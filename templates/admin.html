@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block titolo %}Admin — Gestione{% endblock %}
+
+{% block contenuto %}
+
+<section class="pagina-interna">
+
+    <div class="admin-topbar">
+        <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
+        <a href="/admin/logout" class="btn-azione rosso">Esci</a>
+    </div>
+
+    <h2>📋 Gestione Appuntamenti</h2>
+
+    <!-- FILTRI -->
+    <div class="admin-filtri">
+    <a href="/admin?filtro=in_attesa"
+       class="filtro-btn {% if filtro == 'in_attesa' %}attivo{% endif %}">
+        🔔 In attesa
+        {% if in_attesa_count > 0 %}
+        <span class="badge-count">{{ in_attesa_count }}</span>
+        {% endif %}
+    </a>
+    <a href="/admin?filtro=confermati"
+       class="filtro-btn {% if filtro == 'confermati' %}attivo{% endif %}">
+        ✅ Confermati
+    </a>
+    <a href="/admin?filtro=annullati"
+       class="filtro-btn {% if filtro == 'annullati' %}attivo{% endif %}">
+        ❌ Annullati
+    </a>
+    <a href="/admin?filtro=passati"
+       class="filtro-btn {% if filtro == 'passati' %}attivo{% endif %}">
+        🕐 Passati
+    </a>
+</div>
+
+    <!-- ETICHETTA SEZIONE ATTIVA -->
+    <p class="filtro-descrizione">
+    {% if filtro == 'in_attesa' %}
+        Nuove prenotazioni in attesa di risposta
+    {% elif filtro == 'confermati' %}
+        Appuntamenti confermati
+    {% elif filtro == 'annullati' %}
+        Appuntamenti annullati (quelli più vecchi di 30 giorni vengono eliminati automaticamente)
+    {% elif filtro == 'passati' %}
+        Appuntamenti passati rispetto alla data odierna
+    {% endif %}
+</p>
+{% if appuntamenti %}
+
+    <!-- VISTA DESKTOP: tabella -->
+    <table class="tabella-admin tabella-desktop">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Telefono</th>
+                <th>Servizio</th>
+                <th>Data</th>
+                <th>Ora</th>
+                <th>Note</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in appuntamenti %}
+            <tr class="stato-{{ a.stato | lower | replace(' ', '-') }}">
+                <td>{{ a.nome }}</td>
+                <td>{{ a.telefono }}</td>
+                <td>{{ a.servizio }}</td>
+                <td>{{ a.data }}</td>
+                <td>{{ a.ora }}</td>
+                <td>{{ a.note or '—' }}</td>
+                <td><span class="badge">{{ a.stato }}</span></td>
+                <td class="azioni">
+                    {% if filtro == 'in_attesa' %}
+                        <a href="/admin/aggiorna/{{ a.id }}/Confermato"
+                           class="btn-azione verde"
+                           onclick="return confirm('Confermare l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.')">
+                           Conferma
+                        </a>
+                        <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
+                        <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                           class="btn-azione rosso"
+                           onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.')">
+                           Rimuovi
+                        </a>
+                    {% elif filtro == 'confermati' %}
+                        <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
+                        <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                           class="btn-azione rosso"
+                           onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.')">
+                           Rimuovi
+                        </a>
+                    {% elif filtro == 'annullati' %}
+                        <a href="/admin/aggiorna/{{ a.id }}/In attesa"
+                           class="btn-azione verde"
+                           onclick="return confirm('Ripristinare l\'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.')">
+                           Ripristina
+                        </a>
+                    {% elif filtro == 'passati' %}
+                        <span style="color: #aaa; font-size: 0.85rem;">Archiviato</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- VISTA MOBILE: card -->
+    <div class="card-admin-lista">
+        {% for a in appuntamenti %}
+        <div class="card-admin stato-{{ a.stato | lower | replace(' ', '-') }}">
+            <div class="card-admin-header">
+                <strong>{{ a.nome }}</strong>
+                <span class="badge">{{ a.stato }}</span>
+            </div>
+            <div class="card-admin-body">
+                <p><span>Servizio</span> {{ a.servizio }}</p>
+                <p><span>Data</span> {{ a.data }} alle {{ a.ora }}</p>
+                <p><span>Telefono</span> {{ a.telefono }}</p>
+                {% if a.note %}
+                <p><span>Note</span> {{ a.note }}</p>
+                {% endif %}
+            </div>
+            <div class="card-admin-azioni">
+                {% if filtro == 'in_attesa' %}
+                    <a href="/admin/aggiorna/{{ a.id }}/Confermato"
+                       class="btn-azione verde"
+                       onclick="return confirm('Confermare l\'appuntamento di {{ a.nome }}?')">
+                       Conferma
+                    </a>
+                    <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
+                    <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                       class="btn-azione rosso"
+                       onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }}?')">
+                       Rimuovi
+                    </a>
+                {% elif filtro == 'confermati' %}
+                    <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
+                    <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                       class="btn-azione rosso"
+                       onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }}?')">
+                       Rimuovi
+                    </a>
+                {% elif filtro == 'annullati' %}
+                    <a href="/admin/aggiorna/{{ a.id }}/In attesa"
+                       class="btn-azione verde"
+                       onclick="return confirm('Ripristinare l\'appuntamento di {{ a.nome }}?')">
+                       Ripristina
+                    </a>
+                {% elif filtro == 'passati' %}
+                    <span style="color: #aaa; font-size: 0.85rem;">Archiviato</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="nota" style="margin-top: 1.5rem;">Nessun appuntamento in questa categoria.</p>
+    {% endif %}
+
+</section>
+
+<!-- GESTIONE CORSI -->
+<section class="pagina-interna">
+    <h2>🎓 Gestione Corsi</h2>
+
+    <div class="form-corso">
+        <h3>Aggiungi nuovo corso</h3>
+        <form method="POST" action="/admin/corso/aggiungi">
+            <div class="form-riga">
+                <div class="form-gruppo">
+                    <label>Titolo corso *</label>
+                    <input type="text" name="titolo" placeholder="Es. ECM Wound Care" required>
+                </div>
+                <div class="form-gruppo">
+                    <label>Data *</label>
+                    <input type="date" name="data" required>
+                </div>
+            </div>
+            <div class="form-riga">
+                <div class="form-gruppo">
+                    <label>Ora</label>
+                    <input type="time" name="ora">
+                </div>
+                <div class="form-gruppo">
+                    <label>Luogo</label>
+                    <input type="text" name="luogo" placeholder="Es. Milano, Fiera">
+                </div>
+            </div>
+            <div class="form-gruppo">
+                <label>Descrizione</label>
+                <textarea name="descrizione" rows="3" placeholder="Breve descrizione del corso..."></textarea>
+            </div>
+            <button type="submit" class="btn">Aggiungi corso</button>
+        </form>
+    </div>
+
+    {% if corsi %}
+    <table class="tabella-admin" style="margin-top: 2rem;">
+        <thead>
+            <tr>
+                <th>Titolo</th>
+                <th>Data</th>
+                <th>Ora</th>
+                <th>Luogo</th>
+                <th>Descrizione</th>
+                <th>Elimina</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in corsi %}
+            <tr>
+                <td>{{ c.titolo }}</td>
+                <td>{{ c.data }}</td>
+                <td>{{ c.ora or '—' }}</td>
+                <td>{{ c.luogo or '—' }}</td>
+                <td>{{ c.descrizione or '—' }}</td>
+                <td>
+                    <a href="/admin/corso/elimina/{{ c.id }}" class="btn-azione rosso"
+                       onclick="return confirm('Eliminare questo corso?')">Elimina</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="nota" style="margin-top: 1rem;">Nessun corso inserito.</p>
+    {% endif %}
+
+</section>
+
+{% endblock %}

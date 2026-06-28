@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accesso Admin — Studio Infermieristico</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}">
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-box">
+        <div class="login-logo">
+    <img src="{{ url_for('static', filename='img/logo_black.png') }}" alt="Studio Infermieristico" style="height: 120px; width: auto;">
+</div>
+        <h2>Area riservata</h2>
+        <p class="sottotitolo">Accesso esclusivo per l'amministratore</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="login-errore">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/admin/login">
+            <div class="form-gruppo">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-gruppo">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn" style="width:100%; margin-top: 0.5rem;">Accedi</button>
+        </form>
+        <p style="text-align:center; margin-top:1rem; font-size:0.85rem;">
+            <a href="/" style="color: var(--verde-salvia);">← Torna al sito</a>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titolo %}Modifica Appuntamento — Admin{% endblock %}
+
+{% block contenuto %}
+
+<section class="pagina-interna">
+    <h2>✏️ Modifica Appuntamento</h2>
+<p class="sottotitolo">Modifica data e ora — verrà inviata automaticamente una mail di spostamento al paziente.</p>
+    <div class="form-prenotazione" style="max-width: 580px;">
+
+        <div class="riepilogo-paziente">
+            <h3>Paziente</h3>
+            <p><strong>Nome:</strong> {{ a.nome }}</p>
+            <p><strong>Telefono:</strong> {{ a.telefono }}</p>
+            <p><strong>Email:</strong> {{ a.email }}</p>
+            <p><strong>Servizio:</strong> {{ a.servizio }}</p>
+            {% if a.note %}
+            <p><strong>Note:</strong> {{ a.note }}</p>
+            {% endif %}
+        </div>
+
+        <form method="POST" action="/admin/modifica/{{ a.id }}">
+
+            <div class="form-riga" style="margin-top: 1.5rem;">
+                <div class="form-gruppo">
+                    <label for="data">Nuova data *</label>
+                    <input type="date" id="data" name="data" value="{{ a.data }}" required>
+                </div>
+                <div class="form-gruppo">
+                    <label for="ora">Nuova ora *</label>
+                    <select id="ora" name="ora" required>
+                        {% for h in ['08:00','08:30','09:00','09:30','10:00','10:30',
+                                     '11:00','11:30','12:00','12:30','15:00','15:30',
+                                     '16:00','16:30','17:00','17:30','18:00','18:30'] %}
+                        <option value="{{ h }}" {% if a.ora == h %}selected{% endif %}>{{ h }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="flex:1;">
+                    ✅ Salva e invia conferma
+                </button>
+                <a href="/admin?filtro=in_attesa" class="btn" 
+                   style="flex:1; background: var(--grigio); text-align:center;">
+                    Annulla
+                </a>
+            </div>
+
+        </form>
+    </div>
+</section>
+
+{% endblock %}

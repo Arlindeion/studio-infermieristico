@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block titolo %}Home — Studio Infermieristico{% endblock %}
+
+{% block contenuto %}
+
+<!-- CAROSELLO FOTO -->
+<div class="carosello">
+    <div class="carosello-traccia" id="carosello">
+        <img src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto2.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto3.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto4.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto5.jpg') }}" alt="Studio infermieristico">
+    </div>
+    <button class="carosello-btn prev" onclick="spostaCarosello(-1)">&#8592;</button>
+    <button class="carosello-btn next" onclick="spostaCarosello(1)">&#8594;</button>
+    <div class="carosello-dots" id="dots"></div>
+</div>
+
+<!-- BIOGRAFIA BREVE -->
+<section class="bio-preview">
+    <div class="bio-preview-contenuto">
+        <div class="bio-preview-testo">
+            <h2>Chi sono</h2>
+            <p>Sono [Nome Cognome], infermiera professionale iscritta all'Albo OPI di Milano. Con oltre [X] anni di esperienza, offro assistenza infermieristica professionale, personalizzata e vicina alle esigenze di ogni paziente.</p>
+            <p>I miei servizi sono disponibili presso lo studio e a domicilio, per garantirti la massima comodità e continuità di cura.</p>
+            <a href="/chi-sono" class="btn">Scopri di più</a>
+        </div>
+    </div>
+</section>
+<!-- COSA FACCIO -->
+<section class="cosa-faccio">
+    <h2>Cosa faccio</h2>
+    <p class="sottotitolo">Le aree in cui posso supportarti</p>
+    <div class="cosa-faccio-grid">
+
+        <div class="cosa-faccio-card">
+            <div class="cosa-faccio-img">
+                <img src="{{ url_for('static', filename='img/prima-nascita.jpg') }}" alt="Prima della nascita">
+            </div>
+            <div class="cosa-faccio-testo">
+                <h3>Prima della nascita</h3>
+                <p>Descrivi qui brevemente cosa offri durante la gravidanza e nel periodo che precede il parto.</p>
+                <a href="/prima-della-nascita" class="btn">Scopri di più</a>
+            </div>
+        </div>
+
+        <div class="cosa-faccio-card">
+            <div class="cosa-faccio-img">
+                <img src="{{ url_for('static', filename='img/dopo-nascita.jpg') }}" alt="Dopo la nascita">
+            </div>
+            <div class="cosa-faccio-testo">
+                <h3>Dopo la nascita</h3>
+                <p>Descrivi qui brevemente cosa offri nel periodo post-parto per mamma e neonato.</p>
+                <a href="/dopo-la-nascita" class="btn">Scopri di più</a>
+            </div>
+        </div>
+
+        <div class="cosa-faccio-card">
+            <div class="cosa-faccio-img">
+                <img src="{{ url_for('static', filename='img/consulenze.jpg') }}" alt="Consulenze online">
+            </div>
+            <div class="cosa-faccio-testo">
+                <h3>Consulenze online</h3>
+                <p>Descrivi qui brevemente come funzionano le tue consulenze a distanza.</p>
+                <a href="/consulenze-online" class="btn">Scopri di più</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+<!-- CALENDARIO CORSI -->
+<section class="sezione-calendario">
+    <h2>I miei corsi e aggiornamenti</h2>
+    <p class="sottotitolo">Formazione continua per offrirti sempre il meglio.</p>
+
+    <div class="calendario-wrapper">
+        <div class="cal-header">
+            <button class="cal-nav" id="btn-prec">&#8592;</button>
+            <h3 id="cal-titolo"></h3>
+            <button class="cal-nav" id="btn-succ">&#8594;</button>
+        </div>
+        <div class="cal-giorni-header">
+            <span>Lun</span><span>Mar</span><span>Mer</span>
+            <span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+        </div>
+        <div class="cal-griglia" id="cal-griglia"></div>
+        <div class="cal-dettaglio" id="cal-dettaglio" style="display:none;">
+            <h4 id="det-titolo"></h4>
+            <p id="det-ora"></p>
+            <p id="det-luogo"></p>
+            <p id="det-descrizione"></p>
+        </div>
+    </div>
+</section>
+
+<script>
+const corsi = [
+    {% for c in corsi %}
+    {
+        data: {{ c.data | tojson }},
+        titolo: {{ c.titolo | tojson }},
+        ora: {{ c.ora | default('') | tojson }},
+        luogo: {{ c.luogo | default('') | tojson }},
+        descrizione: {{ c.descrizione | default('') | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+const corsiMap = {};
+corsi.forEach(c => { corsiMap[c.data] = c; });
+
+const mesiNomi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+let oggi = new Date();
+let anno = oggi.getFullYear();
+let mese = oggi.getMonth();
+
+function renderCalendario() {
+    const titolo = document.getElementById('cal-titolo');
+    const griglia = document.getElementById('cal-griglia');
+    const dettaglio = document.getElementById('cal-dettaglio');
+
+    titolo.textContent = mesiNomi[mese] + ' ' + anno;
+    griglia.innerHTML = '';
+    dettaglio.style.display = 'none';
+
+    const primoGiorno = new Date(anno, mese, 1).getDay();
+    const offsetLun = (primoGiorno === 0) ? 6 : primoGiorno - 1;
+    const giorniNelMese = new Date(anno, mese + 1, 0).getDate();
+
+    for (let i = 0; i < offsetLun; i++) {
+        const vuoto = document.createElement('div');
+        vuoto.classList.add('cal-cella', 'vuota');
+        griglia.appendChild(vuoto);
+    }
+
+    for (let g = 1; g <= giorniNelMese; g++) {
+        const mm = String(mese + 1).padStart(2, '0');
+        const gg = String(g).padStart(2, '0');
+        const dataStr = `${anno}-${mm}-${gg}`;
+
+        const cella = document.createElement('div');
+        cella.classList.add('cal-cella');
+        cella.textContent = g;
+
+        if (dataStr === oggi.toISOString().split('T')[0]) {
+            cella.classList.add('oggi');
+        }
+
+        if (corsiMap[dataStr]) {
+            cella.classList.add('ha-corso');
+            cella.title = corsiMap[dataStr].titolo;
+            cella.addEventListener('click', () => mostraDettaglio(corsiMap[dataStr]));
+        }
+
+        griglia.appendChild(cella);
+    }
+}
+
+function mostraDettaglio(corso) {
+    const det = document.getElementById('cal-dettaglio');
+    document.getElementById('det-titolo').textContent = corso.titolo;
+    document.getElementById('det-ora').textContent = corso.ora ? '🕐 ' + corso.ora : '';
+    document.getElementById('det-luogo').textContent = corso.luogo ? '📍 ' + corso.luogo : '';
+    document.getElementById('det-descrizione').textContent = corso.descrizione || '';
+    det.style.display = 'block';
+}
+
+document.getElementById('btn-prec').addEventListener('click', () => {
+    mese--; if (mese < 0) { mese = 11; anno--; }
+    renderCalendario();
+});
+
+document.getElementById('btn-succ').addEventListener('click', () => {
+    mese++; if (mese > 11) { mese = 0; anno++; }
+    renderCalendario();
+});
+
+renderCalendario();
+</script>
+<!-- INSTAGRAM -->
+<section class="sezione-instagram">
+    <h2>Seguimi su Instagram</h2>
+    <p class="sottotitolo">@sc.studioinfermieristico</p>
+<behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
+<script>
+  (() => {
+    const d=document,s=d.createElement("script");s.type="module";
+    s.src="https://w.behold.so/widget.js";d.head.append(s);
+  })();
+</script>
+</section>
+<!-- SERVIZI -->
+<section class="servizi-preview">
+    <h2>I miei servizi</h2>
+    <div class="card-grid">
+        <div class="card">
+            <span>💉</span>
+            <h3>Iniezioni e flebo</h3>
+            <p>Somministrazione di farmaci su prescrizione medica.</p>
+        </div>
+        <div class="card">
+            <span>🩹</span>
+            <h3>Medicazioni</h3>
+            <p>Gestione e trattamento di ferite, ulcere e lesioni.</p>
+        </div>
+        <div class="card">
+            <span>❤️</span>
+            <h3>Controllo parametri</h3>
+            <p>Misurazione pressione, glicemia, saturazione e più.</p>
+        </div>
+        <div class="card">
+            <span>🏠</span>
+            <h3>Assistenza domiciliare</h3>
+            <p>Interventi direttamente a casa tua, su prenotazione.</p>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <h2>Prenota il tuo appuntamento</h2>
+    <p>Scegli giorno e ora direttamente online, in pochi secondi.</p>
+    <a href="/prenota" class="btn">Prenota ora</a>
+</section>
+
+<script>
+    let indice = 0;
+    const imgs = document.querySelectorAll('.carosello-traccia img');
+    const dotsContainer = document.getElementById('dots');
+
+    imgs.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.classList.add('dot');
+        if (i === 0) dot.classList.add('attivo');
+        dot.onclick = () => vaiA(i);
+        dotsContainer.appendChild(dot);
+    });
+
+    function vaiA(n) {
+        imgs[indice].classList.remove('attiva');
+        document.querySelectorAll('.dot')[indice].classList.remove('attivo');
+        indice = (n + imgs.length) % imgs.length;
+        imgs[indice].classList.add('attiva');
+        document.querySelectorAll('.dot')[indice].classList.add('attivo');
+    }
+
+    function spostaCarosello(direzione) {
+        vaiA(indice + direzione);
+    }
+
+    imgs[0].classList.add('attiva');
+    setInterval(() => spostaCarosello(1), 4000);
+
+    // ─── SWIPE SU MOBILE ───
+    const carosello = document.querySelector('.carosello');
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    carosello.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    carosello.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+            spostaCarosello(diff > 0 ? 1 : -1);
+        }
+    }, { passive: true });
+</script>
+{% endblock %}

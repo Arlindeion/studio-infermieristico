@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block titolo %}Prenota — S.C. Studio Infermieristico{% endblock %}
+
+{% block contenuto %}
+
+<section class="pagina-interna">
+    <h2>Prenota un appuntamento</h2>
+    <p class="sottotitolo">Compila il modulo, ti confermeremo l'appuntamento entro poche ore.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="background:#fdf0f0; color:#e74c3c; padding:0.8rem 1.2rem; border-radius:8px; margin-bottom:1rem;">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form class="form-prenotazione" method="POST" action="/prenota">
+
+        <div class="form-gruppo">
+            <label for="nome">Nome e Cognome *</label>
+            <input type="text" id="nome" name="nome" placeholder="Es. Mario Rossi"
+                   value="{{ form_data.get('nome', '') if form_data else '' }}" required>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="telefono">Numero di telefono *</label>
+            <input type="tel" id="telefono" name="telefono" placeholder="Es. 333 1234567"
+                   value="{{ form_data.get('telefono', '') if form_data else '' }}" required>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" placeholder="Es. mario.rossi@email.it"
+                   value="{{ form_data.get('email', '') if form_data else '' }}" required>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="servizio">Servizio richiesto *</label>
+            <select id="servizio" name="servizio" required>
+                <option value="">-- Seleziona un servizio --</option>
+                <option value="Iniezione intramuscolare"     {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione intramuscolare' }}>Iniezione intramuscolare</option>
+                <option value="Iniezione sottocutanea"       {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione sottocutanea' }}>Iniezione sottocutanea</option>
+                <option value="Flebo e terapia infusionale"  {{ 'selected' if form_data and form_data.get('servizio') == 'Flebo e terapia infusionale' }}>Flebo e terapia infusionale</option>
+                <option value="Medicazione semplice"         {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione semplice' }}>Medicazione semplice</option>
+                <option value="Medicazione complessa"        {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione complessa' }}>Medicazione complessa</option>
+                <option value="Controllo parametri vitali"   {{ 'selected' if form_data and form_data.get('servizio') == 'Controllo parametri vitali' }}>Controllo parametri vitali</option>
+                <option value="Assistenza domiciliare"       {{ 'selected' if form_data and form_data.get('servizio') == 'Assistenza domiciliare' }}>Assistenza domiciliare</option>
+                <option value="Gestione terapia farmacologica" {{ 'selected' if form_data and form_data.get('servizio') == 'Gestione terapia farmacologica' }}>Gestione terapia farmacologica</option>
+            </select>
+        </div>
+
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="data">Data *</label>
+                <input type="date" id="data" name="data" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="ora">Ora *</label>
+                <select id="ora" name="ora" required>
+                    <option value="">-- Seleziona --</option>
+                    <option value="08:00"  {{ 'selected' if form_data and form_data.get('ora') == '08:00' }}>08:00</option>
+                    <option value="08:30"  {{ 'selected' if form_data and form_data.get('ora') == '08:30' }}>08:30</option>
+                    <option value="09:00"  {{ 'selected' if form_data and form_data.get('ora') == '09:00' }}>09:00</option>
+                    <option value="09:30"  {{ 'selected' if form_data and form_data.get('ora') == '09:30' }}>09:30</option>
+                    <option value="10:00"  {{ 'selected' if form_data and form_data.get('ora') == '10:00' }}>10:00</option>
+                    <option value="10:30"  {{ 'selected' if form_data and form_data.get('ora') == '10:30' }}>10:30</option>
+                    <option value="11:00"  {{ 'selected' if form_data and form_data.get('ora') == '11:00' }}>11:00</option>
+                    <option value="11:30"  {{ 'selected' if form_data and form_data.get('ora') == '11:30' }}>11:30</option>
+                    <option value="12:00"  {{ 'selected' if form_data and form_data.get('ora') == '12:00' }}>12:00</option>
+                    <option value="12:30"  {{ 'selected' if form_data and form_data.get('ora') == '12:30' }}>12:30</option>
+                    <option value="15:00"  {{ 'selected' if form_data and form_data.get('ora') == '15:00' }}>15:00</option>
+                    <option value="15:30"  {{ 'selected' if form_data and form_data.get('ora') == '15:30' }}>15:30</option>
+                    <option value="16:00"  {{ 'selected' if form_data and form_data.get('ora') == '16:00' }}>16:00</option>
+                    <option value="16:30"  {{ 'selected' if form_data and form_data.get('ora') == '16:30' }}>16:30</option>
+                    <option value="17:00"  {{ 'selected' if form_data and form_data.get('ora') == '17:00' }}>17:00</option>
+                    <option value="17:30"  {{ 'selected' if form_data and form_data.get('ora') == '17:30' }}>17:30</option>
+                    <option value="18:00"  {{ 'selected' if form_data and form_data.get('ora') == '18:00' }}>18:00</option>
+                    <option value="18:30"  {{ 'selected' if form_data and form_data.get('ora') == '18:30' }}>18:30</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="note">Note aggiuntive</label>
+            <textarea id="note" name="note" rows="4" placeholder="Es. porto la prescrizione medica, ho difficoltà motorie...">{{ form_data.get('note', '') if form_data else '' }}</textarea>
+        </div>
+
+        <div class="form-gruppo">
+            <label style="display: flex; align-items: flex-start; gap: 10px; font-weight: normal; cursor: pointer;">
+                <input type="checkbox" name="consenso_privacy" required style="width: auto; margin-top: 4px; flex-shrink: 0;">
+                <span style="font-size: 0.85rem; color: #666;">
+                    Ho letto e accetto l'<a href="/privacy" target="_blank" style="color: var(--verde-salvia); text-decoration: underline;">Informativa Privacy</a>.
+                    Acconsento al trattamento dei miei dati personali, inclusi quelli sanitari,
+                    ai sensi del GDPR 679/2016 per la gestione dell'appuntamento. *
+                </span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn" id="btn-invia">Invia prenotazione</button>
+
+    </form>
+</section>
+
+<script>
+    // Blocca date passate nel datepicker
+    document.getElementById('data').min = new Date().toISOString().split('T')[0];
+
+    // Disabilita il bottone dopo l'invio per evitare doppi click
+    document.querySelector('form.form-prenotazione').addEventListener('submit', function() {
+        const btn = document.getElementById('btn-invia');
+        btn.disabled = true;
+        btn.textContent = 'Invio in corso...';
+    });
+</script>
+
+{% endblock %}
