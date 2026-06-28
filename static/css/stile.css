@@ -919,6 +919,17 @@ footer {
         padding: 0.4rem 1rem;
         flex-wrap: nowrap;
         justify-content: space-between;
+    /* Tipografia scalata */
+    .pagina-interna h2 { font-size: 1.5rem; }
+    .sezione-calendario h2 { font-size: 1.5rem; }
+    .cosa-faccio h2 { font-size: 1.5rem; }
+    .servizi-preview h2 { font-size: 1.5rem; }
+    .sezione-instagram h2 { font-size: 1.5rem; }
+    .cta h2 { font-size: 1.5rem; }
+    .bio-preview-testo h2 { font-size: 1.5rem; }
+    .cta p { font-size: 1rem; }
+    .bio-preview-testo p { font-size: 0.95rem; }
+    .logo-testo { display: none; }
     }
 
     .nav-desktop { display: none; }
