@@ -9,6 +9,7 @@ Sito web ufficiale di S.C. Studio Infermieristico con sistema di prenotazione ap
 - **Backend:** Python 3.14 + Flask
 - **Database:** SQLite + SQLAlchemy
 - **Autenticazione:** Flask-Login
+- **Rate Limiting:** Flask-Limiter
 - **Email:** Flask-Mail + Gmail SMTP
 - **Frontend:** HTML, CSS, JavaScript vanilla
 
@@ -171,3 +172,20 @@ pip freeze > requirements.txt
 - Il file `.env` non è su GitHub — va ricreato manualmente su ogni dispositivo
 - Il database `appuntamenti.db` non è su GitHub — viene creato automaticamente al primo avvio
 - Le immagini in `static/img/` sono su GitHub — verificare che ci siano tutte dopo il clone
+
+---
+
+## Testing
+
+To run the test suite:
+
+```bash
+pip install pytest
+pytest
+```
+
+## Configuration
+
+The application uses a configuration class defined in `config.py`. You can set the environment via the `FLASK_ENV` environment variable (development, production, testing). See config.py for details.
+
+Alternatively, you can set `APP_SETTINGS` to point to a config class.

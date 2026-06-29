@@ -1,0 +1,91 @@
+2026-06-29 22:59:49,871 INFO:app: >>> SECRET_KEY caricata: 1443bf60...
+2026-06-29 22:59:49,947 INFO:app: >>> Database OK — Admin esistente
+2026-06-29 22:59:50,095 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-29 22:59:50,095 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-06-29 22:59:50,095 INFO:werkzeug:  * Restarting with stat
+2026-06-29 22:59:50,310 INFO:app: >>> SECRET_KEY caricata: 1443bf60...
+2026-06-29 22:59:50,322 INFO:app: >>> Database OK — Admin esistente
+2026-06-29 22:59:50,342 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 22:59:50,357 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-06-29 23:00:13,405 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "GET / HTTP/1.1" 200 -
+2026-06-29 23:00:13,513 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,514 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "GET /static/css/stile.css HTTP/1.1" 200 -
+2026-06-29 23:00:13,516 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,651 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,656 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,660 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,673 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:13,681 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:13,687 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:13,689 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:13,962 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:13] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-06-29 23:00:16,433 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "GET / HTTP/1.1" 200 -
+2026-06-29 23:00:16,469 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/css/stile.css HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,470 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,473 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,507 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,508 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,510 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,513 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:16,513 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:16,519 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:16,519 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:16] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:17,882 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "GET / HTTP/1.1" 200 -
+2026-06-29 23:00:17,896 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/css/stile.css HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,900 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,901 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,936 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,938 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,939 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:17,940 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,944 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:00:17,946 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:00:17,948 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:00:17] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:01:32,841 INFO:werkzeug:  * Detected change in '/Users/gabrieleconti/Desktop/studio-infermieristico/app.py', reloading
+2026-06-29 23:01:32,961 INFO:werkzeug:  * Restarting with stat
+2026-06-29 23:01:33,380 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 23:01:33,395 INFO:werkzeug:  * Debugger PIN: 251-341-905
+2026-06-29 23:01:37,455 INFO:werkzeug:  * Detected change in '/Users/gabrieleconti/Desktop/studio-infermieristico/app.py', reloading
+2026-06-29 23:01:37,540 INFO:werkzeug:  * Restarting with stat
+2026-06-29 23:01:37,791 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 23:01:37,802 INFO:werkzeug:  * Debugger PIN: 251-341-905
+2026-06-29 23:08:42,757 INFO:app: >>> Admin creato — username: admin | password: cambiami123
+2026-06-29 23:09:43,723 INFO:__main__: >>> Database OK — Admin esistente
+2026-06-29 23:09:46,511 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-29 23:09:46,511 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-06-29 23:09:46,512 INFO:werkzeug:  * Restarting with stat
+2026-06-29 23:09:46,744 INFO:__main__: >>> Database OK — Admin esistente
+2026-06-29 23:09:46,767 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 23:09:46,779 INFO:werkzeug:  * Debugger PIN: 824-597-056
+2026-06-29 23:10:10,302 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:10:10] "GET / HTTP/1.1" 200 -
+2026-06-29 23:15:37,838 INFO:app: >>> Database OK — Admin esistente
+2026-06-29 23:15:57,823 INFO:__main__: >>> Database OK — Admin esistente
+2026-06-29 23:15:57,857 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-29 23:15:57,858 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-06-29 23:15:57,858 INFO:werkzeug:  * Restarting with stat
+2026-06-29 23:15:58,099 INFO:__main__: >>> Database OK — Admin esistente
+2026-06-29 23:15:58,128 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 23:15:58,142 INFO:werkzeug:  * Debugger PIN: 824-597-056
+2026-06-29 23:16:11,131 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:16:11] "GET /prenota HTTP/1.1" 200 -
+2026-06-29 23:37:43,565 INFO:app: >>> Admin creato — username: admin | password: cambiami123
+2026-06-29 23:37:43,603 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-29 23:37:43,603 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-06-29 23:37:43,603 INFO:werkzeug:  * Restarting with stat
+2026-06-29 23:37:43,855 INFO:app: >>> Database OK — Admin esistente
+2026-06-29 23:37:43,875 WARNING:werkzeug:  * Debugger is active!
+2026-06-29 23:37:43,889 INFO:werkzeug:  * Debugger PIN: 824-597-056
+2026-06-29 23:37:50,595 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "GET / HTTP/1.1" 200 -
+2026-06-29 23:37:50,666 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/css/stile.css HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,669 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,669 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,888 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,889 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,891 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,893 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:37:50,898 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-06-29 23:37:50,899 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-06-29 23:37:50,902 INFO:werkzeug: 127.0.0.1 - - [29/Jun/2026 23:37:50] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -

@@ -1,21 +1,65 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+import logging
+import re
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
 from dotenv import load_dotenv
 import os
+import secrets
 load_dotenv()
+from config import config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appuntamenti.db'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback-solo-per-sviluppo')
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-print(f'>>> SECRET_KEY caricata: {app.config["SECRET_KEY"][:8]}...')
+# Load configuration
+config_name = os.environ.get('FLASK_ENV', 'development')
+app.config.from_object(config[config_name])
+
+# Override SECRET_KEY if set in environment (allows .env to override)
+if os.environ.get('SECRET_KEY'):
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+
+# Ensure essential configs are set (fallbacks)
+app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///appuntamenti.db')
+app.config.setdefault('SECRET_KEY', os.environ.get('SECRET_KEY', 'fallback-solo-per-sviluppo'))
+app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config.setdefault('SESSION_COOKIE_SECURE', os.environ.get('FLASK_ENV') == 'production')
+app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
+
+# Rate limiting
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# CSRF Protection
+def generate_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = secrets.token_hex(32)
+    return session['_csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 # ─── CONFIGURAZIONE EMAIL ───
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -30,6 +74,21 @@ mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.session_protection = 'basic'
+
+talisman = Talisman(
+    app,
+    content_security_policy={
+        'default-src': "'self'",
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'script-src': ["'self'", "'unsafe-inline'"],
+        'img-src': ["'self'", "data:"],
+        'font-src': ["'self'"],
+    },
+    force_https=False,
+    session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
+    session_cookie_http_only=True,
+    session_cookie_samesite='Lax',
+)
 
 
 # ─── COSTANTI ───
@@ -96,16 +155,17 @@ with app.app_context():
         )
         db.session.add(admin_utente)
         db.session.commit()
-        print('>>> Admin creato — username: admin | password: cambiami123')
+        logger.info('>>> Admin creato — username: admin | password: cambiami123')
     else:
-        print('>>> Database OK — Admin esistente')
+        logger.info('>>> Database OK — Admin esistente')
 
 
 # ─── EMAIL ───
 
 def invia_email_conferma(appuntamento):
+    """Send confirmation email to the patient after appointment confirmation."""
     try:
-        print(f'>>> Invio email conferma a {appuntamento.email}...')
+        logger.info(f'>>> Invio email conferma a {appuntamento.email}...')
         msg = Message(
             subject='Appuntamento confermato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -121,14 +181,15 @@ def invia_email_conferma(appuntamento):
             )
         )
         mail.send(msg)
-        print('>>> Email conferma inviata con successo!')
+        logger.info('>>> Email conferma inviata con successo!')
     except Exception as e:
-        print(f'>>> Errore invio email conferma: {e}')
+        logger.error(f'>>> Errore invio email conferma: {e}', exc_info=True)
 
 
 def invia_email_spostamento(appuntamento):
+    """Send notification email when an appointment is rescheduled."""
     try:
-        print(f'>>> Invio email spostamento a {appuntamento.email}...')
+        logger.info(f'>>> Invio email spostamento a {appuntamento.email}...')
         msg = Message(
             subject='Appuntamento spostato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -146,14 +207,15 @@ def invia_email_spostamento(appuntamento):
             )
         )
         mail.send(msg)
-        print('>>> Email spostamento inviata con successo!')
+        logger.info('>>> Email spostamento inviata con successo!')
     except Exception as e:
-        print(f'>>> Errore invio email spostamento: {e}')
+        logger.error(f'>>> Errore invio email spostamento: {e}', exc_info=True)
 
 
 def invia_email_annullamento(appuntamento):
+    """Send cancellation email to the patient."""
     try:
-        print(f'>>> Invio email annullamento a {appuntamento.email}...')
+        logger.info(f'>>> Invio email annullamento a {appuntamento.email}...')
         msg = Message(
             subject='Appuntamento cancellato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -171,14 +233,15 @@ def invia_email_annullamento(appuntamento):
             )
         )
         mail.send(msg)
-        print('>>> Email annullamento inviata con successo!')
+        logger.info('>>> Email annullamento inviata con successo!')
     except Exception as e:
-        print(f'>>> Errore invio email annullamento: {e}')
+        logger.error(f'>>> Errore invio email annullamento: {e}', exc_info=True)
 
 
 def invia_email_nuova_prenotazione(appuntamento):
+    """Send alert email to the admin when a new appointment request is received."""
     try:
-        print(f'>>> Invio email alert nuova prenotazione...')
+        logger.info('>>> Invio email alert nuova prenotazione...')
         msg = Message(
             subject=f'Nuova prenotazione - {appuntamento.nome}',
             recipients=['sc.studioinfermieristico@gmail.com'],
@@ -195,9 +258,9 @@ def invia_email_nuova_prenotazione(appuntamento):
             )
         )
         mail.send(msg)
-        print('>>> Email alert inviata con successo!')
+        logger.info('>>> Email alert inviata con successo!')
     except Exception as e:
-        print(f'>>> Errore invio email alert: {e}')
+        logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
 
 
 # ─── PAGINE SITO ───
@@ -233,32 +296,89 @@ def consulenze_online():
     return render_template('consulenze_online.html')
 
 
+@limiter.limit("5 per minute")
 @app.route('/prenota', methods=['GET', 'POST'])
 def prenota():
     if request.method == 'POST':
+        # CSRF Protection
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('prenota.html', form_data=request.form)
 
         if not request.form.get('consenso_privacy'):
             flash('Devi accettare l\'informativa privacy per procedere.')
             return render_template('prenota.html', form_data=request.form)
 
-        if request.form.get('servizio') not in SERVIZI_VALIDI:
+        # Extract form data
+        nome = request.form.get('nome', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        servizio = request.form.get('servizio', '').strip()
+        data_scelta = request.form.get('data', '').strip()
+        ora = request.form.get('ora', '').strip()
+        note = request.form.get('note', '').strip()
+
+        # Validate required fields
+        if not nome:
+            flash('Il nome è obbligatorio.')
+            return render_template('prenota.html', form_data=request.form)
+        if not telefono:
+            flash('Il telefono è obbligatorio.')
+            return render_template('prenota.html', form_data=request.form)
+        if not email:
+            flash('L\'email è obbligatoria.')
+            return render_template('prenota.html', form_data=request.form)
+        if not servizio:
+            flash('Il servizio è obbligatorio.')
+            return render_template('prenota.html', form_data=request.form)
+        if not data_scelta:
+            flash('La data è obbligatoria.')
+            return render_template('prenota.html', form_data=request.form)
+        if not ora:
+            flash('L\'ora è obbligatoria.')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Validate nome length
+        if len(nome) > 100:
+            flash('Il nome è troppo lungo (max 100 caratteri).')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Validate telefono format (allow digits, spaces, +, -, (), length 7-20)
+        if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
+            flash('Il numero di telefono non è valido.')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Validate email format
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            flash('L\'indirizzo email non è valido.')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Validate servizio
+        if servizio not in SERVIZI_VALIDI:
             flash('Servizio non valido. Seleziona un servizio dalla lista.')
             return render_template('prenota.html', form_data=request.form)
 
-        data_scelta = request.form['data']
+        # Validate date not in past
         oggi = date.today().strftime('%Y-%m-%d')
         if data_scelta < oggi:
             flash('Non puoi prenotare una data nel passato.')
             return render_template('prenota.html', form_data=request.form)
 
+        # Validate note length (optional)
+        if len(note) > 500:
+            flash('Le note sono troppo lunghe (max 500 caratteri).')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Create appointment
         nuovo = Appuntamento(
-            nome=request.form['nome'],
-            telefono=request.form['telefono'],
-            email=request.form['email'],
-            servizio=request.form['servizio'],
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            servizio=servizio,
             data=data_scelta,
-            ora=request.form['ora'],
-            note=request.form.get('note', '')
+            ora=ora,
+            note=note
         )
         db.session.add(nuovo)
         db.session.commit()
@@ -280,11 +400,17 @@ def privacy():
 
 # ─── LOGIN / LOGOUT ───
 
+@limiter.limit("5 per minute")
 @app.route('/admin/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin'))
     if request.method == 'POST':
+        # CSRF Protection
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('login.html')
         username = request.form['username']
         password = request.form['password']
         utente = Admin.query.filter_by(username=username).first()
@@ -312,6 +438,7 @@ def admin():
     oggi = date.today().strftime('%Y-%m-%d')
     filtro = request.args.get('filtro', 'in_attesa')
 
+    # Clean up old anulled appointments (>30 giorni)
     trenta_giorni_fa = datetime.today() - timedelta(days=30)
     vecchi = Appuntamento.query.filter(
         Appuntamento.stato == 'Annullato',
@@ -321,30 +448,33 @@ def admin():
         db.session.delete(v)
     db.session.commit()
 
+    # Query appointments based on filter
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
             Appuntamento.stato == 'In attesa'
         ).order_by(Appuntamento.data, Appuntamento.ora).all()
-    elif filtro == 'confermati':
-        appuntamenti = Appuntamento.query.filter(
-            Appuntamento.stato == 'Confermato',
-            Appuntamento.data >= oggi
-        ).order_by(Appuntamento.data, Appuntamento.ora).all()
-    elif filtro == 'annullati':
-        appuntamenti = Appuntamento.query.filter(
-            Appuntamento.stato == 'Annullato'
-        ).order_by(Appuntamento.data, Appuntamento.ora).all()
-    elif filtro == 'passati':
-        appuntamenti = Appuntamento.query.filter(
-            Appuntamento.data < oggi,
-            Appuntamento.stato != 'Annullato'
-        ).order_by(Appuntamento.data.desc(), Appuntamento.ora.desc()).all()
+        in_attesa_count = len(appuntamenti)  # reuse count
     else:
-        appuntamenti = []
-
-    in_attesa_count = Appuntamento.query.filter(
-        Appuntamento.stato == 'In attesa'
-    ).count()
+        # For other filters, we still need the count of "In attesa" for the badge
+        in_attesa_count = Appuntamento.query.filter(
+            Appuntamento.stato == 'In attesa'
+        ).count()
+        if filtro == 'confermati':
+            appuntamenti = Appuntamento.query.filter(
+                Appuntamento.stato == 'Confermato',
+                Appuntamento.data >= oggi
+            ).order_by(Appuntamento.data, Appuntamento.ora).all()
+        elif filtro == 'annullati':
+            appuntamenti = Appuntamento.query.filter(
+                Appuntamento.stato == 'Annullato'
+            ).order_by(Appuntamento.data, Appuntamento.ora).all()
+        elif filtro == 'passati':
+            appuntamenti = Appuntamento.query.filter(
+                Appuntamento.data < oggi,
+                Appuntamento.stato != 'Annullato'
+            ).order_by(Appuntamento.data.desc(), Appuntamento.ora.desc()).all()
+        else:
+            appuntamenti = []
 
     corsi = Corso.query.order_by(Corso.data).all()
     return render_template('admin.html',
@@ -405,6 +535,19 @@ def elimina_corso(id):
     db.session.delete(corso)
     db.session.commit()
     return redirect(url_for('admin'))
+
+
+@app.route('/api/orari-occupati/<data>')
+def orari_occupati(data):
+    # Return list of occupied time slots for the given date (YYYY-MM-DD)
+    # Exclude cancelled appointments (stato != 'Annullato') as they free the slot
+    occupati = Appuntamento.query.filter(
+        Appuntamento.data == data,
+        Appuntamento.stato != 'Annullato'
+    ).with_entities(Appuntamento.ora).all()
+    # Convert list of tuples to list of strings
+    orari = [ora for (ora,) in occupati]
+    return jsonify(orari)
 
 
 # ─── AVVIO ───

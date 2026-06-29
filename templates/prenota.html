@@ -114,4 +114,52 @@
     });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('data');
+    const timeSelect = document.getElementById('ora');
+
+    function updateDisabledTimes() {
+        const selectedDate = dateInput.value;
+        if (!selectedDate) {
+            // Enable all options if no date selected
+            Array.from(timeSelect.options).forEach(option => {
+                if (option.value !== '') {
+                    option.disabled = false;
+                }
+            });
+            return;
+        }
+
+        // Fetch occupied times for the selected date
+        fetch(`/api/orari-occupati/${selectedDate}`)
+            .then(response => response.json())
+            .then(occupiedTimes => {
+                // Enable all options first
+                Array.from(timeSelect.options).forEach(option => {
+                    if (option.value !== '') {
+                        option.disabled = false;
+                    }
+                });
+                // Disable occupied times
+                occupiedTimes.forEach(time => {
+                    const option = Array.from(timeSelect.options).find(opt => opt.value === time);
+                    if (option) {
+                        option.disabled = true;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching occupied times:', error);
+            });
+    }
+
+    // Listen for date changes
+    dateInput.addEventListener('change', updateDisabledTimes);
+
+    // Also run on page load in case date is pre-filled (from form_data)
+    updateDisabledTimes();
+});
+</script>
+
 {% endblock %}
