@@ -252,6 +252,8 @@ section {
 .orari td { padding: 0.6rem 0; border-bottom: 1px solid #c8dbc9; font-size: 0.95rem; }
 .orari td:last-child { text-align: right; font-weight: 600; color: var(--verde-scuro); }
 .nota { margin-top: 1rem; font-size: 0.9rem; color: var(--grigio); }
+.nota-lg { margin-top: 1.5rem; font-size: 0.9rem; color: var(--grigio); }
+.text-muted { color: var(--grigio); font-size: 0.85rem; }
 
 /* ─── CHI SIAMO ─── */
 .chi-siamo-contenuto { display: flex; gap: 3rem; align-items: flex-start; margin-bottom: 3rem; }
@@ -325,6 +327,7 @@ section {
 
 /* ─── TABELLA ADMIN ─── */
 .tabella-admin {
+    margin-top: 2rem;
     width: 100%;
     border-collapse: collapse;
     background: white;
@@ -1085,3 +1088,4 @@ footer {
 /* Logo image and privacy link styles */
 .logo-img { height: 90px; width: auto; }
 .privacy-link { color: #bdc3c7; text-decoration: underline; }
+.logo-login { height: 120px; width: auto; }

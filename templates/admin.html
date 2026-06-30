@@ -100,7 +100,7 @@
                            Ripristina
                         </a>
                     {% elif filtro == 'passati' %}
-                        <span style="color: #aaa; font-size: 0.85rem;">Archiviato</span>
+                        <span class="text-muted">Archiviato</span>
                     {% endif %}
                 </td>
             </tr>
@@ -151,14 +151,14 @@
                        Ripristina
                     </a>
                 {% elif filtro == 'passati' %}
-                    <span style="color: #aaa; font-size: 0.85rem;">Archiviato</span>
+                    <span class="text-muted">Archiviato</span>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <p class="nota" style="margin-top: 1.5rem;">Nessun appuntamento in questa categoria.</p>
+    <p class="nota nota-lg">Nessun appuntamento in questa categoria.</p>
     {% endif %}
 
 </section>
@@ -199,7 +199,7 @@
     </div>
 
     {% if corsi %}
-    <table class="tabella-admin" style="margin-top: 2rem;">
+    <table class="tabella-admin">
         <thead>
             <tr>
                 <th>Titolo</th>
@@ -227,7 +227,7 @@
         </tbody>
     </table>
     {% else %}
-    <p class="nota" style="margin-top: 1rem;">Nessun corso inserito.</p>
+    <p class="nota">Nessun corso inserito.</p>
     {% endif %}
 
 </section>
