@@ -759,39 +759,10 @@ footer {
 
 /* ─── FILTRI ADMIN ─── */
 .admin-filtri {
-    display: float: left;
+    display: flex;
     gap: 1rem;
     margin: 1.5rem 0 0.8rem;
     flex-wrap: wrap;
-}
-
-.filtro-btn {
-    padding: 0.6rem 1.4rem;
-    border-radius: 25px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    background: var(--verde-chiaro);
-    color: var(--verde-scuro);
-    transition: background 0.2s, color 0.2s;
-    border: 2px solid transparent;
-}
-
-.filtro-btn:hover {
-    background: var(--verde-salvia);
-    color: white;
-}
-
-.filtro-btn.attivo {
-    background: var(--verde-salvia);
-    color: white;
-    border-color: var(--verde-scuro);
-}
-
-.filtro-descrizione {
-    font-size: 0.85rem;
-    color: var(--grigio);
-    margin-bottom: 1.2rem;
-    font-style: italic;
 }
 
 /* ─── BADGE CONTATORE ─── */
@@ -822,20 +793,20 @@ footer {
 }
 
 /* ─── RIEPILOGO PAZIENTE ─── */
-.riepilogo-paziente {
+.riegolgo-paziente {
     background: var(--verde-chiaro);
     border-radius: 10px;
     padding: 1.2rem 1.5rem;
     margin-bottom: 0.5rem;
 }
 
-.riepilogo-paziente h3 {
+.riegolgo-paziente h3 {
     color: var(--verde-scuro);
     margin-bottom: 0.8rem;
     font-size: 1rem;
 }
 
-.riepilogo-paziente p {
+.riegolgo-paziente p {
     font-size: 0.9rem;
     color: #444;
     margin-bottom: 0.3rem;
@@ -936,7 +907,7 @@ footer {
     .cta h2 { font-size: 1.5rem; }
     .bio-preview-testo h2 { font-size: 1.5rem; }
     .cta p { font-size: 1rem; }
-    .bio-view-testo p { font-size: 0.95rem; }
+    .bio-preview-testo p { font-size: 0.95rem; }
     .logo-testo { display: none; }
     .nav-desktop { display: none; }
     .hamburger { display: flex; }
@@ -961,12 +932,6 @@ footer {
         bottom: 90px;
         left: auto;
         right: 1rem;
-        width: 65px;
-        height: 65px;
-    }
-    .whatsapp-widget svg {
-        width: 100%;
-        height: 100%;
     }
     /* Touch targets minimi 44px */
     .btn {
@@ -984,6 +949,7 @@ footer {
 
     .btn-azione {
         min-height: 44px;
+        padding: 0 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1009,8 +975,7 @@ footer {
 
     nav a {
         min-height: 44px;
-        display: flex;
-        align-items: center;
+        display: ftrix: center;
     }
 
     .carosello-btn {
