@@ -22,8 +22,6 @@ body {
 }
 
 a { text-decoration: none; color: inherit; }
-
-/* ─── HEADER ─── */
 header {
     background: var(--verde-salvia);
 	padding: 0.3rem 2rem;
@@ -952,7 +950,7 @@ footer {
     section { padding: 2.5rem 1rem; }
     .tabella-admin { font-size: 0.8rem; }
     .tabella-admin th, .tabella-admin td { padding: 0.6rem 0.5rem; }
-    .azioni { flex-direction: column; gap: 0.3rem; }
+    .acciones { flex-direction: column; gap: 0.3rem; }
     .whatsapp-tooltip { display: none; }
     .conferma-box { padding: 2rem 1.2rem; }
     .bio-preview { padding: 2.5rem 1rem; }
@@ -963,6 +961,12 @@ footer {
         bottom: 90px;
         left: auto;
         right: 1rem;
+        width: 65px;
+        height: 65px;
+    }
+    .whatsapp-widget svg {
+        width: 100%;
+        height: 100%;
     }
     /* Touch targets minimi 44px */
     .btn {
@@ -1017,6 +1021,10 @@ footer {
 }
 
 /* ─── BARRA STICKY MOBILE ─── */
+.sticky-prenota {
+    display: none;
+}
+
 @media (max-width: 640px) {
     .sticky-prenota {
         display: block;
