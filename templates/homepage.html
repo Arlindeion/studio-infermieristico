@@ -3,117 +3,76 @@
 
 {% block contenuto %}
 
-<!-- MESSAGGIO DI BENVENUTO -->
-<section class="welcome-message">
-    <div class="container">
-        <h1>Benvenuta, futura mamma e neo-genitore</h1>
-        <p class="lead">Ti accompagno con professionalità e calore umano in ogni fase della maternità e della prima infanzia, offrendo assistenza infermieristica specializzata direttamente a casa tua.</p>
-        <div class="benefici-rapidi">
-            <div class="beneficio">
-                <span class="icon">✓</span>
-                <span>Assistenza personalizzata a domicilio</span>
-            </div>
-            <div class="beneficio">
-                <span class="icon">✓</span>
-                <span>Disponibilità flessibile per emergenze</span>
-            </div>
-            <div class="beneficio">
-                <span class="icon">✓</span>
-                <span>Aggiornamento costante sulle ultime pratiche</span>
-            </div>
-        </div>
-        <a href="/prenota" class="btn btn-grande">Prenota la tua consulenza</a>
-    </div>
-</section>
-
 <!-- CAROSELLO FOTO -->
 <div class="carosello">
     <div class="carosello-traccia" id="carosello">
-        <img src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="Assistenza infermieristica neonatale a domicilio">
-        <img src="{{ url_for('static', filename='img/foto2.jpg') }}" alt="Supporto allattamento e cura del neonato">
-        <img src="{{ url_for('static', filename='img/foto3.jpg') }}" alt="Consulenza post-parto per mamme">
-        <img src="{{ url_for('static', filename='img/foto4.jpg') }}" alt="Educazione sanitaria per neo-genitori">
-        <img src="{{ url_for('static', filename='img/foto5.jpg') }}" alt="Monitoraggio parametri vitali neonatali">
+        <img src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto2.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto3.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto4.jpg') }}" alt="Studio infermieristico">
+        <img src="{{ url_for('static', filename='img/foto5.jpg') }}" alt="Studio infermieristico">
     </div>
-    <div class="carosello-overlay">
-        <h1 class="carosello-titolo">Cura infermieristica specializzata per mamme e bambini</h1>
-        <p class="carosello-sottotitolo">Dalla gravidanza ai primi mesi di vita, al tuo fianco con empatia e professionalità</p>
-    </div>
-    <button class="carosello-btn prev">&#8592;</button>
-    <button class="carosello-btn next">&#8594;</button>
+    <button class="carosello-btn prev" onclick="spostaCarosello(-1)">&#8592;</button>
+    <button class="carosello-btn next" onclick="spostaCarosello(1)">&#8594;</button>
     <div class="carosello-dots" id="dots"></div>
 </div>
 
+<!-- BIOGRAFIA BREVE -->
+<section class="bio-preview">
+    <div class="bio-preview-contenuto">
+        <div class="bio-preview-testo">
+            <h2>Chi sono</h2>
+            <p>Sono [Nome Cognome], infermiera professionale iscritta all'Albo OPI di Milano. Con oltre [X] anni di esperienza, offro assistenza infermieristica professionale, personalizzata e vicina alle esigenze di ogni paziente.</p>
+            <p>I miei servizi sono disponibili presso lo studio e a domicilio, per garantirti la massima comodità e continuità di cura.</p>
+            <a href="/chi-sono" class="btn">Scopri di più</a>
+        </div>
+    </div>
+</section>
 <!-- COSA FACCIO -->
 <section class="cosa-faccio">
-    <h2>Come posso supportarti</h2>
-    <p class="sottotitolo">Servizi dedicati al benessere di mamma e bambino, dalla gravidanza ai primi anni di vita</p>
+    <h2>Cosa faccio</h2>
+    <p class="sottotitolo">Le aree in cui posso supportarti</p>
     <div class="cosa-faccio-grid">
 
         <div class="cosa-faccio-card">
             <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/prima-nascita.jpg') }}" alt="Assistenza prenatale e preparazione al parto">
+                <img src="{{ url_for('static', filename='img/prima-nascita.jpg') }}" alt="Prima della nascita">
             </div>
             <div class="cosa-faccio-testo">
                 <h3>Prima della nascita</h3>
-                <p>Supporto completo durante la gravidanza: monitoraggio parametri materni e fetali, educazione al parto, preparazione all'allattamento e consulenza personalizzata per affrontare al meglio questo periodo speciale.</p>
-                <a href="/prima-della-nascita" class="btn">Scopri il percorso prenatale</a>
+                <p>Descrivi qui brevemente cosa offri durante la gravidanza e nel periodo che precede il parto.</p>
+                <a href="/prima-della-nascita" class="btn">Scopri di più</a>
             </div>
         </div>
 
         <div class="cosa-faccio-card">
             <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/dopo-nascita.jpg') }}" alt="Cura post-parto e assistenza neonatale">
+                <img src="{{ url_for('static', filename='img/dopo-nascita.jpg') }}" alt="Dopo la nascita">
             </div>
             <div class="cosa-faccio-testo">
                 <h3>Dopo la nascita</h3>
-                <p>Assistenza completa nel delicato periodo post-parto: controllo del benessere materno e neonatale, supporto all'allattamento, cura del cordone ombelicale, monitoraggio della crescita e guida pratica per i primi giorni a casa.</p>
-                <a href="/dopo-la-nascita" class="btn">Scopri il supporto post-parto</a>
+                <p>Descrivi qui brevemente cosa offri nel periodo post-parto per mamma e neonato.</p>
+                <a href="/dopo-la-nascita" class="btn">Scopri di più</a>
             </div>
         </div>
 
         <div class="cosa-faccio-card">
             <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/consulenze.jpg') }}" alt="Consulenze online per neo-genitori">
+                <img src="{{ url_for('static', filename='img/consulenze.jpg') }}" alt="Consulenze online">
             </div>
             <div class="cosa-faccio-testo">
-                <h3>Consulenze personalizzate</h3>
-                <p>Incontri one-to-one su misura per le tue esigenze: dall'allattamento al sonno del bambino, dalla gestione delle coliche allo svezzamento. Disponibili anche in videochiamata per massima flessibilità e comfort a casa tua.</p>
-                <a href="/consulenze-online" class="btn">Scopri le consulenze su misura</a>
+                <h3>Consulenze online</h3>
+                <p>Descrivi qui brevemente come funzionano le tue consulenze a distanza.</p>
+                <a href="/consulenze-online" class="btn">Scopri di più</a>
             </div>
         </div>
 
     </div>
 </section>
-
-<!-- STATISTICHE DI FIDUCIA -->
-<section class="stats-section" style="background: #fafafa; padding: 3rem 0;">
-    <div class="container">
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-number">500+</div>
-                <div class="stat-label">Famiglie accompagnate</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">10</div>
-                <div class="stat-label">Anni di esperienza</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">98%</div>
-                <div class="stat-label">Soddisfazione clienti</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Disponibilità per urgenze</div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- CALENDARIO CORSI -->
 <section class="sezione-calendario">
-    <h2>Corsi e incontri informativi</h2>
-    <p class="sottotitolo">Appuntamenti gratuiti per prepararti al meglio alla maternità e alla vita con il tuo bambino</p>
+    <h2>I miei corsi e aggiornamenti</h2>
+    <p class="sottotitolo">Formazione continua per offrirti sempre il meglio.</p>
 
     <div class="calendario-wrapper">
         <div class="cal-header">
@@ -126,7 +85,7 @@
             <span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
         </div>
         <div class="cal-griglia" id="cal-griglia"></div>
-        <div class="cal-dettaglio hidden" id="cal-dettaglio">
+        <div class="cal-dettaglio" id="cal-dettaglio" style="display:none;">
             <h4 id="det-titolo"></h4>
             <p id="det-ora"></p>
             <p id="det-luogo"></p>
@@ -135,61 +94,179 @@
     </div>
 </section>
 
+<script>
+const corsi = [
+    {% for c in corsi %}
+    {
+        data: {{ c.data | tojson }},
+        titolo: {{ c.titolo | tojson }},
+        ora: {{ c.ora | default('') | tojson }},
+        luogo: {{ c.luogo | default('') | tojson }},
+        descrizione: {{ c.descrizione | default('') | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+const corsiMap = {};
+corsi.forEach(c => { corsiMap[c.data] = c; });
+
+const mesiNomi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+let oggi = new Date();
+let anno = oggi.getFullYear();
+let mese = oggi.getMonth();
+
+function renderCalendario() {
+    const titolo = document.getElementById('cal-titolo');
+    const griglia = document.getElementById('cal-griglia');
+    const dettaglio = document.getElementById('cal-dettaglio');
+
+    titolo.textContent = mesiNomi[mese] + ' ' + anno;
+    griglia.innerHTML = '';
+    dettaglio.style.display = 'none';
+
+    const primoGiorno = new Date(anno, mese, 1).getDay();
+    const offsetLun = (primoGiorno === 0) ? 6 : primoGiorno - 1;
+    const giorniNelMese = new Date(anno, mese + 1, 0).getDate();
+
+    for (let i = 0; i < offsetLun; i++) {
+        const vuoto = document.createElement('div');
+        vuoto.classList.add('cal-cella', 'vuota');
+        griglia.appendChild(vuoto);
+    }
+
+    for (let g = 1; g <= giorniNelMese; g++) {
+        const mm = String(mese + 1).padStart(2, '0');
+        const gg = String(g).padStart(2, '0');
+        const dataStr = `${anno}-${mm}-${gg}`;
+
+        const cella = document.createElement('div');
+        cella.classList.add('cal-cella');
+        cella.textContent = g;
+
+        if (dataStr === oggi.toISOString().split('T')[0]) {
+            cella.classList.add('oggi');
+        }
+
+        if (corsiMap[dataStr]) {
+            cella.classList.add('ha-corso');
+            cella.title = corsiMap[dataStr].titolo;
+            cella.addEventListener('click', () => mostraDettaglio(corsiMap[dataStr]));
+        }
+
+        griglia.appendChild(cella);
+    }
+}
+
+function mostraDettaglio(corso) {
+    const det = document.getElementById('cal-dettaglio');
+    document.getElementById('det-titolo').textContent = corso.titolo;
+    document.getElementById('det-ora').textContent = corso.ora ? '🕐 ' + corso.ora : '';
+    document.getElementById('det-luogo').textContent = corso.luogo ? '📍 ' + corso.luogo : '';
+    document.getElementById('det-descrizione').textContent = corso.descrizione || '';
+    det.style.display = 'block';
+}
+
+document.getElementById('btn-prec').addEventListener('click', () => {
+    mese--; if (mese < 0) { mese = 11; anno--; }
+    renderCalendario();
+});
+
+document.getElementById('btn-succ').addEventListener('click', () => {
+    mese++; if (mese > 11) { mese = 0; anno++; }
+    renderCalendario();
+});
+
+renderCalendario();
+</script>
 <!-- INSTAGRAM -->
 <section class="sezione-instagram">
-    <h2>Segui il mio percorso quotidiano</h2>
-    <p class="sottotitolo">Consigli pratici, momenti quotidiani e informazioni utili per mamme e neo-genitori</p>
-    <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
-    <script>
-      (() => {
-        const d=document,s=d.createElement("script");s.type="module";
-        s.src="https://w.behold.so/widget.js";d.head.append(s);
-      })();
-    </script>
+    <h2>Seguimi su Instagram</h2>
+    <p class="sottotitolo">@sc.studioinfermieristico</p>
+<behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
+<script>
+  (() => {
+    const d=document,s=d.createElement("script");s.type="module";
+    s.src="https://w.behold.so/widget.js";d.head.append(s);
+  })();
+</script>
 </section>
-
 <!-- SERVIZI -->
 <section class="servizi-preview">
-    <h2>I miei servizi dedicati a te e al tuo bambino</h2>
+    <h2>I miei servizi</h2>
     <div class="card-grid">
         <div class="card">
-            <span>🩺</span>
-            <h3>Visite prenatalì e post-parto</h3>
-            <p>Monitoraggio completo della salute materna e fetale, seguito dopo il parto per garantire il benessere di mamma e bambino.</p>
+            <span>💉</span>
+            <h3>Iniezioni e flebo</h3>
+            <p>Somministrazione di farmaci su prescrizione medica.</p>
         </div>
         <div class="card">
-            <span>🤱</span>
-            <h3>Supporto all'allattamento</h3>
-            <p>Consulenza personalizzata per avviare e mantenere un allattamento sereno, risolvere difficoltà e garantire la corretta nutrizione del neonato.</p>
+            <span>🩹</span>
+            <h3>Medicazioni</h3>
+            <p>Gestione e trattamento di ferite, ulcere e lesioni.</p>
         </div>
         <div class="card">
-            <span>💓</span>
-            <h3>Monitoraggio neonatale</h3>
-            <p>Controllo parametri vitali, valutazionereflex neonatali, monitoraggio crescita e sviluppo nelle prime settimane di vita.</p>
-        </div>
-        <div class="card">
-            <span>📚</span>
-            <h3>Educazione sanitaria</h3>
-            <p>Informazioni pratiche su sonno, svezzamento, igiene, sicurezza domestica e riconoscimento dei segnali di allarme nel neonato.</p>
+            <span>❤️</span>
+            <h3>Controllo parametri</h3>
+            <p>Misurazione pressione, glicemia, saturazione e più.</p>
         </div>
         <div class="card">
             <span>🏠</span>
             <h3>Assistenza domiciliare</h3>
-            <p>Interventi personalizzati direttamente a casa tua per massimo comfort e minimizzare lo stress di spostamenti con il neonato.</p>
-        </div>
-        <div class="card">
-            <span>💊</span>
-            <h3>Gestione terapia</h3>
-            <p>Somministrazione sicura di farmaci prescritti, terapia endovenosa, medicazioni complesse e gestione di dispositivi medici domiciliari.</p>
+            <p>Interventi direttamente a casa tua, su prenotazione.</p>
         </div>
     </div>
 </section>
 
-<!-- CALL TO ACTION FINALE -->
 <section class="cta">
-    <h2>Pronto per iniziare questo percorso insieme?</h2>
-    <p>La tua tranquillità e il benessere del tuo bambino sono la mia priorità. Contattami per una prima consulenza gratuita e senza impegno.</p>
-    <a href="/prenota" class="btn">Prenota ora la tua consulenza</a>
+    <h2>Prenota il tuo appuntamento</h2>
+    <p>Scegli giorno e ora direttamente online, in pochi secondi.</p>
+    <a href="/prenota" class="btn">Prenota ora</a>
 </section>
 
+<script>
+    let indice = 0;
+    const imgs = document.querySelectorAll('.carosello-traccia img');
+    const dotsContainer = document.getElementById('dots');
+
+    imgs.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.classList.add('dot');
+        if (i === 0) dot.classList.add('attivo');
+        dot.onclick = () => vaiA(i);
+        dotsContainer.appendChild(dot);
+    });
+
+    function vaiA(n) {
+        imgs[indice].classList.remove('attiva');
+        document.querySelectorAll('.dot')[indice].classList.remove('attivo');
+        indice = (n + imgs.length) % imgs.length;
+        imgs[indice].classList.add('attiva');
+        document.querySelectorAll('.dot')[indice].classList.add('attivo');
+    }
+
+    function spostaCarosello(direzione) {
+        vaiA(indice + direzione);
+    }
+
+    imgs[0].classList.add('attiva');
+    setInterval(() => spostaCarosello(1), 4000);
+
+    // ─── SWIPE SU MOBILE ───
+    const carosello = document.querySelector('.carosello');
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    carosello.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    carosello.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+            spostaCarosello(diff > 0 ? 1 : -1);
+        }
+    }, { passive: true });
+</script>
 {% endblock %}
