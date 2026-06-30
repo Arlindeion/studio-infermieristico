@@ -370,7 +370,7 @@ section {
 .privacy-contenuto { margin-top: 2rem; }
 
 .privacy-blocco {
-    background: background: white;
+    background: white;
     border-radius: 10px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.2rem;
@@ -952,7 +952,7 @@ footer {
     section { padding: 2.5rem 1rem; }
     .tabella-admin { font-size: 0.8rem; }
     .tabella-admin th, .tabella-admin td { padding: 0.6rem 0.5rem; }
-    .acciones { flex-direction: column; gap: 0.3rem; }
+    .azioni { flex-direction: column; gap: 0.3rem; }
     .whatsapp-tooltip { display: none; }
     .conferma-box { padding: 2rem 1.2rem; }
     .bio-preview { padding: 2.5rem 1rem; }
@@ -1017,10 +1017,6 @@ footer {
 }
 
 /* ─── BARRA STICKY MOBILE ─── */
-.sticky-prenota {
-    display: none;
-}
-
 @media (max-width: 640px) {
     .sticky-prenota {
         display: block;
