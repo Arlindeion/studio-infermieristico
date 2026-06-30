@@ -40,35 +40,16 @@
 
 <!-- MENU MOBILE -->
 <div class="nav-mobile" id="nav-mobile">
-    <a href="/" onclick="chiudiMenu()">🏠 Home</a>
-    <a href="/chi-sono" onclick="chiudiMenu()">Chi sono</a>
-    <a href="/prima-della-nascita" onclick="chiudiMenu()">Prima della nascita</a>
-    <a href="/dopo-la-nascita" onclick="chiudiMenu()">Dopo la nascita</a>
-    <a href="/consulenze-online" onclick="chiudiMenu()">Consulenze online</a>
-    <a href="/prestazioni-infermieristiche" onclick="chiudiMenu()">Prestazioni infermieristiche</a>
-    <a href="/prenota" class="nav-mobile-prenota" onclick="chiudiMenu()">Prenota ora</a>
+    <a href="/">🏠 Home</a>
+    <a href="/chi-sono">Chi sono</a>
+    <a href="/prima-della-nascita">Prima della nascita</a>
+    <a href="/dopo-la-nascita">Dopo la nascita</a>
+    <a href="/consulenze-online">Consulenze online</a>
+    <a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a>
+    <a href="/prenota" class="nav-mobile-prenota">Prenota ora</a>
 </div>
 
-<script>
-    const hamburger = document.getElementById('hamburger');
-    const navMobile = document.getElementById('nav-mobile');
-
-    hamburger.addEventListener('click', () => {
-        hamburger.classList.toggle('aperto');
-        navMobile.classList.toggle('aperto');
-    });
-
-    function chiudiMenu() {
-        hamburger.classList.remove('aperto');
-        navMobile.classList.remove('aperto');
-    }
-
-    document.addEventListener('click', (e) => {
-        if (!hamburger.contains(e.target) && !navMobile.contains(e.target)) {
-            chiudiMenu();
-        }
-    });
-</script>
+<script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
 
     <main>
         {% block contenuto %}{% endblock %}

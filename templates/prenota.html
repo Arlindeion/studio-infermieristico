@@ -9,7 +9,7 @@
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div style="background:#fdf0f0; color:#e74c3c; padding:0.8rem 1.2rem; border-radius:8px; margin-bottom:1rem;">
+            <div class="flash-message">
                 {{ messages[0] }}
             </div>
         {% endif %}
@@ -87,10 +87,10 @@
         </div>
 
         <div class="form-gruppo">
-            <label style="display: flex; align-items: flex-start; gap: 10px; font-weight: normal; cursor: pointer;">
-                <input type="checkbox" name="consenso_privacy" required style="width: auto; margin-top: 4px; flex-shrink: 0;">
-                <span style="font-size: 0.85rem; color: #666;">
-                    Ho letto e accetto l'<a href="/privacy" target="_blank" style="color: var(--verde-salvia); text-decoration: underline;">Informativa Privacy</a>.
+            <label class="privacy-label">
+                <input type="checkbox" name="consenso_privacy" required class="privacy-checkbox">
+                <span class="privacy-text">
+                    Ho letto e accetto l'<a href="/privacy" target="_blank" class="privacy-link">Informativa Privacy</a>.
                     Acconsento al trattamento dei miei dati personali, inclusi quelli sanitari,
                     ai sensi del GDPR 679/2016 per la gestione dell'appuntamento. *
                 </span>
@@ -102,64 +102,8 @@
     </form>
 </section>
 
-<script>
-    // Blocca date passate nel datepicker
-    document.getElementById('data').min = new Date().toISOString().split('T')[0];
+<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}"></script>
 
-    // Disabilita il bottone dopo l'invio per evitare doppi click
-    document.querySelector('form.form-prenotazione').addEventListener('submit', function() {
-        const btn = document.getElementById('btn-invia');
-        btn.disabled = true;
-        btn.textContent = 'Invio in corso...';
-    });
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dateInput = document.getElementById('data');
-    const timeSelect = document.getElementById('ora');
-
-    function updateDisabledTimes() {
-        const selectedDate = dateInput.value;
-        if (!selectedDate) {
-            // Enable all options if no date selected
-            Array.from(timeSelect.options).forEach(option => {
-                if (option.value !== '') {
-                    option.disabled = false;
-                }
-            });
-            return;
-        }
-
-        // Fetch occupied times for the selected date
-        fetch(`/api/orari-occupati/${selectedDate}`)
-            .then(response => response.json())
-            .then(occupiedTimes => {
-                // Enable all options first
-                Array.from(timeSelect.options).forEach(option => {
-                    if (option.value !== '') {
-                        option.disabled = false;
-                    }
-                });
-                // Disable occupied times
-                occupiedTimes.forEach(time => {
-                    const option = Array.from(timeSelect.options).find(opt => opt.value === time);
-                    if (option) {
-                        option.disabled = true;
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching occupied times:', error);
-            });
-    }
-
-    // Listen for date changes
-    dateInput.addEventListener('change', updateDisabledTimes);
-
-    // Also run on page load in case date is pre-filled (from form_data)
-    updateDisabledTimes();
-});
-</script>
+<script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 
 {% endblock %}

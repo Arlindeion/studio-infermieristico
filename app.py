@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from dotenv import load_dotenv
 import os
 import secrets
+from apscheduler.schedulers.background import BackgroundScheduler
 load_dotenv()
 from config import config
 from flask_sqlalchemy import SQLAlchemy
@@ -14,10 +15,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
-# Logging configuration
+# Configurazione del logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
@@ -30,22 +29,11 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Load configuration
+# Caricamento della configurazione
 config_name = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[config_name])
 
-# Override SECRET_KEY if set in environment (allows .env to override)
-if os.environ.get('SECRET_KEY'):
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-
-# Ensure essential configs are set (fallbacks)
-app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///appuntamenti.db')
-app.config.setdefault('SECRET_KEY', os.environ.get('SECRET_KEY', 'fallback-solo-per-sviluppo'))
-app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
-app.config.setdefault('SESSION_COOKIE_SECURE', os.environ.get('FLASK_ENV') == 'production')
-app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
-
-# Rate limiting
+# Limitazione del traffico
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -53,7 +41,7 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
-# CSRF Protection
+# Protezione CSRF
 def generate_csrf_token():
     if '_csrf_token' not in session:
         session['_csrf_token'] = secrets.token_hex(32)
@@ -71,6 +59,8 @@ app.config['MAIL_DEFAULT_SENDER'] = 'sc.studioinfermieristico@gmail.com'
 
 db = SQLAlchemy(app)
 mail = Mail(app)
+scheduler = BackgroundScheduler()
+scheduler.start()
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.session_protection = 'basic'
@@ -79,8 +69,8 @@ talisman = Talisman(
     app,
     content_security_policy={
         'default-src': "'self'",
-        'style-src': ["'self'", "'unsafe-inline'"],
-        'script-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'"],
+        'script-src': ["'self'"],
         'img-src': ["'self'", "data:"],
         'font-src': ["'self'"],
     },
@@ -163,7 +153,7 @@ with app.app_context():
 # ─── EMAIL ───
 
 def invia_email_conferma(appuntamento):
-    """Send confirmation email to the patient after appointment confirmation."""
+    """Invia email di conferma al paziente dopo la conferma dell'appuntamento."""
     try:
         logger.info(f'>>> Invio email conferma a {appuntamento.email}...')
         msg = Message(
@@ -171,11 +161,11 @@ def invia_email_conferma(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'il tuo appuntamento e stato confermato.\n\n'
+                f'il tuo appuntamento è stato confermato.\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
-                f'Per qualsiasi necessita puoi contattarci al numero 3806317175.\n\n'
+                f'Per qualsiasi necessità puoi contattarci al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -187,7 +177,7 @@ def invia_email_conferma(appuntamento):
 
 
 def invia_email_spostamento(appuntamento):
-    """Send notification email when an appointment is rescheduled."""
+    """Invia email di notifica quando un appuntamento viene riprogrammato."""
     try:
         logger.info(f'>>> Invio email spostamento a {appuntamento.email}...')
         msg = Message(
@@ -195,7 +185,7 @@ def invia_email_spostamento(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento e stato spostato '
+                f'ti informiamo che il tuo appuntamento è stato spostato '
                 f'alle seguenti nuove data e ora:\n\n'
                 f'Servizio:     {appuntamento.servizio}\n'
                 f'Nuova data:   {appuntamento.data}\n'
@@ -213,7 +203,7 @@ def invia_email_spostamento(appuntamento):
 
 
 def invia_email_annullamento(appuntamento):
-    """Send cancellation email to the patient."""
+    """Invia email di cancellazione al paziente."""
     try:
         logger.info(f'>>> Invio email annullamento a {appuntamento.email}...')
         msg = Message(
@@ -221,7 +211,7 @@ def invia_email_annullamento(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento e stato cancellato.\n\n'
+                f'ti informiamo che il tuo appuntamento è stato cancellato.\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
@@ -239,7 +229,7 @@ def invia_email_annullamento(appuntamento):
 
 
 def invia_email_nuova_prenotazione(appuntamento):
-    """Send alert email to the admin when a new appointment request is received."""
+    """Invia email di alert all'amministratore quando viene ricevuta una nuova richiesta di appuntamento."""
     try:
         logger.info('>>> Invio email alert nuova prenotazione...')
         msg = Message(
@@ -261,6 +251,77 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.info('>>> Email alert inviata con successo!')
     except Exception as e:
         logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
+
+
+def invia_email_ricordo_24h(appuntamento):
+    """Invia email di promemoria 24 ore prima dell'appuntamento."""
+    try:
+        logger.info(f'>>> Invio email ricordo 24h a {appuntamento.email}...')
+        msg = Message(
+            subject='Ricordo: Appuntamento domani - S.C. Studio Infermieristico',
+            recipients=[appuntamento.email],
+            body=(
+                f'Gentile {appuntamento.nome},\n\n'
+                f'Ti ricordiamo che hai un appuntamento domani:\n\n'
+                f'Servizio: {appuntamento.servizio}\n'
+                f'Data:     {appuntamento.data}\n'
+                f'Ora:      {appuntamento.ora}\n\n'
+                f'Se hai bisogno di modificare o cancellare l\'appuntamento, '
+                f'puoi contattarci al numero 3806317175.\n\n'
+                f'A presto,\n'
+                f'S.C. Studio Infermieristico'
+            )
+        )
+        mail.send(msg)
+        logger.info('>>> Email ricordo 24h inviata con successo!')
+    except Exception as e:
+        logger.error(f'>>> Errore invio email ricordo 24h: {e}', exc_info=True)
+
+
+def controlla_e_invia_ricordi_24h():
+    """Controlla gli appuntamenti che avvengono nelle prossime 24 ore e invia promemoria."""
+    try:
+        logger.info('>>> Controllo appuntamenti per invio ricordi 24h...')
+
+        # Calcola la finestra temporale: ora + 24 ore +/- 30 minuti
+        adesso = datetime.now()
+        target_time = adesso + timedelta(hours=24)
+        window_start = target_time - timedelta(minutes=30)
+        window_end = target_time + timedelta(minutes=30)
+
+        # Format data per il confronto con i campi stringa nel DB
+        target_date = target_time.strftime('%Y-%m-%d')
+
+        # Troviamo gli appuntamenti per la data target e controlliamo se l'ora è nella finestra
+        appuntamenti = Appuntamento.query.filter(
+            Appuntamento.data == target_date,
+            Appuntamento.stato == 'Confermato'
+        ).all()
+
+        ricordi_inviati = 0
+        for app in appuntamenti:
+            try:
+                app_datetime = datetime.strptime(f"{app.data} {app.ora}", '%Y-%m-%d %H:%M')
+                if window_start <= app_datetime <= window_end:
+                    invia_email_ricordo_24h(app)
+                    ricordi_inviati += 1
+            except ValueError:
+                # Salta gli appuntamenti con formato data/ora non valido
+                continue
+
+        logger.info(f'> Inviati {ricordi_inviati} ricordi 24h')
+    except Exception as e:
+        logger.error(f'> Errore in controlla_e_invia_ricordi_24h: {e}', exc_info=True)
+
+# Pianifica il controllo dei promemoria per eseguirlo ogni ora
+scheduler.add_job(
+    func=controlla_e_invia_ricordi_24h,
+    trigger="interval",
+    hours=1,
+    id='ricordi_24h_job',
+    name='Controllo e invio ricordi 24h',
+    replace_existing=True
+)
 
 
 # ─── PAGINE SITO ───
@@ -300,7 +361,7 @@ def consulenze_online():
 @app.route('/prenota', methods=['GET', 'POST'])
 def prenota():
     if request.method == 'POST':
-        # CSRF Protection
+        # Protezione CSRF
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             flash('Richiesta non valida. Riprova.', 'error')
@@ -310,7 +371,7 @@ def prenota():
             flash('Devi accettare l\'informativa privacy per procedere.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Extract form data
+        # Estrai i dati del modulo
         nome = request.form.get('nome', '').strip()
         telefono = request.form.get('telefono', '').strip()
         email = request.form.get('email', '').strip()
@@ -319,7 +380,7 @@ def prenota():
         ora = request.form.get('ora', '').strip()
         note = request.form.get('note', '').strip()
 
-        # Validate required fields
+        # Valida i campi obbligatori
         if not nome:
             flash('Il nome è obbligatorio.')
             return render_template('prenota.html', form_data=request.form)
@@ -339,38 +400,38 @@ def prenota():
             flash('L\'ora è obbligatoria.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate nome length
+        # Valida la lunghezza del nome
         if len(nome) > 100:
             flash('Il nome è troppo lungo (max 100 caratteri).')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate telefono format (allow digits, spaces, +, -, (), length 7-20)
+        # Valida il formato del telefono (consenti cifre, spazi, +, -, (), lunghezza 7-20)
         if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
             flash('Il numero di telefono non è valido.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate email format
+        # Valida il formato dell'email
         if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
             flash('L\'indirizzo email non è valido.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate servizio
+        # Valida il servizio
         if servizio not in SERVIZI_VALIDI:
             flash('Servizio non valido. Seleziona un servizio dalla lista.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate date not in past
+        # Valida che la data non sia nel passato
         oggi = date.today().strftime('%Y-%m-%d')
         if data_scelta < oggi:
             flash('Non puoi prenotare una data nel passato.')
             return render_template('prenota.html', form_data=request.form)
 
-        # Validate note length (optional)
+        # Valida la lunghezza delle note (opzionale)
         if len(note) > 500:
             flash('Le note sono troppo lunghe (max 500 caratteri).')
             return render_template('prenota.html', form_data=request.form)
 
-        # Create appointment
+        # Crea l'appuntamento
         nuovo = Appuntamento(
             nome=nome,
             telefono=telefono,
@@ -406,7 +467,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin'))
     if request.method == 'POST':
-        # CSRF Protection
+        # Protezione CSRF
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             flash('Richiesta non valida. Riprova.', 'error')
@@ -438,7 +499,7 @@ def admin():
     oggi = date.today().strftime('%Y-%m-%d')
     filtro = request.args.get('filtro', 'in_attesa')
 
-    # Clean up old anulled appointments (>30 giorni)
+    # Pulizia degli appuntamenti annullati vecchi (>30 giorni)
     trenta_giorni_fa = datetime.today() - timedelta(days=30)
     vecchi = Appuntamento.query.filter(
         Appuntamento.stato == 'Annullato',
@@ -448,14 +509,14 @@ def admin():
         db.session.delete(v)
     db.session.commit()
 
-    # Query appointments based on filter
+    # Query gli appuntamenti in base al filtro
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
             Appuntamento.stato == 'In attesa'
         ).order_by(Appuntamento.data, Appuntamento.ora).all()
-        in_attesa_count = len(appuntamenti)  # reuse count
+        in_attesa_count = len(appuntamenti)  # riusa il conteggio
     else:
-        # For other filters, we still need the count of "In attesa" for the badge
+        # Per gli altri filtri, abbiamo comunque bisogno del conto di "In attesa" per il badge
         in_attesa_count = Appuntamento.query.filter(
             Appuntamento.stato == 'In attesa'
         ).count()
@@ -539,13 +600,13 @@ def elimina_corso(id):
 
 @app.route('/api/orari-occupati/<data>')
 def orari_occupati(data):
-    # Return list of occupied time slots for the given date (YYYY-MM-DD)
-    # Exclude cancelled appointments (stato != 'Annullato') as they free the slot
+    # Restituisce la lista degli orari occupati per la data specificata (YYYY-MM-DD)
+    # Escludi gli appuntamenti annullati (stato != 'Annullato') in quanto liberano lo slot
     occupati = Appuntamento.query.filter(
         Appuntamento.data == data,
         Appuntamento.stato != 'Annullato'
     ).with_entities(Appuntamento.ora).all()
-    # Convert list of tuples to list of strings
+    # Converti la lista di tuple in una lista di stringhe
     orari = [ora for (ora,) in occupati]
     return jsonify(orari)
 

@@ -4,12 +4,12 @@ from datetime import timedelta
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
-    """Base configuration."""
+    """Configurazione di base."""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'appuntamenti.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Email settings
+    # Impostazioni email
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
@@ -17,26 +17,26 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or \
         ('S.C. Studio Infermieristico', MAIL_USERNAME)
-    # Session settings
+    # Impostazioni sessione
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_HTTPONLY = True
     # CSRF
-    WTF_CSRF_ENABLED = False  # we handle CSRF manually for now
+    WTF_CSRF_ENABLED = False  # gestiamo CSRF manualmente per ora
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
+    """Configurazione di sviluppo."""
     DEBUG = True
-    # In desarrollo, i cookie possono essere inviati anche su HTTP
+    # In sviluppo, i cookie possono essere inviati anche su HTTP
     SESSION_COOKIE_SECURE = False
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Configurazione di produzione."""
     DEBUG = False
     # In produzione, i cookie devono essere inviati solo su HTTPS
     SESSION_COOKIE_SECURE = True
 
 class TestingConfig(Config):
-    """Testing configuration."""
+    """Configurazione di test."""
     TESTING = True
     # Usa un database in memoria per i test
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'

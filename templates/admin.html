@@ -77,26 +77,26 @@
                     {% if filtro == 'in_attesa' %}
                         <a href="/admin/aggiorna/{{ a.id }}/Confermato"
                            class="btn-azione verde"
-                           onclick="return confirm('Confermare l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.')">
+                           data-confirm="Confermare l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.">
                            Conferma
                         </a>
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                         <a href="/admin/aggiorna/{{ a.id }}/Annullato"
                            class="btn-azione rosso"
-                           onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.')">
+                           data-confirm="Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
                            Rimuovi
                         </a>
                     {% elif filtro == 'confermati' %}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                         <a href="/admin/aggiorna/{{ a.id }}/Annullato"
                            class="btn-azione rosso"
-                           onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.')">
+                           data-confirm="Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
                            Rimuovi
                         </a>
                     {% elif filtro == 'annullati' %}
                         <a href="/admin/aggiorna/{{ a.id }}/In attesa"
                            class="btn-azione verde"
-                           onclick="return confirm('Ripristinare l\'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.')">
+                           data-confirm="Ripristinare l\'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.">
                            Ripristina
                         </a>
                     {% elif filtro == 'passati' %}
@@ -128,26 +128,26 @@
                 {% if filtro == 'in_attesa' %}
                     <a href="/admin/aggiorna/{{ a.id }}/Confermato"
                        class="btn-azione verde"
-                       onclick="return confirm('Confermare l\'appuntamento di {{ a.nome }}?')">
+                       data-confirm="Confermare l\'appuntamento di {{ a.nome }}?">
                        Conferma
                     </a>
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                     <a href="/admin/aggiorna/{{ a.id }}/Annullato"
                        class="btn-azione rosso"
-                       onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }}?')">
+                       data-confirm="Rimuovere l\'appuntamento di {{ a.nome }}?">
                        Rimuovi
                     </a>
                 {% elif filtro == 'confermati' %}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                     <a href="/admin/aggiorna/{{ a.id }}/Annullato"
                        class="btn-azione rosso"
-                       onclick="return confirm('Rimuovere l\'appuntamento di {{ a.nome }}?')">
+                       data-confirm="Rimuovere l\'appuntamento di {{ a.nome }}?">
                        Rimuovi
                     </a>
                 {% elif filtro == 'annullati' %}
                     <a href="/admin/aggiorna/{{ a.id }}/In attesa"
                        class="btn-azione verde"
-                       onclick="return confirm('Ripristinare l\'appuntamento di {{ a.nome }}?')">
+                       data-confirm="Ripristinare l\'appuntamento di {{ a.nome }}?">
                        Ripristina
                     </a>
                 {% elif filtro == 'passati' %}
@@ -220,7 +220,7 @@
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
                     <a href="/admin/corso/elimina/{{ c.id }}" class="btn-azione rosso"
-                       onclick="return confirm('Eliminare questo corso?')">Elimina</a>
+                       data-confirm="Eliminare questo corso?">Elimina</a>
                 </td>
             </tr>
             {% endfor %}
@@ -232,4 +232,5 @@
 
 </section>
 
+    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}"></script>
 {% endblock %}

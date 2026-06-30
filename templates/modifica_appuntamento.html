@@ -6,7 +6,7 @@
 <section class="pagina-interna">
     <h2>✏️ Modifica Appuntamento</h2>
 <p class="sottotitolo">Modifica data e ora — verrà inviata automaticamente una mail di spostamento al paziente.</p>
-    <div class="form-prenotazione" style="max-width: 580px;">
+    <div class="form-prenotazione form-limited">
 
         <div class="riepilogo-paziente">
             <h3>Paziente</h3>
@@ -21,7 +21,7 @@
 
         <form method="POST" action="/admin/modifica/{{ a.id }}">
 
-            <div class="form-riga" style="margin-top: 1.5rem;">
+            <div class="form-riga form-section">
                 <div class="form-gruppo">
                     <label for="data">Nuova data *</label>
                     <input type="date" id="data" name="data" value="{{ a.data }}" required>
@@ -38,12 +38,11 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="submit" class="btn" style="flex:1;">
+            <div class="btn-group">
+                <button type="submit" class="btn btn-flex">
                     ✅ Salva e invia conferma
                 </button>
-                <a href="/admin?filtro=in_attesa" class="btn" 
-                   style="flex:1; background: var(--grigio); text-align:center;">
+                <a href="/admin?filtro=in_attesa" class="btn btn-flex btn-cancel">
                     Annulla
                 </a>
             </div>
