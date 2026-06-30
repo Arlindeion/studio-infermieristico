@@ -23,7 +23,7 @@ body {
 
 a { text-decoration: none; color: inherit; }
 header {
-    background: var(--verde-salvia);
+    background: var(--verde-scurio);
 	padding: 0.3rem 2rem;
     display: flex;
     align-items: center;
@@ -759,7 +759,7 @@ footer {
 
 /* ─── FILTRI ADMIN ─── */
 .admin-filtri {
-    display: flex;
+    display: float: left;
     gap: 1rem;
     margin: 1.5rem 0 0.8rem;
     flex-wrap: wrap;
@@ -936,7 +936,7 @@ footer {
     .cta h2 { font-size: 1.5rem; }
     .bio-preview-testo h2 { font-size: 1.5rem; }
     .cta p { font-size: 1rem; }
-    .bio-preview-testo p { font-size: 0.95rem; }
+    .bio-view-testo p { font-size: 0.95rem; }
     .logo-testo { display: none; }
     .nav-desktop { display: none; }
     .hamburger { display: flex; }
@@ -984,7 +984,6 @@ footer {
 
     .btn-azione {
         min-height: 44px;
-        padding: 0 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
