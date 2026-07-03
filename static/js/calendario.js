@@ -1,7 +1,16 @@
 // Gestione del calendario e dei dati dei corsi per la homepage
-// Si aspetta che la variabile globale `corsi` sia definita (iniettata tramite script inline)
+// I dati dei corsi vengono letti dal blocco <script id="corsi-data" type="application/json">
+// presente nella homepage, così da evitare script inline (non ammessi dalla CSP).
 document.addEventListener('DOMContentLoaded', function() {
-    const corsi = window.corsi || [];
+    let corsi = [];
+    const datiElemento = document.getElementById('corsi-data');
+    if (datiElemento) {
+        try {
+            corsi = JSON.parse(datiElemento.textContent);
+        } catch (errore) {
+            console.error('Errore nel parsing dei dati dei corsi:', errore);
+        }
+    }
     const corsiMap = {};
     corsi.forEach(c => { corsiMap[c.data] = c; });
 

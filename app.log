@@ -368,3 +368,49 @@
 2026-07-03 23:16:57,461 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:16:57] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
 2026-07-03 23:16:57,462 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:16:57] "GET /static/js/carosello.js HTTP/1.1" 200 -
 2026-07-03 23:16:57,864 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:16:57] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-07-03 23:49:01,630 INFO:apscheduler.scheduler: Scheduler started
+2026-07-03 23:49:01,637 INFO:app: >>> Database OK — Admin esistente
+2026-07-03 23:49:01,638 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-03 23:49:01,673 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-03 23:49:01,673 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-03 23:49:01,674 INFO:werkzeug:  * Restarting with stat
+2026-07-03 23:49:01,960 INFO:apscheduler.scheduler: Scheduler started
+2026-07-03 23:49:01,966 INFO:app: >>> Database OK — Admin esistente
+2026-07-03 23:49:01,966 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-03 23:49:01,986 WARNING:werkzeug:  * Debugger is active!
+2026-07-03 23:49:02,003 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-03 23:49:20,390 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "GET / HTTP/1.1" 200 -
+2026-07-03 23:49:20,445 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,446 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,446 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,631 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,632 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,632 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,646 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:49:20,647 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,648 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:49:20,652 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:49:20,658 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:49:20,661 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "GET /static/js/calendario.js HTTP/1.1" 200 -
+2026-07-03 23:49:20,661 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:20] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-03 23:49:51,336 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:51] "GET /admin HTTP/1.1" 200 -
+2026-07-03 23:49:51,493 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:51] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:49:51,495 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:51] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:49:51,496 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:51] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:49:51,649 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:49:51] "GET /static/js/admin-azioni.js HTTP/1.1" 200 -
+2026-07-03 23:50:01,130 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "GET /admin?filtro=confermati HTTP/1.1" 200 -
+2026-07-03 23:50:01,166 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,167 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,167 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,213 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,870 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "GET /admin?filtro=annullati HTTP/1.1" 200 -
+2026-07-03 23:50:01,899 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,900 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,903 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:50:01,963 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:01] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-03 23:50:02,657 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "GET /admin?filtro=passati HTTP/1.1" 200 -
+2026-07-03 23:50:02,688 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:50:02,690 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:50:02,695 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:50:02,737 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
