@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let indice = 0;
     const imgs = document.querySelectorAll('.carosello-traccia img');
     const dotsContainer = document.getElementById('dots');
-    const btnPrev = document.getElementById('btn-prev');
-    const btnNext = document.getElementById('btn-next');
+    const btnPrev = document.querySelector('.carosello-btn.prev');
+    const btnNext = document.querySelector('.carosello-btn.next');
 
     // Creare i puntini
     imgs.forEach((_, i) => {

@@ -12,8 +12,8 @@
         <img src="{{ url_for('static', filename='img/foto4.jpg') }}" alt="Studio infermieristico">
         <img src="{{ url_for('static', filename='img/foto5.jpg') }}" alt="Studio infermieristico">
     </div>
-    <button class="carosello-btn prev" onclick="spostaCarosello(-1)">&#8592;</button>
-    <button class="carosello-btn next" onclick="spostaCarosello(1)">&#8594;</button>
+    <button class="carosello-btn prev" type="button" aria-label="Foto precedente">&#8592;</button>
+    <button class="carosello-btn next" type="button" aria-label="Foto successiva">&#8594;</button>
     <div class="carosello-dots" id="dots"></div>
 </div>
 
@@ -224,49 +224,5 @@ renderCalendario();
     <a href="/prenota" class="btn">Prenota ora</a>
 </section>
 
-<script>
-    let indice = 0;
-    const imgs = document.querySelectorAll('.carosello-traccia img');
-    const dotsContainer = document.getElementById('dots');
-
-    imgs.forEach((_, i) => {
-        const dot = document.createElement('span');
-        dot.classList.add('dot');
-        if (i === 0) dot.classList.add('attivo');
-        dot.onclick = () => vaiA(i);
-        dotsContainer.appendChild(dot);
-    });
-
-    function vaiA(n) {
-        imgs[indice].classList.remove('attiva');
-        document.querySelectorAll('.dot')[indice].classList.remove('attivo');
-        indice = (n + imgs.length) % imgs.length;
-        imgs[indice].classList.add('attiva');
-        document.querySelectorAll('.dot')[indice].classList.add('attivo');
-    }
-
-    function spostaCarosello(direzione) {
-        vaiA(indice + direzione);
-    }
-
-    imgs[0].classList.add('attiva');
-    setInterval(() => spostaCarosello(1), 4000);
-
-    // ─── SWIPE SU MOBILE ───
-    const carosello = document.querySelector('.carosello');
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    carosello.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-
-    carosello.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
-        if (Math.abs(diff) > 50) {
-            spostaCarosello(diff > 0 ? 1 : -1);
-        }
-    }, { passive: true });
-</script>
+<script src="{{ url_for('static', filename='js/carosello.js') }}" defer></script>
 {% endblock %}
