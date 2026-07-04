@@ -23,6 +23,7 @@
         {% endwith %}
 
         <form method="POST" action="/admin/login">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="form-gruppo">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required autofocus>

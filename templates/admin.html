@@ -75,26 +75,26 @@
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/Confermato"
+                        <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
                            class="btn-azione verde"
                            data-confirm="Confermare l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.">
                            Conferma
                         </a>
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
                            class="btn-azione rosso"
                            data-confirm="Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
                            Rimuovi
                         </a>
                     {% elif filtro == 'confermati' %}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
                            class="btn-azione rosso"
                            data-confirm="Rimuovere l\'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
                            Rimuovi
                         </a>
                     {% elif filtro == 'annullati' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/In attesa"
+                        <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
                            class="btn-azione verde"
                            data-confirm="Ripristinare l\'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.">
                            Ripristina
@@ -126,26 +126,26 @@
             </div>
             <div class="card-admin-azioni">
                 {% if filtro == 'in_attesa' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/Confermato"
+                    <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
                        class="btn-azione verde"
                        data-confirm="Confermare l\'appuntamento di {{ a.nome }}?">
                        Conferma
                     </a>
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
                        class="btn-azione rosso"
                        data-confirm="Rimuovere l\'appuntamento di {{ a.nome }}?">
                        Rimuovi
                     </a>
                 {% elif filtro == 'confermati' %}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato"
+                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
                        class="btn-azione rosso"
                        data-confirm="Rimuovere l\'appuntamento di {{ a.nome }}?">
                        Rimuovi
                     </a>
                 {% elif filtro == 'annullati' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/In attesa"
+                    <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
                        class="btn-azione verde"
                        data-confirm="Ripristinare l\'appuntamento di {{ a.nome }}?">
                        Ripristina
@@ -170,6 +170,7 @@
     <div class="form-corso">
         <h3>Aggiungi nuovo corso</h3>
         <form method="POST" action="/admin/corso/aggiungi">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="form-riga">
                 <div class="form-gruppo">
                     <label>Titolo corso *</label>
@@ -219,7 +220,7 @@
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
-                    <a href="/admin/corso/elimina/{{ c.id }}" class="btn-azione rosso"
+                    <a href="/admin/corso/elimina/{{ c.id }}?token={{ csrf_token() }}" class="btn-azione rosso"
                        data-confirm="Eliminare questo corso?">Elimina</a>
                 </td>
             </tr>

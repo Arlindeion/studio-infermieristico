@@ -1,10 +1,18 @@
 import logging
 import re
+import urllib.request
+import urllib.error
+import ssl
+import certifi
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
 from dotenv import load_dotenv
 import os
 import secrets
+import time
+from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
+import icalendar
+import recurring_ical_events
 load_dotenv()
 from config import config
 from flask_sqlalchemy import SQLAlchemy
@@ -49,18 +57,15 @@ def generate_csrf_token():
 
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
-# ─── CONFIGURAZIONE EMAIL ───
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'sc.studioinfermieristico@gmail.com'
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = 'sc.studioinfermieristico@gmail.com'
+# La configurazione email (server, porta, TLS, username, password, mittente)
+# è già definita in config.py a partire dalle variabili d'ambiente in .env.
+# NON va duplicata/sovrascritta qui: farlo renderebbe inutile qualsiasi
+# modifica al file .env. Assicurati che nel tuo .env siano presenti sia
+# MAIL_USERNAME che MAIL_PASSWORD.
 
 db = SQLAlchemy(app)
 mail = Mail(app)
 scheduler = BackgroundScheduler()
-scheduler.start()
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.session_protection = 'basic'
@@ -95,6 +100,119 @@ SERVIZI_VALIDI = [
 ]
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
+
+# Slot orari prenotabili (durata 30 minuti ciascuno). È la stessa lista
+# mostrata nei menu a tendina di prenota.html e modifica_appuntamento.html.
+ORARI_DISPONIBILI = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+    '11:00', '11:30', '12:00', '12:30', '15:00', '15:30',
+    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+]
+DURATA_SLOT_MINUTI = 30
+
+FUSO_ORARIO = ZoneInfo('Europe/Rome')
+
+# ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
+#
+# Arzamed sincronizza appuntamenti e chiusure studio su un calendario
+# Google. Leggiamo quel calendario tramite il suo "indirizzo segreto in
+# formato iCal" (nessuna credenziale API necessaria) per bloccare, anche
+# sul sito, gli orari già impegnati su Arzamed.
+#
+# Il risultato del download viene tenuto in cache per qualche minuto
+# (CALENDARIO_CACHE_SECONDI) per non interrogare Google ad ogni richiesta.
+
+_cache_calendario = {'calendario': None, 'scaricato_il': 0}
+
+
+def _scarica_calendario_ics():
+    """Scarica e interpreta il feed iCal di Google Calendar, con cache in memoria.
+
+    Restituisce un oggetto icalendar.Calendar, oppure None se l'URL non è
+    configurato o se il download/parsing fallisce (in quel caso il sito
+    continua a funzionare usando solo gli appuntamenti presi dal form).
+    """
+    url = app.config.get('GOOGLE_CALENDAR_ICS_URL')
+    if not url:
+        return None
+
+    adesso = time.time()
+    cache_valida_fino_a = _cache_calendario['scaricato_il'] + app.config.get('CALENDARIO_CACHE_SECONDI', 300)
+    if _cache_calendario['calendario'] is not None and adesso < cache_valida_fino_a:
+        return _cache_calendario['calendario']
+
+    try:
+        contesto_ssl = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen(url, timeout=10, context=contesto_ssl) as risposta:
+            contenuto = risposta.read()
+        calendario = icalendar.Calendar.from_ical(contenuto)
+        _cache_calendario['calendario'] = calendario
+        _cache_calendario['scaricato_il'] = adesso
+        return calendario
+    except Exception as e:
+        logger.error(f'>>> Errore nel download/lettura del calendario Google: {e}', exc_info=True)
+        # Se il download fallisce ma avevamo già una copia in cache (anche se
+        # "scaduta"), meglio riusarla piuttosto che non bloccare nessun orario.
+        return _cache_calendario['calendario']
+
+
+def orari_occupati_da_calendario(data_str):
+    """Restituisce l'insieme degli orari (stringhe 'HH:MM') di ORARI_DISPONIBILI
+    che risultano occupati, per la data indicata, da eventi sul calendario
+    Google (appuntamenti Arzamed o chiusure studio)."""
+    calendario = _scarica_calendario_ics()
+    if calendario is None:
+        return set()
+
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return set()
+
+    inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
+    fine_giornata = inizio_giornata + timedelta(days=1)
+
+    try:
+        eventi = recurring_ical_events.of(calendario).between(inizio_giornata, fine_giornata)
+    except Exception as e:
+        logger.error(f'>>> Errore nell\'espansione degli eventi del calendario: {e}', exc_info=True)
+        return set()
+
+    occupati = set()
+    for evento in eventi:
+        inizio_evento = evento.get('DTSTART').dt
+        fine_evento = evento.get('DTEND').dt if evento.get('DTEND') else inizio_evento
+
+        # Un evento "tutto il giorno" ha date (non datetime) come inizio/fine:
+        # lo trattiamo come se occupasse l'intera fascia oraria dello studio.
+        if not isinstance(inizio_evento, datetime):
+            inizio_evento = datetime.combine(inizio_evento, datetime.min.time(), tzinfo=FUSO_ORARIO)
+        if not isinstance(fine_evento, datetime):
+            fine_evento = datetime.combine(fine_evento, datetime.min.time(), tzinfo=FUSO_ORARIO)
+
+        # Normalizza al fuso orario locale per confrontare correttamente con
+        # gli slot orari dello studio (gli eventi Google possono arrivare in
+        # UTC o con un altro fuso a seconda di come sono stati creati).
+        if inizio_evento.tzinfo is None:
+            inizio_evento = inizio_evento.replace(tzinfo=FUSO_ORARIO)
+        else:
+            inizio_evento = inizio_evento.astimezone(FUSO_ORARIO)
+        if fine_evento.tzinfo is None:
+            fine_evento = fine_evento.replace(tzinfo=FUSO_ORARIO)
+        else:
+            fine_evento = fine_evento.astimezone(FUSO_ORARIO)
+
+        for orario in ORARI_DISPONIBILI:
+            ora, minuto = map(int, orario.split(':'))
+            inizio_slot = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
+            fine_slot = inizio_slot + timedelta(minutes=DURATA_SLOT_MINUTI)
+
+            # Due intervalli si sovrappongono se ciascuno inizia prima che
+            # l'altro finisca.
+            if inizio_slot < fine_evento and inizio_evento < fine_slot:
+                occupati.add(orario)
+
+    return occupati
 
 
 # ─── MODELLI DATABASE ───
@@ -313,15 +431,27 @@ def controlla_e_invia_ricordi_24h():
     except Exception as e:
         logger.error(f'> Errore in controlla_e_invia_ricordi_24h: {e}', exc_info=True)
 
-# Pianifica il controllo dei promemoria per eseguirlo ogni ora
-scheduler.add_job(
-    func=controlla_e_invia_ricordi_24h,
-    trigger="interval",
-    hours=1,
-    id='ricordi_24h_job',
-    name='Controllo e invio ricordi 24h',
-    replace_existing=True
-)
+# Pianifica il controllo dei promemoria per eseguirlo ogni ora.
+#
+# Protezioni:
+# - Non parte affatto durante i test (TESTING=True), per non inviare email
+#   né lasciare thread in background attivi dopo la fine della test suite.
+# - Non parte due volte in sviluppo: con `debug=True`, Werkzeug avvia un
+#   processo "reloader" che riesegue l'intero modulo in un sottoprocesso.
+#   Senza questo controllo, sia il processo padre che quello riavviato
+#   registrano e avviano il proprio scheduler, con il risultato di due
+#   promemoria 24h duplicati per ogni appuntamento (visibile in app.log
+#   come doppio "Scheduler started").
+if not app.config.get('TESTING') and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true'):
+    scheduler.add_job(
+        func=controlla_e_invia_ricordi_24h,
+        trigger="interval",
+        hours=1,
+        id='ricordi_24h_job',
+        name='Controllo e invio ricordi 24h',
+        replace_existing=True
+    )
+    scheduler.start()
 
 
 # ─── PAGINE SITO ───
@@ -357,8 +487,8 @@ def consulenze_online():
     return render_template('consulenze_online.html')
 
 
-@limiter.limit("5 per minute")
 @app.route('/prenota', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def prenota():
     if request.method == 'POST':
         # Protezione CSRF
@@ -431,6 +561,26 @@ def prenota():
             flash('Le note sono troppo lunghe (max 500 caratteri).')
             return render_template('prenota.html', form_data=request.form)
 
+        # Valida che l'orario sia uno di quelli previsti
+        if ora not in ORARI_DISPONIBILI:
+            flash('Orario non valido. Seleziona un orario dalla lista.')
+            return render_template('prenota.html', form_data=request.form)
+
+        # Verifica che lo slot non sia già occupato (in DB o su Arzamed/Google
+        # Calendar). Il form disabilita già questi orari via JavaScript, ma
+        # questo controllo lato server evita doppie prenotazioni nel caso in
+        # cui qualcuno invii comunque la richiesta (bypassando il JS, o per
+        # una prenotazione fatta nel frattempo da un altro utente).
+        gia_occupato_db = Appuntamento.query.filter(
+            Appuntamento.data == data_scelta,
+            Appuntamento.ora == ora,
+            Appuntamento.stato != 'Annullato'
+        ).first() is not None
+        gia_occupato_calendario = ora in orari_occupati_da_calendario(data_scelta)
+        if gia_occupato_db or gia_occupato_calendario:
+            flash('Questo orario non è più disponibile. Scegline un altro.')
+            return render_template('prenota.html', form_data=request.form)
+
         # Crea l'appuntamento
         nuovo = Appuntamento(
             nome=nome,
@@ -461,8 +611,8 @@ def privacy():
 
 # ─── LOGIN / LOGOUT ───
 
-@limiter.limit("5 per minute")
 @app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin'))
@@ -550,6 +700,15 @@ def admin():
 def aggiorna_stato(id, stato):
     if stato not in STATI_VALIDI:
         abort(400)
+    # Protezione CSRF: questi link puntano a un'azione che modifica dati,
+    # quindi vanno protetti come un form. Non usiamo session.pop() perché
+    # più link nella stessa pagina admin condividono lo stesso token: se lo
+    # consumassimo al primo click, i click successivi (senza ricaricare la
+    # pagina) fallirebbero.
+    token = request.args.get('token')
+    if not token or token != session.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
     appuntamento = db.get_or_404(Appuntamento, id)
     appuntamento.stato = stato
     db.session.commit()
@@ -565,6 +724,11 @@ def aggiorna_stato(id, stato):
 def modifica_appuntamento(id):
     appuntamento = db.get_or_404(Appuntamento, id)
     if request.method == 'POST':
+        # Protezione CSRF
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('modifica_appuntamento.html', a=appuntamento)
         appuntamento.data = request.form['data']
         appuntamento.ora = request.form['ora']
         appuntamento.stato = 'Confermato'
@@ -577,6 +741,11 @@ def modifica_appuntamento(id):
 @app.route('/admin/corso/aggiungi', methods=['POST'])
 @login_required
 def aggiungi_corso():
+    # Protezione CSRF
+    token = session.pop('_csrf_token', None)
+    if not token or token != request.form.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin'))
     corso = Corso(
         titolo=request.form['titolo'],
         descrizione=request.form.get('descrizione', ''),
@@ -592,6 +761,11 @@ def aggiungi_corso():
 @app.route('/admin/corso/elimina/<int:id>')
 @login_required
 def elimina_corso(id):
+    # Protezione CSRF (stesso ragionamento di aggiorna_stato)
+    token = request.args.get('token')
+    if not token or token != session.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin'))
     corso = db.get_or_404(Corso, id)
     db.session.delete(corso)
     db.session.commit()
@@ -607,8 +781,10 @@ def orari_occupati(data):
         Appuntamento.stato != 'Annullato'
     ).with_entities(Appuntamento.ora).all()
     # Converti la lista di tuple in una lista di stringhe
-    orari = [ora for (ora,) in occupati]
-    return jsonify(orari)
+    orari = {ora for (ora,) in occupati}
+    # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)
+    orari |= orari_occupati_da_calendario(data)
+    return jsonify(sorted(orari))
 
 
 # ─── AVVIO ───

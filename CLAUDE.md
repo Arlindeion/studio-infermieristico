@@ -27,8 +27,11 @@
 
 ## Variabili d'ambiente (`.env`, NON committed)
 - `SECRET_KEY` — chiave segreta Flask (genera con `python -c "import secrets; print(secrets.token_hex(32))"`)
+- `MAIL_USERNAME` — indirizzo Gmail usato per inviare le email
 - `MAIL_PASSWORD` — app-password Gmail (16 caratteri)
 - `FLASK_ENV` — `development` | `production` | `testing` (default: `development`)
+- `GOOGLE_CALENDAR_ICS_URL` — indirizzo segreto in formato iCal del calendario Google sincronizzato da Arzamed (Impostazioni calendario → Integra calendario). Se non impostata, il sito funziona comunque ma non conosce gli impegni presi solo su Arzamed.
+- `CALENDARIO_CACHE_SECONDI` — per quanti secondi tenere in cache il calendario scaricato prima di ricontattare Google (default: `300`, cioè 5 minuti)
 
 ## Struttura
 - `app.py` — applicazione Flask principale (modelli, route, email, scheduler)

@@ -22,6 +22,15 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     # CSRF
     WTF_CSRF_ENABLED = False  # gestiamo CSRF manualmente per ora
+    # Calendario Google (sincronizzato da Arzamed): indirizzo segreto in
+    # formato iCal del calendario su cui Arzamed segna appuntamenti e
+    # chiusure studio. Vedi Impostazioni calendario > Integra calendario
+    # su Google Calendar. Se non impostato, il sito funziona comunque,
+    # semplicemente non conoscerà gli impegni presi solo su Arzamed.
+    GOOGLE_CALENDAR_ICS_URL = os.environ.get('GOOGLE_CALENDAR_ICS_URL')
+    # Per quanti secondi tenere in cache il calendario scaricato, per non
+    # interrogare Google Calendar ad ogni singola richiesta del sito.
+    CALENDARIO_CACHE_SECONDI = int(os.environ.get('CALENDARIO_CACHE_SECONDI') or 300)
 
 class DevelopmentConfig(Config):
     """Configurazione di sviluppo."""
@@ -44,6 +53,8 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     # Email non inviate realmente durante i test
     MAIL_SUPPRESS_SEND = True
+    # Durante i test non contattiamo mai Google Calendar
+    GOOGLE_CALENDAR_ICS_URL = None
 
 config = {
     'development': DevelopmentConfig,

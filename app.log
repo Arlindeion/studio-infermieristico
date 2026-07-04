@@ -414,3 +414,412 @@
 2026-07-03 23:50:02,690 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
 2026-07-03 23:50:02,695 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
 2026-07-03 23:50:02,737 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:50:02] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-03 23:57:01,048 INFO:apscheduler.scheduler: Scheduler started
+2026-07-03 23:57:01,057 INFO:app: >>> Database OK — Admin esistente
+2026-07-03 23:57:01,058 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-03 23:57:01,087 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-03 23:57:01,088 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-03 23:57:01,088 INFO:werkzeug:  * Restarting with stat
+2026-07-03 23:57:01,331 INFO:apscheduler.scheduler: Scheduler started
+2026-07-03 23:57:01,337 INFO:app: >>> Database OK — Admin esistente
+2026-07-03 23:57:01,338 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-03 23:57:01,357 WARNING:werkzeug:  * Debugger is active!
+2026-07-03 23:57:01,371 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-03 23:58:47,705 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "GET / HTTP/1.1" 200 -
+2026-07-03 23:58:47,772 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,772 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,774 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,939 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,939 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,949 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "GET /static/js/behold-widget.js HTTP/1.1" 200 -
+2026-07-03 23:58:47,950 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,955 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,957 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:58:47,957 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,965 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:58:47,969 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-03 23:58:47,974 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/js/calendario.js HTTP/1.1[0m" 304 -
+2026-07-03 23:58:47,975 INFO:werkzeug: 127.0.0.1 - - [03/Jul/2026 23:58:47] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:19,657 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 09:46:19,696 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-04 09:46:19,696 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-04 09:46:19,697 INFO:werkzeug:  * Restarting with stat
+2026-07-04 09:46:19,940 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 09:46:19,941 INFO:apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-04 09:46:19,941 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-04 09:46:19,941 INFO:apscheduler.scheduler: Scheduler started
+2026-07-04 09:46:19,964 WARNING:werkzeug:  * Debugger is active!
+2026-07-04 09:46:19,986 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-04 09:46:24,582 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "GET / HTTP/1.1" 200 -
+2026-07-04 09:46:24,619 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,621 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "GET /static/css/stile.css?v=1.1 HTTP/1.1" 200 -
+2026-07-04 09:46:24,619 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "GET /static/img/logo.png HTTP/1.1" 200 -
+2026-07-04 09:46:24,796 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,797 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,798 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,812 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/js/behold-widget.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,815 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,823 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:46:24,824 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,831 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:46:24,832 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:46:24,833 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/js/calendario.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:24,834 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:24] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:25,303 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:25] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-07-04 09:46:26,903 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:26] "GET /prenota HTTP/1.1" 200 -
+2026-07-04 09:46:26,964 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:26] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:46:26,966 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:26] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:46:26,970 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:26] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:46:27,001 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:27] "GET /static/js/form-prenotazione.js HTTP/1.1" 200 -
+2026-07-04 09:46:27,002 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:46:27] "GET /static/js/prenota-times.js HTTP/1.1" 200 -
+2026-07-04 09:47:00,422 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:00] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 09:47:17,090 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "POST /prenota HTTP/1.1" 200 -
+2026-07-04 09:47:17,141 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:47:17,142 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:47:17,143 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:47:17,172 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "[36mGET /static/js/form-prenotazione.js HTTP/1.1[0m" 304 -
+2026-07-04 09:47:17,172 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:17] "[36mGET /static/js/prenota-times.js HTTP/1.1[0m" 304 -
+2026-07-04 09:47:46,278 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:46] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 09:47:52,516 INFO:app: >>> Invio email alert nuova prenotazione...
+2026-07-04 09:47:54,897 INFO:app: >>> Email alert inviata con successo!
+2026-07-04 09:47:54,899 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:54] "[32mPOST /prenota HTTP/1.1[0m" 302 -
+2026-07-04 09:47:54,920 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:54] "GET /conferma HTTP/1.1" 200 -
+2026-07-04 09:47:54,973 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:54] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:47:54,977 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:54] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:47:54,978 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:47:54] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,287 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "GET / HTTP/1.1" 200 -
+2026-07-04 09:48:17,320 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,320 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,321 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,336 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,339 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,340 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,346 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,346 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,366 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:48:17,372 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:48:17,374 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:48:17,374 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/js/behold-widget.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,382 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:17,382 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:17] "[36mGET /static/js/calendario.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:25,017 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:25] "GET /admin HTTP/1.1" 200 -
+2026-07-04 09:48:25,033 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:25] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:48:25,037 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:25] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:25,039 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:25] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:48:25,191 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:25] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:44,254 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:44] "[32mGET /admin/logout HTTP/1.1[0m" 302 -
+2026-07-04 09:48:44,267 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:44] "GET /admin/login HTTP/1.1" 200 -
+2026-07-04 09:48:44,319 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:44] "GET /static/css/stile.css HTTP/1.1" 200 -
+2026-07-04 09:48:44,320 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:44] "[36mGET /static/img/logo_black.png HTTP/1.1[0m" 304 -
+2026-07-04 09:48:48,821 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "[32mPOST /admin/login HTTP/1.1[0m" 302 -
+2026-07-04 09:48:48,827 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "GET /admin HTTP/1.1" 200 -
+2026-07-04 09:48:48,869 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:48:48,871 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:48:48,874 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:48:48,974 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:48:48] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:09,863 INFO:app: >>> Invio email annullamento a conti_gabriele_94@hotmail.it...
+2026-07-04 09:49:12,802 INFO:app: >>> Email annullamento inviata con successo!
+2026-07-04 09:49:12,803 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "[32mGET /admin/aggiorna/1/Annullato?token=db7cade04b9f5df1c47ca950788aaba87750a0795e50eecdd6a9e1285f954d9c HTTP/1.1[0m" 302 -
+2026-07-04 09:49:12,818 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "GET /admin?filtro=in_attesa HTTP/1.1" 200 -
+2026-07-04 09:49:12,857 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:49:12,859 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:49:12,862 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:12,986 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:12] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:37,566 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "[32mPOST /admin/corso/aggiungi HTTP/1.1[0m" 302 -
+2026-07-04 09:49:37,578 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "GET /admin HTTP/1.1" 200 -
+2026-07-04 09:49:37,657 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:49:37,658 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:49:37,661 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:37,735 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:37] "[36mGET /static/js/admin-azioni.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,520 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "GET / HTTP/1.1" 200 -
+2026-07-04 09:49:40,567 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,572 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,572 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,641 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,642 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,645 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/js/behold-widget.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,644 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,644 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,647 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,658 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:49:40,659 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:49:40,665 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-04 09:49:40,669 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/js/calendario.js HTTP/1.1[0m" 304 -
+2026-07-04 09:49:40,669 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 09:49:40] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:33,085 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 21:56:33,135 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-04 21:56:33,135 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-04 21:56:33,136 INFO:werkzeug:  * Restarting with stat
+2026-07-04 21:56:33,445 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 21:56:33,446 INFO:apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-04 21:56:33,446 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-04 21:56:33,447 INFO:apscheduler.scheduler: Scheduler started
+2026-07-04 21:56:33,466 WARNING:werkzeug:  * Debugger is active!
+2026-07-04 21:56:33,487 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-04 21:56:48,519 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "GET / HTTP/1.1" 200 -
+2026-07-04 21:56:48,550 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,551 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,553 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,750 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/foto2.jpg HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,768 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/foto3.jpg HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,772 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/foto1.jpg HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,812 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/js/behold-widget.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,815 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/foto4.jpg HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,817 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/img/foto5.jpg HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,832 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[33mGET /static/img/prima-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 21:56:48,834 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[33mGET /static/img/dopo-nascita.jpg HTTP/1.1[0m" 404 -
+2026-07-04 21:56:48,836 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[33mGET /static/img/consulenze.jpg HTTP/1.1[0m" 404 -
+2026-07-04 21:56:48,841 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/js/calendario.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:48,844 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:48] "[36mGET /static/js/carosello.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:49,159 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:49] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-07-04 21:56:56,321 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "GET /prenota HTTP/1.1" 200 -
+2026-07-04 21:56:56,364 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 21:56:56,367 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:56,368 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 21:56:56,424 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "[36mGET /static/js/form-prenotazione.js HTTP/1.1[0m" 304 -
+2026-07-04 21:56:56,425 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:56:56] "[36mGET /static/js/prenota-times.js HTTP/1.1[0m" 304 -
+2026-07-04 21:57:03,771 ERROR:app: >>> Errore nel download/lettura del calendario Google: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1508, in connect
+    self.sock = self._context.wrap_socket(self.sock,
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+                                          server_hostname=server_hostname)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/gabrieleconti/Desktop/studio-infermieristico/app.py", line 143, in _scarica_calendario_ics
+    with urllib.request.urlopen(url, timeout=10) as risposta:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+2026-07-04 21:57:03,779 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:57:03] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 21:59:38,497 ERROR:app: >>> Errore nel download/lettura del calendario Google: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1508, in connect
+    self.sock = self._context.wrap_socket(self.sock,
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+                                          server_hostname=server_hostname)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/gabrieleconti/Desktop/studio-infermieristico/app.py", line 143, in _scarica_calendario_ics
+    with urllib.request.urlopen(url, timeout=10) as risposta:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+2026-07-04 21:59:38,505 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 21:59:38] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 22:02:23,950 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 22:02:23,996 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-04 22:02:23,996 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-04 22:02:23,997 INFO:werkzeug:  * Restarting with stat
+2026-07-04 22:02:24,302 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 22:02:24,303 INFO:apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-04 22:02:24,303 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-04 22:02:24,303 INFO:apscheduler.scheduler: Scheduler started
+2026-07-04 22:02:24,328 WARNING:werkzeug:  * Debugger is active!
+2026-07-04 22:02:24,348 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-04 22:03:30,851 ERROR:app: >>> Errore nel download/lettura del calendario Google: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1321, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/client.py", line 1508, in connect
+    self.sock = self._context.wrap_socket(self.sock,
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+                                          server_hostname=server_hostname)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/gabrieleconti/Desktop/studio-infermieristico/app.py", line 143, in _scarica_calendario_ics
+    with urllib.request.urlopen(url, timeout=10) as risposta:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1369, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)>
+2026-07-04 22:03:30,858 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:03:30] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 22:06:10,001 INFO:werkzeug:  * Detected change in '/Users/gabrieleconti/Desktop/studio-infermieristico/app.py', reloading
+2026-07-04 22:06:10,394 INFO:werkzeug:  * Restarting with stat
+2026-07-04 22:07:20,507 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 22:07:20,536 INFO:werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-07-04 22:07:20,536 INFO:werkzeug: [33mPress CTRL+C to quit[0m
+2026-07-04 22:07:20,537 INFO:werkzeug:  * Restarting with stat
+2026-07-04 22:07:20,796 INFO:app: >>> Database OK — Admin esistente
+2026-07-04 22:07:20,797 INFO:apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-07-04 22:07:20,798 INFO:apscheduler.scheduler: Added job "Controllo e invio ricordi 24h" to job store "default"
+2026-07-04 22:07:20,798 INFO:apscheduler.scheduler: Scheduler started
+2026-07-04 22:07:20,817 WARNING:werkzeug:  * Debugger is active!
+2026-07-04 22:07:20,830 INFO:werkzeug:  * Debugger PIN: 832-724-182
+2026-07-04 22:07:40,616 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:40] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -
+2026-07-04 22:07:45,273 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "GET /prenota HTTP/1.1" 200 -
+2026-07-04 22:07:45,314 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "[36mGET /static/css/stile.css?v=1.1 HTTP/1.1[0m" 304 -
+2026-07-04 22:07:45,314 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2026-07-04 22:07:45,315 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "[36mGET /static/js/menu-mobile.js HTTP/1.1[0m" 304 -
+2026-07-04 22:07:45,443 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "[36mGET /static/js/form-prenotazione.js HTTP/1.1[0m" 304 -
+2026-07-04 22:07:45,443 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:45] "[36mGET /static/js/prenota-times.js HTTP/1.1[0m" 304 -
+2026-07-04 22:07:48,693 INFO:werkzeug: 127.0.0.1 - - [04/Jul/2026 22:07:48] "GET /api/orari-occupati/2026-07-06 HTTP/1.1" 200 -

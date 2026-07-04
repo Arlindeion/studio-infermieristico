@@ -16,6 +16,7 @@
     {% endwith %}
 
     <form class="form-prenotazione" method="POST" action="/prenota">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <div class="form-gruppo">
             <label for="nome">Nome e Cognome *</label>

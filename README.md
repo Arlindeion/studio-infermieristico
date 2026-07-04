@@ -93,7 +93,11 @@ pip install -r requirements.txt
 Crea un file `.env` nella cartella del progetto con questi valori:
 SECRET_KEY=genera_una_chiave_con_python_secrets
 
+MAIL_USERNAME=sc.studioinfermieristico@gmail.com
+
 MAIL_PASSWORD=app_password_gmail_16_caratteri
+
+GOOGLE_CALENDAR_ICS_URL=indirizzo_segreto_ical_del_calendario_arzamed
 
 Per generare una SECRET_KEY sicura:
 
