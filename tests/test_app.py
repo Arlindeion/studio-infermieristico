@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import app as app_module
 from app import app as flask_app
 from config import config
-from app import db, Appuntamento, Admin, Corso
+from app import db, Appuntamento, Admin, Corso, IscrizioneCorso
 
 @pytest.fixture
 def app():
@@ -49,6 +49,7 @@ def test_database_empty(app):
         assert Appuntamento.query.count() == 0
         assert Admin.query.count() == 0
         assert Corso.query.count() == 0
+        assert IscrizioneCorso.query.count() == 0
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -102,7 +103,6 @@ def test_orari_occupati_endpoint(client):
         db.session.commit()
         resp2 = client.get('/api/orari-occupati/2026-07-10')
         data2 = resp2.get_json()
-        print('Dopo la cancellazione, orari occupati:', data2)  # DEBUG
         assert '10:30' not in data2  # dovrebbe essere libero dopo la cancellazione
 
 def test_holiday_flow(client):
@@ -131,6 +131,72 @@ def _csrf_prenota(client):
     import re
     resp = client.get('/prenota')
     return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def _csrf_iscrizione(client, corso_tipo):
+    import re
+    resp = client.get(f'/iscrizione-corsi/{corso_tipo}')
+    return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def test_iscrizione_disostruzione_salva_richiesta(client):
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': '16/07/2026',
+        'scopo_informativo': 'si',
+        'no_certificazione': 'si',
+        'buono_stato_salute': 'si',
+        'consenso_privacy': 'si',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/iscrizione-corsi/conferma'
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.corso_tipo == 'disostruzione-pediatrica'
+        assert iscrizione.nome == 'Mario Rossi'
+        assert iscrizione.stato == 'Nuova'
+
+
+def test_iscrizione_accompagnamento_compare_in_admin(client):
+    token = _csrf_iscrizione(client, 'accompagnamento-nascita')
+
+    resp = client.post('/iscrizione-corsi/accompagnamento-nascita', data={
+        'nome': 'Luisa Verdi',
+        'codice_fiscale': 'VRDLSU90A41G482Y',
+        'telefono': '3331234567',
+        'email': 'luisa@example.com',
+        'data_nascita': '1990-01-01',
+        'luogo_nascita': 'Pescara',
+        'indirizzo': 'Via Roma 1',
+        'citta': 'Montesilvano',
+        'provincia': 'PE',
+        'cap': '65015',
+        'data_presunta_parto': '2026-12-01',
+        'settimana_gravidanza': '20',
+        'gravidanza_regolare': 'Si',
+        'consenso_privacy': 'ACCONSENTO',
+        'consenso_immagini': 'NON ACCONSENTO',
+        'conferma_finale': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    csrf = _login_admin(client)
+    admin_resp = client.get('/admin')
+    assert 'Luisa Verdi' in admin_resp.text
+    assert 'Corso di accompagnamento alla nascita' in admin_resp.text
+    stato_resp = client.get(f'/admin/iscrizione-corso/1/Contattato?token={csrf}')
+    assert stato_resp.status_code == 302
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.first().stato == 'Contattato'
 
 
 def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(client):
@@ -390,6 +456,95 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
     mock_servizio.events().insert.assert_not_called()
 
 
+def test_aggiunta_corso_crea_evento_su_calendario(client, google_calendar_scrittura_finto):
+    """Creare un corso in admin deve creare anche l'evento Google Calendar."""
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {'id': 'evento-corso-123'}
+
+    csrf = _login_admin(client)
+    client.post('/admin/corso/aggiungi', data={
+        'tipo': 'disostruzione-pediatrica',
+        'titolo': 'Disostruzione pediatrica',
+        'durata_ore': '2',
+        'descrizione': 'Manovre salvavita per genitori e famiglie',
+        'data': '2026-09-10',
+        'ora': '18:00',
+        'luogo': 'Studio infermieristico',
+        '_csrf_token': csrf,
+    })
+
+    mock_servizio.events().insert.assert_called_once()
+    kwargs = mock_servizio.events().insert.call_args.kwargs
+    assert kwargs['calendarId'] == 'finto@group.calendar.google.com'
+    assert kwargs['body']['summary'] == 'Corso: Disostruzione pediatrica'
+    assert kwargs['body']['location'] == 'Studio infermieristico'
+    assert kwargs['body']['start']['dateTime'].startswith('2026-09-10T18:00:00')
+    assert kwargs['body']['end']['dateTime'].startswith('2026-09-10T20:00:00')
+
+    with flask_app.app_context():
+        corso = Corso.query.filter_by(titolo='Disostruzione pediatrica').one()
+        assert corso.tipo == 'disostruzione-pediatrica'
+        assert corso.durata_ore == 2
+        assert corso.google_event_id == 'evento-corso-123'
+
+
+def test_aggiunta_corso_usa_durata_modificata_su_calendario(client, google_calendar_scrittura_finto):
+    """La durata modificabile nel form admin determina l'orario di fine su Calendar."""
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {'id': 'evento-blsd-123'}
+
+    csrf = _login_admin(client)
+    client.post('/admin/corso/aggiungi', data={
+        'tipo': 'bls-d',
+        'titolo': 'BLS-D aziendale',
+        'durata_ore': '4',
+        'descrizione': 'Corso in azienda',
+        'data': '2026-09-11',
+        'ora': '09:00',
+        'luogo': 'Azienda',
+        '_csrf_token': csrf,
+    })
+
+    kwargs = mock_servizio.events().insert.call_args.kwargs
+    assert kwargs['body']['start']['dateTime'].startswith('2026-09-11T09:00:00')
+    assert kwargs['body']['end']['dateTime'].startswith('2026-09-11T13:00:00')
+
+    with flask_app.app_context():
+        corso = Corso.query.filter_by(titolo='BLS-D aziendale').one()
+        assert corso.tipo == 'bls-d'
+        assert corso.durata_ore == 4
+
+
+def test_eliminazione_corso_elimina_evento_su_calendario(client, google_calendar_scrittura_finto):
+    """Eliminare un corso in admin deve cancellare l'evento Google Calendar collegato."""
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='Corso di accompagnamento alla nascita',
+            tipo='accompagnamento-nascita',
+            descrizione='Percorso in presenza',
+            data='2026-09-12',
+            ora='10:00',
+            luogo='Studio',
+            durata_ore=2,
+            google_event_id='evento-corso-da-eliminare',
+        )
+        db.session.add(corso)
+        db.session.commit()
+        corso_id = corso.id
+
+    csrf = _login_admin(client)
+    client.get(f'/admin/corso/elimina/{corso_id}?token={csrf}')
+
+    mock_servizio.events().delete.assert_called_once_with(
+        calendarId='finto@group.calendar.google.com',
+        eventId='evento-corso-da-eliminare',
+    )
+    with flask_app.app_context():
+        assert db.session.get(Corso, corso_id) is None
+
+
 def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scrittura_finto):
     """Anche l'area admin deve rispettare chiusure e orari prenotabili."""
     mock_servizio = google_calendar_scrittura_finto
@@ -463,6 +618,29 @@ def test_nessuna_chiamata_google_se_non_configurato(client):
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.stato == 'Confermato'
         assert aggiornato.google_event_id is None
+
+
+def test_google_analytics_non_presente_se_non_configurato(client):
+    flask_app.config['GOOGLE_ANALYTICS_ID'] = None
+
+    resp = client.get('/')
+
+    assert 'google-analytics-id' not in resp.text
+    assert 'analytics-consent.js' not in resp.text
+    assert 'Preferenze cookie' not in resp.text
+
+
+def test_google_analytics_presente_se_configurato(client):
+    flask_app.config['GOOGLE_ANALYTICS_ID'] = 'G-TEST1234'
+
+    try:
+        resp = client.get('/')
+    finally:
+        flask_app.config['GOOGLE_ANALYTICS_ID'] = None
+
+    assert 'meta name="google-analytics-id" content="G-TEST1234"' in resp.text
+    assert 'analytics-consent.js' in resp.text
+    assert 'Preferenze cookie' in resp.text
 
 
 if __name__ == '__main__':

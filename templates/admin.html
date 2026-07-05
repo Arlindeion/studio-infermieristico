@@ -3,14 +3,39 @@
 
 {% block contenuto %}
 
-<section class="pagina-interna">
+<section class="pagina-interna admin-page">
 
     <div class="admin-topbar">
         <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
         <a href="/admin/logout" class="btn-azione rosso">Esci</a>
     </div>
 
-    <h2>📋 Gestione Appuntamenti</h2>
+    <div class="admin-view-switch" role="tablist" aria-label="Sezioni admin">
+        <button type="button" class="admin-view-btn attivo" data-admin-target="prenotazioni" role="tab" aria-selected="true">
+            <span>Prenotazioni sanitarie</span>
+            {% if in_attesa_count > 0 %}
+            <strong>{{ in_attesa_count }}</strong>
+            {% endif %}
+        </button>
+        <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false">
+            <span>Corsi</span>
+            {% if iscrizioni_nuove_count > 0 %}
+            <strong>{{ iscrizioni_nuove_count }}</strong>
+            {% endif %}
+        </button>
+    </div>
+
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="prenotazioni" id="admin-prenotazioni">
+
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Area sanitaria</p>
+            <h2>Gestione appuntamenti</h2>
+        </div>
+        <span class="admin-total">{{ appuntamenti|length }} risultati</span>
+    </div>
 
     <!-- FILTRI -->
     <div class="admin-filtri">
@@ -50,14 +75,13 @@
 {% if appuntamenti %}
 
     <!-- VISTA DESKTOP: tabella -->
-    <table class="tabella-admin tabella-desktop">
+    <div class="admin-table-wrap tabella-desktop">
+    <table class="tabella-admin tabella-appuntamenti">
         <thead>
             <tr>
-                <th>Nome</th>
-                <th>Telefono</th>
-                <th>Servizio</th>
-                <th>Data</th>
-                <th>Ora</th>
+                <th>Paziente</th>
+                <th>Prestazione</th>
+                <th>Quando</th>
                 <th>Note</th>
                 <th>Stato</th>
                 <th>Azioni</th>
@@ -66,12 +90,19 @@
         <tbody>
             {% for a in appuntamenti %}
             <tr class="stato-{{ a.stato | lower | replace(' ', '-') }}">
-                <td>{{ a.nome }}</td>
-                <td>{{ a.telefono }}</td>
+                <td>
+                    <strong class="admin-primary">{{ a.nome }}</strong>
+                    <span class="admin-secondary">{{ a.telefono }}</span>
+                    {% if a.email %}
+                    <span class="admin-secondary">{{ a.email }}</span>
+                    {% endif %}
+                </td>
                 <td>{{ a.servizio }}</td>
-                <td>{{ a.data }}</td>
-                <td>{{ a.ora }}</td>
-                <td>{{ a.note or '—' }}</td>
+                <td>
+                    <strong class="admin-primary">{{ a.data }}</strong>
+                    <span class="admin-secondary">ore {{ a.ora }}</span>
+                </td>
+                <td class="admin-note-cell">{{ a.note or '—' }}</td>
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
@@ -107,6 +138,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <!-- VISTA MOBILE: card -->
     <div class="card-admin-lista">
@@ -163,9 +195,110 @@
 
 </section>
 
+<!-- ISCRIZIONI CORSI -->
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi" id="admin-corsi">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Area formazione</p>
+            <h2>Iscrizioni corsi</h2>
+        </div>
+        <span class="admin-total">{{ iscrizioni_corsi|length }} richieste</span>
+    </div>
+    {% if iscrizioni_nuove_count > 0 %}
+    <p class="nota">{{ iscrizioni_nuove_count }} richiesta{% if iscrizioni_nuove_count != 1 %}e{% endif %} nuova{% if iscrizioni_nuove_count != 1 %}e{% endif %} da gestire.</p>
+    {% endif %}
+
+    {% if iscrizioni_corsi %}
+    <table class="tabella-admin tabella-desktop">
+        <thead>
+            <tr>
+                <th>Corso</th>
+                <th>Nome</th>
+                <th>Contatti</th>
+                <th>Dettagli</th>
+                <th>Consensi</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in iscrizioni_corsi %}
+            {% set extra = i.extra_dict() %}
+            <tr class="stato-{{ i.stato | lower | replace(' ', '-') }}">
+                <td>
+                    <strong>{{ i.corso_titolo }}</strong><br>
+                    <span class="text-muted">{{ i.creato_il.strftime('%d/%m/%Y %H:%M') }}</span>
+                </td>
+                <td>
+                    {{ i.nome }}<br>
+                    <span class="text-muted">CF: {{ i.codice_fiscale }}</span>
+                </td>
+                <td>
+                    {{ i.telefono }}<br>
+                    <span class="text-muted">{{ i.email or 'Email non indicata' }}</span>
+                </td>
+                <td>
+                    {% if i.data_corso %}<p><strong>Data:</strong> {{ i.data_corso }}</p>{% endif %}
+                    {% if i.partecipazione %}<p><strong>Tipo:</strong> {{ i.partecipazione }}</p>{% endif %}
+                    {% if extra.nome_secondo_partecipante %}<p><strong>Secondo:</strong> {{ extra.nome_secondo_partecipante }}{% if extra.codice_fiscale_secondo_partecipante %} ({{ extra.codice_fiscale_secondo_partecipante }}){% endif %}</p>{% endif %}
+                    {% if extra.data_presunta_parto %}<p><strong>DPP:</strong> {{ extra.data_presunta_parto }}</p>{% endif %}
+                    {% if extra.settimana_gravidanza %}<p><strong>Settimana:</strong> {{ extra.settimana_gravidanza }}</p>{% endif %}
+                    {% if extra.nome_partner %}<p><strong>Partner:</strong> {{ extra.nome_partner }}{% if extra.telefono_partner %} - {{ extra.telefono_partner }}{% endif %}</p>{% endif %}
+                    {% if i.note %}<p><strong>Note:</strong> {{ i.note }}</p>{% endif %}
+                </td>
+                <td>
+                    <p>Privacy: {{ 'Si' if i.consenso_privacy else 'No' }}</p>
+                    <p>Immagini: {{ 'Si' if i.consenso_immagini else 'No' }}</p>
+                </td>
+                <td><span class="badge">{{ i.stato }}</span></td>
+                <td class="azioni">
+                    <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
+                    <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
+                    <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="card-admin-lista">
+        {% for i in iscrizioni_corsi %}
+        {% set extra = i.extra_dict() %}
+        <div class="card-admin stato-{{ i.stato | lower | replace(' ', '-') }}">
+            <div class="card-admin-header">
+                <strong>{{ i.nome }}</strong>
+                <span class="badge">{{ i.stato }}</span>
+            </div>
+            <div class="card-admin-body">
+                <p><span>Corso</span> {{ i.corso_titolo }}</p>
+                <p><span>Telefono</span> {{ i.telefono }}</p>
+                <p><span>Email</span> {{ i.email or 'Non indicata' }}</p>
+                {% if i.data_corso %}<p><span>Data</span> {{ i.data_corso }}</p>{% endif %}
+                {% if i.partecipazione %}<p><span>Tipo</span> {{ i.partecipazione }}</p>{% endif %}
+                {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
+            </div>
+            <div class="card-admin-azioni">
+                <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
+                <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
+                <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="nota nota-lg">Nessuna iscrizione corso ricevuta.</p>
+    {% endif %}
+</section>
+
 <!-- GESTIONE CORSI -->
-<section class="pagina-interna">
-    <h2>🎓 Gestione Corsi</h2>
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Calendario formazione</p>
+            <h2>Gestione corsi</h2>
+        </div>
+        <span class="admin-total">{{ corsi|length }} corsi</span>
+    </div>
 
     <div class="form-corso">
         <h3>Aggiungi nuovo corso</h3>
@@ -173,8 +306,27 @@
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="form-riga">
                 <div class="form-gruppo">
+                    <label>Tipo corso *</label>
+                    <select name="tipo" id="tipo-corso-admin" required>
+                        <option value="">Seleziona tipo</option>
+                        {% for valore, corso_tipo in corsi_admin_tipi.items() %}
+                        <option value="{{ valore }}"
+                                data-titolo="{{ corso_tipo.titolo }}"
+                                data-durata="{{ corso_tipo.durata_ore }}">
+                            {{ corso_tipo.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-gruppo">
                     <label>Titolo corso *</label>
-                    <input type="text" name="titolo" placeholder="Es. ECM Wound Care" required>
+                    <input type="text" name="titolo" id="titolo-corso-admin" placeholder="Es. BLS-D aziendale" required>
+                </div>
+            </div>
+            <div class="form-riga">
+                <div class="form-gruppo">
+                    <label>Durata *</label>
+                    <input type="number" name="durata_ore" id="durata-corso-admin" min="0.5" max="12" step="0.5" value="2" required>
                 </div>
                 <div class="form-gruppo">
                     <label>Data *</label>
@@ -204,8 +356,10 @@
         <thead>
             <tr>
                 <th>Titolo</th>
+                <th>Tipo</th>
                 <th>Data</th>
                 <th>Ora</th>
+                <th>Durata</th>
                 <th>Luogo</th>
                 <th>Descrizione</th>
                 <th>Elimina</th>
@@ -215,8 +369,10 @@
             {% for c in corsi %}
             <tr>
                 <td>{{ c.titolo }}</td>
+                <td>{{ corsi_admin_tipi.get(c.tipo, {}).get('label', c.tipo or '—') }}</td>
                 <td>{{ c.data }}</td>
                 <td>{{ c.ora or '—' }}</td>
+                <td>{{ c.durata_ore|int if c.durata_ore == c.durata_ore|int else c.durata_ore }} ore</td>
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>

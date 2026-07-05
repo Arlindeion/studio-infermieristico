@@ -34,14 +34,16 @@
 - `CALENDARIO_CACHE_SECONDI` — per quanti secondi tenere in cache il calendario scaricato prima di ricontattare Google (default: `300`, cioè 5 minuti)
 - `GOOGLE_SERVICE_ACCOUNT_FILE` — percorso al file JSON della chiave dell'account di servizio Google (per SCRIVERE eventi su Calendar quando un appuntamento viene confermato). File sensibile: non va mai committato (già escluso da `.gitignore`).
 - `GOOGLE_CALENDAR_ID` — ID del calendario Google su cui creare gli eventi (Impostazioni calendario → Integra calendario → "ID calendario"). L'account di servizio deve avere accesso "Apportare modifiche agli eventi" su questo calendario.
+- `GOOGLE_ANALYTICS_ID` — ID misurazione GA4 (formato `G-XXXXXXXXXX`). Se impostato, il sito mostra il banner cookie e carica Google Analytics solo dopo consenso dell'utente.
 
 ## Migrazione database
 
 Se aggiorni un database `appuntamenti.db` già esistente (con dati reali), dopo aver aggiornato il codice esegui una volta sola:
 ```bash
 python3 migrazione_google_event_id.py
+python3 migrazione_corsi_google_event_id.py
 ```
-Aggiunge la colonna `google_event_id` alla tabella `appuntamento`, necessaria per collegare ogni appuntamento all'evento Google Calendar corrispondente. Non serve se il database viene creato da zero (lo schema aggiornato include già questa colonna).
+Aggiungono le colonne necessarie per collegare appuntamenti e corsi agli eventi Google Calendar corrispondenti; per i corsi aggiungono anche `tipo` e `durata_ore`. Non serve se il database viene creato da zero (lo schema aggiornato include già queste colonne).
 
 ## Struttura
 - `app.py` — applicazione Flask principale (modelli, route, email, scheduler)

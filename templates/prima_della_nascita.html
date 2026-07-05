@@ -1,9 +1,44 @@
 {% extends "base.html" %}
-{% block titolo %}Prima della nascita — Studio Infermieristico{% endblock %}
+{% block titolo %}Corso di accompagnamento alla nascita — S.C. Studio Infermieristico{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna">
-    <h2>Prima della nascita</h2>
-    <p class="sottotitolo">Contenuto in arrivo. Torna presto!</p>
+<section class="pagina-interna pagina-consulenza">
+    <p class="eyebrow">Corso preparto in presenza</p>
+    <h2>Corso di accompagnamento alla nascita</h2>
+    <p class="sottotitolo">Un accompagnamento pratico e rassicurante per arrivare più preparati alla nascita e ai primi giorni con il neonato.</p>
+
+    <div class="pagina-hero-img">
+        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Percorso di accompagnamento alla nascita">
+    </div>
+
+    <div class="servizio-lista">
+        <div class="servizio-item">
+            <span>01</span>
+            <div>
+                <h3>Organizzazione del rientro a casa</h3>
+                <p>Spazi, materiali utili, prime routine e indicazioni per vivere i primi giorni con meno improvvisazione.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>02</span>
+            <div>
+                <h3>Sonno sicuro e ambiente</h3>
+                <p>Prepariamo insieme l'ambiente del sonno e affrontiamo i dubbi più comuni con indicazioni prudenti e aggiornate.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>03</span>
+            <div>
+                <h3>Domande pratiche da futuri genitori</h3>
+                <p>Bagnetto, cambio, cordone, pianto, segnali da osservare e quando chiedere aiuto al pediatra.</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="cta cta-interna">
+        <h2>Vuoi partecipare al percorso?</h2>
+        <p>Richiedi informazioni sul prossimo gruppo in presenza o su un incontro dedicato.</p>
+        <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn">Richiedi partecipazione</a>
+    </section>
 </section>
 {% endblock %}

@@ -1,84 +1,134 @@
 {% extends "base.html" %}
-{% block titolo %}Home — Studio Infermieristico{% endblock %}
+{% block titolo %}Corsi e consulenze per famiglie e aziende — S.C. Studio Infermieristico{% endblock %}
 
 {% block contenuto %}
 
-<!-- CAROSELLO FOTO -->
-<div class="carosello">
-    <div class="carosello-traccia" id="carosello">
-        <img src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="Studio infermieristico">
-        <img src="{{ url_for('static', filename='img/foto2.jpg') }}" alt="Studio infermieristico">
-        <img src="{{ url_for('static', filename='img/foto3.jpg') }}" alt="Studio infermieristico">
-        <img src="{{ url_for('static', filename='img/foto4.jpg') }}" alt="Studio infermieristico">
-        <img src="{{ url_for('static', filename='img/foto5.jpg') }}" alt="Studio infermieristico">
+<section class="hero-consulenze">
+    <div class="hero-consulenze-testo">
+        <p class="eyebrow">Corsi e consulenze in studio, online e in azienda</p>
+        <h1>Formazione sanitaria e supporto pratico per famiglie, neogenitori e aziende</h1>
+        <p class="hero-lead">Ti accompagno con corsi in presenza, consulenze personalizzate e percorsi pratici per affrontare nascita, cura del bambino e sicurezza con più consapevolezza.</p>
+        <div class="hero-actions">
+            <a href="/iscrizione-corsi" class="btn">Iscriviti a un corso</a>
+            <a href="https://wa.me/393806317175" class="btn btn-secondaria">Scrivimi su WhatsApp</a>
+        </div>
+        <div class="hero-trust">
+            <span>Infermiera professionale</span>
+            <span>Corsi in studio o in azienda</span>
+            <span>Supporto per famiglie e neonati</span>
+        </div>
     </div>
-    <button class="carosello-btn prev" type="button" aria-label="Foto precedente">&#8592;</button>
-    <button class="carosello-btn next" type="button" aria-label="Foto successiva">&#8594;</button>
-    <div class="carosello-dots" id="dots"></div>
-</div>
+    <div class="hero-consulenze-media">
+        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corsi e consulenze per famiglie e aziende">
+    </div>
+</section>
 
-<!-- BIOGRAFIA BREVE -->
-<section class="bio-preview">
+<section class="problemi-genitori">
+    <p class="eyebrow centro">Aree di intervento</p>
+    <h2>Tre bisogni diversi, un unico approccio: pratico, chiaro e rassicurante</h2>
+    <div class="problemi-grid">
+        <article>
+            <span>Sicurezza</span>
+            <h3>Primo soccorso e sicurezza</h3>
+            <p>Corsi BLSD e disostruzione pediatrica per sentirsi pronti ad agire nei momenti che contano.</p>
+        </article>
+        <article>
+            <span>Nascita</span>
+            <h3>Nascita e primi mesi</h3>
+            <p>Un percorso in presenza per prepararsi al rientro a casa, alla cura del neonato e alla nuova quotidianità.</p>
+        </article>
+        <article>
+            <span>Supporto</span>
+            <h3>Consulenze personalizzate</h3>
+            <p>Supporto online o in studio su gestione del neonato, routine, sonno e dubbi pratici della famiglia.</p>
+        </article>
+    </div>
+</section>
+
+<section class="percorsi-consulenza">
+    <div class="section-heading">
+        <p class="eyebrow">Percorsi principali</p>
+        <h2>Corsi e consulenze con lo stesso spazio, pensati per persone reali</h2>
+    </div>
+    <div class="percorsi-grid">
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso BLSD in studio o in azienda">
+            <div>
+                <h3>Corso BLSD</h3>
+                <p>Formazione pratica sulle manovre di rianimazione e uso del defibrillatore, nello studio o direttamente in azienda.</p>
+                <a href="https://wa.me/393806317175" class="link-azione">Richiedi informazioni</a>
+            </div>
+        </article>
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Percorso di accompagnamento alla nascita">
+            <div>
+                <h3>Corso di accompagnamento alla nascita</h3>
+                <p>Un corso preparto in presenza per prepararsi alla nascita, al rientro a casa e ai primi giorni con il bambino.</p>
+                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi partecipazione</a>
+            </div>
+        </article>
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di disostruzione pediatrica">
+            <div>
+                <h3>Disostruzione pediatrica e tagli sicuri</h3>
+                <p>Incontro pratico in presenza per genitori, nonni e caregiver sulle manovre di disostruzione in età pediatrica.</p>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Iscriviti</a>
+            </div>
+        </article>
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Consulenze per neogenitori">
+            <div>
+                <h3>Consulenze neogenitori</h3>
+                <p>Supporto online o in studio su routine, sonno, cura del neonato e piccoli dubbi dei primi mesi.</p>
+                <a href="/consulenze-online" class="link-azione">Come funzionano</a>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="metodo-consulenza">
+    <div class="metodo-testo">
+        <p class="eyebrow">Metodo</p>
+        <h2>Un approccio concreto: poche nozioni confuse, molte cose da saper fare</h2>
+        <p>Che si tratti di un corso o di una consulenza, l'obiettivo è rendere le persone più sicure: capire cosa osservare, cosa fare, quando chiedere aiuto e come muoversi nella pratica.</p>
+    </div>
+    <div class="metodo-lista">
+        <div>
+            <strong>1. Ascolto</strong>
+            <p>Partiamo dal contesto: famiglia, azienda, gruppo, età dei bambini o obiettivi del corso.</p>
+        </div>
+        <div>
+            <strong>2. Pratica guidata</strong>
+            <p>Spazio a esempi, domande, manovre, procedure e situazioni concrete.</p>
+        </div>
+        <div>
+            <strong>3. Prossimi passi</strong>
+            <p>Alla fine sai cosa portare a casa: indicazioni, priorità e azioni utili.</p>
+        </div>
+    </div>
+</section>
+
+<section class="bio-preview bio-preview-home">
     <div class="bio-preview-contenuto">
         <div class="bio-preview-testo">
-            <h2>Chi sono</h2>
-            <p>Sono Selene Campetta, infermiera professionale. Offro assistenza infermieristica personalizzata, ascolto e supporto vicino alle esigenze di ogni paziente e della sua famiglia.</p>
-            <p>I miei servizi sono disponibili presso lo studio e a domicilio, per garantirti la massima comodità e continuità di cura.</p>
-            <a href="/chi-sono" class="btn">Scopri di più</a>
+            <p class="eyebrow">Chi ti accompagna</p>
+            <h2>Sono Selene Campetta, infermiera professionale</h2>
+            <p>Offro assistenza infermieristica, corsi pratici e consulenze dedicate a famiglie, neogenitori e realtà aziendali che vogliono formarsi sulla sicurezza.</p>
+            <p>Puoi prenotare un appuntamento, chiedere informazioni su un corso in studio o valutare una formazione direttamente presso la tua azienda.</p>
+            <a href="/chi-sono" class="btn">Conosci Selene</a>
         </div>
     </div>
 </section>
-<!-- COSA FACCIO -->
-<section class="cosa-faccio">
-    <h2>Cosa faccio</h2>
-    <p class="sottotitolo">Le aree in cui posso supportarti</p>
-    <div class="cosa-faccio-grid">
 
-        <div class="cosa-faccio-card">
-            <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/prima-nascita.jpg') }}" alt="Prima della nascita">
-            </div>
-            <div class="cosa-faccio-testo">
-                <h3>Prima della nascita</h3>
-                <p>Descrivi qui brevemente cosa offri durante la gravidanza e nel periodo che precede il parto.</p>
-                <a href="/prima-della-nascita" class="btn">Scopri di più</a>
-            </div>
-        </div>
-
-        <div class="cosa-faccio-card">
-            <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/dopo-nascita.jpg') }}" alt="Dopo la nascita">
-            </div>
-            <div class="cosa-faccio-testo">
-                <h3>Dopo la nascita</h3>
-                <p>Descrivi qui brevemente cosa offri nel periodo post-parto per mamma e neonato.</p>
-                <a href="/dopo-la-nascita" class="btn">Scopri di più</a>
-            </div>
-        </div>
-
-        <div class="cosa-faccio-card">
-            <div class="cosa-faccio-img">
-                <img src="{{ url_for('static', filename='img/consulenze.jpg') }}" alt="Consulenze online">
-            </div>
-            <div class="cosa-faccio-testo">
-                <h3>Consulenze online</h3>
-                <p>Descrivi qui brevemente come funzionano le tue consulenze a distanza.</p>
-                <a href="/consulenze-online" class="btn">Scopri di più</a>
-            </div>
-        </div>
-
-    </div>
-</section>
-<!-- CALENDARIO CORSI -->
-<section class="sezione-calendario">
+<section class="sezione-calendario" id="calendario-corsi">
     <h2>I miei corsi e aggiornamenti</h2>
-    <p class="sottotitolo">Formazione continua per offrirti sempre il meglio.</p>
+    <p class="sottotitolo">Formazione continua e appuntamenti dedicati alle famiglie.</p>
 
     <div class="calendario-wrapper">
         <div class="cal-header">
-            <button class="cal-nav" id="btn-prec">&#8592;</button>
+            <button class="cal-nav" id="btn-prec" type="button" aria-label="Mese precedente">&#8592;</button>
             <h3 id="cal-titolo"></h3>
-            <button class="cal-nav" id="btn-succ">&#8594;</button>
+            <button class="cal-nav" id="btn-succ" type="button" aria-label="Mese successivo">&#8594;</button>
         </div>
         <div class="cal-giorni-header">
             <span>Lun</span><span>Mar</span><span>Mer</span>
@@ -94,7 +144,6 @@
     </div>
 </section>
 
-<!-- Dati dei corsi: blocco JSON non eseguibile, quindi compatibile con la CSP (script-src 'self') -->
 <script id="corsi-data" type="application/json">
 [
     {% for c in corsi %}
@@ -109,45 +158,44 @@
 ]
 </script>
 <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
-<!-- INSTAGRAM -->
+
 <section class="sezione-instagram">
     <h2>Seguimi su Instagram</h2>
-    <p class="sottotitolo">@sc.studioinfermieristico</p>
-<behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
-<script src="{{ url_for('static', filename='js/behold-widget.js') }}"></script>
+    <p class="sottotitolo">Spunti, aggiornamenti e vita dello studio su @sc.studioinfermieristico</p>
+    <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
+    <script src="{{ url_for('static', filename='js/behold-widget.js') }}"></script>
 </section>
-<!-- SERVIZI -->
+
 <section class="servizi-preview">
-    <h2>I miei servizi</h2>
+    <h2>Assistenza infermieristica</h2>
     <div class="card-grid">
         <div class="card">
-            <span>💉</span>
+            <span>IN</span>
             <h3>Iniezioni e flebo</h3>
             <p>Somministrazione di farmaci su prescrizione medica.</p>
         </div>
         <div class="card">
-            <span>🩹</span>
+            <span>ME</span>
             <h3>Medicazioni</h3>
             <p>Gestione e trattamento di ferite, ulcere e lesioni.</p>
         </div>
         <div class="card">
-            <span>❤️</span>
+            <span>PA</span>
             <h3>Controllo parametri</h3>
-            <p>Misurazione pressione, glicemia, saturazione e più.</p>
+            <p>Misurazione pressione, glicemia, saturazione e altri parametri.</p>
         </div>
         <div class="card">
-            <span>🏠</span>
+            <span>DO</span>
             <h3>Assistenza domiciliare</h3>
-            <p>Interventi direttamente a casa tua, su prenotazione.</p>
+            <p>Interventi direttamente a casa, su prenotazione.</p>
         </div>
     </div>
 </section>
 
-<section class="cta">
-    <h2>Prenota il tuo appuntamento</h2>
-    <p>Scegli giorno e ora direttamente online, in pochi secondi.</p>
-    <a href="/prenota" class="btn">Prenota ora</a>
+<section class="cta cta-famiglie">
+    <h2>Vuoi partecipare a un corso?</h2>
+    <p>Puoi inviare la richiesta per disostruzione pediatrica o corso di accompagnamento alla nascita direttamente dal sito. La prenotazione online resta dedicata alle prestazioni sanitarie.</p>
+    <a href="/iscrizione-corsi" class="btn">Vai alle iscrizioni</a>
 </section>
 
-<script src="{{ url_for('static', filename='js/carosello.js') }}" defer></script>
 {% endblock %}

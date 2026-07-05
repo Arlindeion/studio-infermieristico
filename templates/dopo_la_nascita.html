@@ -1,9 +1,49 @@
 {% extends "base.html" %}
-{% block titolo %}Dopo la nascita — Studio Infermieristico{% endblock %}
+{% block titolo %}Dopo la nascita — S.C. Studio Infermieristico{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna">
+<section class="pagina-interna pagina-consulenza">
+    <p class="eyebrow">I primi mesi insieme</p>
     <h2>Dopo la nascita</h2>
-    <p class="sottotitolo">Contenuto in arrivo. Torna presto!</p>
+    <p class="sottotitolo">Supporto pratico per cura del neonato, sonno, routine e serenità dei genitori.</p>
+
+    <div class="pagina-hero-img">
+        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Supporto dopo la nascita per mamma e neonato">
+    </div>
+
+    <div class="servizio-lista">
+        <div class="servizio-item">
+            <span>SN</span>
+            <div>
+                <h3>Sonno e routine</h3>
+                <p>Osserviamo insieme sonnellini, risvegli, rituale serale, ambiente del sonno e segnali di stanchezza.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>CU</span>
+            <div>
+                <h3>Cura quotidiana del neonato</h3>
+                <p>Bagnetto, cambio, cordone ombelicale, igiene, piccoli dubbi e segnali da monitorare nei primi mesi.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>FA</span>
+            <div>
+                <h3>Supporto alla famiglia</h3>
+                <p>Uno spazio per fare domande, ridurre l'ansia e costruire una gestione più tranquilla e sostenibile.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="nota-sicurezza">
+        <h3>Un supporto pratico, non un sostituto del pediatra</h3>
+        <p>La consulenza aiuta nella gestione quotidiana e nell'organizzazione familiare. In caso di febbre, difficoltà respiratoria, scarso accrescimento o sintomi importanti, è sempre necessario contattare il pediatra o i servizi sanitari.</p>
+    </div>
+
+    <section class="cta cta-interna">
+        <h2>Vuoi un aiuto nei primi mesi?</h2>
+        <p>Chiedi informazioni per capire quale supporto può essere più adatto alla tua famiglia.</p>
+        <a href="https://wa.me/393806317175" class="btn">Richiedi informazioni</a>
+    </section>
 </section>
 {% endblock %}

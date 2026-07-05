@@ -38,6 +38,7 @@ class Config:
     # configurato, il sito funziona comunque: semplicemente non crea eventi.
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID')
+    GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID')
 
 class DevelopmentConfig(Config):
     """Configurazione di sviluppo."""
@@ -70,6 +71,7 @@ class TestingConfig(Config):
     GOOGLE_CALENDAR_ICS_URL = None
     GOOGLE_SERVICE_ACCOUNT_FILE = None
     GOOGLE_CALENDAR_ID = None
+    GOOGLE_ANALYTICS_ID = None
 
 config = {
     'development': DevelopmentConfig,

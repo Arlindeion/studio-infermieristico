@@ -103,6 +103,8 @@ GOOGLE_SERVICE_ACCOUNT_FILE=percorso/al/file-chiave-service-account.json
 
 GOOGLE_CALENDAR_ID=id_del_calendario_google
 
+GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+
 Per generare una SECRET_KEY sicura:
 
 ```bash

@@ -1,4 +1,5 @@
 import logging
+import json
 import re
 import urllib.request
 import urllib.error
@@ -79,9 +80,21 @@ talisman = Talisman(
     content_security_policy={
         'default-src': "'self'",
         'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        'script-src': ["'self'", "https://w.behold.so"],
-        'connect-src': ["'self'", "https://feeds.behold.so"],
-        'img-src': ["'self'", "data:", "https://cdn2.behold.pictures", "https://*.cdninstagram.com"],
+        'script-src': ["'self'", "https://w.behold.so", "https://www.googletagmanager.com"],
+        'connect-src': [
+            "'self'",
+            "https://feeds.behold.so",
+            "https://www.google-analytics.com",
+            "https://region1.google-analytics.com",
+            "https://analytics.google.com",
+        ],
+        'img-src': [
+            "'self'",
+            "data:",
+            "https://cdn2.behold.pictures",
+            "https://*.cdninstagram.com",
+            "https://www.google-analytics.com",
+        ],
         'media-src': ["'self'", "https://*.cdninstagram.com"],
         'font-src': ["'self'", "https://fonts.gstatic.com"],
     },
@@ -90,6 +103,13 @@ talisman = Talisman(
     session_cookie_http_only=True,
     session_cookie_samesite='Lax',
 )
+
+
+@app.context_processor
+def inject_tracking_config():
+    return {
+        'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID')
+    }
 
 
 # ─── COSTANTI ───
@@ -106,6 +126,41 @@ SERVIZI_VALIDI = [
 ]
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
+STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
+
+CORSI_ADMIN_TIPI = {
+    'bls-d': {
+        'label': 'BLS-D',
+        'titolo': 'BLS-D',
+        'durata_ore': 4,
+    },
+    'disostruzione-pediatrica': {
+        'label': 'Disostruzione pediatrica',
+        'titolo': 'Disostruzione pediatrica',
+        'durata_ore': 2,
+    },
+    'accompagnamento-nascita': {
+        'label': 'Corso di accompagnamento alla nascita',
+        'titolo': 'Corso di accompagnamento alla nascita',
+        'durata_ore': 2,
+    },
+    'laboratorio-infanzia': {
+        'label': "Laboratorio per l'infanzia",
+        'titolo': "Laboratorio per l'infanzia",
+        'durata_ore': 2,
+    },
+}
+
+CORSI_ISCRIVIBILI = {
+    'disostruzione-pediatrica': {
+        'titolo': 'Corso di Disostruzione Pediatrica',
+        'data_options': ['16/07/2026'],
+        'partecipazione_options': ['Singolo 34 euro', 'Coppia 60 euro'],
+    },
+    'accompagnamento-nascita': {
+        'titolo': 'Corso di accompagnamento alla nascita',
+    },
+}
 
 # Slot orari prenotabili (durata 30 minuti ciascuno). È la stessa lista
 # mostrata nei menu a tendina di prenota.html e modifica_appuntamento.html.
@@ -115,6 +170,7 @@ ORARI_DISPONIBILI = [
     '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
 ]
 DURATA_SLOT_MINUTI = 30
+DURATA_CORSO_DEFAULT_ORE = 2
 FESTIVI_FISSI = {
     (1, 1),    # Capodanno
     (1, 6),    # Epifania
@@ -357,6 +413,44 @@ def _corpo_evento_da_appuntamento(appuntamento):
     }
 
 
+def _corpo_evento_da_corso(corso):
+    """Costruisce il corpo dell'evento Google Calendar a partire da un Corso."""
+    giorno = datetime.strptime(corso.data, '%Y-%m-%d').date()
+    descrizione = corso.descrizione or 'Nessuna descrizione'
+    durata_ore = corso.durata_ore or DURATA_CORSO_DEFAULT_ORE
+    corpo = {
+        'summary': f'Corso: {corso.titolo}',
+        'description': f'{descrizione}\n\n(Corso inserito dall\'area admin del sito web)',
+    }
+    if corso.luogo:
+        corpo['location'] = corso.luogo
+
+    if corso.ora:
+        ora, minuto = map(int, corso.ora.split(':'))
+        inizio = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
+        fine = inizio + timedelta(hours=durata_ore)
+        corpo['start'] = {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'}
+        corpo['end'] = {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'}
+    else:
+        corpo['start'] = {'date': giorno.isoformat()}
+        corpo['end'] = {'date': (giorno + timedelta(days=1)).isoformat()}
+
+    return corpo
+
+
+def _durata_corso_da_form(valore, tipo_corso):
+    durata_default = CORSI_ADMIN_TIPI.get(tipo_corso, {}).get('durata_ore', DURATA_CORSO_DEFAULT_ORE)
+    if not valore:
+        return durata_default
+    try:
+        durata = float(valore.replace(',', '.'))
+    except ValueError:
+        return durata_default
+    if durata <= 0 or durata > 12:
+        return durata_default
+    return durata
+
+
 def crea_o_aggiorna_evento_calendario(appuntamento):
     """Crea l'evento su Google Calendar per un appuntamento appena confermato,
     oppure aggiorna orario/contenuto se esiste già (es. dopo uno spostamento).
@@ -389,6 +483,37 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
         logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar: {e}', exc_info=True)
 
 
+def crea_o_aggiorna_evento_calendario_corso(corso):
+    """Crea o aggiorna l'evento Google Calendar collegato a un corso admin.
+    Non blocca mai l'area admin: eventuali errori vengono solo loggati."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id:
+        logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
+        return
+    if servizio is None:
+        return
+
+    corpo = _corpo_evento_da_corso(corso)
+    try:
+        if corso.google_event_id:
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=corso.google_event_id,
+                body=corpo
+            ).execute()
+            logger.info(f'>>> Evento Google Calendar aggiornato per corso {corso.id}.')
+        else:
+            evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            corso.google_event_id = evento_creato.get('id')
+            db.session.commit()
+            logger.info(f'>>> Evento Google Calendar creato per corso {corso.id}.')
+    except HttpError as e:
+        logger.error(f'>>> Errore nella scrittura su Google Calendar per corso {corso.id}: {e}', exc_info=True)
+    except Exception as e:
+        logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar per corso: {e}', exc_info=True)
+
+
 def elimina_evento_calendario(appuntamento):
     """Elimina l'evento Google Calendar collegato a un appuntamento (se esiste),
     ad esempio quando l'appuntamento viene annullato."""
@@ -408,6 +533,25 @@ def elimina_evento_calendario(appuntamento):
         logger.error(f'>>> Errore imprevisto nell\'eliminazione dell\'evento Google Calendar: {e}', exc_info=True)
     finally:
         appuntamento.google_event_id = None
+        db.session.commit()
+
+
+def elimina_evento_calendario_corso(corso):
+    """Elimina l'evento Google Calendar collegato a un corso (se esiste)."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None or not corso.google_event_id:
+        return
+
+    try:
+        servizio.events().delete(calendarId=calendar_id, eventId=corso.google_event_id).execute()
+    except HttpError as e:
+        if getattr(e, 'status_code', None) not in (404, 410):
+            logger.error(f'>>> Errore nell\'eliminazione dell\'evento Google Calendar per corso {corso.id}: {e}', exc_info=True)
+    except Exception as e:
+        logger.error(f'>>> Errore imprevisto nell\'eliminazione dell\'evento Google Calendar per corso: {e}', exc_info=True)
+    finally:
+        corso.google_event_id = None
         db.session.commit()
 
 
@@ -439,11 +583,40 @@ class Appuntamento(db.Model):
 class Corso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titolo = db.Column(db.String(200), nullable=False)
+    tipo = db.Column(db.String(100), nullable=True)
     descrizione = db.Column(db.Text, nullable=True)
     data = db.Column(db.String(20), nullable=False)
     ora = db.Column(db.String(10), nullable=True)
     luogo = db.Column(db.String(200), nullable=True)
+    durata_ore = db.Column(db.Float, default=DURATA_CORSO_DEFAULT_ORE, nullable=False)
     creato_il = db.Column(db.DateTime, default=datetime.now)
+    google_event_id = db.Column(db.String(255), nullable=True)
+
+
+class IscrizioneCorso(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    corso_tipo = db.Column(db.String(80), nullable=False)
+    corso_titolo = db.Column(db.String(200), nullable=False)
+    nome = db.Column(db.String(100), nullable=False)
+    telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=True)
+    codice_fiscale = db.Column(db.String(32), nullable=False)
+    data_corso = db.Column(db.String(20), nullable=True)
+    partecipazione = db.Column(db.String(100), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    dati_extra = db.Column(db.Text, nullable=True)
+    consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_immagini = db.Column(db.Boolean, default=False, nullable=False)
+    stato = db.Column(db.String(20), default='Nuova', nullable=False)
+    creato_il = db.Column(db.DateTime, default=datetime.now)
+
+    def extra_dict(self):
+        if not self.dati_extra:
+            return {}
+        try:
+            return json.loads(self.dati_extra)
+        except json.JSONDecodeError:
+            return {}
 
 
 @login_manager.user_loader
@@ -571,6 +744,30 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
 
 
+def invia_email_nuova_iscrizione(iscrizione):
+    """Invia email di alert all'amministratore quando arriva una richiesta di iscrizione corso."""
+    try:
+        logger.info('>>> Invio email alert nuova iscrizione corso...')
+        msg = Message(
+            subject=f'Nuova iscrizione corso - {iscrizione.corso_titolo}',
+            recipients=['sc.studioinfermieristico@gmail.com'],
+            body=(
+                f'Hai ricevuto una nuova richiesta di iscrizione corso.\n\n'
+                f'Corso:    {iscrizione.corso_titolo}\n'
+                f'Nome:     {iscrizione.nome}\n'
+                f'Telefono: {iscrizione.telefono}\n'
+                f'Email:    {iscrizione.email or "Non indicata"}\n'
+                f'Data:     {iscrizione.data_corso or "Da definire"}\n'
+                f'Tipo:     {iscrizione.partecipazione or "Non indicato"}\n\n'
+                f'Accedi all\'area admin per gestire la richiesta.'
+            )
+        )
+        mail.send(msg)
+        logger.info('>>> Email alert iscrizione corso inviata con successo!')
+    except Exception as e:
+        logger.error(f'>>> Errore invio email alert iscrizione corso: {e}', exc_info=True)
+
+
 def invia_email_ricordo_24h(appuntamento):
     """Invia email di promemoria 24 ore prima dell'appuntamento."""
     try:
@@ -685,6 +882,152 @@ def dopo_la_nascita():
 @app.route('/consulenze-online')
 def consulenze_online():
     return render_template('consulenze_online.html')
+
+
+def _email_valida(email):
+    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) is not None
+
+
+def _telefono_valido(telefono):
+    return re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono) is not None
+
+
+def _render_iscrizione_con_errore(corso_tipo, messaggio):
+    flash(messaggio, 'error')
+    return render_template(
+        'iscrizione_corso.html',
+        corso_tipo=corso_tipo,
+        corso=CORSI_ISCRIVIBILI[corso_tipo],
+        form_data=request.form
+    )
+
+
+@app.route('/iscrizione-corsi/<corso_tipo>', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def iscrizione_corso(corso_tipo):
+    if corso_tipo not in CORSI_ISCRIVIBILI:
+        abort(404)
+
+    corso = CORSI_ISCRIVIBILI[corso_tipo]
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            return _render_iscrizione_con_errore(corso_tipo, 'Richiesta non valida. Riprova.')
+
+        nome = request.form.get('nome', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        codice_fiscale = request.form.get('codice_fiscale', '').strip()
+        extra = {}
+        data_corso = request.form.get('data_corso', '').strip()
+        partecipazione = request.form.get('partecipazione', '').strip()
+        consenso_privacy = request.form.get('consenso_privacy') in ['si', 'ACCONSENTO', 'on']
+        consenso_immagini = request.form.get('consenso_immagini') == 'ACCONSENTO'
+
+        if not nome or len(nome) > 100:
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.')
+        if not codice_fiscale or len(codice_fiscale) > 32:
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il codice fiscale.')
+        if not telefono or not _telefono_valido(telefono):
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un numero di telefono valido.')
+        if email and not _email_valida(email):
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.')
+
+        if corso_tipo == 'disostruzione-pediatrica':
+            if partecipazione not in corso['partecipazione_options']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona se partecipi da solo/a o in coppia.')
+            if data_corso not in corso['data_options']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una data corso valida.')
+
+            nome_secondo = request.form.get('nome_secondo_partecipante', '').strip()
+            cf_secondo = request.form.get('codice_fiscale_secondo_partecipante', '').strip()
+            if partecipazione == 'Coppia 60 euro' and (not nome_secondo or not cf_secondo):
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Per la partecipazione in coppia inserisci nome e codice fiscale del secondo partecipante.'
+                )
+
+            dichiarazioni = {
+                'scopo_informativo': request.form.get('scopo_informativo') == 'si',
+                'no_certificazione': request.form.get('no_certificazione') == 'si',
+                'buono_stato_salute': request.form.get('buono_stato_salute') == 'si',
+            }
+            if not all(dichiarazioni.values()):
+                return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
+            if not consenso_privacy:
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+
+            extra = {
+                'nome_secondo_partecipante': nome_secondo,
+                'codice_fiscale_secondo_partecipante': cf_secondo,
+                **dichiarazioni,
+            }
+
+        elif corso_tipo == 'accompagnamento-nascita':
+            required_fields = {
+                'data_nascita': 'Inserisci la data di nascita.',
+                'luogo_nascita': 'Inserisci il luogo di nascita.',
+                'indirizzo': 'Inserisci l\'indirizzo di residenza.',
+                'citta': 'Inserisci la città.',
+                'provincia': 'Inserisci la provincia.',
+                'cap': 'Inserisci il CAP.',
+                'data_presunta_parto': 'Inserisci la data presunta del parto.',
+                'settimana_gravidanza': 'Inserisci la settimana di gravidanza attuale.',
+            }
+            for field_name, error_message in required_fields.items():
+                if not request.form.get(field_name, '').strip():
+                    return _render_iscrizione_con_errore(corso_tipo, error_message)
+            if not consenso_privacy:
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi acconsentire al trattamento dei dati personali.')
+            if request.form.get('consenso_immagini') not in ['ACCONSENTO', 'NON ACCONSENTO']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per l\'autorizzazione immagini.')
+            if request.form.get('conferma_finale') != 'on':
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
+
+            extra = {
+                'data_nascita': request.form.get('data_nascita', '').strip(),
+                'luogo_nascita': request.form.get('luogo_nascita', '').strip(),
+                'indirizzo': request.form.get('indirizzo', '').strip(),
+                'citta': request.form.get('citta', '').strip(),
+                'provincia': request.form.get('provincia', '').strip(),
+                'cap': request.form.get('cap', '').strip(),
+                'data_presunta_parto': request.form.get('data_presunta_parto', '').strip(),
+                'settimana_gravidanza': request.form.get('settimana_gravidanza', '').strip(),
+                'gravidanza_regolare': request.form.get('gravidanza_regolare', '').strip(),
+                'nome_partner': request.form.get('nome_partner', '').strip(),
+                'telefono_partner': request.form.get('telefono_partner', '').strip(),
+            }
+
+        iscrizione = IscrizioneCorso(
+            corso_tipo=corso_tipo,
+            corso_titolo=corso['titolo'],
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            data_corso=data_corso,
+            partecipazione=partecipazione,
+            note=request.form.get('note', '').strip(),
+            dati_extra=json.dumps(extra, ensure_ascii=False),
+            consenso_privacy=consenso_privacy,
+            consenso_immagini=consenso_immagini,
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        invia_email_nuova_iscrizione(iscrizione)
+        return redirect(url_for('conferma_iscrizione_corso'))
+
+    return render_template('iscrizione_corso.html', corso_tipo=corso_tipo, corso=corso, form_data={})
+
+
+@app.route('/iscrizione-corsi')
+def iscrizione_corsi():
+    return render_template('iscrizione_corsi.html')
+
+
+@app.route('/iscrizione-corsi/conferma')
+def conferma_iscrizione_corso():
+    return render_template('conferma_iscrizione_corso.html')
 
 
 @app.route('/prenota', methods=['GET', 'POST'])
@@ -894,9 +1237,14 @@ def admin():
             appuntamenti = []
 
     corsi = Corso.query.order_by(Corso.data).all()
+    iscrizioni_corsi = IscrizioneCorso.query.order_by(IscrizioneCorso.creato_il.desc()).all()
+    iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
     return render_template('admin.html',
                            appuntamenti=appuntamenti,
                            corsi=corsi,
+                           corsi_admin_tipi=CORSI_ADMIN_TIPI,
+                           iscrizioni_corsi=iscrizioni_corsi,
+                           iscrizioni_nuove_count=iscrizioni_nuove_count,
                            filtro=filtro,
                            in_attesa_count=in_attesa_count)
 
@@ -984,15 +1332,22 @@ def aggiungi_corso():
     if not token or token != request.form.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
+    tipo_corso = request.form.get('tipo', '').strip()
+    if tipo_corso not in CORSI_ADMIN_TIPI:
+        flash('Seleziona un tipo di corso valido.', 'error')
+        return redirect(url_for('admin'))
     corso = Corso(
         titolo=request.form['titolo'],
+        tipo=tipo_corso,
         descrizione=request.form.get('descrizione', ''),
         data=request.form['data'],
         ora=request.form.get('ora', ''),
-        luogo=request.form.get('luogo', '')
+        luogo=request.form.get('luogo', ''),
+        durata_ore=_durata_corso_da_form(request.form.get('durata_ore', ''), tipo_corso),
     )
     db.session.add(corso)
     db.session.commit()
+    crea_o_aggiorna_evento_calendario_corso(corso)
     return redirect(url_for('admin'))
 
 
@@ -1005,7 +1360,23 @@ def elimina_corso(id):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     corso = db.get_or_404(Corso, id)
+    elimina_evento_calendario_corso(corso)
     db.session.delete(corso)
+    db.session.commit()
+    return redirect(url_for('admin'))
+
+
+@app.route('/admin/iscrizione-corso/<int:id>/<stato>')
+@login_required
+def aggiorna_stato_iscrizione_corso(id, stato):
+    if stato not in STATI_ISCRIZIONE_VALIDI:
+        abort(400)
+    token = request.args.get('token')
+    if not token or token != session.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin'))
+    iscrizione = db.get_or_404(IscrizioneCorso, id)
+    iscrizione.stato = stato
     db.session.commit()
     return redirect(url_for('admin'))
 

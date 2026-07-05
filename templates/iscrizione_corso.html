@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block titolo %}Iscrizione — {{ corso.titolo }}{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna pagina-consulenza">
+    <p class="eyebrow">Iscrizione corso</p>
+    <h2>{{ corso.titolo }}</h2>
+
+    {% if corso_tipo == 'disostruzione-pediatrica' %}
+    <p class="sottotitolo">Il corso si terrà presso lo studio in Via C. D'Agnese 43 e avrà una durata di circa 2 ore / 2 ore e mezza, con prove pratiche su lattante e bambino e laboratorio sui tagli sicuri.</p>
+    {% else %}
+    <p class="sottotitolo">Un percorso multidisciplinare in 9 incontri, più un incontro post parto e un incontro offerto dalla Farmacia Russo. Ti ricontatteremo per confermare l'inserimento nel corso.</p>
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-message">{{ messages[0] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        <h3>Dati partecipante</h3>
+        <div class="form-gruppo">
+            <label for="nome">Nome e Cognome *</label>
+            <input type="text" id="nome" name="nome" value="{{ form_data.get('nome', '') }}" required>
+        </div>
+
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="codice_fiscale">Codice Fiscale *</label>
+                <input type="text" id="codice_fiscale" name="codice_fiscale" value="{{ form_data.get('codice_fiscale', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="telefono">Telefono *</label>
+                <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" required>
+            </div>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}">
+        </div>
+
+        {% if corso_tipo == 'disostruzione-pediatrica' %}
+        <h3>Dettagli corso</h3>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="partecipazione">Partecipi come *</label>
+                <select id="partecipazione" name="partecipazione" required>
+                    <option value="">-- Seleziona --</option>
+                    {% for option in corso.partecipazione_options %}
+                    <option value="{{ option }}" {{ 'selected' if form_data.get('partecipazione') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-gruppo">
+                <label for="data_corso">Data corso *</label>
+                <select id="data_corso" name="data_corso" required>
+                    <option value="">-- Seleziona --</option>
+                    {% for option in corso.data_options %}
+                    <option value="{{ option }}" {{ 'selected' if form_data.get('data_corso') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="nome_secondo_partecipante">Nome secondo partecipante</label>
+                <input type="text" id="nome_secondo_partecipante" name="nome_secondo_partecipante" value="{{ form_data.get('nome_secondo_partecipante', '') }}">
+            </div>
+            <div class="form-gruppo">
+                <label for="codice_fiscale_secondo_partecipante">Codice fiscale secondo partecipante</label>
+                <input type="text" id="codice_fiscale_secondo_partecipante" name="codice_fiscale_secondo_partecipante" value="{{ form_data.get('codice_fiscale_secondo_partecipante', '') }}">
+            </div>
+        </div>
+
+        <h3>Dichiarazioni e consensi</h3>
+        <div class="form-gruppo radio-stack">
+            <p>Partecipo al corso di disostruzione pediatrica a scopo informativo e pratico *</p>
+            <label><input type="radio" name="scopo_informativo" value="si" required> Si</label>
+            <label><input type="radio" name="scopo_informativo" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Sono consapevole che il corso non abilita a certificazioni professionali *</p>
+            <label><input type="radio" name="no_certificazione" value="si" required> Si</label>
+            <label><input type="radio" name="no_certificazione" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Dichiaro di essere in buono stato di salute per la partecipazione alle prove pratiche *</p>
+            <label><input type="radio" name="buono_stato_salute" value="si" required> Si</label>
+            <label><input type="radio" name="buono_stato_salute" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</p>
+            <label><input type="radio" name="consenso_privacy" value="si" required> Si</label>
+            <label><input type="radio" name="consenso_privacy" value="no"> No</label>
+        </div>
+        {% else %}
+        <h3>Dati anagrafici</h3>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="data_nascita">Data di nascita *</label>
+                <input type="date" id="data_nascita" name="data_nascita" value="{{ form_data.get('data_nascita', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="luogo_nascita">Luogo di nascita *</label>
+                <input type="text" id="luogo_nascita" name="luogo_nascita" value="{{ form_data.get('luogo_nascita', '') }}" required>
+            </div>
+        </div>
+
+        <div class="form-gruppo">
+            <label for="indirizzo">Indirizzo di residenza *</label>
+            <input type="text" id="indirizzo" name="indirizzo" value="{{ form_data.get('indirizzo', '') }}" required>
+        </div>
+
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="citta">Città *</label>
+                <input type="text" id="citta" name="citta" value="{{ form_data.get('citta', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="provincia">Provincia *</label>
+                <input type="text" id="provincia" name="provincia" value="{{ form_data.get('provincia', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="cap">CAP *</label>
+                <input type="text" id="cap" name="cap" value="{{ form_data.get('cap', '') }}" required>
+            </div>
+        </div>
+
+        <h3>Gravidanza</h3>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="data_presunta_parto">Data presunta del parto *</label>
+                <input type="date" id="data_presunta_parto" name="data_presunta_parto" value="{{ form_data.get('data_presunta_parto', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="settimana_gravidanza">Settimana di gravidanza attuale *</label>
+                <input type="text" id="settimana_gravidanza" name="settimana_gravidanza" value="{{ form_data.get('settimana_gravidanza', '') }}" required>
+            </div>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>La gravidanza sta procedendo regolarmente?</p>
+            <label><input type="radio" name="gravidanza_regolare" value="Si"> Si</label>
+            <label><input type="radio" name="gravidanza_regolare" value="No"> No</label>
+        </div>
+
+        <h3>Partner</h3>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="nome_partner">Nome del partner, se presente</label>
+                <input type="text" id="nome_partner" name="nome_partner" value="{{ form_data.get('nome_partner', '') }}">
+            </div>
+            <div class="form-gruppo">
+                <label for="telefono_partner">Telefono del partner</label>
+                <input type="tel" id="telefono_partner" name="telefono_partner" value="{{ form_data.get('telefono_partner', '') }}">
+            </div>
+        </div>
+
+        <h3>Privacy e immagini</h3>
+        <div class="form-gruppo radio-stack">
+            <p>Acconsento al trattamento dei dati personali per finalità organizzative e amministrative *</p>
+            <label><input type="radio" name="consenso_privacy" value="ACCONSENTO" required> Acconsento</label>
+            <label><input type="radio" name="consenso_privacy" value="NON ACCONSENTO"> Non acconsento</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative *</p>
+            <label><input type="radio" name="consenso_immagini" value="ACCONSENTO" required> Acconsento</label>
+            <label><input type="radio" name="consenso_immagini" value="NON ACCONSENTO"> Non acconsento</label>
+        </div>
+        <div class="form-gruppo">
+            <label class="privacy-label">
+                <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
+                <span class="privacy-text">Confermo di voler procedere con la richiesta di iscrizione al corso *</span>
+            </label>
+        </div>
+        {% endif %}
+
+        <div class="form-gruppo">
+            <label for="note">Note aggiuntive</label>
+            <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
+        </div>
+
+        <button type="submit" class="btn">Invia richiesta di iscrizione</button>
+    </form>
+</section>
+{% endblock %}

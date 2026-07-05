@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titolo %}Studio Infermieristico{% endblock %}</title>
+    {% if google_analytics_id %}
+    <meta name="google-analytics-id" content="{{ google_analytics_id }}">
+    {% endif %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,11 +28,31 @@
             </svg>
         </a>
         <a href="/chi-sono">CHI SONO</a>
-        <a href="/prima-della-nascita">PRIMA DELLA NASCITA</a>
-        <a href="/dopo-la-nascita">DOPO LA NASCITA</a>
-        <a href="/consulenze-online">CONSULENZE ONLINE</a>
-        <a href="/prestazioni-infermieristiche">PRESTAZIONI INFERMIERISTICHE</a>
-        <a href="/prenota" class="btn-prenota">PRENOTA ORA</a>
+        <div class="nav-dropdown">
+            <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
+                FAMIGLIE
+                <span class="nav-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="/prima-della-nascita">Prima della nascita</a>
+                <a href="/dopo-la-nascita">Dopo la nascita</a>
+                <a href="/consulenze-online">Consulenze online</a>
+            </div>
+        </div>
+        <div class="nav-dropdown">
+            <button type="button" class="nav-dropdown-toggle nav-corsi-toggle" aria-expanded="false">
+                CORSI
+                <span class="nav-chevron" aria-hidden="true"></span>
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="/iscrizione-corsi">Tutti i corsi</a>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
+                <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
+                <a href="/#calendario-corsi">Calendario corsi</a>
+            </div>
+        </div>
+        <a href="/prestazioni-infermieristiche">PRESTAZIONI</a>
+        <a href="/prenota" class="btn-prenota">PRENOTA PRESTAZIONE</a>
     </nav>
 
     <!-- HAMBURGER MOBILE -->
@@ -44,14 +67,23 @@
 <div class="nav-mobile" id="nav-mobile">
     <a href="/">🏠 Home</a>
     <a href="/chi-sono">Chi sono</a>
+    <span class="nav-mobile-label">Famiglie</span>
     <a href="/prima-della-nascita">Prima della nascita</a>
     <a href="/dopo-la-nascita">Dopo la nascita</a>
     <a href="/consulenze-online">Consulenze online</a>
+    <span class="nav-mobile-label">Corsi</span>
+    <a href="/iscrizione-corsi">Tutti i corsi</a>
+    <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
+    <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
+    <a href="/#calendario-corsi">Calendario corsi</a>
     <a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a>
-    <a href="/prenota" class="nav-mobile-prenota">Prenota ora</a>
+    <a href="/prenota" class="nav-mobile-prenota">Prenota prestazione</a>
 </div>
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
+{% if google_analytics_id %}
+<script src="{{ url_for('static', filename='js/analytics-consent.js') }}" defer></script>
+{% endif %}
 
     <main>
         {% block contenuto %}{% endblock %}
@@ -59,7 +91,7 @@
 
     <footer>
         <p>© 2026 S.C. Studio Infermieristico — Via C.D'AGNESE 43 MONTESILVANO (PE) — Tel. 3806317175</p>
-        <p><a href="/privacy" class="privacy-link">Informativa Privacy</a></p>
+        <p><a href="/privacy" class="privacy-link">Informativa Privacy</a>{% if google_analytics_id %} · <button type="button" class="cookie-preferences" id="cookie-preferences">Preferenze cookie</button>{% endif %}</p>
     </footer>
 
     <!-- WIDGET WHATSAPP -->
@@ -79,7 +111,7 @@
 <!-- BARRA STICKY MOBILE -->
 <div class="sticky-prenota">
     <a href="/prenota" class="sticky-prenota-btn">
-        📅 Prenota un appuntamento
+        Prenota prestazione
     </a>
 </div>
 </body>

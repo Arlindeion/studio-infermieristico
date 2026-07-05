@@ -1,9 +1,44 @@
 {% extends "base.html" %}
-{% block titolo %}Consulenze online — Studio Infermieristico{% endblock %}
+{% block titolo %}Consulenze online — S.C. Studio Infermieristico{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna">
-    <h2>Consulenze online</h2>
-    <p class="sottotitolo">Contenuto in arrivo. Torna presto!</p>
+<section class="pagina-interna pagina-consulenza">
+    <p class="eyebrow">A distanza, con la stessa cura</p>
+    <h2>Consulenze online per neogenitori</h2>
+    <p class="sottotitolo">Un confronto pratico per affrontare gestione quotidiana, routine, sonno e piccoli dubbi dei primi mesi anche da casa.</p>
+
+    <div class="pagina-hero-img">
+        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Consulenza online per neogenitori">
+    </div>
+
+    <div class="servizio-lista">
+        <div class="servizio-item">
+            <span>01</span>
+            <div>
+                <h3>Prima ascoltiamo la vostra situazione</h3>
+                <p>Età del bambino, routine attuale, dubbi, risvegli, poppate, pianto e obiettivi realistici per la famiglia.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>02</span>
+            <div>
+                <h3>Ricevi indicazioni personalizzate</h3>
+                <p>Ti guido con suggerimenti semplici su cura del neonato, sonno sicuro, organizzazione della giornata e piccoli cambiamenti da provare.</p>
+            </div>
+        </div>
+        <div class="servizio-item">
+            <span>03</span>
+            <div>
+                <h3>Esci con un piano chiaro</h3>
+                <p>Concordiamo pochi passi concreti, sostenibili e adatti alla vostra quotidianità.</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="cta cta-interna">
+        <h2>Vuoi capire se la consulenza online fa per te?</h2>
+        <p>Scrivimi per ricevere informazioni. Le iscrizioni e le consulenze avranno un sistema dedicato, separato dalla prenotazione delle prestazioni sanitarie.</p>
+        <a href="https://wa.me/393806317175" class="btn">Richiedi informazioni</a>
+    </section>
 </section>
 {% endblock %}

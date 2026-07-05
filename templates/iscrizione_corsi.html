@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titolo %}Iscrizione corsi — S.C. Studio Infermieristico{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna">
+    <p class="eyebrow">Iscrizioni corsi</p>
+    <h2>Scegli il corso a cui vuoi partecipare</h2>
+    <p class="sottotitolo">Le richieste vengono raccolte direttamente dal sito e saranno gestite dall'area admin.</p>
+
+    <div class="percorsi-grid">
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di disostruzione pediatrica">
+            <div>
+                <h3>Corso di Disostruzione Pediatrica</h3>
+                <p>Prove pratiche su lattante e bambino, laboratorio sui tagli sicuri e indicazioni per prevenire il soffocamento nella vita quotidiana.</p>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Compila richiesta</a>
+            </div>
+        </article>
+        <article class="percorso-card percorso-evidenza">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di accompagnamento alla nascita">
+            <div>
+                <h3>Corso di accompagnamento alla nascita</h3>
+                <p>Percorso multidisciplinare in presenza per gravidanza, nascita, post parto e primi giorni con il neonato.</p>
+                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Compila richiesta</a>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}
