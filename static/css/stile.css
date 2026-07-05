@@ -115,10 +115,6 @@ nav a:hover,
     transform: rotate(225deg) translateY(-1px);
 }
 
-.nav-corsi-toggle {
-    color: #fff7ef;
-}
-
 .nav-dropdown-menu {
     position: absolute;
     top: calc(100% + 0.55rem);
@@ -459,9 +455,28 @@ nav a:hover,
 }
 
 .percorso-card {
+    position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 100%;
+    background:
+        linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 250, 246, 0.94)),
+        var(--avorio);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.percorso-card::before {
+    content: '';
+    display: block;
+    height: 5px;
+    background: linear-gradient(90deg, var(--verde-salvia), var(--rosa-antico));
+}
+
+.percorso-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(143, 166, 133, 0.34);
+    box-shadow: var(--ombra-soft);
 }
 
 .percorso-card img {
@@ -472,10 +487,27 @@ nav a:hover,
 }
 
 .percorso-card div {
-    padding: 1.3rem;
+    padding: 1.35rem;
     display: flex;
     flex: 1;
     flex-direction: column;
+}
+
+.percorso-tag {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--verde-chiaro);
+    color: var(--verde-scuro);
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
 }
 
 .percorso-evidenza {
@@ -505,6 +537,15 @@ nav a:hover,
     border-bottom: 1px solid rgba(143, 166, 133, 0.18);
 }
 
+.home-compact-band {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.92fr);
+    gap: 1.5rem;
+    align-items: stretch;
+    padding: 2.7rem 2rem;
+}
+
 .metodo-testo,
 .metodo-lista {
     max-width: 540px;
@@ -512,6 +553,19 @@ nav a:hover,
 
 .metodo-testo {
     justify-self: end;
+}
+
+.home-compact-band .metodo-testo,
+.home-compact-band .metodo-lista {
+    max-width: none;
+}
+
+.home-compact-band .metodo-testo {
+    justify-self: stretch;
+    background: var(--verde-chiaro);
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    padding: 1.7rem;
 }
 
 .metodo-testo p {
@@ -522,6 +576,10 @@ nav a:hover,
 .metodo-lista {
     display: grid;
     gap: 1rem;
+}
+
+.metodo-lista-compatta {
+    margin-top: 1.4rem;
 }
 
 .metodo-lista div {
@@ -536,6 +594,14 @@ nav a:hover,
 
 .bio-preview-home {
     margin: 0;
+}
+
+.bio-compact-card {
+    background: var(--rosa-chiaro);
+    border: 1px solid rgba(208, 143, 134, 0.18);
+    border-radius: 8px;
+    padding: 1.7rem;
+    box-shadow: var(--ombra-card);
 }
 
 .pagina-hero-img {
@@ -630,7 +696,21 @@ section {
     text-align: center;
     font-size: 2rem;
     color: var(--verde-scuro);
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.servizi-preview > .sottotitolo {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+    text-align: center;
+}
+
+.servizi-azione {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: center;
+    margin-top: 2rem;
 }
 
 .cta {
@@ -1221,7 +1301,7 @@ footer p {
 .whatsapp-widget {
     position: fixed;
     bottom: 2rem;
-    left: 2rem;
+    right: 2rem;
     width: 60px;
     height: 60px;
     background: #25D366;
@@ -1242,7 +1322,7 @@ footer p {
 
 .whatsapp-tooltip {
     position: absolute;
-    left: 70px;
+    right: 70px;
     background: #2c3e50;
     color: white;
     padding: 0.5rem 0.9rem;
@@ -1258,11 +1338,11 @@ footer p {
 .whatsapp-tooltip::before {
     content: '';
     position: absolute;
-    right: 100%;
+    left: 100%;
     top: 50%;
     transform: translateY(-50%);
     border: 6px solid transparent;
-    border-right-color: #2c3e50;
+    border-left-color: #2c3e50;
 }
 
 .whatsapp-widget:hover .whatsapp-tooltip {
@@ -1356,17 +1436,6 @@ footer p {
     font-size: 0.9rem;
 }
 
-.nav-home {
-    display: flex;
-    align-items: center;
-    opacity: 0.9;
-    transition: opacity 0.2s;
-}
-
-.nav-home:hover {
-    opacity: 0.6;
-}
-
 .logo-link {
     display: flex;
     align-items: center;
@@ -1387,7 +1456,7 @@ footer p {
 .sezione-instagram {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 4rem 2rem;
+    padding: 3rem 2rem 4rem;
     text-align: center;
 }
 
@@ -1724,7 +1793,8 @@ footer p {
     .percorsi-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    .metodo-consulenza {
+    .metodo-consulenza,
+    .home-compact-band {
         grid-template-columns: 1fr;
     }
     .metodo-testo,
@@ -1784,14 +1854,22 @@ footer p {
     }
     .problemi-grid article,
     .percorso-card div,
-    .metodo-lista div {
+    .metodo-lista div,
+    .home-compact-band .metodo-testo,
+    .bio-compact-card {
         padding: 1.2rem;
     }
     .percorsi-grid {
         grid-template-columns: 1fr;
     }
+    .home-compact-band {
+        padding: 2.5rem 1rem;
+    }
     .percorso-card img {
         height: 190px;
+    }
+    .servizi-azione {
+        flex-direction: column;
     }
     .pagina-consulenza .cta-interna {
         margin-left: -1rem;

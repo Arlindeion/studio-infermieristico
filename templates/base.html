@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=1.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=1.2">
 </head>
 <body>
 
@@ -22,37 +22,24 @@
 
     <!-- MENU DESKTOP -->
     <nav class="nav-desktop">
-        <a href="/" aria-label="Homepage" class="nav-home">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-        </a>
         <a href="/chi-sono">CHI SONO</a>
         <div class="nav-dropdown">
             <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
-                FAMIGLIE
+                PERCORSI
                 <span class="nav-chevron" aria-hidden="true"></span>
             </button>
             <div class="nav-dropdown-menu">
+                <a href="/iscrizione-corsi">Corsi e iscrizioni</a>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
+                <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
                 <a href="/prima-della-nascita">Prima della nascita</a>
                 <a href="/dopo-la-nascita">Dopo la nascita</a>
                 <a href="/consulenze-online">Consulenze online</a>
-            </div>
-        </div>
-        <div class="nav-dropdown">
-            <button type="button" class="nav-dropdown-toggle nav-corsi-toggle" aria-expanded="false">
-                CORSI
-                <span class="nav-chevron" aria-hidden="true"></span>
-            </button>
-            <div class="nav-dropdown-menu">
-                <a href="/iscrizione-corsi">Tutti i corsi</a>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
-                <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
                 <a href="/#calendario-corsi">Calendario corsi</a>
             </div>
         </div>
         <a href="/prestazioni-infermieristiche">PRESTAZIONI</a>
-        <a href="/prenota" class="btn-prenota">PRENOTA PRESTAZIONE</a>
+        <a href="/prenota" class="btn-prenota">PRENOTA</a>
     </nav>
 
     <!-- HAMBURGER MOBILE -->
@@ -65,19 +52,17 @@
 
 <!-- MENU MOBILE -->
 <div class="nav-mobile" id="nav-mobile">
-    <a href="/">🏠 Home</a>
     <a href="/chi-sono">Chi sono</a>
-    <span class="nav-mobile-label">Famiglie</span>
+    <span class="nav-mobile-label">Percorsi</span>
+    <a href="/iscrizione-corsi">Corsi e iscrizioni</a>
+    <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
+    <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
     <a href="/prima-della-nascita">Prima della nascita</a>
     <a href="/dopo-la-nascita">Dopo la nascita</a>
     <a href="/consulenze-online">Consulenze online</a>
-    <span class="nav-mobile-label">Corsi</span>
-    <a href="/iscrizione-corsi">Tutti i corsi</a>
-    <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
-    <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
     <a href="/#calendario-corsi">Calendario corsi</a>
     <a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a>
-    <a href="/prenota" class="nav-mobile-prenota">Prenota prestazione</a>
+    <a href="/prenota" class="nav-mobile-prenota">Prenota</a>
 </div>
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
@@ -111,7 +96,7 @@
 <!-- BARRA STICKY MOBILE -->
 <div class="sticky-prenota">
     <a href="/prenota" class="sticky-prenota-btn">
-        Prenota prestazione
+        Prenota
     </a>
 </div>
 </body>
