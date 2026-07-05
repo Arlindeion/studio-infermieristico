@@ -166,7 +166,7 @@ def orario_prenotabile(data_str, ora):
     if ora not in ORARI_DISPONIBILI or is_festivo(giorno):
         return False
 
-    if giorno.weekday() == 5 and ora > '12:00':
+    if giorno.weekday() == 5 and ora > '11:30':
         return False
 
     return True
@@ -182,7 +182,7 @@ def orari_non_prenotabili_per_chiusura(data_str):
         return set(ORARI_DISPONIBILI)
 
     if giorno.weekday() == 5:
-        return {ora for ora in ORARI_DISPONIBILI if ora > '12:00'}
+        return {ora for ora in ORARI_DISPONIBILI if ora > '11:30'}
 
     return set()
 

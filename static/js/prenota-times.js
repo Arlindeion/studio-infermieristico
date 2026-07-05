@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.getDay() === 6) {
             return Array.from(timeSelect.options)
                 .map(opzione => opzione.value)
-                .filter(ora => ora && ora > '12:00');
+                .filter(ora => ora && ora > '11:30');
         }
 
         return [];

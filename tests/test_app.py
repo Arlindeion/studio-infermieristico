@@ -134,7 +134,7 @@ def _csrf_prenota(client):
 
 
 def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(client):
-    """Domeniche e festivi devono bloccare tutti gli orari; il sabato solo dopo le 12:00."""
+    """Domeniche e festivi devono bloccare tutti gli orari; il sabato solo dopo le 11:30."""
     domenica = _prossimo_giorno_con_weekday(6).strftime('%Y-%m-%d')
     resp_domenica = client.get(f'/api/orari-occupati/{domenica}')
     assert set(resp_domenica.get_json()) == set(app_module.ORARI_DISPONIBILI)
@@ -145,7 +145,8 @@ def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(clie
     sabato = _prossimo_sabato_non_festivo().strftime('%Y-%m-%d')
     resp_sabato = client.get(f'/api/orari-occupati/{sabato}')
     orari_sabato = set(resp_sabato.get_json())
-    assert '12:00' not in orari_sabato
+    assert '11:30' not in orari_sabato
+    assert '12:00' in orari_sabato
     assert '12:30' in orari_sabato
     assert '15:00' in orari_sabato
 
