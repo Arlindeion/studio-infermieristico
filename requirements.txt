@@ -9,6 +9,8 @@ Flask-Login==0.6.3
 Flask-Mail==0.10.0
 Flask-SQLAlchemy==3.1.1
 flask-talisman==1.1.0
+google-api-python-client==2.198.0
+google-auth==2.55.1
 icalendar==7.2.0
 itsdangerous==2.2.0
 Jinja2==3.1.6

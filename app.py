@@ -13,6 +13,9 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 import icalendar
 import recurring_ical_events
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 load_dotenv()
 from config import config
 from flask_sqlalchemy import SQLAlchemy
@@ -215,6 +218,113 @@ def orari_occupati_da_calendario(data_str):
     return occupati
 
 
+# ─── SCRITTURA SU GOOGLE CALENDAR (account di servizio) ───
+#
+# Quando un appuntamento viene confermato dall'area admin, creiamo un evento
+# corrispondente sul calendario Google (lo stesso usato da Arzamed), così chi
+# controlla il calendario vede anche le prenotazioni arrivate dal sito.
+# Se l'appuntamento viene poi annullato o spostato, aggiorniamo/eliminiamo
+# anche l'evento, per restare sincronizzati nei due sensi.
+#
+# A differenza della lettura (che usa il feed iCal pubblico/segreto), la
+# scrittura richiede un vero accesso alle API di Google Calendar tramite un
+# account di servizio con permesso di modifica sul calendario.
+
+_servizio_calendario_cache = None
+
+
+def _ottieni_servizio_calendario():
+    """Restituisce un client autenticato per le API di Google Calendar, o None
+    se la scrittura su Google Calendar non è configurata o fallisce."""
+    global _servizio_calendario_cache
+    if _servizio_calendario_cache is not None:
+        return _servizio_calendario_cache
+
+    percorso_chiave = app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+    if not percorso_chiave:
+        return None
+
+    try:
+        credenziali = service_account.Credentials.from_service_account_file(
+            percorso_chiave,
+            scopes=['https://www.googleapis.com/auth/calendar']
+        )
+        _servizio_calendario_cache = build('calendar', 'v3', credentials=credenziali, cache_discovery=False)
+        return _servizio_calendario_cache
+    except Exception as e:
+        logger.error(f'>>> Errore nell\'autenticazione con Google Calendar: {e}', exc_info=True)
+        return None
+
+
+def _corpo_evento_da_appuntamento(appuntamento):
+    """Costruisce il corpo dell'evento Google Calendar a partire da un Appuntamento."""
+    ora, minuto = map(int, appuntamento.ora.split(':'))
+    giorno = datetime.strptime(appuntamento.data, '%Y-%m-%d').date()
+    inizio = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
+    fine = inizio + timedelta(minutes=DURATA_SLOT_MINUTI)
+
+    return {
+        'summary': f'{appuntamento.nome} {appuntamento.servizio}',
+        'description': (
+            f'Telefono: {appuntamento.telefono}\n'
+            f'Email: {appuntamento.email}\n'
+            f'Note: {appuntamento.note or "Nessuna"}\n'
+            f'(Prenotazione confermata dal sito web)'
+        ),
+        'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
+        'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+    }
+
+
+def crea_o_aggiorna_evento_calendario(appuntamento):
+    """Crea l'evento su Google Calendar per un appuntamento appena confermato,
+    oppure aggiorna orario/contenuto se esiste già (es. dopo uno spostamento).
+    Non blocca mai il flusso dell'admin: eventuali errori vengono solo loggati."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        return
+
+    corpo = _corpo_evento_da_appuntamento(appuntamento)
+    try:
+        if appuntamento.google_event_id:
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=appuntamento.google_event_id,
+                body=corpo
+            ).execute()
+        else:
+            evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            appuntamento.google_event_id = evento_creato.get('id')
+            db.session.commit()
+    except HttpError as e:
+        logger.error(f'>>> Errore nella scrittura su Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
+    except Exception as e:
+        logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar: {e}', exc_info=True)
+
+
+def elimina_evento_calendario(appuntamento):
+    """Elimina l'evento Google Calendar collegato a un appuntamento (se esiste),
+    ad esempio quando l'appuntamento viene annullato."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None or not appuntamento.google_event_id:
+        return
+
+    try:
+        servizio.events().delete(calendarId=calendar_id, eventId=appuntamento.google_event_id).execute()
+    except HttpError as e:
+        # Se l'evento è già stato cancellato manualmente su Google Calendar,
+        # l'API risponde 410/404: non è un errore su cui allarmarsi.
+        if getattr(e, 'status_code', None) not in (404, 410):
+            logger.error(f'>>> Errore nell\'eliminazione dell\'evento Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
+    except Exception as e:
+        logger.error(f'>>> Errore imprevisto nell\'eliminazione dell\'evento Google Calendar: {e}', exc_info=True)
+    finally:
+        appuntamento.google_event_id = None
+        db.session.commit()
+
+
 # ─── MODELLI DATABASE ───
 
 class Admin(UserMixin, db.Model):
@@ -234,6 +344,10 @@ class Appuntamento(db.Model):
     note = db.Column(db.Text, nullable=True)
     stato = db.Column(db.String(20), default='In attesa')
     creato_il = db.Column(db.DateTime, default=datetime.now)
+    # ID dell'evento creato su Google Calendar quando l'appuntamento viene
+    # confermato (None se non ancora confermato, o se la scrittura su
+    # Google Calendar non è configurata/è fallita).
+    google_event_id = db.Column(db.String(255), nullable=True)
 
 
 class Corso(db.Model):
@@ -714,8 +828,10 @@ def aggiorna_stato(id, stato):
     db.session.commit()
     if stato == 'Confermato':
         invia_email_conferma(appuntamento)
+        crea_o_aggiorna_evento_calendario(appuntamento)
     elif stato == 'Annullato':
         invia_email_annullamento(appuntamento)
+        elimina_evento_calendario(appuntamento)
     return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
 
 
@@ -734,6 +850,7 @@ def modifica_appuntamento(id):
         appuntamento.stato = 'Confermato'
         db.session.commit()
         invia_email_spostamento(appuntamento)
+        crea_o_aggiorna_evento_calendario(appuntamento)
         return redirect(url_for('admin', filtro='in_attesa'))
     return render_template('modifica_appuntamento.html', a=appuntamento)
 

@@ -1,5 +1,15 @@
 .env
+.DS_Store
+**/.DS_Store
+*.log
 venv/
 .venv/
 __pycache__/
+instance/
+.pytest_cache/
 *.db
+*.sqlite
+*.sqlite3
+sito-sc-studio-infermieristico-c02624e175e1.json
+*service-account*.json
+*google*service*.json

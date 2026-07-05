@@ -99,6 +99,10 @@ MAIL_PASSWORD=app_password_gmail_16_caratteri
 
 GOOGLE_CALENDAR_ICS_URL=indirizzo_segreto_ical_del_calendario_arzamed
 
+GOOGLE_SERVICE_ACCOUNT_FILE=percorso/al/file-chiave-service-account.json
+
+GOOGLE_CALENDAR_ID=id_del_calendario_google
+
 Per generare una SECRET_KEY sicura:
 
 ```bash

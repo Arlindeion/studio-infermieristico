@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 import icalendar
+from unittest.mock import MagicMock, patch
 from datetime import date, datetime
 
 # Assicurarsi che l'applicazione possa essere importata
@@ -195,6 +196,142 @@ def test_prenotazione_rifiutata_se_occupata_su_calendario(client, calendario_fin
     assert 'non è più disponibile' in resp.text
     with flask_app.app_context():
         assert Appuntamento.query.count() == 0
+
+
+# ─── Scrittura su Google Calendar (conferma/spostamento/annullamento) ───
+
+def _login_admin(client):
+    """Helper: garantisce che esista un admin, effettua il login e restituisce
+    un token CSRF valido per le azioni successive nell'area admin.
+
+    Nota: il token CSRF usato per il login viene "consumato" (rimosso dalla
+    sessione) dal server durante il controllo del login stesso, quindi non è
+    riutilizzabile per le richieste successive: ne va letto uno nuovo dopo
+    il login, ricaricando una pagina che lo rigeneri (es. /admin).
+    """
+    import re
+    from werkzeug.security import generate_password_hash
+
+    with flask_app.app_context():
+        if not Admin.query.filter_by(username='admin').first():
+            db.session.add(Admin(username='admin', password=generate_password_hash('cambiami123')))
+            db.session.commit()
+
+    resp = client.get('/admin/login')
+    token_login = re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+    client.post('/admin/login', data={'username': 'admin', 'password': 'cambiami123', '_csrf_token': token_login})
+
+    resp = client.get('/admin')
+    with client.session_transaction() as sess:
+        token_azioni = sess.get('_csrf_token')
+    assert token_azioni, 'Login admin fallito: impossibile ottenere un token CSRF valido.'
+    return token_azioni
+
+
+@pytest.fixture
+def google_calendar_scrittura_finto(app):
+    """Configura la scrittura su Google Calendar e sostituisce il client API
+    reale con un mock, per verificare le chiamate senza contattare Google."""
+    app_module.app.config['GOOGLE_CALENDAR_ID'] = 'finto@group.calendar.google.com'
+    app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = '/percorso/finto/service-account.json'
+    mock_servizio = MagicMock()
+    app_module._servizio_calendario_cache = mock_servizio
+    yield mock_servizio
+    app_module.app.config['GOOGLE_CALENDAR_ID'] = None
+    app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = None
+    app_module._servizio_calendario_cache = None
+
+
+def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_finto):
+    """Confermare un appuntamento deve creare un evento su Google Calendar e
+    salvarne l'ID sull'appuntamento."""
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events().insert().execute.return_value = {'id': 'evento-abc-123'}
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Lavaggio auricolare', data='2026-09-01', ora='10:00')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+
+    mock_servizio.events().insert.assert_called()
+    corpo_inviato = mock_servizio.events().insert.call_args.kwargs['body']
+    assert corpo_inviato['summary'] == 'Mario Rossi Lavaggio auricolare'
+
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.google_event_id == 'evento-abc-123'
+
+
+def test_annullamento_elimina_evento_da_calendario(client, google_calendar_scrittura_finto):
+    """Annullare un appuntamento già confermato deve eliminare l'evento da
+    Google Calendar e ripulire il riferimento salvato."""
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Test', data='2026-09-01', ora='10:00',
+                             stato='Confermato', google_event_id='evento-da-eliminare')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    client.get(f'/admin/aggiorna/{appt_id}/Annullato?token={csrf}')
+
+    mock_servizio.events().delete.assert_called_with(
+        calendarId='finto@group.calendar.google.com', eventId='evento-da-eliminare'
+    )
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.google_event_id is None
+
+
+def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura_finto):
+    """Spostare un appuntamento già collegato a un evento deve aggiornarlo
+    (patch) invece di crearne uno nuovo."""
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Test', data='2026-09-01', ora='10:00',
+                             stato='Confermato', google_event_id='evento-esistente')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    client.post(f'/admin/modifica/{appt_id}', data={
+        'data': '2026-09-02', 'ora': '11:00', '_csrf_token': csrf
+    })
+
+    mock_servizio.events().patch.assert_called_once()
+    kwargs = mock_servizio.events().patch.call_args.kwargs
+    assert kwargs['eventId'] == 'evento-esistente'
+    mock_servizio.events().insert.assert_not_called()
+
+
+def test_nessuna_chiamata_google_se_non_configurato(client):
+    """Se la scrittura su Google Calendar non è configurata, confermare un
+    appuntamento deve funzionare normalmente senza errori né chiamate API."""
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Test', data='2026-09-01', ora='10:00')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    resp = client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}', follow_redirects=True)
+    assert resp.status_code == 200
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.stato == 'Confermato'
+        assert aggiornato.google_event_id is None
 
 
 if __name__ == '__main__':

@@ -31,6 +31,12 @@ class Config:
     # Per quanti secondi tenere in cache il calendario scaricato, per non
     # interrogare Google Calendar ad ogni singola richiesta del sito.
     CALENDARIO_CACHE_SECONDI = int(os.environ.get('CALENDARIO_CACHE_SECONDI') or 300)
+    # Scrittura su Google Calendar: quando un appuntamento viene confermato
+    # dall'area admin, viene creato un evento su questo calendario tramite un
+    # account di servizio (permesso di modifica, non solo lettura). Se non
+    # configurato, il sito funziona comunque: semplicemente non crea eventi.
+    GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+    GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID')
 
 class DevelopmentConfig(Config):
     """Configurazione di sviluppo."""
@@ -51,10 +57,18 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     # Disabilita CSRF durante i test
     WTF_CSRF_ENABLED = False
+    # Disabilita il rate limiting durante i test: altrimenti, siccome i
+    # contatori di Flask-Limiter restano in memoria per tutta la durata del
+    # processo pytest (non si resettano da un test all'altro), una suite con
+    # più login/prenotazioni ravvicinate rischia di far scattare i limiti a
+    # metà test, causando fallimenti intermittenti indipendenti dal codice.
+    RATELIMIT_ENABLED = False
     # Email non inviate realmente durante i test
     MAIL_SUPPRESS_SEND = True
     # Durante i test non contattiamo mai Google Calendar
     GOOGLE_CALENDAR_ICS_URL = None
+    GOOGLE_SERVICE_ACCOUNT_FILE = None
+    GOOGLE_CALENDAR_ID = None
 
 config = {
     'development': DevelopmentConfig,
