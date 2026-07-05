@@ -306,7 +306,34 @@ section {
 
 .form-riga { display: flex; gap: 1.2rem; }
 .privacy { font-size: 0.8rem; color: #999; margin-bottom: 1.2rem; line-height: 1.5; }
+
+.privacy-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.form-gruppo .privacy-checkbox {
+    width: auto;
+    flex: 0 0 auto;
+    margin-top: 0.25rem;
+}
+
+.privacy-text {
+    flex: 1;
+}
+
 .form-prenotazione .btn { width: 100%; padding: 1rem; font-size: 1rem; }
+
+.form-prenotazione .btn-privacy-mancante {
+    background: #a7a19b;
+}
+
+.form-prenotazione .btn-privacy-mancante:hover {
+    background: #8f8984;
+}
 
 /* ─── CONFERMA ─── */
 .testo-centro { text-align: center; }

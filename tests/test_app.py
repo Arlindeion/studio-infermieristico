@@ -112,6 +112,60 @@ def test_holiday_flow(client):
     assert b'S.C. Studio Infermieristico' in resp.data  # adeguare in base al contenuto effettivo
 
 
+def _prossimo_giorno_con_weekday(weekday):
+    giorno = date.today()
+    giorni_da_aggiungere = (weekday - giorno.weekday()) % 7
+    if giorni_da_aggiungere == 0:
+        giorni_da_aggiungere = 7
+    return giorno + app_module.timedelta(days=giorni_da_aggiungere)
+
+
+def _prossimo_sabato_non_festivo():
+    giorno = _prossimo_giorno_con_weekday(5)
+    while app_module.is_festivo(giorno):
+        giorno += app_module.timedelta(days=7)
+    return giorno
+
+
+def _csrf_prenota(client):
+    import re
+    resp = client.get('/prenota')
+    return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(client):
+    """Domeniche e festivi devono bloccare tutti gli orari; il sabato solo dopo le 12:00."""
+    domenica = _prossimo_giorno_con_weekday(6).strftime('%Y-%m-%d')
+    resp_domenica = client.get(f'/api/orari-occupati/{domenica}')
+    assert set(resp_domenica.get_json()) == set(app_module.ORARI_DISPONIBILI)
+
+    resp_festivo = client.get('/api/orari-occupati/2099-12-25')
+    assert set(resp_festivo.get_json()) == set(app_module.ORARI_DISPONIBILI)
+
+    sabato = _prossimo_sabato_non_festivo().strftime('%Y-%m-%d')
+    resp_sabato = client.get(f'/api/orari-occupati/{sabato}')
+    orari_sabato = set(resp_sabato.get_json())
+    assert '12:00' not in orari_sabato
+    assert '12:30' in orari_sabato
+    assert '15:00' in orari_sabato
+
+
+def test_prenotazione_rifiutata_se_studio_chiuso(client):
+    """Il server deve rifiutare una prenotazione inviata in un giorno di chiusura."""
+    domenica = _prossimo_giorno_con_weekday(6).strftime('%Y-%m-%d')
+    token = _csrf_prenota(client)
+
+    resp = client.post('/prenota', data={
+        'nome': 'Mario Rossi', 'telefono': '333 1234567', 'email': 'mario@example.com',
+        'servizio': 'Medicazione semplice', 'data': domenica, 'ora': '10:00',
+        'consenso_privacy': 'on', '_csrf_token': token
+    })
+
+    assert 'studio è chiuso' in resp.text
+    with flask_app.app_context():
+        assert Appuntamento.query.count() == 0
+
+
 # ─── Integrazione Google Calendar (Arzamed) ───
 
 @pytest.fixture

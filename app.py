@@ -77,9 +77,11 @@ talisman = Talisman(
     app,
     content_security_policy={
         'default-src': "'self'",
-        'style-src': ["'self'"],
-        'script-src': ["'self'"],
-        'img-src': ["'self'", "data:"],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'script-src': ["'self'", "https://w.behold.so"],
+        'connect-src': ["'self'", "https://feeds.behold.so"],
+        'img-src': ["'self'", "data:", "https://cdn2.behold.pictures", "https://*.cdninstagram.com"],
+        'media-src': ["'self'", "https://*.cdninstagram.com"],
         'font-src': ["'self'"],
     },
     force_https=False,
@@ -112,8 +114,76 @@ ORARI_DISPONIBILI = [
     '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
 ]
 DURATA_SLOT_MINUTI = 30
+FESTIVI_FISSI = {
+    (1, 1),    # Capodanno
+    (1, 6),    # Epifania
+    (4, 25),   # Festa della Liberazione
+    (5, 1),    # Festa dei Lavoratori
+    (6, 2),    # Festa della Repubblica
+    (8, 15),   # Ferragosto
+    (11, 1),   # Ognissanti
+    (12, 8),   # Immacolata
+    (12, 25),  # Natale
+    (12, 26),  # Santo Stefano
+}
 
 FUSO_ORARIO = ZoneInfo('Europe/Rome')
+
+
+def calcola_pasqua(anno):
+    a = anno % 19
+    b = anno // 100
+    c = anno % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    mese = (h + l - 7 * m + 114) // 31
+    giorno = ((h + l - 7 * m + 114) % 31) + 1
+    return date(anno, mese, giorno)
+
+
+def is_festivo(giorno):
+    return (
+        giorno.weekday() == 6
+        or (giorno.month, giorno.day) in FESTIVI_FISSI
+        or giorno == calcola_pasqua(giorno.year) + timedelta(days=1)
+    )
+
+
+def orario_prenotabile(data_str, ora):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return False
+
+    if ora not in ORARI_DISPONIBILI or is_festivo(giorno):
+        return False
+
+    if giorno.weekday() == 5 and ora > '12:00':
+        return False
+
+    return True
+
+
+def orari_non_prenotabili_per_chiusura(data_str):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return set(ORARI_DISPONIBILI)
+
+    if is_festivo(giorno):
+        return set(ORARI_DISPONIBILI)
+
+    if giorno.weekday() == 5:
+        return {ora for ora in ORARI_DISPONIBILI if ora > '12:00'}
+
+    return set()
 
 # ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
 #
@@ -242,6 +312,7 @@ def _ottieni_servizio_calendario():
 
     percorso_chiave = app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     if not percorso_chiave:
+        logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_SERVICE_ACCOUNT_FILE mancante.')
         return None
 
     try:
@@ -282,7 +353,10 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
     Non blocca mai il flusso dell'admin: eventuali errori vengono solo loggati."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
-    if not calendar_id or servizio is None:
+    if not calendar_id:
+        logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
+        return
+    if servizio is None:
         return
 
     corpo = _corpo_evento_da_appuntamento(appuntamento)
@@ -293,10 +367,12 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
                 eventId=appuntamento.google_event_id,
                 body=corpo
             ).execute()
+            logger.info(f'>>> Evento Google Calendar aggiornato per appuntamento {appuntamento.id}.')
         else:
             evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
             appuntamento.google_event_id = evento_creato.get('id')
             db.session.commit()
+            logger.info(f'>>> Evento Google Calendar creato per appuntamento {appuntamento.id}.')
     except HttpError as e:
         logger.error(f'>>> Errore nella scrittura su Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
     except Exception as e:
@@ -680,6 +756,10 @@ def prenota():
             flash('Orario non valido. Seleziona un orario dalla lista.')
             return render_template('prenota.html', form_data=request.form)
 
+        if not orario_prenotabile(data_scelta, ora):
+            flash('Lo studio è chiuso nella data o nell\'orario selezionato. Scegli un altro appuntamento.')
+            return render_template('prenota.html', form_data=request.form)
+
         # Verifica che lo slot non sia già occupato (in DB o su Arzamed/Google
         # Calendar). Il form disabilita già questi orari via JavaScript, ma
         # questo controllo lato server evita doppie prenotazioni nel caso in
@@ -899,6 +979,8 @@ def orari_occupati(data):
     ).with_entities(Appuntamento.ora).all()
     # Converti la lista di tuple in una lista di stringhe
     orari = {ora for (ora,) in occupati}
+    # Aggiungi chiusure ricorrenti dello studio: domeniche, festivi e sabato pomeriggio
+    orari |= orari_non_prenotabili_per_chiusura(data)
     # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)
     orari |= orari_occupati_da_calendario(data)
     return jsonify(sorted(orari))
