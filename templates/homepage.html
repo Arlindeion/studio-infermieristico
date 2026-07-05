@@ -6,36 +6,58 @@
 <section class="hero-consulenze">
     <div class="hero-consulenze-testo">
         <p class="eyebrow">Studio infermieristico, corsi e consulenze</p>
-        <h1>Supporto sanitario e formazione pratica per famiglie, neogenitori e aziende</h1>
-        <p class="hero-lead">Prenota prestazioni infermieristiche, partecipa ai corsi in presenza o chiedi una consulenza personalizzata per affrontare nascita, cura del bambino e sicurezza con più consapevolezza.</p>
+        <h1>Cura pratica e sicurezza per famiglie e aziende</h1>
+        <p class="hero-lead">Prestazioni infermieristiche, corsi BLSD e disostruzione, accompagnamento alla nascita e consulenze per i primi mesi: un riferimento chiaro quando vuoi sapere cosa fare.</p>
         <div class="hero-actions">
-            <a href="/iscrizione-corsi" class="btn">Iscriviti a un corso</a>
+            <a href="#percorsi-principali" class="btn">Trova il percorso</a>
             <a href="/prenota" class="btn btn-secondaria">Prenota prestazione</a>
         </div>
         <div class="hero-trust">
             <span>Infermiera professionale</span>
-            <span>Prestazioni in studio e a domicilio</span>
-            <span>Corsi in studio o in azienda</span>
+            <span>Corsi in studio e in azienda</span>
+            <span>Consulenze online e in presenza</span>
+        </div>
+        <div class="hero-quick-paths" aria-label="Scelte rapide">
+            <a href="/prenota" class="hero-quick-path">
+                <span>01</span>
+                <strong>Prestazioni</strong>
+                <small>Per appuntamenti sanitari</small>
+            </a>
+            <a href="/iscrizione-corsi" class="hero-quick-path">
+                <span>02</span>
+                <strong>Corsi</strong>
+                <small>Per famiglie e aziende</small>
+            </a>
+            <a href="/consulenze-online" class="hero-quick-path">
+                <span>03</span>
+                <strong>Consulenze</strong>
+                <small>Per nascita e primi mesi</small>
+            </a>
         </div>
     </div>
     <div class="hero-consulenze-media">
         <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corsi e consulenze per famiglie e aziende">
+        <div class="hero-media-note">
+            <span>Dal dubbio alla pratica</span>
+            <strong>Risposte chiare, gesti sicuri</strong>
+        </div>
     </div>
 </section>
 
-<section class="percorsi-consulenza">
+<section class="percorsi-consulenza" id="percorsi-principali">
     <div class="section-heading">
         <p class="eyebrow">Percorsi principali</p>
-        <h2>Un solo punto di partenza per sicurezza, nascita, supporto e cura</h2>
+        <h2>Quattro modi concreti per sentirsi più preparati</h2>
+        <p>Corsi e consulenze hanno lo stesso spazio: scegli da dove partire, poi ti accompagno con indicazioni pratiche e realistiche.</p>
     </div>
     <div class="percorsi-grid">
         <article class="percorso-card percorso-evidenza">
             <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso BLSD in studio o in azienda">
             <div>
                 <span class="percorso-tag">Sicurezza</span>
-                <h3>Corso BLSD</h3>
-                <p>Formazione pratica sulle manovre di rianimazione e uso del defibrillatore, nello studio o direttamente in azienda.</p>
-                <a href="https://wa.me/393806317175" class="link-azione">Richiedi informazioni</a>
+                <h3>BLS-D</h3>
+                <p>Un corso operativo per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto.</p>
+                <a href="https://wa.me/393806317175" class="link-azione">Chiedi disponibilità</a>
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
@@ -43,26 +65,26 @@
             <div>
                 <span class="percorso-tag">Nascita</span>
                 <h3>Corso di accompagnamento alla nascita</h3>
-                <p>Un corso preparto in presenza per prepararsi alla nascita, al rientro a casa e ai primi giorni con il bambino.</p>
-                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi partecipazione</a>
+                <p>Un percorso in presenza per arrivare al parto e al rientro a casa con più strumenti, meno confusione e domande accolte.</p>
+                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Partecipa al percorso</a>
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
             <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di disostruzione pediatrica e tagli sicuri">
             <div>
-                <span class="percorso-tag">Famiglie</span>
+                <span class="percorso-tag">Primo soccorso</span>
                 <h3>Disostruzione pediatrica e tagli sicuri</h3>
-                <p>Incontro pratico in presenza per genitori, nonni e caregiver sulle manovre di disostruzione in età pediatrica.</p>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Iscriviti</a>
+                <p>Manovre, prevenzione e gestione dei piccoli incidenti domestici per genitori, nonni e caregiver.</p>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Iscriviti al corso</a>
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
             <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Consulenze per neogenitori">
             <div>
-                <span class="percorso-tag">Supporto</span>
+                <span class="percorso-tag">Primi mesi</span>
                 <h3>Consulenze neogenitori</h3>
-                <p>Supporto online o in studio su routine, sonno, cura del neonato e piccoli dubbi dei primi mesi.</p>
-                <a href="/consulenze-online" class="link-azione">Come funzionano</a>
+                <p>Uno spazio online o in studio per mettere ordine tra sonno, routine, cura del neonato e dubbi quotidiani.</p>
+                <a href="/consulenze-online" class="link-azione">Scopri il supporto</a>
             </div>
         </article>
     </div>
@@ -71,18 +93,21 @@
 <section class="home-compact-band">
     <div class="metodo-testo">
         <p class="eyebrow">Metodo</p>
-        <h2>Un approccio concreto, guidato da Selene</h2>
-        <p>Che si tratti di un corso, di una consulenza o di una prestazione infermieristica, l'obiettivo è rendere le persone più sicure: capire cosa osservare, cosa fare e quando chiedere aiuto.</p>
+        <h2>Meno teoria dispersiva, più sicurezza nella pratica</h2>
+        <p>Che si tratti di un corso, di una consulenza o di una prestazione infermieristica, lavoriamo su ciò che serve davvero: capire cosa osservare, cosa fare e quando chiedere aiuto.</p>
         <div class="metodo-lista metodo-lista-compatta">
             <div>
+                <span>1</span>
                 <strong>Ascolto</strong>
                 <p>Partiamo dal contesto: famiglia, azienda, gruppo, bisogni e obiettivi.</p>
             </div>
             <div>
+                <span>2</span>
                 <strong>Pratica guidata</strong>
                 <p>Spazio a esempi, domande, manovre e situazioni concrete.</p>
             </div>
             <div>
+                <span>3</span>
                 <strong>Prossimi passi</strong>
                 <p>Indicazioni chiare, priorità e azioni utili da portare a casa.</p>
             </div>
@@ -92,14 +117,14 @@
         <p class="eyebrow">Chi ti accompagna</p>
         <h2>Sono Selene Campetta, infermiera professionale</h2>
         <p>Offro assistenza infermieristica, corsi pratici e consulenze dedicate a famiglie, neogenitori e realtà aziendali che vogliono formarsi sulla sicurezza.</p>
-        <p>Puoi prenotare un appuntamento, chiedere informazioni su un corso in studio o valutare una formazione direttamente presso la tua azienda.</p>
+        <p>Il tono è semplice, il metodo è pratico: esci con indicazioni utilizzabili, senza sentirti giudicato o lasciato solo davanti ai dubbi.</p>
         <a href="/chi-sono" class="btn">Conosci Selene</a>
     </div>
 </section>
 
 <section class="sezione-calendario" id="calendario-corsi">
-    <h2>I miei corsi e aggiornamenti</h2>
-    <p class="sottotitolo">Formazione continua e appuntamenti dedicati alle famiglie.</p>
+    <h2>Prossimi incontri in calendario</h2>
+    <p class="sottotitolo">Date, corsi e appuntamenti formativi dedicati a famiglie e aziende.</p>
 
     <div class="calendario-wrapper">
         <div class="cal-header">
@@ -137,28 +162,28 @@
 <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
 
 <section class="servizi-preview">
-    <h2>Assistenza infermieristica</h2>
-    <p class="sottotitolo">Per iniezioni, medicazioni, parametri e assistenza domiciliare puoi prenotare direttamente online.</p>
+    <h2>Hai bisogno di una prestazione sanitaria?</h2>
+    <p class="sottotitolo">La prenotazione online resta dedicata alle prestazioni infermieristiche: scegli il servizio, invia la richiesta e attendi la conferma.</p>
     <div class="card-grid">
         <div class="card">
             <span>IN</span>
             <h3>Iniezioni e flebo</h3>
-            <p>Somministrazione di farmaci su prescrizione medica.</p>
+            <p>Somministrazione di farmaci su prescrizione, con attenzione a tempi e indicazioni ricevute.</p>
         </div>
         <div class="card">
             <span>ME</span>
             <h3>Medicazioni</h3>
-            <p>Gestione e trattamento di ferite, ulcere e lesioni.</p>
+            <p>Gestione di ferite, ulcere e lesioni con monitoraggio dell'evoluzione.</p>
         </div>
         <div class="card">
             <span>PA</span>
             <h3>Controllo parametri</h3>
-            <p>Misurazione pressione, glicemia, saturazione e altri parametri.</p>
+            <p>Misurazione di pressione, glicemia, saturazione e altri valori utili.</p>
         </div>
         <div class="card">
             <span>DO</span>
             <h3>Assistenza domiciliare</h3>
-            <p>Interventi direttamente a casa, su prenotazione.</p>
+            <p>Interventi a casa quando muoversi è complicato o poco pratico.</p>
         </div>
     </div>
     <div class="servizi-azione">
@@ -168,8 +193,8 @@
 </section>
 
 <section class="sezione-instagram">
-    <h2>Seguimi su Instagram</h2>
-    <p class="sottotitolo">Spunti, aggiornamenti e vita dello studio su @sc.studioinfermieristico</p>
+    <h2>Uno sguardo allo studio</h2>
+    <p class="sottotitolo">Aggiornamenti, spunti pratici e vita quotidiana su @sc.studioinfermieristico</p>
     <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
     <script src="{{ url_for('static', filename='js/behold-widget.js') }}"></script>
 </section>
