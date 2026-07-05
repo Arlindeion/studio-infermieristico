@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titolo %}FAQ — Domande frequenti | S.C. Studio Infermieristico{% endblock %}
+
+{% block contenuto %}
+
+<section class="pagina-interna faq-page">
+    <p class="eyebrow">Domande frequenti</p>
+    <h1>Risposte rapide su prenotazioni, corsi e consulenze</h1>
+    <p class="sottotitolo">Una guida pratica per capire cosa puoi prenotare online, come funzionano i corsi e quali informazioni servono allo studio.</p>
+
+    <div class="faq-list">
+        {% for item in faq_items %}
+        <article class="faq-item" id="{{ item.id }}">
+            <h2>{{ item.question }}</h2>
+            <p>{{ item.answer }}</p>
+            {% if item.map_embed_src %}
+            <div class="faq-map">
+                <iframe
+                    src="{{ item.map_embed_src }}"
+                    title="Mappa di S.C. Studio Infermieristico"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            {% endif %}
+            {% if item.link_href and item.link_text %}
+            <a href="{{ item.link_href }}" class="link-azione"{% if item.link_external %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ item.link_text }}</a>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+
+    <div class="faq-cta">
+        <div>
+            <p class="eyebrow">Hai ancora un dubbio?</p>
+            <h2>Scrivimi prima di prenotare</h2>
+            <p>Se non sai quale percorso scegliere o hai bisogno di chiarire una prestazione, puoi contattare lo studio direttamente.</p>
+        </div>
+        <a href="https://wa.me/393806317175" class="btn" target="_blank" rel="noopener noreferrer">Contatta lo studio</a>
+    </div>
+</section>
+
+{% endblock %}

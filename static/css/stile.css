@@ -2,6 +2,9 @@
 :root {
     --verde-salvia: #8FA685;
     --verde-scuro: #526F50;
+    --verde-header: #3F5A3D;
+    --verde-header-profondo: #334A33;
+    --verde-header-soft: #5D7A58;
     --verde-chiaro: #EEF5EA;
     --rosa-antico: #D08F86;
     --rosa-chiaro: #FFF0EC;
@@ -48,9 +51,9 @@ p {
 }
 
 header {
-    background: linear-gradient(100deg, rgba(82, 111, 80, 0.98), rgba(143, 166, 133, 0.95) 58%, rgba(208, 143, 134, 0.9));
+    background: linear-gradient(100deg, var(--verde-header-profondo), var(--verde-header) 58%, var(--verde-header-soft));
     backdrop-filter: blur(16px) saturate(1.08);
-    border-bottom: 1px solid rgba(255, 250, 246, 0.28);
+    border-bottom: 1px solid rgba(255, 250, 246, 0.18);
     padding: 0.45rem clamp(1rem, 3vw, 2.5rem);
     display: flex;
     align-items: center;
@@ -58,7 +61,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 8px 24px rgba(63, 52, 43, 0.12);
+    box-shadow: 0 8px 24px rgba(45, 64, 44, 0.18);
 }
 
 nav {
@@ -68,8 +71,8 @@ nav {
 }
 
 .nav-desktop {
-    background: rgba(255, 253, 249, 0.1);
-    border: 1px solid rgba(255, 253, 249, 0.18);
+    background: rgba(255, 253, 249, 0.08);
+    border: 1px solid rgba(255, 253, 249, 0.2);
     border-radius: 999px;
     padding: 0.28rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -77,10 +80,11 @@ nav {
 
 nav a,
 .nav-dropdown-toggle {
-    color: var(--bianco);
+    color: #fffdf9;
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.02em;
+    text-shadow: 0 1px 1px rgba(35, 49, 34, 0.16);
     transition: color 0.2s, opacity 0.2s, transform 0.2s;
 }
 
@@ -90,11 +94,28 @@ nav > a:not(.btn-prenota),
     padding: 0.58rem 0.8rem;
 }
 
+.nav-home-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+}
+
+.nav-home-link svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.85;
+}
+
 nav > a:not(.btn-prenota):hover,
 .nav-dropdown-toggle:hover,
 .nav-dropdown:focus-within .nav-dropdown-toggle,
 .nav-dropdown.aperto .nav-dropdown-toggle {
-    background: rgba(255, 253, 249, 0.13);
+    background: rgba(255, 253, 249, 0.14);
 }
 
 nav a:hover,
@@ -125,7 +146,7 @@ nav a:hover,
     position: relative;
     width: 1.15rem;
     height: 1.15rem;
-    border: 1px solid rgba(255, 253, 249, 0.5);
+    border: 1px solid rgba(255, 253, 249, 0.58);
     border-radius: 50%;
     transform: none;
     transition: transform 0.18s ease;
@@ -147,7 +168,7 @@ nav a:hover,
 .nav-dropdown:hover .nav-chevron,
 .nav-dropdown:focus-within .nav-chevron,
 .nav-dropdown.aperto .nav-chevron {
-    background: rgba(255, 253, 249, 0.12);
+    background: rgba(255, 253, 249, 0.16);
 }
 
 .nav-dropdown:hover .nav-chevron::before,
@@ -210,7 +231,7 @@ nav a:hover,
 
 .btn-prenota {
     background: #fffaf6;
-    color: var(--verde-scuro) !important;
+    color: var(--verde-header) !important;
     border: 1px solid rgba(255, 255, 255, 0.52);
     padding: 0.62rem 1.2rem;
     border-radius: 25px;
@@ -222,9 +243,9 @@ nav a:hover,
 }
 
 .btn-prenota:hover {
-    background: var(--rosa-antico) !important;
-    border-color: var(--rosa-antico);
-    color: var(--bianco) !important;
+    background: var(--rosa-chiaro) !important;
+    border-color: rgba(255, 240, 236, 0.9);
+    color: var(--verde-header-profondo) !important;
     opacity: 1 !important;
     transform: translateY(-1px);
 }
@@ -982,8 +1003,93 @@ section[id] {
 
 /* ─── PAGINE INTERNE ─── */
 .pagina-interna { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+.pagina-interna h1 { font-size: 2.4rem; color: var(--verde-scuro); line-height: 1.15; margin-bottom: 0.8rem; }
 .pagina-interna h2 { font-size: 2.1rem; color: var(--verde-scuro); margin-bottom: 0.5rem; }
 .sottotitolo { color: var(--grigio); margin-bottom: 2.5rem; font-size: 1rem; }
+
+.faq-page {
+    max-width: 1040px;
+}
+
+.faq-page > .sottotitolo {
+    max-width: 760px;
+}
+
+.faq-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.faq-item {
+    background: var(--avorio);
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: flex;
+    flex-direction: column;
+    padding: 1.45rem;
+    position: relative;
+}
+
+.faq-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--verde-header), var(--rosa-antico));
+    border-radius: 8px 8px 0 0;
+}
+
+.faq-item h2 {
+    font-size: 1.2rem;
+    line-height: 1.35;
+    margin-bottom: 0.7rem;
+}
+
+.faq-item p {
+    font-size: 0.96rem;
+    line-height: 1.75;
+}
+
+.faq-map {
+    border: 1px solid rgba(143, 166, 133, 0.22);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(79, 95, 69, 0.12);
+    height: 180px;
+    margin: 0.35rem 0 1rem;
+    overflow: hidden;
+}
+
+.faq-map iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.faq-cta {
+    align-items: center;
+    background: linear-gradient(135deg, rgba(238, 245, 234, 0.98), rgba(255, 240, 236, 0.72));
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    margin-top: 1.2rem;
+    padding: 1.5rem;
+}
+
+.faq-cta h2 {
+    font-size: 1.45rem;
+    margin-bottom: 0.45rem;
+}
+
+.faq-cta p:last-child {
+    margin-bottom: 0;
+}
 
 /* ─── SERVIZI LISTA ─── */
 .servizio-lista { display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 3rem; }
@@ -1929,7 +2035,7 @@ footer p {
 .nav-mobile {
     display: none;
     flex-direction: column;
-    background: var(--verde-salvia);
+    background: linear-gradient(180deg, var(--verde-header-profondo), var(--verde-header));
     position: sticky;
     top: 0;
     z-index: 99;
@@ -1970,10 +2076,26 @@ footer p {
 
 .nav-mobile a:hover { background: rgba(255,255,255,0.1); }
 
+.nav-mobile-home {
+    align-items: center;
+    display: flex;
+    gap: 0.55rem;
+}
+
+.nav-mobile-home svg {
+    fill: none;
+    height: 20px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.85;
+    width: 20px;
+}
+
 .nav-mobile-prenota {
     margin: 0.75rem 1.5rem 0;
     background: white;
-    color: var(--verde-salvia) !important;
+    color: var(--verde-header) !important;
     border-radius: 25px !important;
     text-align: center;
     font-weight: 700 !important;
@@ -1982,8 +2104,8 @@ footer p {
 }
 
 .nav-mobile-prenota:hover {
-    background: var(--verde-scuro) !important;
-    color: white !important;
+    background: var(--rosa-chiaro) !important;
+    color: var(--verde-header-profondo) !important;
 }
 
 /* ─── RESPONSIVE TABLET ─── */
@@ -2046,6 +2168,7 @@ footer p {
         justify-content: space-between;
     }
     .pagina-interna h2 { font-size: 1.5rem; }
+    .pagina-interna h1 { font-size: 1.85rem; }
     .sezione-calendario h2 { font-size: 1.5rem; }
     .cosa-faccio h2 { font-size: 1.5rem; }
     .servizi-preview h2 { font-size: 1.5rem; }
@@ -2149,6 +2272,17 @@ footer p {
     .cosa-faccio-grid { grid-template-columns: 1fr; }
     .form-riga { flex-direction: column; gap: 0; }
     .pagina-interna { padding: 2rem 1rem; }
+    .faq-list {
+        grid-template-columns: 1fr;
+    }
+    .faq-item {
+        padding: 1.25rem;
+    }
+    .faq-cta {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 1.25rem;
+    }
     section { padding: 2.5rem 1rem; }
     .tabella-admin { font-size: 0.8rem; }
     .tabella-admin th, .tabella-admin td { padding: 0.6rem 0.5rem; }

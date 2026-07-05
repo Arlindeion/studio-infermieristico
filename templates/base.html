@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=1.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=1.7">
 </head>
 <body>
 
@@ -22,6 +22,13 @@
 
     <!-- MENU DESKTOP -->
     <nav class="nav-desktop">
+        <a href="/" class="nav-home-link" aria-label="Torna alla homepage">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 10.8 12 4.4l7.5 6.4"/>
+                <path d="M6.4 9.9v8.7h11.2V9.9"/>
+                <path d="M9.6 14.4c0-1 .7-1.7 1.6-1.7.5 0 1 .3 1.3.7.3-.4.8-.7 1.3-.7.9 0 1.6.7 1.6 1.7 0 1.5-1.6 2.5-2.9 3.4-1.3-.9-2.9-1.9-2.9-3.4Z"/>
+            </svg>
+        </a>
         <a href="/chi-sono">CHI SONO</a>
         <div class="nav-dropdown">
             <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
@@ -39,6 +46,7 @@
             </div>
         </div>
         <a href="/prestazioni-infermieristiche">PRESTAZIONI</a>
+        <a href="/faq">FAQ</a>
         <a href="/prenota" class="btn-prenota">PRENOTA</a>
     </nav>
 
@@ -52,6 +60,14 @@
 
 <!-- MENU MOBILE -->
 <div class="nav-mobile" id="nav-mobile">
+    <a href="/" class="nav-mobile-home">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 10.8 12 4.4l7.5 6.4"/>
+            <path d="M6.4 9.9v8.7h11.2V9.9"/>
+            <path d="M9.6 14.4c0-1 .7-1.7 1.6-1.7.5 0 1 .3 1.3.7.3-.4.8-.7 1.3-.7.9 0 1.6.7 1.6 1.7 0 1.5-1.6 2.5-2.9 3.4-1.3-.9-2.9-1.9-2.9-3.4Z"/>
+        </svg>
+        Home
+    </a>
     <a href="/chi-sono">Chi sono</a>
     <span class="nav-mobile-label">Percorsi</span>
     <a href="/iscrizione-corsi">Corsi e iscrizioni</a>
@@ -62,6 +78,7 @@
     <a href="/consulenze-online">Consulenze online</a>
     <a href="/#calendario-corsi">Calendario corsi</a>
     <a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a>
+    <a href="/faq">FAQ</a>
     <a href="/prenota" class="nav-mobile-prenota">Prenota</a>
 </div>
 
@@ -83,6 +100,7 @@
 <a href="https://wa.me/393806317175" 
    class="whatsapp-widget" 
    target="_blank" 
+   rel="noopener noreferrer"
    aria-label="Contattami su WhatsApp">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32px" height="32px">
         <path fill="#fff" d="M4.868,43.303l2.694-9.835C5.9,30.59,5.026,27.324,5.027,23.979C5.032,13.514,13.548,5,24.014,5c5.079,0.002,9.845,1.979,13.43,5.566c3.584,3.588,5.558,8.356,5.556,13.428c-0.004,10.465-8.522,18.98-18.986,18.98c-0.001,0,0,0,0,0h-0.008c-3.177-0.001-6.3-0.798-9.073-2.311L4.868,43.303z"/>

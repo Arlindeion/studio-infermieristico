@@ -97,6 +97,7 @@ talisman = Talisman(
         ],
         'media-src': ["'self'", "https://*.cdninstagram.com"],
         'font-src': ["'self'", "https://fonts.gstatic.com"],
+        'frame-src': ["'self'", "https://www.google.com"],
     },
     force_https=False,
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
@@ -161,6 +162,89 @@ CORSI_ISCRIVIBILI = {
         'titolo': 'Corso di accompagnamento alla nascita',
     },
 }
+
+FAQ_ITEMS = [
+    {
+        'id': 'prenotare-prestazione-infermieristica',
+        'question': 'Come posso prenotare una prestazione infermieristica?',
+        'answer': "Puoi prenotare una prestazione infermieristica dalla pagina Prenota. Compili il modulo con i tuoi dati, scegli il servizio, la data e l'orario disponibili, accetti l'informativa privacy e invii la richiesta.",
+        'link_href': '/prenota',
+        'link_text': 'Vai alla prenotazione',
+    },
+    {
+        'id': 'prenotazione-corsi',
+        'question': 'La pagina Prenota serve anche per iscriversi ai corsi?',
+        'answer': 'No. La prenotazione online è dedicata alle prestazioni sanitarie. Per i corsi, come disostruzione pediatrica e corso di accompagnamento alla nascita, usiamo una sezione separata di iscrizione.',
+        'link_href': '/iscrizione-corsi',
+        'link_text': 'Vai alle iscrizioni corsi',
+    },
+    {
+        'id': 'prestazioni-disponibili',
+        'question': 'Quali prestazioni infermieristiche posso prenotare?',
+        'answer': 'Puoi richiedere iniezioni intramuscolari e sottocutanee, flebo e terapie infusionali, medicazioni semplici o complesse, controllo dei parametri vitali, assistenza domiciliare e supporto nella gestione della terapia farmacologica.',
+        'link_href': '/prestazioni-infermieristiche',
+        'link_text': 'Vedi le prestazioni',
+    },
+    {
+        'id': 'giorni-orari-prenotabili',
+        'question': 'In quali giorni e orari posso prenotare un appuntamento?',
+        'answer': "Gli appuntamenti sono prenotabili dal lunedì al venerdì negli orari disponibili del calendario. Il sabato l'ultimo orario prenotabile è le 11:30. Domeniche e festivi non sono prenotabili.",
+        'link_href': '/prenota',
+        'link_text': 'Controlla gli orari disponibili',
+    },
+    {
+        'id': 'dopo-invio-prenotazione',
+        'question': 'Cosa succede dopo aver inviato una prenotazione?',
+        'answer': "Dopo l'invio, la richiesta arriva nell'area admin dello studio. Ricevi una email di conferma della richiesta e l'appuntamento viene gestito dallo studio; quando viene confermato, può essere sincronizzato con il calendario collegato al gestionale.",
+        'link_href': '/prenota',
+        'link_text': 'Invia una richiesta',
+    },
+    {
+        'id': 'corsi-disponibili',
+        'question': 'Quali corsi sono disponibili per famiglie, neogenitori e aziende?',
+        'answer': "I percorsi principali sono BLS-D, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Alcuni corsi sono pensati per famiglie, altri possono essere organizzati anche in azienda.",
+        'link_href': '/iscrizione-corsi',
+        'link_text': 'Scopri i corsi',
+    },
+    {
+        'id': 'durata-corsi',
+        'question': 'Quanto durano i corsi?',
+        'answer': "La durata dipende dal tipo di corso: il BLS-D dura 4 ore, mentre disostruzione pediatrica, corso di accompagnamento alla nascita e laboratorio per l'infanzia durano 2 ore. La durata può essere modificata in base all'organizzazione del corso.",
+        'link_href': '/#calendario-corsi',
+        'link_text': 'Vedi il calendario corsi',
+    },
+    {
+        'id': 'corsi-in-azienda',
+        'question': 'È possibile organizzare un corso BLS-D o di primo soccorso in azienda?',
+        'answer': 'Sì. Il corso BLS-D e altri percorsi pratici sulla sicurezza possono essere valutati anche per aziende o gruppi organizzati. Per definire sede, numero di partecipanti e data è meglio contattare lo studio.',
+        'link_href': 'https://wa.me/393806317175',
+        'link_text': 'Scrivi su WhatsApp',
+        'link_external': True,
+    },
+    {
+        'id': 'consulenze-neogenitori',
+        'question': 'Offrite consulenze online o in presenza per neogenitori?',
+        'answer': 'Sì. Le consulenze per neogenitori possono aiutare su routine, sonno, cura del neonato e dubbi pratici dei primi mesi. Possono essere online o in studio, in base al bisogno della famiglia.',
+        'link_href': '/consulenze-online',
+        'link_text': 'Scopri le consulenze',
+    },
+    {
+        'id': 'privacy-dati-sanitari',
+        'question': 'Come vengono trattati i dati personali e sanitari inviati dal sito?',
+        'answer': "I dati inseriti nei moduli vengono usati per gestire prenotazioni, iscrizioni ai corsi e comunicazioni necessarie. I dati sanitari sono trattati come dati particolari ai sensi del GDPR e l'invio richiede l'accettazione dell'informativa privacy.",
+        'link_href': '/privacy',
+        'link_text': 'Leggi la privacy',
+    },
+    {
+        'id': 'dove-si-trova-studio',
+        'question': 'Dove si trova S.C. Studio Infermieristico e come posso contattarlo?',
+        'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattare lo studio al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
+        'map_embed_src': "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed",
+        'link_href': 'https://wa.me/393806317175',
+        'link_text': 'Contatta lo studio',
+        'link_external': True,
+    },
+]
 
 # Slot orari prenotabili (durata 30 minuti ciascuno). È la stessa lista
 # mostrata nei menu a tendina di prenota.html e modifica_appuntamento.html.
@@ -862,6 +946,11 @@ def homepage():
 @app.route('/chi-sono')
 def chi_siamo():
     return render_template('chi_siamo.html')
+
+
+@app.route('/faq')
+def faq():
+    return render_template('faq.html', faq_items=FAQ_ITEMS)
 
 
 @app.route('/prestazioni-infermieristiche')
