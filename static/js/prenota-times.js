@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('data');
     const timeSelect = document.getElementById('ora');
+    const form = dateInput.closest('form');
+    const ignoreId = form ? form.dataset.ignoreAppuntamentoId : null;
     const festiviFissi = new Set([
         '01-01', '01-06', '04-25', '05-01', '06-02',
         '08-15', '11-01', '12-08', '12-25', '12-26',
@@ -93,7 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         // Recupera gli orari occupati per la data selezionata
-        fetch(`/api/orari-occupati/${dataSelezionata}`)
+        const query = ignoreId ? `?ignore_id=${encodeURIComponent(ignoreId)}` : '';
+        fetch(`/api/orari-occupati/${dataSelezionata}${query}`)
             .then(risposta => risposta.json())
             .then(orariOccupati => {
                 applicaOrariDisabilitati([...new Set([...orariChiusura, ...orariOccupati])]);

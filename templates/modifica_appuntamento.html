@@ -6,6 +6,15 @@
 <section class="pagina-interna">
     <h2>✏️ Modifica Appuntamento</h2>
 <p class="sottotitolo">Modifica data e ora — verrà inviata automaticamente una mail di spostamento al paziente.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-message">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="form-prenotazione form-limited">
 
         <div class="riepilogo-paziente">
@@ -19,7 +28,7 @@
             {% endif %}
         </div>
 
-        <form method="POST" action="/admin/modifica/{{ a.id }}">
+        <form method="POST" action="/admin/modifica/{{ a.id }}" data-ignore-appuntamento-id="{{ a.id }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <div class="form-riga form-section">
@@ -51,5 +60,7 @@
         </form>
     </div>
 </section>
+
+<script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 
 {% endblock %}

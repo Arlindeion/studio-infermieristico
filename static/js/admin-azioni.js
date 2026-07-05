@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Elabora solo i tag <a> (collegamenti)
         if (tagNameCheck(pulsante, 'a')) {
             pulsante.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
                 const messaggio = this.getAttribute('data-confirm');
                 if (messaggio && !confirm(messaggio)) {
                     e.preventDefault();

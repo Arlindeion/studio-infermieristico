@@ -4,6 +4,7 @@ import urllib.request
 import urllib.error
 import ssl
 import certifi
+from urllib.parse import urlsplit
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
 from dotenv import load_dotenv
 import os
@@ -77,12 +78,12 @@ talisman = Talisman(
     app,
     content_security_policy={
         'default-src': "'self'",
-        'style-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         'script-src': ["'self'", "https://w.behold.so"],
         'connect-src': ["'self'", "https://feeds.behold.so"],
         'img-src': ["'self'", "data:", "https://cdn2.behold.pictures", "https://*.cdninstagram.com"],
         'media-src': ["'self'", "https://*.cdninstagram.com"],
-        'font-src': ["'self'"],
+        'font-src': ["'self'", "https://fonts.gstatic.com"],
     },
     force_https=False,
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
@@ -184,6 +185,15 @@ def orari_non_prenotabili_per_chiusura(data_str):
         return {ora for ora in ORARI_DISPONIBILI if ora > '12:00'}
 
     return set()
+
+
+def is_safe_redirect_target(target):
+    if not target:
+        return False
+
+    ref_url = urlsplit(request.host_url)
+    test_url = urlsplit(target)
+    return not test_url.netloc or test_url.netloc == ref_url.netloc
 
 # ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
 #
@@ -453,7 +463,7 @@ with app.app_context():
         )
         db.session.add(admin_utente)
         db.session.commit()
-        logger.info('>>> Admin creato — username: admin | password: cambiami123')
+        logger.info('>>> Admin creato con credenziali di default. Cambiare la password al primo accesso.')
     else:
         logger.info('>>> Database OK — Admin esistente')
 
@@ -822,7 +832,9 @@ def login():
         if utente and check_password_hash(utente.password, password):
             login_user(utente, remember=True)
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('admin'))
+            if is_safe_redirect_target(next_page):
+                return redirect(next_page)
+            return redirect(url_for('admin'))
         else:
             flash('Username o password errati.')
     return render_template('login.html')
@@ -925,8 +937,37 @@ def modifica_appuntamento(id):
         if not token or token != request.form.get('_csrf_token'):
             flash('Richiesta non valida. Riprova.', 'error')
             return render_template('modifica_appuntamento.html', a=appuntamento)
-        appuntamento.data = request.form['data']
-        appuntamento.ora = request.form['ora']
+
+        nuova_data = request.form.get('data', '').strip()
+        nuova_ora = request.form.get('ora', '').strip()
+        oggi = date.today().strftime('%Y-%m-%d')
+
+        if not nuova_data or not nuova_ora:
+            flash('Data e ora sono obbligatorie.', 'error')
+            return render_template('modifica_appuntamento.html', a=appuntamento)
+        if nuova_data < oggi:
+            flash('Non puoi spostare un appuntamento a una data nel passato.', 'error')
+            return render_template('modifica_appuntamento.html', a=appuntamento)
+        if not orario_prenotabile(nuova_data, nuova_ora):
+            flash('Lo studio è chiuso nella data o nell\'orario selezionato. Scegli un altro appuntamento.', 'error')
+            return render_template('modifica_appuntamento.html', a=appuntamento)
+
+        gia_occupato_db = Appuntamento.query.filter(
+            Appuntamento.id != appuntamento.id,
+            Appuntamento.data == nuova_data,
+            Appuntamento.ora == nuova_ora,
+            Appuntamento.stato != 'Annullato'
+        ).first() is not None
+        orari_occupati_calendario = orari_occupati_da_calendario(nuova_data)
+        if nuova_data == appuntamento.data:
+            orari_occupati_calendario.discard(appuntamento.ora)
+        gia_occupato_calendario = nuova_ora in orari_occupati_calendario
+        if gia_occupato_db or gia_occupato_calendario:
+            flash('Questo orario non è più disponibile. Scegline un altro.', 'error')
+            return render_template('modifica_appuntamento.html', a=appuntamento)
+
+        appuntamento.data = nuova_data
+        appuntamento.ora = nuova_ora
         appuntamento.stato = 'Confermato'
         db.session.commit()
         invia_email_spostamento(appuntamento)
@@ -973,6 +1014,7 @@ def elimina_corso(id):
 def orari_occupati(data):
     # Restituisce la lista degli orari occupati per la data specificata (YYYY-MM-DD)
     # Escludi gli appuntamenti annullati (stato != 'Annullato') in quanto liberano lo slot
+    ignore_id = request.args.get('ignore_id', type=int)
     occupati = Appuntamento.query.filter(
         Appuntamento.data == data,
         Appuntamento.stato != 'Annullato'
@@ -983,6 +1025,10 @@ def orari_occupati(data):
     orari |= orari_non_prenotabili_per_chiusura(data)
     # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)
     orari |= orari_occupati_da_calendario(data)
+    if ignore_id:
+        appuntamento_ignorato = db.session.get(Appuntamento, ignore_id)
+        if appuntamento_ignorato and appuntamento_ignorato.data == data:
+            orari.discard(appuntamento_ignorato.ora)
     return jsonify(sorted(orari))
 
 

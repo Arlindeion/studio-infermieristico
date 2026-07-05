@@ -166,6 +166,26 @@ def test_prenotazione_rifiutata_se_studio_chiuso(client):
         assert Appuntamento.query.count() == 0
 
 
+def test_login_admin_ignora_redirect_esterno(client):
+    """Il parametro next non deve poter portare l'admin verso domini esterni."""
+    from werkzeug.security import generate_password_hash
+
+    with flask_app.app_context():
+        if not Admin.query.filter_by(username='admin').first():
+            db.session.add(Admin(username='admin', password=generate_password_hash('cambiami123')))
+            db.session.commit()
+
+    token = _csrf_prenota(client)
+    resp = client.post('/admin/login?next=https://example.com', data={
+        'username': 'admin',
+        'password': 'cambiami123',
+        '_csrf_token': token
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/admin'
+
+
 # ─── Integrazione Google Calendar (Arzamed) ───
 
 @pytest.fixture
@@ -367,6 +387,62 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
     kwargs = mock_servizio.events().patch.call_args.kwargs
     assert kwargs['eventId'] == 'evento-esistente'
     mock_servizio.events().insert.assert_not_called()
+
+
+def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scrittura_finto):
+    """Anche l'area admin deve rispettare chiusure e orari prenotabili."""
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Test', data='2026-09-01', ora='10:00',
+                             stato='Confermato')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    domenica = _prossimo_giorno_con_weekday(6).strftime('%Y-%m-%d')
+    resp = client.post(f'/admin/modifica/{appt_id}', data={
+        'data': domenica, 'ora': '10:00', '_csrf_token': csrf
+    })
+
+    assert 'studio è chiuso' in resp.text
+    mock_servizio.events().patch.assert_not_called()
+    mock_servizio.events().insert.assert_not_called()
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.data == '2026-09-01'
+        assert aggiornato.ora == '10:00'
+
+
+def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
+    """Spostare un appuntamento su uno slot già preso non deve sovrascrivere l'agenda."""
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Test', data='2026-09-01', ora='10:00',
+                             stato='Confermato')
+        occupato = Appuntamento(nome='Luisa Verdi', telefono='334', email='l@example.com',
+                                servizio='Test', data='2026-09-02', ora='11:00',
+                                stato='Confermato')
+        db.session.add_all([appt, occupato])
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    resp = client.post(f'/admin/modifica/{appt_id}', data={
+        'data': '2026-09-02', 'ora': '11:00', '_csrf_token': csrf
+    })
+
+    assert 'non è più disponibile' in resp.text
+    mock_servizio.events().patch.assert_not_called()
+    mock_servizio.events().insert.assert_not_called()
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.data == '2026-09-01'
+        assert aggiornato.ora == '10:00'
 
 
 def test_nessuna_chiamata_google_se_non_configurato(client):
