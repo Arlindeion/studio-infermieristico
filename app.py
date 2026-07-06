@@ -131,8 +131,8 @@ STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
 
 CORSI_ADMIN_TIPI = {
     'bls-d': {
-        'label': 'BLS-D',
-        'titolo': 'BLS-D',
+        'label': 'BLSD',
+        'titolo': 'BLSD',
         'durata_ore': 4,
     },
     'disostruzione-pediatrica': {
@@ -154,13 +154,11 @@ CORSI_ADMIN_TIPI = {
 
 CORSI_ISCRIVIBILI = {
     'bls-d': {
-        'titolo': 'Corso BLS-D',
-        'data_options': ['Prima data disponibile', 'Data da concordare'],
-        'partecipazione_options': ['Iscrizione individuale', 'Azienda o gruppo'],
+        'titolo': 'Corso BLSD',
+        'partecipazione_options': ['Iscrizione individuale'],
     },
     'disostruzione-pediatrica': {
         'titolo': 'Corso di Disostruzione Pediatrica',
-        'data_options': ['16/07/2026'],
         'partecipazione_options': ['Singolo 34 euro', 'Coppia 60 euro'],
     },
     'accompagnamento-nascita': {
@@ -207,23 +205,24 @@ FAQ_ITEMS = [
     {
         'id': 'corsi-disponibili',
         'question': 'Quali corsi sono disponibili per famiglie, neogenitori e aziende?',
-        'answer': "I percorsi principali sono BLS-D, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Alcuni corsi sono pensati per famiglie, altri possono essere organizzati anche in azienda.",
+        'answer': "I percorsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Alcuni corsi sono pensati per famiglie, altri possono essere organizzati anche in azienda.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Scopri i corsi',
     },
     {
         'id': 'durata-corsi',
         'question': 'Quanto durano i corsi?',
-        'answer': "La durata dipende dal tipo di corso: il BLS-D dura 4 ore, mentre disostruzione pediatrica, corso di accompagnamento alla nascita e laboratorio per l'infanzia durano 2 ore. La durata può essere modificata in base all'organizzazione del corso.",
+        'answer': "La durata dipende dal tipo di corso: il BLSD dura 4 ore, mentre disostruzione pediatrica, corso di accompagnamento alla nascita e laboratorio per l'infanzia durano 2 ore. La durata può essere modificata in base all'organizzazione del corso.",
         'link_href': '/#calendario-corsi',
         'link_text': 'Vedi il calendario corsi',
     },
     {
         'id': 'corsi-in-azienda',
-        'question': 'È possibile organizzare un corso BLS-D o di primo soccorso in azienda?',
-        'answer': 'Sì. Il corso BLS-D e altri percorsi pratici sulla sicurezza possono essere valutati anche per aziende o gruppi organizzati. Nel modulo puoi indicare il gruppo, il numero di partecipanti e la preferenza sulla data.',
-        'link_href': '/iscrizione-corsi/bls-d',
-        'link_text': 'Richiedi il corso BLS-D',
+        'question': 'È possibile richiedere un corso BLSD in studio o in azienda?',
+        'answer': 'Sì. Nessun pacchetto standard: la formazione la costruiamo insieme, su misura per la tua realtà. Puoi richiedere il corso BLSD in studio o direttamente in azienda, definendo sede, numero di partecipanti e data.',
+        'link_href': 'https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda.',
+        'link_text': 'Richiedi il corso in studio o in azienda',
+        'link_external': True,
     },
     {
         'id': 'consulenze-neogenitori',
@@ -992,12 +991,54 @@ def _telefono_valido(telefono):
     return re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono) is not None
 
 
+def _checkbox_checked(field_name):
+    return request.form.get(field_name) in ['on', 'si', 'ACCONSENTO', 'true', '1']
+
+
+def _formatta_data_corso(data_iso):
+    try:
+        return datetime.strptime(data_iso, '%Y-%m-%d').strftime('%d/%m/%Y')
+    except (TypeError, ValueError):
+        return data_iso or 'Data da definire'
+
+
+def _etichetta_data_corso(corso):
+    parti = [_formatta_data_corso(corso.data)]
+    if corso.ora:
+        parti.append(f'ore {corso.ora}')
+    if corso.luogo:
+        parti.append(corso.luogo)
+    return ' - '.join(parti)
+
+
+def _opzioni_date_corso(corso_tipo):
+    oggi = date.today().strftime('%Y-%m-%d')
+    corsi = Corso.query.filter(
+        Corso.tipo == corso_tipo,
+        Corso.data >= oggi
+    ).order_by(Corso.data, Corso.ora).all()
+    return [
+        {
+            'value': str(corso.id),
+            'label': _etichetta_data_corso(corso),
+        }
+        for corso in corsi
+    ]
+
+
+def _corso_iscrivibile_con_date(corso_tipo):
+    corso = dict(CORSI_ISCRIVIBILI[corso_tipo])
+    corso['data_options'] = _opzioni_date_corso(corso_tipo)
+    corso['has_open_dates'] = len(corso['data_options']) > 0
+    return corso
+
+
 def _render_iscrizione_con_errore(corso_tipo, messaggio):
     flash(messaggio, 'error')
     return render_template(
         'iscrizione_corso.html',
         corso_tipo=corso_tipo,
-        corso=CORSI_ISCRIVIBILI[corso_tipo],
+        corso=_corso_iscrivibile_con_date(corso_tipo),
         form_data=request.form
     )
 
@@ -1008,7 +1049,7 @@ def iscrizione_corso(corso_tipo):
     if corso_tipo not in CORSI_ISCRIVIBILI:
         abort(404)
 
-    corso = CORSI_ISCRIVIBILI[corso_tipo]
+    corso = _corso_iscrivibile_con_date(corso_tipo)
     if request.method == 'POST':
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
@@ -1019,10 +1060,18 @@ def iscrizione_corso(corso_tipo):
         email = request.form.get('email', '').strip()
         codice_fiscale = request.form.get('codice_fiscale', '').strip()
         extra = {}
-        data_corso = request.form.get('data_corso', '').strip()
+        data_corso_id = request.form.get('data_corso', '').strip()
+        opzioni_date = {option['value']: option['label'] for option in corso['data_options']}
+        if opzioni_date:
+            if data_corso_id not in opzioni_date:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una data disponibile tra quelle aperte.')
+            data_corso = opzioni_date[data_corso_id]
+        else:
+            data_corso = 'Da ricontattare per prossime date'
+            extra['richiesta_prossime_date'] = True
         partecipazione = request.form.get('partecipazione', '').strip()
-        consenso_privacy = request.form.get('consenso_privacy') in ['si', 'ACCONSENTO', 'on']
-        consenso_immagini = request.form.get('consenso_immagini') == 'ACCONSENTO'
+        consenso_privacy = _checkbox_checked('consenso_privacy')
+        consenso_immagini = _checkbox_checked('consenso_immagini')
 
         if not nome or len(nome) > 100:
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.')
@@ -1036,40 +1085,26 @@ def iscrizione_corso(corso_tipo):
         if corso_tipo == 'bls-d':
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.')
-            if data_corso not in corso['data_options']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per la data del corso.')
-
-            ente_azienda = request.form.get('ente_azienda', '').strip()
-            numero_partecipanti = request.form.get('numero_partecipanti', '').strip()
-            if partecipazione == 'Azienda o gruppo' and not ente_azienda:
-                return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il nome dell\'azienda o del gruppo.')
-
             dichiarazioni = {
-                'prove_pratiche': request.form.get('prove_pratiche') == 'si',
-                'buono_stato_salute': request.form.get('buono_stato_salute') == 'si',
-                'richiesta_non_conferma': request.form.get('richiesta_non_conferma') == 'si',
+                'prove_pratiche': _checkbox_checked('prove_pratiche'),
+                'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
+                'richiesta_non_conferma': _checkbox_checked('richiesta_non_conferma'),
             }
             if not all(dichiarazioni.values()):
                 return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
             if not consenso_privacy:
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
-            if request.form.get('consenso_immagini') not in ['ACCONSENTO', 'NON ACCONSENTO']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per l\'autorizzazione immagini.')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
 
             extra = {
-                'ente_azienda': ente_azienda,
-                'numero_partecipanti': numero_partecipanti,
+                **extra,
                 **dichiarazioni,
             }
 
         elif corso_tipo == 'disostruzione-pediatrica':
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona se partecipi da solo/a o in coppia.')
-            if data_corso not in corso['data_options']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una data corso valida.')
-
             nome_secondo = request.form.get('nome_secondo_partecipante', '').strip()
             cf_secondo = request.form.get('codice_fiscale_secondo_partecipante', '').strip()
             if partecipazione == 'Coppia 60 euro' and (not nome_secondo or not cf_secondo):
@@ -1079,9 +1114,9 @@ def iscrizione_corso(corso_tipo):
                 )
 
             dichiarazioni = {
-                'scopo_informativo': request.form.get('scopo_informativo') == 'si',
-                'no_certificazione': request.form.get('no_certificazione') == 'si',
-                'buono_stato_salute': request.form.get('buono_stato_salute') == 'si',
+                'scopo_informativo': _checkbox_checked('scopo_informativo'),
+                'no_certificazione': _checkbox_checked('no_certificazione'),
+                'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
             }
             if not all(dichiarazioni.values()):
                 return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
@@ -1089,6 +1124,7 @@ def iscrizione_corso(corso_tipo):
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
 
             extra = {
+                **extra,
                 'nome_secondo_partecipante': nome_secondo,
                 'codice_fiscale_secondo_partecipante': cf_secondo,
                 **dichiarazioni,
@@ -1110,12 +1146,11 @@ def iscrizione_corso(corso_tipo):
                     return _render_iscrizione_con_errore(corso_tipo, error_message)
             if not consenso_privacy:
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi acconsentire al trattamento dei dati personali.')
-            if request.form.get('consenso_immagini') not in ['ACCONSENTO', 'NON ACCONSENTO']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per l\'autorizzazione immagini.')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
 
             extra = {
+                **extra,
                 'data_nascita': request.form.get('data_nascita', '').strip(),
                 'luogo_nascita': request.form.get('luogo_nascita', '').strip(),
                 'indirizzo': request.form.get('indirizzo', '').strip(),

@@ -139,7 +139,24 @@ def _csrf_iscrizione(client, corso_tipo):
     return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
 
 
+def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18:00', luogo='Studio'):
+    with flask_app.app_context():
+        corso = Corso(
+            titolo=titolo,
+            tipo=corso_tipo,
+            descrizione='Data aperta per test',
+            data=data,
+            ora=ora,
+            luogo=luogo,
+            durata_ore=2,
+        )
+        db.session.add(corso)
+        db.session.commit()
+        return str(corso.id)
+
+
 def test_iscrizione_disostruzione_salva_richiesta(client):
+    data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
     token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
 
     resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
@@ -148,11 +165,11 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         'telefono': '3331234567',
         'email': 'mario@example.com',
         'partecipazione': 'Singolo 34 euro',
-        'data_corso': '16/07/2026',
-        'scopo_informativo': 'si',
-        'no_certificazione': 'si',
-        'buono_stato_salute': 'si',
-        'consenso_privacy': 'si',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
         '_csrf_token': token,
     })
 
@@ -162,10 +179,12 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.corso_tipo == 'disostruzione-pediatrica'
         assert iscrizione.nome == 'Mario Rossi'
+        assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
 
 
-def test_iscrizione_blsd_salva_richiesta_azienda(client):
+def test_iscrizione_blsd_salva_richiesta_individuale(client):
+    data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
     token = _csrf_iscrizione(client, 'bls-d')
 
     resp = client.post('/iscrizione-corsi/bls-d', data={
@@ -173,15 +192,12 @@ def test_iscrizione_blsd_salva_richiesta_azienda(client):
         'codice_fiscale': 'BNCGLI85A41G482Z',
         'telefono': '3331234567',
         'email': 'giulia@example.com',
-        'partecipazione': 'Azienda o gruppo',
-        'data_corso': 'Data da concordare',
-        'ente_azienda': 'Studio Demo',
-        'numero_partecipanti': '8',
-        'prove_pratiche': 'si',
-        'buono_stato_salute': 'si',
-        'richiesta_non_conferma': 'si',
-        'consenso_privacy': 'si',
-        'consenso_immagini': 'NON ACCONSENTO',
+        'partecipazione': 'Iscrizione individuale',
+        'data_corso': data_corso_id,
+        'prove_pratiche': 'on',
+        'buono_stato_salute': 'on',
+        'richiesta_non_conferma': 'on',
+        'consenso_privacy': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -192,13 +208,46 @@ def test_iscrizione_blsd_salva_richiesta_azienda(client):
         iscrizione = IscrizioneCorso.query.one()
         extra = iscrizione.extra_dict()
         assert iscrizione.corso_tipo == 'bls-d'
-        assert iscrizione.corso_titolo == 'Corso BLS-D'
-        assert iscrizione.partecipazione == 'Azienda o gruppo'
-        assert extra['ente_azienda'] == 'Studio Demo'
-        assert extra['numero_partecipanti'] == '8'
+        assert iscrizione.corso_titolo == 'Corso BLSD'
+        assert iscrizione.partecipazione == 'Iscrizione individuale'
+        assert '17/07/2099' in iscrizione.data_corso
+        assert not iscrizione.consenso_immagini
+        assert 'ente_azienda' not in extra
+        assert 'numero_partecipanti' not in extra
+
+
+def test_iscrizione_blsd_non_accetta_azienda_da_form(client):
+    data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
+    token = _csrf_iscrizione(client, 'bls-d')
+
+    resp = client.post('/iscrizione-corsi/bls-d', data={
+        'nome': 'Giulia Bianchi',
+        'codice_fiscale': 'BNCGLI85A41G482Z',
+        'telefono': '3331234567',
+        'email': 'giulia@example.com',
+        'partecipazione': 'Azienda o gruppo',
+        'data_corso': data_corso_id,
+        'prove_pratiche': 'on',
+        'buono_stato_salute': 'on',
+        'richiesta_non_conferma': 'on',
+        'consenso_privacy': 'on',
+        'conferma_finale': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 200
+    assert 'Seleziona il tipo di partecipazione.' in resp.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
 
 
 def test_iscrizione_accompagnamento_compare_in_admin(client):
+    data_corso_id = _crea_data_corso(
+        'accompagnamento-nascita',
+        'Corso di accompagnamento alla nascita',
+        data='2099-07-18',
+        ora='10:00',
+    )
     token = _csrf_iscrizione(client, 'accompagnamento-nascita')
 
     resp = client.post('/iscrizione-corsi/accompagnamento-nascita', data={
@@ -215,8 +264,8 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
         'data_presunta_parto': '2026-12-01',
         'settimana_gravidanza': '20',
         'gravidanza_regolare': 'Si',
-        'consenso_privacy': 'ACCONSENTO',
-        'consenso_immagini': 'NON ACCONSENTO',
+        'data_corso': data_corso_id,
+        'consenso_privacy': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -230,6 +279,29 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
     assert stato_resp.status_code == 302
     with flask_app.app_context():
         assert IscrizioneCorso.query.first().stato == 'Contattato'
+
+
+def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.data_corso == 'Da ricontattare per prossime date'
+        assert iscrizione.extra_dict()['richiesta_prossime_date'] is True
 
 
 def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(client):
@@ -529,7 +601,7 @@ def test_aggiunta_corso_usa_durata_modificata_su_calendario(client, google_calen
     csrf = _login_admin(client)
     client.post('/admin/corso/aggiungi', data={
         'tipo': 'bls-d',
-        'titolo': 'BLS-D aziendale',
+        'titolo': 'BLSD aziendale',
         'durata_ore': '4',
         'descrizione': 'Corso in azienda',
         'data': '2026-09-11',
@@ -543,7 +615,7 @@ def test_aggiunta_corso_usa_durata_modificata_su_calendario(client, google_calen
     assert kwargs['body']['end']['dateTime'].startswith('2026-09-11T13:00:00')
 
     with flask_app.app_context():
-        corso = Corso.query.filter_by(titolo='BLS-D aziendale').one()
+        corso = Corso.query.filter_by(titolo='BLSD aziendale').one()
         assert corso.tipo == 'bls-d'
         assert corso.durata_ore == 4
 
