@@ -153,6 +153,11 @@ CORSI_ADMIN_TIPI = {
 }
 
 CORSI_ISCRIVIBILI = {
+    'bls-d': {
+        'titolo': 'Corso BLS-D',
+        'data_options': ['Prima data disponibile', 'Data da concordare'],
+        'partecipazione_options': ['Iscrizione individuale', 'Azienda o gruppo'],
+    },
     'disostruzione-pediatrica': {
         'titolo': 'Corso di Disostruzione Pediatrica',
         'data_options': ['16/07/2026'],
@@ -216,10 +221,9 @@ FAQ_ITEMS = [
     {
         'id': 'corsi-in-azienda',
         'question': 'È possibile organizzare un corso BLS-D o di primo soccorso in azienda?',
-        'answer': 'Sì. Il corso BLS-D e altri percorsi pratici sulla sicurezza possono essere valutati anche per aziende o gruppi organizzati. Per definire sede, numero di partecipanti e data è meglio contattare lo studio.',
-        'link_href': 'https://wa.me/393806317175',
-        'link_text': 'Scrivi su WhatsApp',
-        'link_external': True,
+        'answer': 'Sì. Il corso BLS-D e altri percorsi pratici sulla sicurezza possono essere valutati anche per aziende o gruppi organizzati. Nel modulo puoi indicare il gruppo, il numero di partecipanti e la preferenza sulla data.',
+        'link_href': '/iscrizione-corsi/bls-d',
+        'link_text': 'Richiedi il corso BLS-D',
     },
     {
         'id': 'consulenze-neogenitori',
@@ -832,6 +836,12 @@ def invia_email_nuova_iscrizione(iscrizione):
     """Invia email di alert all'amministratore quando arriva una richiesta di iscrizione corso."""
     try:
         logger.info('>>> Invio email alert nuova iscrizione corso...')
+        extra = iscrizione.extra_dict()
+        dettagli_extra = ''
+        if extra.get('ente_azienda'):
+            dettagli_extra += f'Azienda/gruppo: {extra["ente_azienda"]}\n'
+        if extra.get('numero_partecipanti'):
+            dettagli_extra += f'Partecipanti: {extra["numero_partecipanti"]}\n'
         msg = Message(
             subject=f'Nuova iscrizione corso - {iscrizione.corso_titolo}',
             recipients=['sc.studioinfermieristico@gmail.com'],
@@ -843,6 +853,7 @@ def invia_email_nuova_iscrizione(iscrizione):
                 f'Email:    {iscrizione.email or "Non indicata"}\n'
                 f'Data:     {iscrizione.data_corso or "Da definire"}\n'
                 f'Tipo:     {iscrizione.partecipazione or "Non indicato"}\n\n'
+                f'{dettagli_extra}'
                 f'Accedi all\'area admin per gestire la richiesta.'
             )
         )
@@ -1022,7 +1033,38 @@ def iscrizione_corso(corso_tipo):
         if email and not _email_valida(email):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.')
 
-        if corso_tipo == 'disostruzione-pediatrica':
+        if corso_tipo == 'bls-d':
+            if partecipazione not in corso['partecipazione_options']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.')
+            if data_corso not in corso['data_options']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per la data del corso.')
+
+            ente_azienda = request.form.get('ente_azienda', '').strip()
+            numero_partecipanti = request.form.get('numero_partecipanti', '').strip()
+            if partecipazione == 'Azienda o gruppo' and not ente_azienda:
+                return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il nome dell\'azienda o del gruppo.')
+
+            dichiarazioni = {
+                'prove_pratiche': request.form.get('prove_pratiche') == 'si',
+                'buono_stato_salute': request.form.get('buono_stato_salute') == 'si',
+                'richiesta_non_conferma': request.form.get('richiesta_non_conferma') == 'si',
+            }
+            if not all(dichiarazioni.values()):
+                return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
+            if not consenso_privacy:
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+            if request.form.get('consenso_immagini') not in ['ACCONSENTO', 'NON ACCONSENTO']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una preferenza per l\'autorizzazione immagini.')
+            if request.form.get('conferma_finale') != 'on':
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
+
+            extra = {
+                'ente_azienda': ente_azienda,
+                'numero_partecipanti': numero_partecipanti,
+                **dichiarazioni,
+            }
+
+        elif corso_tipo == 'disostruzione-pediatrica':
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona se partecipi da solo/a o in coppia.')
             if data_corso not in corso['data_options']:

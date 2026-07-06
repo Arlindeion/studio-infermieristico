@@ -6,7 +6,9 @@
     <p class="eyebrow">Iscrizione corso</p>
     <h2>{{ corso.titolo }}</h2>
 
-    {% if corso_tipo == 'disostruzione-pediatrica' %}
+    {% if corso_tipo == 'bls-d' %}
+    <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Ti ricontatteremo per confermare disponibilità, data e dettagli organizzativi.</p>
+    {% elif corso_tipo == 'disostruzione-pediatrica' %}
     <p class="sottotitolo">Il corso si terrà presso lo studio in Via C. D'Agnese 43 e avrà una durata di circa 2 ore / 2 ore e mezza, con prove pratiche su lattante e bambino e laboratorio sui tagli sicuri.</p>
     {% else %}
     <p class="sottotitolo">Un percorso multidisciplinare in 9 incontri, più un incontro post parto e un incontro offerto dalla Farmacia Russo. Ti ricontatteremo per confermare l'inserimento nel corso.</p>
@@ -43,7 +45,74 @@
             <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}">
         </div>
 
-        {% if corso_tipo == 'disostruzione-pediatrica' %}
+        {% if corso_tipo == 'bls-d' %}
+        <h3>Dettagli corso</h3>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="partecipazione">Tipo di partecipazione *</label>
+                <select id="partecipazione" name="partecipazione" required>
+                    <option value="">-- Seleziona --</option>
+                    {% for option in corso.partecipazione_options %}
+                    <option value="{{ option }}" {{ 'selected' if form_data.get('partecipazione') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-gruppo">
+                <label for="data_corso">Preferenza data *</label>
+                <select id="data_corso" name="data_corso" required>
+                    <option value="">-- Seleziona --</option>
+                    {% for option in corso.data_options %}
+                    <option value="{{ option }}" {{ 'selected' if form_data.get('data_corso') == option }}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="ente_azienda">Azienda o gruppo</label>
+                <input type="text" id="ente_azienda" name="ente_azienda" value="{{ form_data.get('ente_azienda', '') }}" placeholder="Da compilare se l'iscrizione è per un gruppo">
+            </div>
+            <div class="form-gruppo">
+                <label for="numero_partecipanti">Numero partecipanti</label>
+                <input type="number" id="numero_partecipanti" name="numero_partecipanti" min="1" max="60" value="{{ form_data.get('numero_partecipanti', '') }}">
+            </div>
+        </div>
+
+        <h3>Dichiarazioni e consensi</h3>
+        <div class="form-gruppo radio-stack">
+            <p>Sono disponibile a partecipare alle prove pratiche previste dal corso *</p>
+            <label><input type="radio" name="prove_pratiche" value="si" required> Si</label>
+            <label><input type="radio" name="prove_pratiche" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Dichiaro di essere in buono stato di salute per la partecipazione alle prove pratiche *</p>
+            <label><input type="radio" name="buono_stato_salute" value="si" required> Si</label>
+            <label><input type="radio" name="buono_stato_salute" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Sono consapevole che l'invio della richiesta non conferma automaticamente il posto al corso *</p>
+            <label><input type="radio" name="richiesta_non_conferma" value="si" required> Si</label>
+            <label><input type="radio" name="richiesta_non_conferma" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</p>
+            <label><input type="radio" name="consenso_privacy" value="si" required> Si</label>
+            <label><input type="radio" name="consenso_privacy" value="no"> No</label>
+        </div>
+        <div class="form-gruppo radio-stack">
+            <p>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative *</p>
+            <label><input type="radio" name="consenso_immagini" value="ACCONSENTO" required> Acconsento</label>
+            <label><input type="radio" name="consenso_immagini" value="NON ACCONSENTO"> Non acconsento</label>
+        </div>
+        <div class="form-gruppo">
+            <label class="privacy-label">
+                <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
+                <span class="privacy-text">Confermo di voler procedere con la richiesta di iscrizione al corso *</span>
+            </label>
+        </div>
+
+        {% elif corso_tipo == 'disostruzione-pediatrica' %}
         <h3>Dettagli corso</h3>
         <div class="form-riga">
             <div class="form-gruppo">

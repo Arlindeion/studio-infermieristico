@@ -8,35 +8,33 @@
         <p class="eyebrow">Studio infermieristico, corsi e consulenze</p>
         <h1>Cura pratica e sicurezza per famiglie e aziende</h1>
         <p class="hero-lead">Prestazioni infermieristiche, corsi BLSD e disostruzione, accompagnamento alla nascita e consulenze per i primi mesi: un riferimento chiaro quando vuoi sapere cosa fare.</p>
-        <div class="hero-actions">
-            <a href="#percorsi-principali" class="btn">Trova il percorso</a>
-            <a href="/prenota" class="btn btn-secondaria">Prenota prestazione</a>
+        <div class="hero-choice-panel">
+            <div class="hero-quick-header">
+                <span>Accessi principali</span>
+            </div>
+            <div class="hero-quick-paths" aria-label="Accessi principali">
+                <a href="/prenota" class="hero-quick-path">
+                    <strong>Prestazioni</strong>
+                    <small>Appuntamenti sanitari in studio o a domicilio</small>
+                </a>
+                <a href="/iscrizione-corsi" class="hero-quick-path">
+                    <strong>Corsi</strong>
+                    <small>Incontri pratici per famiglie e aziende</small>
+                </a>
+                <a href="/consulenze-online" class="hero-quick-path">
+                    <strong>Consulenze</strong>
+                    <small>Supporto per nascita, rientro a casa e primi mesi</small>
+                </a>
+            </div>
         </div>
         <div class="hero-trust">
-            <span>Infermiera professionale</span>
+            <span>Infermiera</span>
             <span>Corsi in studio e in azienda</span>
             <span>Consulenze online e in presenza</span>
         </div>
-        <div class="hero-quick-paths" aria-label="Scelte rapide">
-            <a href="/prenota" class="hero-quick-path">
-                <span>01</span>
-                <strong>Prestazioni</strong>
-                <small>Per appuntamenti sanitari</small>
-            </a>
-            <a href="/iscrizione-corsi" class="hero-quick-path">
-                <span>02</span>
-                <strong>Corsi</strong>
-                <small>Per famiglie e aziende</small>
-            </a>
-            <a href="/consulenze-online" class="hero-quick-path">
-                <span>03</span>
-                <strong>Consulenze</strong>
-                <small>Per nascita e primi mesi</small>
-            </a>
-        </div>
     </div>
     <div class="hero-consulenze-media">
-        <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corsi e consulenze per famiglie e aziende">
+        <img src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="Selene Campetta con modello anatomico del cuore">
         <div class="hero-media-note">
             <span>Dal dubbio alla pratica</span>
             <strong>Risposte chiare, gesti sicuri</strong>
@@ -52,16 +50,16 @@
     </div>
     <div class="percorsi-grid">
         <article class="percorso-card percorso-evidenza">
-            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso BLSD in studio o in azienda">
+            <img src="{{ url_for('static', filename='img/selene-blsd.jpg') }}" alt="Corso BLSD in studio o in azienda">
             <div>
                 <span class="percorso-tag">Sicurezza</span>
                 <h3>BLS-D</h3>
                 <p>Un corso operativo per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto.</p>
-                <a href="https://wa.me/393806317175" class="link-azione">Chiedi disponibilità</a>
+                <a href="/iscrizione-corsi/bls-d" class="link-azione">Iscriviti al corso</a>
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
-            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di accompagnamento alla nascita">
+            <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Corso di accompagnamento alla nascita">
             <div>
                 <span class="percorso-tag">Nascita</span>
                 <h3>Corso di accompagnamento alla nascita</h3>
@@ -70,7 +68,7 @@
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
-            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Corso di disostruzione pediatrica e tagli sicuri">
+            <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Corso di disostruzione pediatrica e tagli sicuri">
             <div>
                 <span class="percorso-tag">Primo soccorso</span>
                 <h3>Disostruzione pediatrica e tagli sicuri</h3>
@@ -79,7 +77,7 @@
             </div>
         </article>
         <article class="percorso-card percorso-evidenza">
-            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Consulenze per neogenitori">
+            <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Consulenze per neogenitori">
             <div>
                 <span class="percorso-tag">Primi mesi</span>
                 <h3>Consulenze neogenitori</h3>
@@ -115,7 +113,7 @@
     </div>
     <div class="bio-preview-testo bio-compact-card">
         <p class="eyebrow">Chi ti accompagna</p>
-        <h2>Sono Selene Campetta, infermiera professionale</h2>
+        <h2>Sono Selene Campetta, infermiera</h2>
         <p>Offro assistenza infermieristica, corsi pratici e consulenze dedicate a famiglie, neogenitori e realtà aziendali che vogliono formarsi sulla sicurezza.</p>
         <p>Il tono è semplice, il metodo è pratico: esci con indicazioni utilizzabili, senza sentirti giudicato o lasciato solo davanti ai dubbi.</p>
         <a href="/chi-sono" class="btn">Conosci Selene</a>

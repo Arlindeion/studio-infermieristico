@@ -240,6 +240,8 @@
                 <td>
                     {% if i.data_corso %}<p><strong>Data:</strong> {{ i.data_corso }}</p>{% endif %}
                     {% if i.partecipazione %}<p><strong>Tipo:</strong> {{ i.partecipazione }}</p>{% endif %}
+                    {% if extra.ente_azienda %}<p><strong>Azienda/gruppo:</strong> {{ extra.ente_azienda }}</p>{% endif %}
+                    {% if extra.numero_partecipanti %}<p><strong>Partecipanti:</strong> {{ extra.numero_partecipanti }}</p>{% endif %}
                     {% if extra.nome_secondo_partecipante %}<p><strong>Secondo:</strong> {{ extra.nome_secondo_partecipante }}{% if extra.codice_fiscale_secondo_partecipante %} ({{ extra.codice_fiscale_secondo_partecipante }}){% endif %}</p>{% endif %}
                     {% if extra.data_presunta_parto %}<p><strong>DPP:</strong> {{ extra.data_presunta_parto }}</p>{% endif %}
                     {% if extra.settimana_gravidanza %}<p><strong>Settimana:</strong> {{ extra.settimana_gravidanza }}</p>{% endif %}
@@ -275,6 +277,8 @@
                 <p><span>Email</span> {{ i.email or 'Non indicata' }}</p>
                 {% if i.data_corso %}<p><span>Data</span> {{ i.data_corso }}</p>{% endif %}
                 {% if i.partecipazione %}<p><span>Tipo</span> {{ i.partecipazione }}</p>{% endif %}
+                {% if extra.ente_azienda %}<p><span>Azienda/gruppo</span> {{ extra.ente_azienda }}</p>{% endif %}
+                {% if extra.numero_partecipanti %}<p><span>Partecipanti</span> {{ extra.numero_partecipanti }}</p>{% endif %}
                 {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
             </div>
             <div class="card-admin-azioni">

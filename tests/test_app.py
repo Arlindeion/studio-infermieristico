@@ -165,6 +165,39 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.stato == 'Nuova'
 
 
+def test_iscrizione_blsd_salva_richiesta_azienda(client):
+    token = _csrf_iscrizione(client, 'bls-d')
+
+    resp = client.post('/iscrizione-corsi/bls-d', data={
+        'nome': 'Giulia Bianchi',
+        'codice_fiscale': 'BNCGLI85A41G482Z',
+        'telefono': '3331234567',
+        'email': 'giulia@example.com',
+        'partecipazione': 'Azienda o gruppo',
+        'data_corso': 'Data da concordare',
+        'ente_azienda': 'Studio Demo',
+        'numero_partecipanti': '8',
+        'prove_pratiche': 'si',
+        'buono_stato_salute': 'si',
+        'richiesta_non_conferma': 'si',
+        'consenso_privacy': 'si',
+        'consenso_immagini': 'NON ACCONSENTO',
+        'conferma_finale': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/iscrizione-corsi/conferma'
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        extra = iscrizione.extra_dict()
+        assert iscrizione.corso_tipo == 'bls-d'
+        assert iscrizione.corso_titolo == 'Corso BLS-D'
+        assert iscrizione.partecipazione == 'Azienda o gruppo'
+        assert extra['ente_azienda'] == 'Studio Demo'
+        assert extra['numero_partecipanti'] == '8'
+
+
 def test_iscrizione_accompagnamento_compare_in_admin(client):
     token = _csrf_iscrizione(client, 'accompagnamento-nascita')
 
