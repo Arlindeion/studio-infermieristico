@@ -1046,18 +1046,27 @@ section[id] {
     box-shadow: var(--ombra-soft);
 }
 .card span { font-size: 2.5rem; display: block; margin-bottom: 1rem; }
-.servizi-preview .card span {
+.servizi-preview .prestazione-icona {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     background: var(--verde-chiaro);
+    border: 1px solid rgba(95, 126, 88, 0.18);
     color: var(--verde-scuro);
-    font-size: 0.9rem;
-    font-weight: 800;
     margin-bottom: 1rem;
+}
+
+.servizi-preview .prestazione-icona svg {
+    fill: none;
+    height: 31px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    width: 31px;
 }
 .card h3 { font-size: 1.05rem; color: var(--verde-scuro); margin-bottom: 0.5rem; }
 .card p { font-size: 0.9rem; color: #666; }
