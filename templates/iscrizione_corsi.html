@@ -4,34 +4,79 @@
 {% block contenuto %}
 <section class="pagina-interna">
     <p class="eyebrow">Iscrizioni corsi</p>
-    <h2>Scegli il corso a cui vuoi partecipare</h2>
-    <p class="sottotitolo">Le richieste vengono raccolte direttamente dal sito e saranno gestite dall'area admin.</p>
+    <h2>Corsi pratici per sentirti più pronto quando conta</h2>
+    <p class="sottotitolo">Scegli il percorso più adatto: se c'è una data aperta puoi richiedere l'iscrizione, se non c'è ancora lasci il tuo interesse e verrai ricontattato.</p>
+
+    <div class="proof-grid proof-grid-corsi" aria-label="Come funzionano le iscrizioni ai corsi">
+        <article class="proof-card">
+            <span>Pratica</span>
+            <h3>Non solo teoria</h3>
+            <p>Ogni incontro punta su gesti, esempi e situazioni reali: cosa osservare, cosa fare e quando chiedere aiuto.</p>
+        </article>
+        <article class="proof-card">
+            <span>Date</span>
+            <h3>Calendario controllato</h3>
+            <p>Le date selezionabili sono quelle create dall'area admin. Se non trovi quella giusta, la richiesta resta come interesse.</p>
+        </article>
+        <article class="proof-card">
+            <span>Fiducia</span>
+            <h3>Guida sanitaria</h3>
+            <p>I contenuti sono spiegati con linguaggio semplice, mantenendo il confine tra formazione, consulenza e assistenza sanitaria.</p>
+        </article>
+    </div>
 
     <div class="percorsi-grid">
-        <article class="percorso-card percorso-evidenza">
+        <article class="percorso-card percorso-evidenza percorso-sicurezza">
             <img src="{{ url_for('static', filename='img/selene-blsd.jpg') }}" alt="Corso BLSD con defibrillatore">
             <div>
+                <span class="percorso-tag">Sicurezza</span>
                 <h3>Corso BLSD</h3>
-                <p>Un corso pratico per riconoscere l'emergenza, intervenire con ordine e imparare a usare il defibrillatore in modo corretto. Il modulo è dedicato alle iscrizioni individuali.</p>
+                <p>Per riconoscere l'emergenza, attivare i soccorsi, intervenire con una sequenza ordinata e imparare a usare il defibrillatore.</p>
+                <div class="course-meta" aria-label="Dettagli corso BLSD">
+                    <span>4 ore</span>
+                    <span>Prove pratiche</span>
+                    <span>Iscrizione individuale</span>
+                </div>
                 <a href="/iscrizione-corsi/bls-d" class="link-azione">Iscrizione individuale</a>
             </div>
         </article>
-        <article class="percorso-card percorso-evidenza">
+        <article class="percorso-card percorso-evidenza percorso-primo-soccorso">
             <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Corso di disostruzione pediatrica">
             <div>
-                <h3>Corso di Disostruzione Pediatrica</h3>
-                <p>Prove pratiche su lattante e bambino, laboratorio sui tagli sicuri e indicazioni per prevenire il soffocamento nella vita quotidiana.</p>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Compila richiesta</a>
+                <span class="percorso-tag">Primo soccorso</span>
+                <h3>Disostruzione pediatrica e tagli sicuri</h3>
+                <p>Per genitori, nonni e caregiver: manovre su lattante e bambino, prevenzione del soffocamento e tagli sicuri degli alimenti.</p>
+                <div class="course-meta" aria-label="Dettagli corso disostruzione pediatrica">
+                    <span>2 ore</span>
+                    <span>Singolo o coppia</span>
+                    <span>Lattante e bambino</span>
+                </div>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Richiedi iscrizione</a>
             </div>
         </article>
-        <article class="percorso-card percorso-evidenza">
+        <article class="percorso-card percorso-evidenza percorso-nascita">
             <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Corso di accompagnamento alla nascita">
             <div>
+                <span class="percorso-tag">Nascita</span>
                 <h3>Corso di accompagnamento alla nascita</h3>
-                <p>Percorso multidisciplinare in presenza per gravidanza, nascita, post parto e primi giorni con il neonato.</p>
-                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Compila richiesta</a>
+                <p>Per arrivare più preparati al rientro a casa: cura del neonato, sonno sicuro, prime routine, dubbi pratici e segnali da osservare.</p>
+                <div class="course-meta" aria-label="Dettagli corso accompagnamento alla nascita">
+                    <span>In presenza</span>
+                    <span>Con partner</span>
+                    <span>Primi giorni</span>
+                </div>
+                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi iscrizione</a>
             </div>
         </article>
+    </div>
+
+    <div class="course-flow">
+        <h3>Dopo l'invio della richiesta</h3>
+        <div class="course-flow-grid">
+            <p><strong>1. Ricezione</strong> La richiesta arriva nell'area admin dello studio.</p>
+            <p><strong>2. Verifica</strong> Controlliamo data, posti disponibili e informazioni necessarie.</p>
+            <p><strong>3. Conferma</strong> Ricevi un contatto per confermare partecipazione o prossima data utile.</p>
+        </div>
     </div>
 
     <div class="azienda-callout">

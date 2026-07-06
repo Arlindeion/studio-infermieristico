@@ -55,9 +55,9 @@ p {
 }
 
 header {
-    background: linear-gradient(100deg, var(--verde-header-profondo), var(--verde-header) 46%, var(--corallo-header));
+    background: linear-gradient(100deg, #435f40 0%, var(--verde-header-profondo) 58%, #6d7b54 100%);
     backdrop-filter: blur(16px) saturate(1.08);
-    border-bottom: 1px solid rgba(255, 250, 246, 0.18);
+    border-bottom: 1px solid rgba(255, 250, 246, 0.2);
     padding: 0.45rem clamp(1rem, 3vw, 2.5rem);
     display: flex;
     align-items: center;
@@ -65,7 +65,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 8px 24px rgba(45, 64, 44, 0.18);
+    box-shadow: 0 8px 24px rgba(45, 64, 44, 0.18), inset 0 -1px 0 rgba(208, 143, 134, 0.28);
 }
 
 nav {
@@ -75,8 +75,8 @@ nav {
 }
 
 .nav-desktop {
-    background: rgba(255, 253, 249, 0.08);
-    border: 1px solid rgba(255, 253, 249, 0.2);
+    background: rgba(35, 52, 34, 0.24);
+    border: 1px solid rgba(255, 253, 249, 0.22);
     border-radius: 999px;
     padding: 0.28rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -90,6 +90,16 @@ nav a,
     letter-spacing: 0.02em;
     text-shadow: 0 1px 1px rgba(35, 49, 34, 0.16);
     transition: color 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+nav a:focus-visible,
+.nav-dropdown-toggle:focus-visible,
+.hamburger:focus-visible,
+.btn:focus-visible,
+.btn-prenota:focus-visible,
+.sticky-prenota-btn:focus-visible {
+    outline: 3px solid rgba(255, 240, 236, 0.72);
+    outline-offset: 3px;
 }
 
 nav > a:not(.btn-prenota),
@@ -119,7 +129,7 @@ nav > a:not(.btn-prenota):hover,
 .nav-dropdown-toggle:hover,
 .nav-dropdown:focus-within .nav-dropdown-toggle,
 .nav-dropdown.aperto .nav-dropdown-toggle {
-    background: rgba(255, 253, 249, 0.14);
+    background: rgba(255, 253, 249, 0.18);
 }
 
 nav a:hover,
@@ -403,13 +413,15 @@ nav a:hover,
 }
 
 .hero-choice-panel {
-    background: rgba(255, 253, 249, 0.62);
+    background: rgba(255, 253, 249, 0.74);
     border: 1px solid rgba(143, 166, 133, 0.16);
     border-radius: 8px;
     box-shadow: 0 10px 28px rgba(92, 76, 64, 0.06);
     margin-top: 1.8rem;
     max-width: 760px;
     padding: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .hero-quick-header {
@@ -440,18 +452,33 @@ nav a:hover,
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
     margin-top: 0.75rem;
+    position: relative;
+}
+
+.hero-quick-paths::before {
+    content: '';
+    position: absolute;
+    left: 3.1rem;
+    right: 3.1rem;
+    top: 2.45rem;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(95, 126, 88, 0.18), rgba(208, 143, 134, 0.32), rgba(95, 126, 88, 0.18));
+    z-index: 0;
 }
 
 .hero-quick-path {
     background: var(--avorio);
     border: 1px solid rgba(95, 126, 88, 0.22);
     border-radius: 8px;
-    min-height: 132px;
+    min-height: 166px;
     padding: 1.1rem;
     box-shadow: 0 8px 20px rgba(92, 76, 64, 0.05);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 0.62rem;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 1;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
@@ -462,12 +489,31 @@ nav a:hover,
     transform: translateY(-2px);
 }
 
-.hero-quick-path > span {
-    display: none;
+.hero-path-icon {
+    align-items: center;
+    background: var(--verde-chiaro);
+    border: 1px solid rgba(95, 126, 88, 0.18);
+    border-radius: 50%;
+    color: var(--verde-scuro);
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    width: 48px;
+}
+
+.hero-path-icon svg {
+    fill: none;
+    height: 25px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.75;
+    width: 25px;
 }
 
 .hero-quick-path strong,
-.hero-quick-path small {
+.hero-quick-path small,
+.hero-quick-path em {
     display: block;
 }
 
@@ -481,7 +527,16 @@ nav a:hover,
     color: var(--grigio);
     font-size: 0.82rem;
     line-height: 1.35;
-    margin-top: 0.55rem;
+}
+
+.hero-quick-path em {
+    color: var(--rosa-antico);
+    font-size: 0.76rem;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin-top: auto;
+    text-transform: uppercase;
 }
 
 .hero-consulenze-media {
@@ -644,6 +699,7 @@ nav a:hover,
     display: flex;
     flex-direction: column;
     min-height: 100%;
+    --percorso-accent: var(--verde-salvia);
     background:
         linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 250, 246, 0.94)),
         var(--avorio);
@@ -654,7 +710,7 @@ nav a:hover,
     content: '';
     display: block;
     height: 5px;
-    background: linear-gradient(90deg, var(--verde-salvia), var(--rosa-antico));
+    background: linear-gradient(90deg, var(--percorso-accent), var(--rosa-antico));
 }
 
 .percorso-card:hover {
@@ -680,6 +736,46 @@ nav a:hover,
     display: flex;
     flex: 1;
     flex-direction: column;
+    position: relative;
+}
+
+.percorso-symbol {
+    align-items: center;
+    background: var(--verde-chiaro);
+    border: 1px solid rgba(95, 126, 88, 0.16);
+    border-radius: 50%;
+    color: var(--percorso-accent);
+    display: inline-flex;
+    height: 46px;
+    justify-content: center;
+    margin-bottom: 0.9rem;
+    width: 46px;
+}
+
+.percorso-symbol svg {
+    fill: none;
+    height: 25px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.75;
+    width: 25px;
+}
+
+.percorso-sicurezza {
+    --percorso-accent: #526F50;
+}
+
+.percorso-nascita {
+    --percorso-accent: #C67870;
+}
+
+.percorso-primo-soccorso {
+    --percorso-accent: #6D7F8E;
+}
+
+.percorso-primi-mesi {
+    --percorso-accent: #8B7B55;
 }
 
 .percorso-tag {
@@ -690,13 +786,33 @@ nav a:hover,
     padding: 0.3rem 0.7rem;
     border-radius: 999px;
     background: rgba(238, 245, 234, 0.94);
-    color: var(--verde-scuro);
+    color: var(--percorso-accent);
     font-size: 0.73rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     line-height: 1;
     text-transform: uppercase;
     margin-bottom: 0.85rem;
+}
+
+.course-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.95rem 0 0.2rem;
+}
+
+.course-meta span {
+    align-items: center;
+    background: rgba(255, 253, 249, 0.92);
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 999px;
+    color: #5a514b;
+    display: inline-flex;
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.45rem 0.65rem;
 }
 
 .percorso-card h3 {
@@ -771,6 +887,148 @@ nav a:hover,
 .azienda-callout-form {
     margin-bottom: 1.5rem;
     margin-top: 0;
+}
+
+.proof-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 1.8rem 0 2rem;
+}
+
+.proof-card {
+    background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 250, 246, 0.96));
+    border: 1px solid rgba(143, 166, 133, 0.2);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    padding: 1.25rem;
+}
+
+.proof-card span {
+    align-items: center;
+    background: var(--verde-chiaro);
+    border-radius: 999px;
+    color: var(--verde-header);
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+    min-height: 28px;
+    padding: 0.35rem 0.65rem;
+    text-transform: uppercase;
+}
+
+.proof-card h3 {
+    color: var(--verde-scuro);
+    font-size: 1.05rem;
+    line-height: 1.3;
+    margin-bottom: 0.45rem;
+}
+
+.proof-card p {
+    color: #5a514b;
+    font-size: 0.93rem;
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+.proof-grid-corsi {
+    margin-top: 2rem;
+}
+
+.course-flow {
+    background: var(--verde-chiaro);
+    border: 1px solid rgba(143, 166, 133, 0.22);
+    border-radius: 8px;
+    margin: 1.5rem 0 1.6rem;
+    padding: 1.35rem;
+}
+
+.course-flow h3 {
+    color: var(--verde-scuro);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.course-flow-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.course-flow-grid p {
+    color: #5a514b;
+    font-size: 0.93rem;
+    line-height: 1.65;
+    margin-bottom: 0;
+}
+
+.course-flow-grid strong {
+    color: var(--verde-scuro);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.course-value-panel {
+    background:
+        linear-gradient(135deg, rgba(238, 245, 234, 0.9), rgba(255, 250, 246, 0.96));
+    border: 1px solid rgba(143, 166, 133, 0.2);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    margin: 1.6rem 0;
+    padding: 1.35rem;
+}
+
+.section-heading-compact {
+    margin-bottom: 1.1rem;
+    max-width: 760px;
+}
+
+.section-heading-compact h3 {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin-bottom: 0.45rem;
+}
+
+.section-heading-compact p:not(.eyebrow) {
+    color: #5a514b;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.course-value-grid {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.course-value-grid article {
+    background: rgba(255, 253, 249, 0.82);
+    border: 1px solid rgba(208, 143, 134, 0.16);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.course-value-grid span {
+    color: var(--rosa-antico);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+}
+
+.course-value-grid p {
+    color: #5a514b;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin-bottom: 0;
 }
 
 .metodo-consulenza {
@@ -1666,7 +1924,7 @@ footer p {
 
 /* ─── CALENDARIO CORSI ─── */
 .sezione-calendario {
-    max-width: 900px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 3rem 2rem;
 }
@@ -1677,13 +1935,56 @@ footer p {
     margin-bottom: 0.5rem;
 }
 
+.calendario-layout {
+    align-items: stretch;
+    display: grid;
+    gap: 1.3rem;
+    grid-template-columns: minmax(260px, 0.72fr) minmax(420px, 1.28fr);
+    margin-top: 1.5rem;
+}
+
+.calendario-copy-card {
+    background: linear-gradient(145deg, rgba(238, 245, 234, 0.96), rgba(255, 253, 249, 0.92));
+    border: 1px solid rgba(143, 166, 133, 0.2);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1.6rem;
+}
+
+.calendario-copy-card h3 {
+    color: var(--verde-scuro);
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin-bottom: 0.7rem;
+}
+
+.calendario-copy-card p:not(.eyebrow) {
+    font-size: 0.96rem;
+    line-height: 1.75;
+}
+
+.calendario-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.25rem;
+}
+
+.calendario-actions .btn {
+    padding-left: 1.45rem;
+    padding-right: 1.45rem;
+}
+
 .calendario-wrapper {
     background: var(--avorio);
     border-radius: 8px;
     padding: 2rem;
     border: 1px solid rgba(143, 166, 133, 0.16);
     box-shadow: var(--ombra-card);
-    margin-top: 1.5rem;
 }
 
 .cal-header {
@@ -2212,7 +2513,7 @@ footer p {
 .nav-mobile {
     display: none;
     flex-direction: column;
-    background: linear-gradient(180deg, var(--verde-header-profondo), var(--verde-header) 54%, var(--corallo-header-profondo));
+    background: linear-gradient(180deg, #435f40, var(--verde-header-profondo) 58%, #6d7b54);
     position: sticky;
     top: 0;
     z-index: 99;
@@ -2310,11 +2611,15 @@ footer p {
         max-width: none;
     }
     .problemi-grid,
-    .percorsi-grid {
+    .percorsi-grid,
+    .proof-grid,
+    .course-flow-grid,
+    .course-value-grid {
         grid-template-columns: repeat(2, 1fr);
     }
     .metodo-consulenza,
-    .home-compact-band {
+    .home-compact-band,
+    .calendario-layout {
         grid-template-columns: 1fr;
     }
     .metodo-testo,
@@ -2375,10 +2680,25 @@ footer p {
         gap: 0.55rem;
         margin-top: 0.7rem;
     }
+    .hero-quick-paths::before {
+        display: none;
+    }
     .hero-quick-path {
+        align-items: center;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
         min-height: 0;
         padding: 0.85rem 0.95rem;
         text-align: left;
+    }
+    .hero-path-icon {
+        grid-row: span 3;
+        height: 42px;
+        width: 42px;
+    }
+    .hero-path-icon svg {
+        height: 22px;
+        width: 22px;
     }
     .hero-quick-path strong {
         font-size: 0.98rem;
@@ -2387,6 +2707,10 @@ footer p {
         display: block;
         font-size: 0.78rem;
         margin-top: 0.25rem;
+    }
+    .hero-quick-path em {
+        font-size: 0.68rem;
+        margin-top: 0.2rem;
     }
     .hero-trust {
         gap: 0.5rem;
@@ -2444,8 +2768,31 @@ footer p {
     .percorsi-grid {
         grid-template-columns: 1fr;
     }
+    .proof-grid,
+    .course-flow-grid,
+    .course-value-grid {
+        grid-template-columns: 1fr;
+    }
+    .proof-card,
+    .course-flow,
+    .course-value-panel {
+        padding: 1.1rem;
+    }
+    .course-meta span {
+        font-size: 0.7rem;
+    }
     .home-compact-band {
         padding: 2.5rem 1rem;
+    }
+    .calendario-copy-card {
+        padding: 1.2rem;
+    }
+    .calendario-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .calendario-actions .link-azione {
+        justify-content: center;
     }
     .percorso-card img {
         height: 190px;
@@ -2493,9 +2840,18 @@ footer p {
     .admin-filtri { gap: 0.5rem; }
     .filtro-btn { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
     .whatsapp-widget {
-        bottom: 90px;
+        bottom: 5.9rem;
         left: auto;
         right: 1rem;
+        width: 52px;
+        height: 52px;
+    }
+    .whatsapp-widget svg {
+        width: 60px;
+        height: 60px;
+    }
+    .page-homepage .whatsapp-widget {
+        display: none;
     }
     .cookie-banner {
         align-items: stretch;
@@ -2601,6 +2957,12 @@ footer p {
     /* Aggiunge spazio in fondo alla pagina per non coprire contenuto */
     body {
         padding-bottom: 80px;
+    }
+    body.page-prenota,
+    body.page-admin,
+    body.page-login,
+    body.page-modifica-appuntamento {
+        padding-bottom: 0;
     }
     /* Admin card mobile */
     .tabella-desktop { display: none; }

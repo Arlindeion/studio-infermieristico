@@ -136,8 +136,8 @@ CORSI_ADMIN_TIPI = {
         'durata_ore': 4,
     },
     'disostruzione-pediatrica': {
-        'label': 'Disostruzione pediatrica',
-        'titolo': 'Disostruzione pediatrica',
+        'label': 'Disostruzione pediatrica e tagli sicuri',
+        'titolo': 'Disostruzione pediatrica e tagli sicuri',
         'durata_ore': 2,
     },
     'accompagnamento-nascita': {
@@ -158,7 +158,7 @@ CORSI_ISCRIVIBILI = {
         'partecipazione_options': ['Iscrizione individuale'],
     },
     'disostruzione-pediatrica': {
-        'titolo': 'Corso di Disostruzione Pediatrica',
+        'titolo': 'Disostruzione pediatrica e tagli sicuri',
         'partecipazione_options': ['Singolo 34 euro', 'Coppia 60 euro'],
     },
     'accompagnamento-nascita': {
@@ -205,7 +205,7 @@ FAQ_ITEMS = [
     {
         'id': 'corsi-disponibili',
         'question': 'Quali corsi sono disponibili per famiglie, neogenitori e aziende?',
-        'answer': "I percorsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Alcuni corsi sono pensati per famiglie, altri possono essere organizzati anche in azienda.",
+        'answer': "I percorsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Ogni corso chiarisce cosa impari, per chi è indicato, durata e prossima azione: iscrizione individuale, interesse per nuove date o contatto diretto per aziende e gruppi.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Scopri i corsi',
     },
@@ -227,7 +227,7 @@ FAQ_ITEMS = [
     {
         'id': 'consulenze-neogenitori',
         'question': 'Offrite consulenze online o in presenza per neogenitori?',
-        'answer': 'Sì. Le consulenze per neogenitori possono aiutare su routine, sonno, cura del neonato e dubbi pratici dei primi mesi. Possono essere online o in studio, in base al bisogno della famiglia.',
+        'answer': 'Sì. Le consulenze per neogenitori aiutano a mettere ordine tra routine, sonno sicuro, cura quotidiana, poppate, pianto e dubbi dei primi mesi. Possono essere online o in studio e portano a pochi passi pratici, sostenibili per la famiglia.',
         'link_href': '/consulenze-online',
         'link_text': 'Scopri le consulenze',
     },

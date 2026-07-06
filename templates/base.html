@@ -10,9 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=2.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=2.6">
 </head>
-<body>
+<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}">
 
 <header>
     <a href="/" class="logo-link">
@@ -114,10 +114,25 @@
     <span class="whatsapp-tooltip">Contattami per saperne di più</span>
 </a>
 <!-- BARRA STICKY MOBILE -->
+{% set endpoint = request.endpoint or '' %}
+{% set sticky_href = '/prenota' %}
+{% set sticky_label = 'Prenota' %}
+{% if endpoint == 'homepage' %}
+    {% set sticky_href = '/#percorsi-principali' %}
+    {% set sticky_label = 'Scegli il percorso' %}
+{% elif endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
+    {% set sticky_href = '/iscrizione-corsi' %}
+    {% set sticky_label = 'Vai ai corsi' %}
+{% elif endpoint in ['consulenze_online', 'prima_della_nascita', 'dopo_la_nascita'] %}
+    {% set sticky_href = 'https://wa.me/393806317175' %}
+    {% set sticky_label = 'Richiedi informazioni' %}
+{% endif %}
+{% if endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
 <div class="sticky-prenota">
-    <a href="/prenota" class="sticky-prenota-btn">
-        Prenota
+    <a href="{{ sticky_href }}" class="sticky-prenota-btn"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
+        {{ sticky_label }}
     </a>
 </div>
+{% endif %}
 </body>
 </html>

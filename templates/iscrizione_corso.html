@@ -8,6 +8,27 @@
 
     {% if corso_tipo == 'bls-d' %}
     <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Questo modulo è dedicato alle iscrizioni individuali.</p>
+    <div class="course-value-panel">
+        <div class="section-heading section-heading-compact">
+            <p class="eyebrow">Cosa porti a casa</p>
+            <h3>Una sequenza chiara da seguire nei primi minuti</h3>
+            <p>Il valore del corso non è ricordare tutto a memoria, ma allenare ordine, priorità e gesti essenziali quando l'emergenza richiede lucidità.</p>
+        </div>
+        <div class="course-value-grid">
+            <article>
+                <span>Emergenza</span>
+                <p>Riconoscere una situazione critica e attivare i soccorsi senza perdere tempo.</p>
+            </article>
+            <article>
+                <span>Manovre</span>
+                <p>Allenare compressioni, ventilazioni e passaggi pratici con supervisione.</p>
+            </article>
+            <article>
+                <span>DAE</span>
+                <p>Capire come usare il defibrillatore e come inserirlo nella sequenza di intervento.</p>
+            </article>
+        </div>
+    </div>
     <div class="azienda-callout azienda-callout-form">
         <div>
             <p class="eyebrow">Aziende e gruppi</p>
@@ -18,8 +39,50 @@
     </div>
     {% elif corso_tipo == 'disostruzione-pediatrica' %}
     <p class="sottotitolo">Il corso si terrà presso lo studio in Via C. D'Agnese 43 e avrà una durata di circa 2 ore / 2 ore e mezza, con prove pratiche su lattante e bambino e laboratorio sui tagli sicuri.</p>
+    <div class="course-value-panel">
+        <div class="section-heading section-heading-compact">
+            <p class="eyebrow">Cosa porti a casa</p>
+            <h3>Più sicurezza a tavola e nei piccoli imprevisti</h3>
+            <p>Il corso unisce prevenzione e pratica: impari a ridurre il rischio di soffocamento e ad agire con più ordine se qualcosa va storto.</p>
+        </div>
+        <div class="course-value-grid">
+            <article>
+                <span>Manovre</span>
+                <p>Prove guidate su lattante e bambino, con attenzione alle differenze tra le età.</p>
+            </article>
+            <article>
+                <span>Tagli sicuri</span>
+                <p>Indicazioni pratiche su alimenti, consistenze e preparazione quotidiana.</p>
+            </article>
+            <article>
+                <span>Prevenzione</span>
+                <p>Segnali da riconoscere, comportamenti da evitare e quando chiedere aiuto.</p>
+            </article>
+        </div>
+    </div>
     {% else %}
-    <p class="sottotitolo">Un percorso multidisciplinare in 9 incontri, più un incontro post parto e un incontro offerto dalla Farmacia Russo. Ti ricontatteremo per confermare l'inserimento nel corso.</p>
+    <p class="sottotitolo">Un incontro in presenza di circa 2 ore per arrivare più preparati al rientro a casa, alla cura quotidiana e ai primi giorni con il neonato. Ti ricontatteremo per confermare l'inserimento nel corso.</p>
+    <div class="course-value-panel">
+        <div class="section-heading section-heading-compact">
+            <p class="eyebrow">Cosa porti a casa</p>
+            <h3>Una preparazione concreta al rientro con il neonato</h3>
+            <p>Il percorso aiuta a trasformare domande e paure in azioni pratiche: cosa preparare, cosa osservare e come orientarsi nei primi giorni.</p>
+        </div>
+        <div class="course-value-grid">
+            <article>
+                <span>Casa</span>
+                <p>Organizzazione degli spazi, materiali utili e prime routine sostenibili.</p>
+            </article>
+            <article>
+                <span>Neonato</span>
+                <p>Bagnetto, cordone, cambio, pianto, segnali da osservare e cura quotidiana.</p>
+            </article>
+            <article>
+                <span>Sonno sicuro</span>
+                <p>Ambiente del sonno, abitudini prudenti e dubbi frequenti dei primi giorni.</p>
+            </article>
+        </div>
+    </div>
     {% endif %}
 
     {% with messages = get_flashed_messages() %}
@@ -33,7 +96,7 @@
         <div>
             <p class="eyebrow">Prossime date</p>
             <h3>Al momento non ci sono date aperte per questo corso</h3>
-            <p>Puoi lasciare comunque i tuoi dati: ti ricontatteremo appena apre una nuova data o per valutare insieme la soluzione più adatta.</p>
+            <p>Puoi lasciare comunque i tuoi dati: la richiesta resta in area admin come interesse e ti ricontatteremo appena apre una data adatta.</p>
         </div>
         <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="btn btn-secondaria" target="_blank" rel="noopener noreferrer">Scrivimi su WhatsApp</a>
     </div>

@@ -4,11 +4,29 @@
 {% block contenuto %}
 <section class="pagina-interna pagina-consulenza">
     <p class="eyebrow">A distanza, con la stessa cura</p>
-    <h2>Consulenze online per neogenitori</h2>
-    <p class="sottotitolo">Un confronto pratico per affrontare gestione quotidiana, routine, sonno e piccoli dubbi dei primi mesi anche da casa.</p>
+    <h2>Consulenze per neogenitori, online o in studio</h2>
+    <p class="sottotitolo">Un confronto guidato per mettere ordine tra sonno, routine, cura quotidiana e dubbi dei primi mesi, senza giudizio e senza ricette uguali per tutti.</p>
 
     <div class="pagina-hero-img">
         <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Consulenza online per neogenitori">
+    </div>
+
+    <div class="proof-grid proof-grid-consulenze" aria-label="Quando può essere utile una consulenza">
+        <article class="proof-card">
+            <span>Quando</span>
+            <h3>Se siete stanchi e confusi</h3>
+            <p>Quando ogni consiglio ricevuto sembra contraddire quello prima e serve una lettura ordinata della vostra situazione reale.</p>
+        </article>
+        <article class="proof-card">
+            <span>Cosa</span>
+            <h3>Un piano semplice</h3>
+            <p>Non una lista infinita di regole: pochi passi pratici su routine, sonno sicuro, segnali da osservare e gestione quotidiana.</p>
+        </article>
+        <article class="proof-card">
+            <span>Confine</span>
+            <h3>Supporto, non diagnosi</h3>
+            <p>La consulenza aiuta nell'organizzazione familiare. Per sintomi, febbre o dubbi clinici importanti resta centrale il pediatra.</p>
+        </article>
     </div>
 
     <div class="servizio-lista">
@@ -37,8 +55,8 @@
 
     <section class="cta cta-interna">
         <h2>Vuoi capire se la consulenza online fa per te?</h2>
-        <p>Scrivimi per ricevere informazioni. Le iscrizioni e le consulenze avranno un sistema dedicato, separato dalla prenotazione delle prestazioni sanitarie.</p>
-        <a href="https://wa.me/393806317175" class="btn">Richiedi informazioni</a>
+        <p>Per ora raccogliamo le richieste in modo diretto: ti aiuto a capire se serve una consulenza, un corso o una prestazione sanitaria prenotabile.</p>
+        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20informazioni%20sulle%20consulenze%20per%20neogenitori." class="btn" target="_blank" rel="noopener noreferrer">Richiedi informazioni</a>
     </section>
 </section>
 {% endblock %}
