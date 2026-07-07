@@ -138,7 +138,7 @@ def test_holiday_flow(client):
 def test_faq_include_flussi_aggiornati(client):
     resp = client.get('/faq')
     assert resp.status_code == 200
-    assert 'SOS neomamma' in resp.text
+    assert 'consulenze genitori' in resp.text
     assert 'BLSD' in resp.text
     assert 'link privato' in resp.text
     assert 'open day gratuito' in resp.text
@@ -251,6 +251,41 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
         assert PersonaCorso.query.count() == 1
+
+
+def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
+    data_corso_id = _crea_data_corso(
+        'laboratorio-infanzia',
+        "Laboratorio per l'infanzia",
+        data='2099-07-21',
+        ora='17:00',
+    )
+    token = _csrf_iscrizione(client, 'laboratorio-infanzia')
+
+    resp = client.post('/iscrizione-corsi/laboratorio-infanzia', data={
+        'nome': 'Anna Neri',
+        'codice_fiscale': 'NRENNA90A41G482Z',
+        'telefono': '3331234567',
+        'email': 'anna@example.com',
+        'nome_bambino': 'Leo',
+        'eta_bambino': '18 mesi',
+        'partecipazione': 'Iscrizione individuale',
+        'data_corso': data_corso_id,
+        'consenso_privacy': 'on',
+        'conferma_finale': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/iscrizione-corsi/conferma'
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.corso_tipo == 'laboratorio-infanzia'
+        assert iscrizione.corso_titolo == 'Laboratori svezzamento, gioco e sviluppo'
+        assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
+        assert iscrizione.posti == 1
+        assert iscrizione.persona.nome_bambino == 'Leo'
+        assert iscrizione.persona.eta_bambino == '18 mesi'
 
 
 def test_iscrizione_blsd_salva_richiesta_individuale(client):

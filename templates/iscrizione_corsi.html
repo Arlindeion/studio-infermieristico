@@ -4,31 +4,31 @@
 {% block contenuto %}
 <section class="pagina-interna">
     <p class="eyebrow">Iscrizioni corsi</p>
-    <h2>Corsi pratici per sentirti più pronto quando conta</h2>
-    <p class="sottotitolo">Scegli il percorso più adatto: se c'è una data aperta puoi richiedere l'iscrizione, se non c'è ancora lasci il tuo interesse e verrai ricontattato.</p>
+    <h2>Corsi in presenza per sapere cosa fare nei momenti importanti</h2>
+    <p class="sottotitolo">Scegli il percorso più adatto tra sicurezza, nascita e laboratori per l'infanzia. Se c'è una data aperta puoi richiedere l'iscrizione; se non c'è ancora, lasci il tuo interesse e verrai ricontattato.</p>
 
-    <div class="proof-grid proof-grid-corsi" aria-label="Come funzionano le iscrizioni ai corsi">
-        <article class="proof-card">
+    <div class="course-overview-strip" aria-label="Come funzionano le iscrizioni ai corsi">
+        <article>
             <span>Pratica</span>
             <h3>Non solo teoria</h3>
             <p>Ogni incontro punta su gesti, esempi e situazioni reali: cosa osservare, cosa fare e quando chiedere aiuto.</p>
         </article>
-        <article class="proof-card">
-            <span>Date</span>
-            <h3>Calendario controllato</h3>
-            <p>Le date selezionabili sono quelle create dall'area admin. Se non trovi quella giusta, la richiesta resta come interesse.</p>
+        <article>
+            <span>Open day</span>
+            <h3>Prima ci conosciamo</h3>
+            <p>Per il corso di accompagnamento alla nascita, l'open day gratuito serve a conoscere professionisti, metodo e contenuti.</p>
         </article>
-        <article class="proof-card">
-            <span>Fiducia</span>
-            <h3>Guida sanitaria</h3>
-            <p>I contenuti sono spiegati con linguaggio semplice, mantenendo il confine tra formazione, consulenza e assistenza sanitaria.</p>
+        <article>
+            <span>Lista</span>
+            <h3>Se non trovi date aperte</h3>
+            <p>Lasci i tuoi dati e la richiesta resta in area admin come interesse, così posso ricontattarti alla prossima data utile.</p>
         </article>
     </div>
 
-    <div class="percorsi-grid">
-        <article class="percorso-card percorso-evidenza percorso-sicurezza">
+    <div class="course-directory">
+        <article class="course-directory-row percorso-sicurezza">
             <img src="{{ url_for('static', filename='img/selene-blsd.jpg') }}" alt="Corso BLSD con defibrillatore">
-            <div>
+            <div class="course-directory-copy">
                 <span class="percorso-tag">Sicurezza</span>
                 <h3>Corso BLSD</h3>
                 <p>Per riconoscere l'emergenza, attivare i soccorsi, intervenire con una sequenza ordinata e imparare a usare il defibrillatore.</p>
@@ -37,12 +37,12 @@
                     <span>Prove pratiche</span>
                     <span>Iscrizione individuale</span>
                 </div>
-                <a href="/iscrizione-corsi/bls-d" class="link-azione">Iscrizione individuale</a>
             </div>
+            <a href="/iscrizione-corsi/bls-d" class="link-azione">Iscrizione individuale</a>
         </article>
-        <article class="percorso-card percorso-evidenza percorso-primo-soccorso">
+        <article class="course-directory-row percorso-primo-soccorso">
             <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Corso di disostruzione pediatrica">
-            <div>
+            <div class="course-directory-copy">
                 <span class="percorso-tag">Primo soccorso</span>
                 <h3>Disostruzione pediatrica e tagli sicuri</h3>
                 <p>Per genitori, nonni e caregiver: manovre su lattante e bambino, prevenzione del soffocamento e tagli sicuri degli alimenti.</p>
@@ -51,22 +51,36 @@
                     <span>Singolo o coppia</span>
                     <span>Lattante e bambino</span>
                 </div>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Richiedi iscrizione</a>
             </div>
+            <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Richiedi iscrizione</a>
         </article>
-        <article class="percorso-card percorso-evidenza percorso-nascita">
+        <article class="course-directory-row percorso-nascita">
             <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Corso di accompagnamento alla nascita">
-            <div>
+            <div class="course-directory-copy">
                 <span class="percorso-tag">Nascita</span>
                 <h3>Corso di accompagnamento alla nascita</h3>
-                <p>Per arrivare più preparati al rientro a casa: cura del neonato, sonno sicuro, prime routine, dubbi pratici e segnali da osservare.</p>
+                <p>Open day gratuito e percorso completo con cinque professionisti sanitari per guardare gravidanza, nascita e rientro a casa da più prospettive.</p>
                 <div class="course-meta" aria-label="Dettagli corso accompagnamento alla nascita">
                     <span>In presenza</span>
-                    <span>Con partner</span>
-                    <span>Primi giorni</span>
+                    <span>Coppie</span>
+                    <span>9 incontri</span>
                 </div>
-                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi iscrizione</a>
             </div>
+            <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi iscrizione</a>
+        </article>
+        <article class="course-directory-row percorso-laboratori">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Laboratori per l'infanzia">
+            <div class="course-directory-copy">
+                <span class="percorso-tag">Infanzia</span>
+                <h3>Laboratori svezzamento, gioco e sviluppo</h3>
+                <p>Incontri pratici per genitori e bambini su alimentazione, svezzamento, gioco e tappe di sviluppo, con indicazioni semplici da usare a casa.</p>
+                <div class="course-meta" aria-label="Dettagli laboratori per l'infanzia">
+                    <span>2 ore</span>
+                    <span>Genitori e bambini</span>
+                    <span>Date dedicate</span>
+                </div>
+            </div>
+            <a href="/iscrizione-corsi/laboratorio-infanzia" class="link-azione">Mostra le date</a>
         </article>
     </div>
 
@@ -74,7 +88,7 @@
         <h3>Dopo l'invio della richiesta</h3>
         <div class="course-flow-grid">
             <p><strong>1. Ricezione</strong> La richiesta arriva nell'area admin dello studio.</p>
-            <p><strong>2. Verifica</strong> Controlliamo data, posti disponibili e informazioni necessarie.</p>
+            <p><strong>2. Verifica</strong> Controllo data, posti disponibili e informazioni necessarie.</p>
             <p><strong>3. Conferma</strong> Ricevi un contatto per confermare partecipazione o prossima data utile.</p>
         </div>
     </div>

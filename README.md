@@ -12,7 +12,7 @@ Sito web ufficiale di S.C. Studio Infermieristico con sistema di prenotazione ap
 - **Target primario:** neomamme stanche e genitori preoccupati. Target attivi anche coppie alla prima gravidanza, nonni e caregiver. Aziende e gruppi sono target secondari da gestire quando arrivano.
 - **Consulenze online:** potenzialmente rivolte a famiglie in tutta Italia, con call conoscitiva gratuita prima di eventuali percorsi o pagamenti.
 - **Tono:** guida calma e competente, non promessa miracolosa. Evitare frasi che facciano pensare a risultati garantiti o soluzioni immediate per tutti.
-- **Naming:** `Corso di accompagnamento alla nascita` e `Disostruzione pediatrica e tagli sicuri` restano nomi ufficiali. `SOS neomamma` va evoluto verso un nome più calmo, come `Supporto primi mesi`, mantenendo nei testi le keyword consulenze neogenitori, sonno, spannolinamento e ciuccio.
+- **Naming:** `Corso di accompagnamento alla nascita`, `Disostruzione pediatrica e tagli sicuri` e `Consulenze genitori` sono i nomi principali da mantenere nei testi, affiancando keyword utili come primi mesi, consulenze neogenitori, sonno, spannolinamento e ciuccio.
 - **CTA:** privilegiare richieste informazioni e contatti qualificati. La call conoscitiva gratuita per le consulenze deve comparire anche in homepage. I prezzi non sono una leva principale nella fase iniziale.
 - **Differenza competitiva:** il corso di accompagnamento alla nascita valorizza 5 professionisti sanitari: infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 

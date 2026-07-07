@@ -4,7 +4,8 @@
 {% block contenuto %}
 <section class="pagina-interna pagina-consulenza">
     {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
-    <p class="eyebrow">{{ 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else 'Iscrizione corso' }}</p>
+    {% set page_eyebrow = 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else ('Iscrizione laboratorio' if corso_tipo == 'laboratorio-infanzia' else 'Iscrizione corso') %}
+    <p class="eyebrow">{{ page_eyebrow }}</p>
     <h2>{{ corso.titolo }}</h2>
 
     {% if corso_tipo == 'bls-d' %}
@@ -67,7 +68,7 @@
             </article>
         </div>
     </div>
-    {% else %}
+    {% elif corso_tipo == 'accompagnamento-nascita' %}
     <p class="sottotitolo">Iscriviti all'open day gratuito per conoscere il percorso, fare domande e capire se il corso completo è adatto alla tua famiglia. L'iscrizione al corso completo avverrà solo tramite link privato fornito successivamente.</p>
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
@@ -87,6 +88,29 @@
             <article>
                 <span>Prossimo passo</span>
                 <p>Se il percorso è adatto, l'iscrizione effettiva avverrà con un modulo privato separato.</p>
+            </article>
+        </div>
+    </div>
+    {% elif corso_tipo == 'laboratorio-infanzia' %}
+    <p class="sottotitolo">Laboratori in presenza per genitori e bambini su alimentazione, svezzamento, gioco e tappe di sviluppo. Se non trovi una data aperta, puoi lasciare i dati per essere ricontattato.</p>
+    <div class="course-value-panel">
+        <div class="section-heading section-heading-compact">
+            <p class="eyebrow">Cosa porti a casa</p>
+            <h3>Indicazioni pratiche da usare nella quotidianità</h3>
+            <p>Ogni laboratorio parte dall'età del bambino e da situazioni reali: pasti, gioco, sviluppo, dubbi frequenti e piccoli passaggi da rendere più semplici.</p>
+        </div>
+        <div class="course-value-grid">
+            <article>
+                <span>Svezzamento</span>
+                <p>Idee pratiche su alimenti, consistenze, autonomia e gestione dei dubbi più comuni.</p>
+            </article>
+            <article>
+                <span>Gioco</span>
+                <p>Proposte semplici per sostenere sviluppo, relazione e curiosità del bambino.</p>
+            </article>
+            <article>
+                <span>Età</span>
+                <p>Indicazioni più utili se lasci nome ed età del bambino nel modulo.</p>
             </article>
         </div>
     </div>
@@ -290,7 +314,7 @@
                 <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
             </label>
         </div>
-        {% else %}
+        {% elif corso_tipo == 'accompagnamento-nascita' %}
         <h3>Dati anagrafici</h3>
         <div class="form-riga">
             <div class="form-gruppo">
@@ -385,6 +409,43 @@
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
                 <span class="privacy-text">Confermo di voler procedere con l'iscrizione all'open day gratuito *</span>
+            </label>
+        </div>
+        {% elif corso_tipo == 'laboratorio-infanzia' %}
+        <h3>Dettagli laboratorio</h3>
+        <input type="hidden" name="partecipazione" value="Iscrizione individuale">
+        {% if corso.has_open_dates %}
+        <div class="form-gruppo">
+            <label for="data_corso">Data laboratorio *</label>
+            <select id="data_corso" name="data_corso" required>
+                <option value="">-- Seleziona --</option>
+                {% for option in corso.data_options %}
+                <option value="{{ option.value }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <p class="nota-form">La richiesta verrà salvata come ricontatto per i prossimi laboratori. Nel campo note puoi indicare età del bambino, fascia oraria o tema di interesse.</p>
+        {% endif %}
+
+        <h3>Privacy e immagini</h3>
+        <div class="form-gruppo checkbox-stack">
+            <label>
+                <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
+                <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+            </label>
+        </div>
+        <div class="form-gruppo checkbox-stack">
+            <label>
+                <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
+                <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
+            </label>
+            <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
+        </div>
+        <div class="form-gruppo">
+            <label class="privacy-label">
+                <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
+                <span class="privacy-text">Confermo di voler procedere con la richiesta di iscrizione al laboratorio *</span>
             </label>
         </div>
         {% endif %}

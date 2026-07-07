@@ -57,7 +57,7 @@
 - L'obiettivo di conversione iniziale è generare contatti qualificati, non vendite immediate o iscrizioni forzate.
 
 ## Naming e messaggi
-- Evitare un tono emergenziale per le consulenze ai neogenitori: `SOS neomamma` è comprensibile ma troppo urgente come nome principale. Preferire una direzione più calma, ad esempio `Supporto primi mesi`, mantenendo nei testi parole chiave SEO come consulenze neogenitori, sonno, spannolinamento e ciuccio.
+- Evitare un tono emergenziale per le consulenze ai neogenitori: `SOS neomamma` è comprensibile ma troppo urgente come nome principale. Usare `Consulenze genitori` come voce chiara di navigazione e nome del servizio, mantenendo nei testi parole chiave SEO come primi mesi, consulenze neogenitori, sonno, spannolinamento e ciuccio.
 - `Corso di accompagnamento alla nascita` resta il nome ufficiale.
 - `Disostruzione pediatrica e tagli sicuri` resta il nome ufficiale, anche se lungo, perché è chiaro e specifico.
 - BLSD va comunicato come investimento concreto nella sicurezza degli ambienti, non solo come corso tecnico.

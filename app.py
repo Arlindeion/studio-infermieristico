@@ -179,6 +179,10 @@ CORSI_ISCRIVIBILI = {
     'accompagnamento-nascita': {
         'titolo': 'Corso di accompagnamento alla nascita',
     },
+    'laboratorio-infanzia': {
+        'titolo': 'Laboratori svezzamento, gioco e sviluppo',
+        'partecipazione_options': ['Iscrizione individuale'],
+    },
 }
 
 FAQ_ITEMS = [
@@ -232,11 +236,11 @@ FAQ_ITEMS = [
         'link_text': 'Vedi i corsi',
     },
     {
-        'id': 'consulenze-sos-neomamma',
-        'question': 'Cos\'è SOS neomamma e quando può aiutare una famiglia?',
-        'answer': "SOS neomamma è il percorso di consulenza per i primi mesi: aiuta a fare ordine tra sonno sicuro, routine, cura quotidiana, poppate, pianto, dubbi pratici e segnali da osservare. È pensato per genitori che cercano una guida concreta, non giudicante e sostenibile.",
+        'id': 'consulenze-genitori',
+        'question': 'Cosa sono le consulenze genitori e quando possono aiutare una famiglia?',
+        'answer': "Le consulenze genitori sono incontri online o in studio per chi cerca una guida concreta su sonno, routine, spannolinamento, togliere il ciuccio, cura quotidiana e dubbi pratici dei primi mesi. Sono pensate per fare ordine senza giudizio e capire, anche con una call conoscitiva gratuita, quale passo è davvero utile.",
         'link_href': '/consulenze-online',
-        'link_text': 'Scopri SOS neomamma',
+        'link_text': 'Scopri le consulenze genitori',
     },
     {
         'id': 'consulenze-online-presenza',
@@ -1825,6 +1829,14 @@ def iscrizione_corso(corso_tipo):
                 'nome_partner': request.form.get('nome_partner', '').strip(),
                 'telefono_partner': request.form.get('telefono_partner', '').strip(),
             }
+
+        elif corso_tipo == 'laboratorio-infanzia':
+            if partecipazione not in corso['partecipazione_options']:
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.')
+            if not consenso_privacy:
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+            if request.form.get('conferma_finale') != 'on':
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.')
 
         persona = _trova_o_crea_persona_corso(
             nome=nome,
