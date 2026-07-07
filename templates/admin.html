@@ -10,6 +10,16 @@
         <a href="/admin/logout" class="btn-azione rosso">Esci</a>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="admin-flash-stack" role="status" aria-live="polite">
+            {% for category, message in messages %}
+            <p class="admin-flash admin-flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="admin-view-switch" role="tablist" aria-label="Sezioni admin">
         <button type="button" class="admin-view-btn attivo" data-admin-target="prenotazioni" role="tab" aria-selected="true">
             <span>Prenotazioni sanitarie</span>
@@ -21,6 +31,12 @@
             <span>Corsi</span>
             {% if iscrizioni_nuove_count > 0 %}
             <strong>{{ iscrizioni_nuove_count }}</strong>
+            {% endif %}
+        </button>
+        <button type="button" class="admin-view-btn" data-admin-target="eventi" role="tab" aria-selected="false">
+            <span>Registro eventi</span>
+            {% if eventi_critici_count > 0 %}
+            <strong>{{ eventi_critici_count }}</strong>
             {% endif %}
         </button>
     </div>
@@ -193,6 +209,80 @@
     <p class="nota nota-lg">Nessun appuntamento in questa categoria.</p>
     {% endif %}
 
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="eventi" id="admin-eventi">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Cabina di regia</p>
+            <h2>Registro eventi</h2>
+        </div>
+        <span class="admin-total">{{ registro_eventi|length }} eventi recenti</span>
+    </div>
+
+    <p class="filtro-descrizione">Qui trovi gli ultimi avvisi operativi: sincronizzazione Google Calendar, email non inviate e problemi che non devono bloccare il salvataggio dei dati.</p>
+
+    {% if registro_eventi %}
+    <div class="admin-table-wrap tabella-desktop">
+        <table class="tabella-admin tabella-eventi">
+            <thead>
+                <tr>
+                    <th>Quando</th>
+                    <th>Esito</th>
+                    <th>Categoria</th>
+                    <th>Messaggio</th>
+                    <th>Riferimento</th>
+                    <th>Dettagli</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evento in registro_eventi %}
+                <tr class="evento-{{ evento.esito }}">
+                    <td>
+                        <strong class="admin-primary">{{ evento.creato_il.strftime('%d/%m/%Y') }}</strong>
+                        <span class="admin-secondary">{{ evento.creato_il.strftime('%H:%M') }}</span>
+                    </td>
+                    <td><span class="event-badge event-badge-{{ evento.esito }}">{{ evento.esito }}</span></td>
+                    <td>{{ evento.categoria | replace('_', ' ') }}</td>
+                    <td>{{ evento.messaggio }}</td>
+                    <td>
+                        {% if evento.entita_tipo %}
+                        <strong class="admin-primary">{{ evento.entita_tipo }}</strong>
+                        <span class="admin-secondary">ID {{ evento.entita_id }}</span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td class="admin-note-cell">{{ evento.dettagli or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-admin-lista">
+        {% for evento in registro_eventi %}
+        <div class="card-admin evento-{{ evento.esito }}">
+            <div class="card-admin-header">
+                <strong>{{ evento.categoria | replace('_', ' ') }}</strong>
+                <span class="event-badge event-badge-{{ evento.esito }}">{{ evento.esito }}</span>
+            </div>
+            <div class="card-admin-body">
+                <p><span>Quando</span> {{ evento.creato_il.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><span>Messaggio</span> {{ evento.messaggio }}</p>
+                {% if evento.entita_tipo %}
+                <p><span>Riferimento</span> {{ evento.entita_tipo }} ID {{ evento.entita_id }}</p>
+                {% endif %}
+                {% if evento.dettagli %}
+                <p><span>Dettagli</span> {{ evento.dettagli }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="nota nota-lg">Nessun evento operativo registrato.</p>
+    {% endif %}
 </section>
 
 <!-- ISCRIZIONI CORSI -->

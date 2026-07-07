@@ -22,6 +22,10 @@ from googleapiclient.errors import HttpError
 load_dotenv()
 from config import config
 from flask_sqlalchemy import SQLAlchemy
+try:
+    from flask_migrate import Migrate
+except ImportError:  # Flask-Migrate è dichiarato in requirements, ma resta opzionale in locale finché non reinstalli.
+    Migrate = None
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from datetime import datetime, date, timedelta
@@ -71,6 +75,7 @@ app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 db = SQLAlchemy(app)
 mail = Mail(app)
+migrate = Migrate(app, db) if Migrate else None
 scheduler = BackgroundScheduler()
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -585,14 +590,28 @@ def _durata_corso_da_form(valore, tipo_corso):
 def crea_o_aggiorna_evento_calendario(appuntamento):
     """Crea l'evento su Google Calendar per un appuntamento appena confermato,
     oppure aggiorna orario/contenuto se esiste già (es. dopo uno spostamento).
-    Non blocca mai il flusso dell'admin: eventuali errori vengono solo loggati."""
+    Non blocca mai il flusso dell'admin: eventuali errori vengono registrati."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
     if not calendar_id:
         logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
-        return
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Evento appuntamento non creato: GOOGLE_CALENDAR_ID mancante.',
+            'Appuntamento',
+            appuntamento.id,
+        )
+        return False
     if servizio is None:
-        return
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Evento appuntamento non creato: servizio Google Calendar non disponibile.',
+            'Appuntamento',
+            appuntamento.id,
+        )
+        return False
 
     corpo = _corpo_evento_da_appuntamento(appuntamento)
     try:
@@ -603,27 +622,75 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
                 body=corpo
             ).execute()
             logger.info(f'>>> Evento Google Calendar aggiornato per appuntamento {appuntamento.id}.')
+            registra_evento(
+                'google_calendar',
+                'successo',
+                'Evento Google Calendar aggiornato per appuntamento confermato.',
+                'Appuntamento',
+                appuntamento.id,
+                {'google_event_id': appuntamento.google_event_id},
+            )
         else:
             evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
             appuntamento.google_event_id = evento_creato.get('id')
             db.session.commit()
             logger.info(f'>>> Evento Google Calendar creato per appuntamento {appuntamento.id}.')
+            registra_evento(
+                'google_calendar',
+                'successo',
+                'Evento Google Calendar creato per appuntamento confermato.',
+                'Appuntamento',
+                appuntamento.id,
+                {'google_event_id': appuntamento.google_event_id},
+            )
+        return True
     except HttpError as e:
         logger.error(f'>>> Errore nella scrittura su Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore Google Calendar durante la sincronizzazione di un appuntamento.',
+            'Appuntamento',
+            appuntamento.id,
+            {'errore': str(e)},
+        )
     except Exception as e:
         logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar: {e}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore imprevisto durante la sincronizzazione Calendar di un appuntamento.',
+            'Appuntamento',
+            appuntamento.id,
+            {'errore': str(e)},
+        )
+    return False
 
 
 def crea_o_aggiorna_evento_calendario_corso(corso):
     """Crea o aggiorna l'evento Google Calendar collegato a un corso admin.
-    Non blocca mai l'area admin: eventuali errori vengono solo loggati."""
+    Non blocca mai l'area admin: eventuali errori vengono registrati."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
     if not calendar_id:
         logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
-        return
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Evento corso non creato: GOOGLE_CALENDAR_ID mancante.',
+            'Corso',
+            corso.id,
+        )
+        return False
     if servizio is None:
-        return
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Evento corso non creato: servizio Google Calendar non disponibile.',
+            'Corso',
+            corso.id,
+        )
+        return False
 
     corpo = _corpo_evento_da_corso(corso)
     try:
@@ -634,15 +701,49 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
                 body=corpo
             ).execute()
             logger.info(f'>>> Evento Google Calendar aggiornato per corso {corso.id}.')
+            registra_evento(
+                'google_calendar',
+                'successo',
+                'Evento Google Calendar aggiornato per corso.',
+                'Corso',
+                corso.id,
+                {'google_event_id': corso.google_event_id},
+            )
         else:
             evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
             corso.google_event_id = evento_creato.get('id')
             db.session.commit()
             logger.info(f'>>> Evento Google Calendar creato per corso {corso.id}.')
+            registra_evento(
+                'google_calendar',
+                'successo',
+                'Evento Google Calendar creato per corso.',
+                'Corso',
+                corso.id,
+                {'google_event_id': corso.google_event_id},
+            )
+        return True
     except HttpError as e:
         logger.error(f'>>> Errore nella scrittura su Google Calendar per corso {corso.id}: {e}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore Google Calendar durante la sincronizzazione di un corso.',
+            'Corso',
+            corso.id,
+            {'errore': str(e)},
+        )
     except Exception as e:
         logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar per corso: {e}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore imprevisto durante la sincronizzazione Calendar di un corso.',
+            'Corso',
+            corso.id,
+            {'errore': str(e)},
+        )
+    return False
 
 
 def elimina_evento_calendario(appuntamento):
@@ -650,40 +751,138 @@ def elimina_evento_calendario(appuntamento):
     ad esempio quando l'appuntamento viene annullato."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
-    if not calendar_id or servizio is None or not appuntamento.google_event_id:
-        return
+    if not appuntamento.google_event_id:
+        return True
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Evento appuntamento non eliminato da Calendar: configurazione o servizio non disponibile.',
+            'Appuntamento',
+            appuntamento.id,
+            {'google_event_id': appuntamento.google_event_id},
+        )
+        return False
 
+    eliminato = False
     try:
         servizio.events().delete(calendarId=calendar_id, eventId=appuntamento.google_event_id).execute()
+        eliminato = True
+        registra_evento(
+            'google_calendar',
+            'successo',
+            'Evento Google Calendar eliminato per appuntamento annullato.',
+            'Appuntamento',
+            appuntamento.id,
+            {'google_event_id': appuntamento.google_event_id},
+        )
     except HttpError as e:
         # Se l'evento è già stato cancellato manualmente su Google Calendar,
         # l'API risponde 410/404: non è un errore su cui allarmarsi.
         if getattr(e, 'status_code', None) not in (404, 410):
             logger.error(f'>>> Errore nell\'eliminazione dell\'evento Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
+            registra_evento(
+                'google_calendar',
+                'errore',
+                'Errore Google Calendar durante l\'eliminazione di un appuntamento.',
+                'Appuntamento',
+                appuntamento.id,
+                {'errore': str(e), 'google_event_id': appuntamento.google_event_id},
+            )
+            return False
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Evento appuntamento già assente da Google Calendar.',
+            'Appuntamento',
+            appuntamento.id,
+            {'google_event_id': appuntamento.google_event_id},
+        )
+        eliminato = True
     except Exception as e:
         logger.error(f'>>> Errore imprevisto nell\'eliminazione dell\'evento Google Calendar: {e}', exc_info=True)
-    finally:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore imprevisto durante l\'eliminazione Calendar di un appuntamento.',
+            'Appuntamento',
+            appuntamento.id,
+            {'errore': str(e), 'google_event_id': appuntamento.google_event_id},
+        )
+        return False
+
+    if eliminato:
         appuntamento.google_event_id = None
         db.session.commit()
+    return eliminato
 
 
 def elimina_evento_calendario_corso(corso):
     """Elimina l'evento Google Calendar collegato a un corso (se esiste)."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
-    if not calendar_id or servizio is None or not corso.google_event_id:
-        return
+    if not corso.google_event_id:
+        return True
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Evento corso non eliminato da Calendar: configurazione o servizio non disponibile.',
+            'Corso',
+            corso.id,
+            {'google_event_id': corso.google_event_id},
+        )
+        return False
 
+    eliminato = False
     try:
         servizio.events().delete(calendarId=calendar_id, eventId=corso.google_event_id).execute()
+        eliminato = True
+        registra_evento(
+            'google_calendar',
+            'successo',
+            'Evento Google Calendar eliminato per corso.',
+            'Corso',
+            corso.id,
+            {'google_event_id': corso.google_event_id},
+        )
     except HttpError as e:
         if getattr(e, 'status_code', None) not in (404, 410):
             logger.error(f'>>> Errore nell\'eliminazione dell\'evento Google Calendar per corso {corso.id}: {e}', exc_info=True)
+            registra_evento(
+                'google_calendar',
+                'errore',
+                'Errore Google Calendar durante l\'eliminazione di un corso.',
+                'Corso',
+                corso.id,
+                {'errore': str(e), 'google_event_id': corso.google_event_id},
+            )
+            return False
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Evento corso già assente da Google Calendar.',
+            'Corso',
+            corso.id,
+            {'google_event_id': corso.google_event_id},
+        )
+        eliminato = True
     except Exception as e:
         logger.error(f'>>> Errore imprevisto nell\'eliminazione dell\'evento Google Calendar per corso: {e}', exc_info=True)
-    finally:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore imprevisto durante l\'eliminazione Calendar di un corso.',
+            'Corso',
+            corso.id,
+            {'errore': str(e), 'google_event_id': corso.google_event_id},
+        )
+        return False
+
+    if eliminato:
         corso.google_event_id = None
         db.session.commit()
+    return eliminato
 
 
 # ─── MODELLI DATABASE ───
@@ -813,6 +1012,45 @@ class PresenzaAccompagnamento(db.Model):
     incontro = db.relationship('IncontroAccompagnamento', backref=db.backref('presenze', lazy=True))
 
 
+class RegistroEvento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    categoria = db.Column(db.String(40), nullable=False, index=True)
+    esito = db.Column(db.String(20), nullable=False, default='info', index=True)
+    messaggio = db.Column(db.Text, nullable=False)
+    entita_tipo = db.Column(db.String(80), nullable=True, index=True)
+    entita_id = db.Column(db.Integer, nullable=True, index=True)
+    dettagli = db.Column(db.Text, nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, index=True)
+
+    def dettagli_dict(self):
+        if not self.dettagli:
+            return {}
+        try:
+            return json.loads(self.dettagli)
+        except json.JSONDecodeError:
+            return {}
+
+
+def registra_evento(categoria, esito, messaggio, entita_tipo=None, entita_id=None, dettagli=None):
+    """Registra un evento operativo senza interrompere il flusso principale."""
+    try:
+        evento = RegistroEvento(
+            categoria=categoria,
+            esito=esito,
+            messaggio=messaggio,
+            entita_tipo=entita_tipo,
+            entita_id=entita_id,
+            dettagli=json.dumps(dettagli, ensure_ascii=False) if dettagli else None,
+        )
+        db.session.add(evento)
+        db.session.commit()
+        return evento
+    except Exception as errore:
+        db.session.rollback()
+        logger.error(f'>>> Impossibile registrare evento operativo: {errore}', exc_info=True)
+        return None
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(Admin, int(user_id))
@@ -857,8 +1095,11 @@ def invia_email_conferma(appuntamento):
         )
         mail.send(msg)
         logger.info('>>> Email conferma inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email conferma: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email di conferma appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_spostamento(appuntamento):
@@ -883,8 +1124,11 @@ def invia_email_spostamento(appuntamento):
         )
         mail.send(msg)
         logger.info('>>> Email spostamento inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email spostamento: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email di spostamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_annullamento(appuntamento):
@@ -909,8 +1153,11 @@ def invia_email_annullamento(appuntamento):
         )
         mail.send(msg)
         logger.info('>>> Email annullamento inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email annullamento: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email di annullamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_nuova_prenotazione(appuntamento):
@@ -934,8 +1181,11 @@ def invia_email_nuova_prenotazione(appuntamento):
         )
         mail.send(msg)
         logger.info('>>> Email alert inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email alert nuova prenotazione non inviata allo studio.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_nuova_iscrizione(iscrizione):
@@ -965,8 +1215,11 @@ def invia_email_nuova_iscrizione(iscrizione):
         )
         mail.send(msg)
         logger.info('>>> Email alert iscrizione corso inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email alert iscrizione corso: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email alert iscrizione corso non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
@@ -993,8 +1246,11 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
         )
         mail.send(msg)
         logger.info('>>> Email conferma percorso accompagnamento inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email conferma percorso accompagnamento: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email conferma percorso accompagnamento non inviata.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
@@ -1015,8 +1271,11 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
         )
         mail.send(msg)
         logger.info('>>> Email alert percorso accompagnamento inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email alert percorso accompagnamento: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email alert percorso accompagnamento non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
+        return False
 
 
 def invia_email_ricordo_24h(appuntamento):
@@ -1040,8 +1299,11 @@ def invia_email_ricordo_24h(appuntamento):
         )
         mail.send(msg)
         logger.info('>>> Email ricordo 24h inviata con successo!')
+        return True
     except Exception as e:
         logger.error(f'>>> Errore invio email ricordo 24h: {e}', exc_info=True)
+        registra_evento('email', 'errore', 'Email promemoria 24h non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
 
 
 def controlla_e_invia_ricordi_24h():
@@ -2006,6 +2268,11 @@ def admin():
     iscrizioni_corsi = iscrizioni_query.order_by(IscrizioneCorso.creato_il.desc()).all()
     iscrizioni_totali_count = IscrizioneCorso.query.count()
     iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
+    registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
+    eventi_critici_count = RegistroEvento.query.filter(
+        RegistroEvento.esito.in_(['errore', 'avviso']),
+        RegistroEvento.creato_il >= datetime.now() - timedelta(days=7)
+    ).count()
     return render_template('admin.html',
                            appuntamenti=appuntamenti,
                            corsi=corsi,
@@ -2019,6 +2286,8 @@ def admin():
                            iscrizioni_totali_count=iscrizioni_totali_count,
                            persone_corsi_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
+                           registro_eventi=registro_eventi,
+                           eventi_critici_count=eventi_critici_count,
                            tipo_richiesta_labels=TIPI_RICHIESTA_CORSO,
                            corso_filtro_attivo=corso_filtro_attivo,
                            filtro_tipo_corso=filtro_tipo_corso,
@@ -2049,10 +2318,12 @@ def aggiorna_stato(id, stato):
     db.session.commit()
     if stato == 'Confermato':
         invia_email_conferma(appuntamento)
-        crea_o_aggiorna_evento_calendario(appuntamento)
+        if not crea_o_aggiorna_evento_calendario(appuntamento):
+            flash('Appuntamento confermato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
     elif stato == 'Annullato':
         invia_email_annullamento(appuntamento)
-        elimina_evento_calendario(appuntamento)
+        if not elimina_evento_calendario(appuntamento):
+            flash('Appuntamento annullato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
     return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
 
 
@@ -2100,7 +2371,8 @@ def modifica_appuntamento(id):
         appuntamento.stato = 'Confermato'
         db.session.commit()
         invia_email_spostamento(appuntamento)
-        crea_o_aggiorna_evento_calendario(appuntamento)
+        if not crea_o_aggiorna_evento_calendario(appuntamento):
+            flash('Appuntamento modificato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
         return redirect(url_for('admin', filtro='in_attesa'))
     return render_template('modifica_appuntamento.html', a=appuntamento)
 
@@ -2130,7 +2402,8 @@ def aggiungi_corso():
     )
     db.session.add(corso)
     db.session.commit()
-    crea_o_aggiorna_evento_calendario_corso(corso)
+    if not crea_o_aggiorna_evento_calendario_corso(corso):
+        flash('Corso salvato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
     return redirect(url_for('admin'))
 
 
@@ -2433,7 +2706,9 @@ def elimina_corso(id):
     if iscrizioni_attive:
         flash('Non puoi eliminare un corso con iscrizioni attive. Annulla prima le iscrizioni o chiudi il corso.', 'error')
         return redirect(url_for('admin') + '#admin-corsi')
-    elimina_evento_calendario_corso(corso)
+    if not elimina_evento_calendario_corso(corso):
+        flash('Il corso non è stato eliminato perché Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
     db.session.delete(corso)
     db.session.commit()
     return redirect(url_for('admin'))

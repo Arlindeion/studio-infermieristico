@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import app as app_module
 from app import app as flask_app
-from config import config
+from config import config, normalize_database_url
 from app import (
     db,
     Appuntamento,
@@ -21,6 +21,7 @@ from app import (
     PercorsoAccompagnamento,
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
+    RegistroEvento,
 )
 
 @pytest.fixture
@@ -53,6 +54,12 @@ def test_app_is_testing(app):
     """Assicurarsi che l'app sia in modalità di test."""
     assert app.config['TESTING'] == True
 
+
+def test_database_url_postgres_compatibile_con_psycopg():
+    assert normalize_database_url('postgres://user:pass@host/db').startswith('postgresql+psycopg://')
+    assert normalize_database_url('postgresql://user:pass@host/db').startswith('postgresql+psycopg://')
+
+
 def test_database_empty(app):
     """Iniziare con un database vuoto."""
     with app.app_context():
@@ -64,6 +71,7 @@ def test_database_empty(app):
         assert PercorsoAccompagnamento.query.count() == 0
         assert IncontroAccompagnamento.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 0
+        assert RegistroEvento.query.count() == 0
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -373,6 +381,15 @@ def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
         assert iscrizione.tipo_richiesta == 'ricontatto'
         assert iscrizione.posti == 0
         assert iscrizione.extra_dict()['richiesta_prossime_date'] is True
+
+
+def test_accompagnamento_senza_date_collega_callout_a_modulo_ricontatto(client):
+    resp = client.get('/iscrizione-corsi/accompagnamento-nascita')
+    assert resp.status_code == 200
+    assert 'Vuoi ricevere un avviso quando apre il prossimo open day?' in resp.text
+    assert 'href="#richiesta-ricontatto"' in resp.text
+    assert 'id="richiesta-ricontatto"' in resp.text
+    assert 'Modulo di ricontatto' in resp.text
 
 
 def test_iscrizione_coppia_occupa_due_posti(client):
@@ -867,6 +884,37 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.google_event_id == 'evento-abc-123'
+
+
+def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, google_calendar_scrittura_finto):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.side_effect = Exception('Calendar non disponibile')
+
+    with flask_app.app_context():
+        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
+                             servizio='Lavaggio auricolare', data='2026-09-01', ora='10:00')
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        evento = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            esito='errore',
+            entita_tipo='Appuntamento',
+            entita_id=appt_id,
+        ).one()
+        assert aggiornato.stato == 'Confermato'
+        assert aggiornato.google_event_id is None
+        assert 'sincronizzazione Calendar' in evento.messaggio
+
+    admin_resp = client.get('/admin')
+    assert 'Registro eventi' in admin_resp.text
+    assert 'Google Calendar non è stato aggiornato' in admin_resp.text
 
 
 def test_annullamento_elimina_evento_da_calendario(client, google_calendar_scrittura_finto):

@@ -4,11 +4,26 @@ from datetime import timedelta
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
+def normalize_database_url(database_url):
+    """Normalizza gli URL PostgreSQL forniti dagli hosting moderni."""
+    if not database_url:
+        return None
+    if database_url.startswith('postgres://'):
+        return database_url.replace('postgres://', 'postgresql+psycopg://', 1)
+    if database_url.startswith('postgresql://'):
+        return database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    return database_url
+
+
 class Config:
     """Configurazione di base."""
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    SQLALCHEMY_DATABASE_URI = normalize_database_url(os.environ.get('DATABASE_URL')) or \
         'sqlite:///' + os.path.join(basedir, 'appuntamenti.db')
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+    }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Impostazioni email
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'

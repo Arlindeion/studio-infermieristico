@@ -1629,16 +1629,29 @@ section[id] {
 .form-prenotazione .btn { width: 100%; padding: 1rem; font-size: 1rem; }
 
 .date-callout {
-    align-items: center;
     background: linear-gradient(135deg, rgba(238, 245, 234, 0.96), rgba(255, 240, 236, 0.72));
     border: 1px solid rgba(143, 166, 133, 0.22);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(330px, 1.15fr);
     gap: 1.25rem;
-    justify-content: space-between;
     margin: 1rem 0 1.5rem;
+    overflow: hidden;
     padding: 1.25rem;
+    position: relative;
+}
+
+.date-callout::before {
+    background: linear-gradient(180deg, var(--verde-header), var(--rosa-antico));
+    content: '';
+    inset: 0 auto 0 0;
+    position: absolute;
+    width: 5px;
+}
+
+.date-callout-copy {
+    padding-left: 0.55rem;
 }
 
 .date-callout h3 {
@@ -1648,15 +1661,101 @@ section[id] {
     margin-bottom: 0.45rem;
 }
 
-.date-callout p:last-child {
+.date-callout-copy p:last-child {
     color: #5a514b;
     line-height: 1.7;
     margin-bottom: 0;
 }
 
-.date-callout .btn {
-    flex: 0 0 auto;
-    white-space: nowrap;
+.date-callout-actions {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.date-action-card {
+    background: rgba(255, 253, 249, 0.72);
+    border: 1.5px solid rgba(82, 111, 80, 0.22);
+    border-radius: 8px;
+    color: var(--testo);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-height: 100%;
+    padding: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.date-action-card:hover,
+.date-action-card:focus-visible {
+    border-color: rgba(198, 120, 112, 0.7);
+    box-shadow: 0 12px 26px rgba(92, 76, 64, 0.12);
+    transform: translateY(-2px);
+}
+
+.date-action-card:focus-visible {
+    outline: 3px solid rgba(198, 120, 112, 0.22);
+    outline-offset: 3px;
+}
+
+.date-action-card-primary {
+    background: #fffdf9;
+    border-color: rgba(82, 111, 80, 0.46);
+    box-shadow: 0 10px 22px rgba(82, 111, 80, 0.12);
+}
+
+.date-action-card span {
+    color: var(--rosa-antico);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.date-action-card strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.03rem;
+    line-height: 1.25;
+}
+
+.date-action-card small {
+    color: var(--grigio);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.form-ricontatto-intro {
+    background: #fffdf9;
+    border: 1.5px solid rgba(82, 111, 80, 0.24);
+    border-left: 5px solid var(--verde-header);
+    border-radius: 8px;
+    margin-bottom: 1.35rem;
+    padding: 1rem 1.1rem;
+}
+
+.form-ricontatto-intro span {
+    color: var(--rosa-antico);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
+.form-ricontatto-intro p {
+    color: #5a514b;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.form-ricontatto-intro p + p {
+    margin-top: 0.25rem;
+}
+
+.form-ricontatto-intro strong {
+    color: var(--verde-scuro);
 }
 
 .nota-form {
@@ -2817,9 +2916,37 @@ footer p {
     box-shadow: var(--ombra-card);
 }
 
+.admin-flash-stack {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0 0 1rem;
+}
+
+.admin-flash {
+    border: 1px solid rgba(143, 166, 133, 0.22);
+    border-left: 5px solid var(--verde-header);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    color: var(--testo);
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0.85rem 1rem;
+}
+
+.admin-flash-error {
+    background: #fff0ec;
+    border-left-color: #c75047;
+}
+
+.admin-flash-success {
+    background: #eef5ea;
+}
+
 .admin-view-switch {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
     background: white;
     border: 1px solid rgba(143, 166, 133, 0.16);
@@ -3043,6 +3170,39 @@ footer p {
     min-height: 44px;
     padding: 0.65rem 0.8rem;
     width: 100%;
+}
+
+.tabella-eventi td {
+    vertical-align: top;
+}
+
+.event-badge {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 0.32rem 0.62rem;
+    text-transform: uppercase;
+}
+
+.event-badge-successo {
+    background: #eef5ea;
+    color: var(--verde-scuro);
+}
+
+.event-badge-avviso {
+    background: #fff4d8;
+    color: #8a6420;
+}
+
+.event-badge-errore {
+    background: #fff0ec;
+    color: #b23d35;
+}
+
+.evento-errore td {
+    background: rgba(255, 240, 236, 0.42);
 }
 
 /* ─── FILTRI ADMIN ─── */
@@ -3386,13 +3546,11 @@ footer p {
         grid-template-columns: 1fr;
     }
     .date-callout {
-        align-items: stretch;
-        flex-direction: column;
+        grid-template-columns: 1fr;
         padding: 1.15rem;
     }
-    .date-callout .btn {
-        text-align: center;
-        white-space: normal;
+    .date-callout-actions {
+        grid-template-columns: 1fr;
     }
     .hero-consulenze-media,
     .hero-consulenze-media img {
@@ -3648,6 +3806,9 @@ footer p {
 .card-admin.stato-contattato { border-left: 4px solid #2563eb; }
 .card-admin.stato-confermato { border-left: 4px solid #27ae60; }
 .card-admin.stato-annullato { border-left: 4px solid #e74c3c; }
+.card-admin.evento-successo { border-left: 4px solid var(--verde-header); }
+.card-admin.evento-avviso { border-left: 4px solid #d29b35; }
+.card-admin.evento-errore { border-left: 4px solid #c75047; }
 
 .card-admin-header {
     display: flex;

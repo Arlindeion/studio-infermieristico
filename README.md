@@ -4,10 +4,24 @@ Sito web ufficiale di S.C. Studio Infermieristico con sistema di prenotazione ap
 
 ---
 
+## Posizionamento marketing
+
+- **Brand:** S.C. Studio Infermieristico è la sede; per famiglie e neogenitori il riferimento umano è Selene.
+- **Percezione desiderata:** chi entra nel sito deve capire rapidamente che Selene è una professionista sanitaria competente, concreta e vicina ai genitori; una scelta autorevole per corsi, consulenze e primi mesi del bambino.
+- **Priorità commerciale iniziale:** corsi in presenza e contatti qualificati. Le prestazioni infermieristiche restano prenotabili ma non sono il focus principale della crescita.
+- **Target primario:** neomamme stanche e genitori preoccupati. Target attivi anche coppie alla prima gravidanza, nonni e caregiver. Aziende e gruppi sono target secondari da gestire quando arrivano.
+- **Consulenze online:** potenzialmente rivolte a famiglie in tutta Italia, con call conoscitiva gratuita prima di eventuali percorsi o pagamenti.
+- **Tono:** guida calma e competente, non promessa miracolosa. Evitare frasi che facciano pensare a risultati garantiti o soluzioni immediate per tutti.
+- **Naming:** `Corso di accompagnamento alla nascita` e `Disostruzione pediatrica e tagli sicuri` restano nomi ufficiali. `SOS neomamma` va evoluto verso un nome più calmo, come `Supporto primi mesi`, mantenendo nei testi le keyword consulenze neogenitori, sonno, spannolinamento e ciuccio.
+- **CTA:** privilegiare richieste informazioni e contatti qualificati. La call conoscitiva gratuita per le consulenze deve comparire anche in homepage. I prezzi non sono una leva principale nella fase iniziale.
+- **Differenza competitiva:** il corso di accompagnamento alla nascita valorizza 5 professionisti sanitari: infermiera, ostetrica, psicologa, osteopata e nutrizionista.
+
+---
+
 ## Stack tecnologico
 
 - **Backend:** Python 3.14 + Flask
-- **Database:** SQLite + SQLAlchemy
+- **Database:** SQLite locale / PostgreSQL-ready in produzione + SQLAlchemy
 - **Autenticazione:** Flask-Login
 - **Rate Limiting:** Flask-Limiter
 - **Email:** Flask-Mail + Gmail SMTP
@@ -105,6 +119,13 @@ GOOGLE_CALENDAR_ID=id_del_calendario_google
 
 GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
 
+DATABASE_URL=postgresql://utente:password@host:porta/database
+
+Se `DATABASE_URL` non è impostata, il sito usa automaticamente `appuntamenti.db`
+in SQLite. Gli URL PostgreSQL forniti dagli hosting come `postgres://...` o
+`postgresql://...` vengono normalizzati automaticamente per usare il driver
+`psycopg`.
+
 Per generare una SECRET_KEY sicura:
 
 ```bash
@@ -149,9 +170,21 @@ Se aggiorni un database `appuntamenti.db` già esistente dopo un pull, esegui un
 python3 migrazione_google_event_id.py
 python3 migrazione_corsi_google_event_id.py
 python3 migrazione_gestione_iscritti_corsi.py
+python3 migrazione_registro_eventi.py
 ```
 
 La terza migrazione aggiorna anche la gestione iscritti: date corso, stati/capienze, rubrica famiglie/partecipanti, modulo privato del percorso di accompagnamento alla nascita, incontri, presenze e collegamento tra iscrizioni e persona salvata. Non serve su un database nuovo creato da zero.
+La quarta crea il registro eventi per tracciare errori parziali, email non inviate e sincronizzazioni Google Calendar.
+
+Il progetto è predisposto per Flask-Migrate/Alembic. In locale puoi continuare
+a usare SQLite; prima del deploy su PostgreSQL conviene generare e verificare
+le migrazioni con:
+
+```bash
+flask db init
+flask db migrate -m "schema iniziale"
+flask db upgrade
+```
 
 ---
 
@@ -195,6 +228,7 @@ pip freeze > requirements.txt
 
 - Il file `.env` non è su GitHub — va ricreato manualmente su ogni dispositivo
 - Il database `appuntamenti.db` non è su GitHub — viene creato automaticamente al primo avvio
+- In produzione puoi usare PostgreSQL impostando `DATABASE_URL`
 - Le immagini in `static/img/` sono su GitHub — verificare che ci siano tutte dopo il clone
 
 ---

@@ -15,14 +15,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (adminViewButtons.length && adminPanels.length) {
-        const pannelloIniziale = window.location.hash === '#admin-corsi' ? 'corsi' : 'prenotazioni';
+        const pannelliPerHash = {
+            '#admin-corsi': 'corsi',
+            '#admin-eventi': 'eventi',
+            '#admin-prenotazioni': 'prenotazioni',
+        };
+        const hashPerPannello = {
+            corsi: '#admin-corsi',
+            eventi: '#admin-eventi',
+            prenotazioni: '#admin-prenotazioni',
+        };
+        const pannelloIniziale = pannelliPerHash[window.location.hash] || 'prenotazioni';
         mostraPannelloAdmin(pannelloIniziale);
 
         adminViewButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const target = this.dataset.adminTarget;
                 mostraPannelloAdmin(target);
-                window.history.replaceState(null, '', target === 'corsi' ? '#admin-corsi' : '#admin-prenotazioni');
+                window.history.replaceState(null, '', hashPerPannello[target] || '#admin-prenotazioni');
             });
         });
     }

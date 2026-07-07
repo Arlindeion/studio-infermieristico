@@ -3,6 +3,7 @@
 
 {% block contenuto %}
 <section class="pagina-interna pagina-consulenza">
+    {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
     <p class="eyebrow">{{ 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else 'Iscrizione corso' }}</p>
     <h2>{{ corso.titolo }}</h2>
 
@@ -13,7 +14,7 @@
             <span>Privati</span>
             <h3>Iscrizione individuale</h3>
             <p>Per partecipare a una data già aperta in studio e ricevere la gestione della richiesta direttamente dal sito.</p>
-            <a href="#iscrizione-individuale" class="link-azione">Vai al modulo</a>
+            <a href="#{{ form_anchor_id }}" class="link-azione">Vai al modulo</a>
         </article>
         <article class="blsd-choice-card blsd-choice-card-azienda">
             <span>Aziende e gruppi</span>
@@ -99,17 +100,36 @@
 
     {% if not corso.has_open_dates %}
     <div class="date-callout">
-        <div>
+        <div class="date-callout-copy">
             <p class="eyebrow">Prossime date</p>
-            <h3>Al momento non ci sono date aperte per questo corso</h3>
-            <p>Puoi lasciare comunque i tuoi dati: la richiesta resta in area admin come interesse e ti ricontatteremo appena apre una data adatta.</p>
+            <h3>{{ 'Vuoi ricevere un avviso quando apre il prossimo open day?' if corso_tipo == 'accompagnamento-nascita' else 'Vuoi ricevere un avviso quando apre una nuova data?' }}</h3>
+            <p>Lasciando i dati nel modulo sotto, la richiesta resta registrata allo studio e ti ricontatteremo appena ci sarà una disponibilità adatta. WhatsApp resta utile se hai una domanda prima di compilare.</p>
         </div>
-        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="btn btn-secondaria" target="_blank" rel="noopener noreferrer">Scrivimi su WhatsApp</a>
+        <div class="date-callout-actions" aria-label="Scegli come restare aggiornato sulle prossime date">
+            <a href="#{{ form_anchor_id }}" class="date-action-card date-action-card-primary">
+                <span>Scelta consigliata</span>
+                <strong>Lascia i dati nel modulo</strong>
+                <small>Resta tutto tracciato per il ricontatto.</small>
+            </a>
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="date-action-card" target="_blank" rel="noopener noreferrer">
+                <span>Domanda veloce</span>
+                <strong>Scrivimi su WhatsApp</strong>
+                <small>Per chiarire un dubbio prima di inviare.</small>
+            </a>
+        </div>
     </div>
     {% endif %}
 
-    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}"{% if corso_tipo == 'bls-d' %} id="iscrizione-individuale"{% endif %}>
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}" id="{{ form_anchor_id }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        {% if not corso.has_open_dates %}
+        <div class="form-ricontatto-intro">
+            <span>Modulo di ricontatto</span>
+            <p><strong>Lascia i tuoi dati: ti avviseremo appena apre {{ 'un nuovo open day' if corso_tipo == 'accompagnamento-nascita' else 'una nuova data' }}.</strong></p>
+            <p>Nel campo note puoi indicare preferenze di giorno, fascia oraria o dubbi da chiarire.</p>
+        </div>
+        {% endif %}
 
         <h3>Dati partecipante</h3>
         <div class="form-gruppo">
@@ -164,7 +184,7 @@
             </div>
         </div>
         {% else %}
-        <p class="nota-form">La richiesta verrà salvata come interesse per le prossime date disponibili.</p>
+        <p class="nota-form">La richiesta verrà salvata come ricontatto per le prossime date disponibili. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
 
         <h3>Dichiarazioni e consensi</h3>
@@ -231,7 +251,7 @@
             {% endif %}
         </div>
         {% if not corso.has_open_dates %}
-        <p class="nota-form">La richiesta verrà salvata come interesse per le prossime date disponibili.</p>
+        <p class="nota-form">La richiesta verrà salvata come ricontatto per le prossime date disponibili. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
 
         <div class="form-riga">
@@ -344,7 +364,7 @@
             </select>
         </div>
         {% else %}
-        <p class="nota-form">La richiesta verrà salvata come interesse per le prossime date disponibili.</p>
+        <p class="nota-form">La richiesta verrà salvata come ricontatto per i prossimi open day. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
 
         <h3>Privacy e immagini</h3>
