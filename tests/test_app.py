@@ -11,7 +11,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import app as app_module
 from app import app as flask_app
 from config import config
-from app import db, Appuntamento, Admin, Corso, IscrizioneCorso
+from app import (
+    db,
+    Appuntamento,
+    Admin,
+    Corso,
+    IscrizioneCorso,
+    PersonaCorso,
+    PercorsoAccompagnamento,
+    IncontroAccompagnamento,
+    PresenzaAccompagnamento,
+)
 
 @pytest.fixture
 def app():
@@ -50,6 +60,10 @@ def test_database_empty(app):
         assert Admin.query.count() == 0
         assert Corso.query.count() == 0
         assert IscrizioneCorso.query.count() == 0
+        assert PersonaCorso.query.count() == 0
+        assert PercorsoAccompagnamento.query.count() == 0
+        assert IncontroAccompagnamento.query.count() == 0
+        assert PresenzaAccompagnamento.query.count() == 0
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -110,6 +124,16 @@ def test_holiday_flow(client):
     resp = client.get('/')
     assert resp.status_code == 200
     assert b'S.C. Studio Infermieristico' in resp.data  # adeguare in base al contenuto effettivo
+    assert 'href="/faq">FAQ</a>' in resp.text
+
+
+def test_faq_include_flussi_aggiornati(client):
+    resp = client.get('/faq')
+    assert resp.status_code == 200
+    assert 'SOS neomamma' in resp.text
+    assert 'BLSD' in resp.text
+    assert 'link privato' in resp.text
+    assert 'open day gratuito' in resp.text
 
 
 def _prossimo_giorno_con_weekday(weekday):
@@ -155,6 +179,34 @@ def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18
         return str(corso.id)
 
 
+def _crea_percorso_accompagnamento(slug='percorso-test', incontri=9):
+    with flask_app.app_context():
+        percorso = PercorsoAccompagnamento(
+            titolo='Iscrizione al corso',
+            slug=slug,
+            descrizione='Edizione privata test',
+            capienza_coppie=8,
+            luogo='Studio',
+            contatti='3806317175',
+            stato='Aperto',
+        )
+        db.session.add(percorso)
+        db.session.flush()
+        professionisti = ['Infermiera', 'Ostetrica', 'Psicologa', 'Osteopata', 'Nutrizionista']
+        for numero in range(1, incontri + 1):
+            db.session.add(IncontroAccompagnamento(
+                percorso=percorso,
+                numero=numero,
+                data=f'2099-08-{numero:02d}',
+                ora='17:00',
+                professionista=professionisti[(numero - 1) % len(professionisti)],
+                tema=f'Incontro {numero}',
+                luogo='Studio',
+            ))
+        db.session.commit()
+        return percorso.slug, percorso.id
+
+
 def test_iscrizione_disostruzione_salva_richiesta(client):
     data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
     token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
@@ -164,6 +216,8 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         'codice_fiscale': 'RSSMRA80A01G482X',
         'telefono': '3331234567',
         'email': 'mario@example.com',
+        'nome_bambino': 'Luca',
+        'eta_bambino': '3 anni',
         'partecipazione': 'Singolo 34 euro',
         'data_corso': data_corso_id,
         'scopo_informativo': 'on',
@@ -179,8 +233,16 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.corso_tipo == 'disostruzione-pediatrica'
         assert iscrizione.nome == 'Mario Rossi'
+        assert iscrizione.corso_id == int(data_corso_id)
+        assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
+        assert iscrizione.posti == 1
+        assert iscrizione.persona is not None
+        assert iscrizione.persona.nome_bambino == 'Luca'
+        assert iscrizione.persona.eta_bambino == '3 anni'
+        assert iscrizione.extra_dict()['nome_bambino'] == 'Luca'
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
+        assert PersonaCorso.query.count() == 1
 
 
 def test_iscrizione_blsd_salva_richiesta_individuale(client):
@@ -210,6 +272,9 @@ def test_iscrizione_blsd_salva_richiesta_individuale(client):
         assert iscrizione.corso_tipo == 'bls-d'
         assert iscrizione.corso_titolo == 'Corso BLSD'
         assert iscrizione.partecipazione == 'Iscrizione individuale'
+        assert iscrizione.corso_id == int(data_corso_id)
+        assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
+        assert iscrizione.posti == 1
         assert '17/07/2099' in iscrizione.data_corso
         assert not iscrizione.consenso_immagini
         assert 'ente_azienda' not in extra
@@ -278,7 +343,10 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
     stato_resp = client.get(f'/admin/iscrizione-corso/1/Contattato?token={csrf}')
     assert stato_resp.status_code == 302
     with flask_app.app_context():
-        assert IscrizioneCorso.query.first().stato == 'Contattato'
+        iscrizione = IscrizioneCorso.query.first()
+        assert iscrizione.stato == 'Contattato'
+        assert iscrizione.corso_id == int(data_corso_id)
+        assert iscrizione.tipo_richiesta == 'open_day'
 
 
 def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
@@ -301,7 +369,182 @@ def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.data_corso == 'Da ricontattare per prossime date'
+        assert iscrizione.corso_id is None
+        assert iscrizione.tipo_richiesta == 'ricontatto'
+        assert iscrizione.posti == 0
         assert iscrizione.extra_dict()['richiesta_prossime_date'] is True
+
+
+def test_iscrizione_coppia_occupa_due_posti(client):
+    data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'partecipazione': 'Coppia 60 euro',
+        'data_corso': data_corso_id,
+        'nome_secondo_partecipante': 'Luisa Verdi',
+        'codice_fiscale_secondo_partecipante': 'VRDLSU90A41G482Y',
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.posti == 2
+
+
+def test_admin_mostra_panoramica_iscritti_per_corso(client):
+    data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    _login_admin(client)
+    resp = client.get(f'/admin?corso_id={data_corso_id}')
+    assert resp.status_code == 200
+    assert 'Panoramica corsi e iscritti' in resp.text
+    assert 'Disostruzione pediatrica' in resp.text
+    assert 'posti stimati' in resp.text
+    assert 'Richiesta iscrizione' in resp.text
+
+
+def test_admin_filtra_iscritti_per_tipologia_corso(client):
+    with flask_app.app_context():
+        disostruzione = IscrizioneCorso(
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='2099-07-16',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+        )
+        blsd = IscrizioneCorso(
+            corso_tipo='bls-d',
+            corso_titolo='BLSD',
+            nome='Giulia Bianchi',
+            telefono='3337654321',
+            email='giulia@example.com',
+            codice_fiscale='BNCGLI85A41G482Z',
+            data_corso='2099-07-17',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+        )
+        db.session.add_all([disostruzione, blsd])
+        db.session.commit()
+
+    _login_admin(client)
+    resp = client.get('/admin?tipo_corso=disostruzione-pediatrica')
+    assert resp.status_code == 200
+    assert 'Visualizza iscritti per tipologia' in resp.text
+    assert 'Disostruzione pediatrica' in resp.text
+    assert 'Mario Rossi' in resp.text
+    assert 'Giulia Bianchi' not in resp.text
+
+
+def test_admin_aggiunge_iscritto_manualmente_e_crea_rubrica(client):
+    data_corso_id = _crea_data_corso(
+        'laboratorio-infanzia',
+        "Laboratorio per l'infanzia",
+        data='2099-07-20',
+        ora='17:00',
+    )
+    csrf = _login_admin(client)
+
+    resp = client.post('/admin/iscrizione-corso/aggiungi', data={
+        'corso_id': data_corso_id,
+        'nome': 'Anna Neri',
+        'telefono': '3331234567',
+        'email': 'anna@example.com',
+        'codice_fiscale': '',
+        'nome_bambino': 'Leo',
+        'eta_bambino': '18 mesi',
+        'tipo_richiesta': 'iscrizione_effettiva',
+        'stato': 'Confermato',
+        'posti': '1',
+        'partecipazione': 'Bambino/a',
+        'note': 'Prenotata da Instagram',
+        'note_persona': 'Preferisce laboratorio pomeridiano',
+        'consenso_privacy': 'on',
+        '_csrf_token': csrf,
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == f'/admin?corso_id={data_corso_id}#admin-corsi'
+    with flask_app.app_context():
+        persona = PersonaCorso.query.one()
+        iscrizione = IscrizioneCorso.query.one()
+        assert persona.nome == 'Anna Neri'
+        assert persona.nome_bambino == 'Leo'
+        assert persona.eta_bambino == '18 mesi'
+        assert 'pomeridiano' in persona.note
+        assert iscrizione.persona_id == persona.id
+        assert iscrizione.corso_id == int(data_corso_id)
+        assert iscrizione.stato == 'Confermato'
+        assert iscrizione.tipo_richiesta == 'iscrizione_effettiva'
+        assert iscrizione.posti == 1
+        assert iscrizione.codice_fiscale == ''
+        assert iscrizione.extra_dict()['inserimento_admin'] is True
+
+
+def test_admin_richiama_persona_da_rubrica_senza_duplicarla(client):
+    data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
+    with flask_app.app_context():
+        persona = PersonaCorso(
+            nome='Anna Neri',
+            telefono='3331234567',
+            email='anna@example.com',
+            nome_bambino='Leo',
+            eta_bambino='18 mesi',
+        )
+        db.session.add(persona)
+        db.session.commit()
+        persona_id = persona.id
+
+    csrf = _login_admin(client)
+    resp = client.post('/admin/iscrizione-corso/aggiungi', data={
+        'corso_id': data_corso_id,
+        'persona_id': str(persona_id),
+        'tipo_richiesta': 'richiesta_iscrizione',
+        'stato': 'Nuova',
+        'posti': '1',
+        'partecipazione': 'Iscrizione individuale',
+        'consenso_privacy': 'on',
+        '_csrf_token': csrf,
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        assert PersonaCorso.query.count() == 1
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.persona_id == persona_id
+        assert iscrizione.nome == 'Anna Neri'
+        assert iscrizione.telefono == '3331234567'
+        assert iscrizione.extra_dict()['nome_bambino'] == 'Leo'
 
 
 def test_chiusure_studio_disabilitano_domeniche_festivi_e_sabato_pomeriggio(client):
@@ -472,6 +715,119 @@ def _login_admin(client):
         token_azioni = sess.get('_csrf_token')
     assert token_azioni, 'Login admin fallito: impossibile ottenere un token CSRF valido.'
     return token_azioni
+
+
+def _csrf_admin(client):
+    client.get('/admin')
+    with client.session_transaction() as sess:
+        token = sess.get('_csrf_token')
+    assert token
+    return token
+
+
+def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
+    slug, percorso_id = _crea_percorso_accompagnamento()
+    resp = client.get(f'/iscrizione-accompagnamento/{slug}')
+    assert resp.status_code == 200
+    assert 'infermiera, ostetrica, psicologa, osteopata e nutrizionista' in resp.text
+    import re
+    token = re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(f'/iscrizione-accompagnamento/{slug}', data={
+            'nome': 'Luisa Verdi',
+            'telefono': '3331234567',
+            'email': 'luisa@example.com',
+            'codice_fiscale': 'VRDLSU90A41G482Y',
+            'data_presunta_parto': '2100-01-10',
+            'partner_presente': 'Si',
+            'consenso_privacy': 'on',
+            'consenso_immagini': 'ACCONSENTO',
+            '_csrf_token': token,
+        })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/iscrizione-accompagnamento/conferma'
+    assert send_mock.call_count == 2
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        extra = iscrizione.extra_dict()
+        assert iscrizione.percorso_accompagnamento_id == percorso_id
+        assert iscrizione.stato == 'Confermato'
+        assert iscrizione.tipo_richiesta == 'iscrizione_effettiva'
+        assert iscrizione.posti == 1
+        assert iscrizione.partecipazione == 'Coppia - partner si'
+        assert extra['data_presunta_parto'] == '2100-01-10'
+        assert extra['partner_presente'] == 'Si'
+        assert iscrizione.consenso_immagini is True
+        assert PersonaCorso.query.count() == 1
+        assert PresenzaAccompagnamento.query.count() == 9
+
+
+def test_admin_gestisce_percorso_accompagnamento_e_export_pdf(client):
+    csrf = _login_admin(client)
+    resp = client.post('/admin/percorso-accompagnamento/aggiungi', data={
+        'titolo': 'Iscrizione al corso',
+        'slug': 'edizione-privata-test',
+        'capienza_coppie': '6',
+        'stato': 'Aperto',
+        'contatti': '3806317175',
+        '_csrf_token': csrf,
+    })
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        percorso = PercorsoAccompagnamento.query.filter_by(slug='edizione-privata-test').one()
+        percorso_id = percorso.id
+
+    csrf = _csrf_admin(client)
+    resp = client.post(f'/admin/percorso-accompagnamento/{percorso_id}/incontro/aggiungi', data={
+        'numero': '1',
+        'data': '2099-09-01',
+        'ora': '17:00',
+        'professionista': 'Ostetrica',
+        'tema': 'Nascita e rientro a casa',
+        '_csrf_token': csrf,
+    })
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        percorso = db.session.get(PercorsoAccompagnamento, percorso_id)
+        persona = PersonaCorso(nome='Luisa Verdi', telefono='3331234567', email='luisa@example.com')
+        iscrizione = IscrizioneCorso(
+            percorso_accompagnamento=percorso,
+            persona=persona,
+            corso_tipo='accompagnamento-nascita',
+            corso_titolo=percorso.titolo,
+            nome='Luisa Verdi',
+            telefono='3331234567',
+            email='luisa@example.com',
+            codice_fiscale='VRDLSU90A41G482Y',
+            data_corso='Percorso di 1 incontri',
+            partecipazione='Coppia - partner si',
+            dati_extra='{"data_presunta_parto": "2100-01-10", "partner_presente": "Si"}',
+            tipo_richiesta='iscrizione_effettiva',
+            posti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        )
+        db.session.add_all([persona, iscrizione])
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+        incontro_id = IncontroAccompagnamento.query.filter_by(percorso_id=percorso_id).one().id
+
+    csrf = _csrf_admin(client)
+    resp = client.post(f'/admin/percorso-accompagnamento/{percorso_id}/presenze', data={
+        f'presenza_{iscrizione_id}_{incontro_id}': 'presente',
+        '_csrf_token': csrf,
+    })
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        presenza = PresenzaAccompagnamento.query.one()
+        assert presenza.presente is True
+
+    resp = client.get(f'/admin/percorso-accompagnamento/{percorso_id}/export-pdf')
+    assert resp.status_code == 200
+    assert resp.mimetype == 'application/pdf'
+    assert resp.data.startswith(b'%PDF')
 
 
 @pytest.fixture

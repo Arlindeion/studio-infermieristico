@@ -141,6 +141,20 @@ Apri il browser su: **http://127.0.0.1:5000**
 
 ---
 
+## Migrazioni database
+
+Se aggiorni un database `appuntamenti.db` già esistente dopo un pull, esegui una volta:
+
+```bash
+python3 migrazione_google_event_id.py
+python3 migrazione_corsi_google_event_id.py
+python3 migrazione_gestione_iscritti_corsi.py
+```
+
+La terza migrazione aggiorna anche la gestione iscritti: date corso, stati/capienze, rubrica famiglie/partecipanti, modulo privato del percorso di accompagnamento alla nascita, incontri, presenze e collegamento tra iscrizioni e persona salvata. Non serve su un database nuovo creato da zero.
+
+---
+
 ## Aggiornare GitHub dopo le modifiche
 
 ```bash

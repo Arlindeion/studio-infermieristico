@@ -200,12 +200,473 @@
     <div class="admin-section-heading">
         <div>
             <p class="admin-eyebrow">Area formazione</p>
-            <h2>Iscrizioni corsi</h2>
+            <h2>Panoramica corsi e iscritti</h2>
         </div>
-        <span class="admin-total">{{ iscrizioni_corsi|length }} richieste</span>
+        <span class="admin-total">{{ iscrizioni_totali_count }} richieste totali</span>
     </div>
+
+    <form class="course-type-selector" method="GET" action="{{ url_for('admin') }}#admin-corsi">
+        <div>
+            <label for="admin-course-type-filter">Visualizza iscritti per tipologia</label>
+            <select id="admin-course-type-filter" name="tipo_corso">
+                <option value="">Tutte le tipologie ({{ iscrizioni_totali_count }})</option>
+                {% for valore, corso_tipo in corsi_admin_tipi.items() %}
+                <option value="{{ valore }}" {% if filtro_tipo_corso == valore %}selected{% endif %}>
+                    {{ corso_tipo.label }} ({{ iscrizioni_per_tipo_count.get(valore, 0) }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn-azione blu">Filtra</button>
+        {% if filtro_tipo_corso %}
+        <a href="/admin#admin-corsi" class="btn-azione">Mostra tutte</a>
+        {% endif %}
+    </form>
+
+    {% if filtro_tipo_corso %}
+    <p class="filtro-descrizione">Stai vedendo {{ iscrizioni_filtrate_count }} iscrizione{% if iscrizioni_filtrate_count != 1 %}i{% endif %} per: <strong>{{ filtro_tipo_corso_label }}</strong>.</p>
+    {% endif %}
+
+    {% if panoramica_corsi %}
+    <div class="course-dashboard-grid">
+        {% for item in panoramica_corsi %}
+        {% set c = item.corso %}
+        <article class="course-dashboard-card corso-tipo-{{ c.tipo or 'generico' }} stato-corso-{{ item.stato | lower }}">
+            <div class="course-dashboard-head">
+                <span class="course-type-dot" aria-hidden="true"></span>
+                <span class="course-status">{{ item.stato }}</span>
+            </div>
+            <h3>{{ c.titolo }}</h3>
+            <p class="course-dashboard-date">{{ c.data }}{% if c.ora %} alle {{ c.ora }}{% endif %}{% if c.luogo %} · {{ c.luogo }}{% endif %}</p>
+            <div class="course-dashboard-metrics">
+                <div>
+                    <strong>{{ item.attive_count }}</strong>
+                    <span>richieste attive</span>
+                </div>
+                <div>
+                    <strong>{{ item.confermate_count }}</strong>
+                    <span>confermati</span>
+                </div>
+                <div>
+                    <strong>{{ item.posti_attivi }}</strong>
+                    <span>posti stimati</span>
+                </div>
+                <div>
+                    <strong>{{ item.open_day_count }}</strong>
+                    <span>open day</span>
+                </div>
+            </div>
+            <p class="course-dashboard-capacity">
+                {% if item.capienza %}
+                Capienza {{ item.capienza }} · {{ item.posti_liberi }} posti liberi stimati
+                {% else %}
+                Capienza non impostata
+                {% endif %}
+            </p>
+            <div class="course-dashboard-actions">
+                <a href="/admin?corso_id={{ c.id }}#admin-corsi" class="btn-azione blu">Vedi iscritti</a>
+                <a href="/admin#admin-corsi" class="btn-azione">Tutti i corsi</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="nota nota-lg">Non ci sono ancora corsi in calendario.</p>
+    {% endif %}
+
+    {% if corsi %}
+    <div class="admin-course-tools">
+        <div class="form-corso manual-enrollment-panel">
+            <div class="manual-panel-heading">
+                <div>
+                    <p class="admin-eyebrow">Inserimento rapido</p>
+                    <h3>Aggiungi iscritto o partecipante</h3>
+                </div>
+                <span class="admin-total">{{ persone_corsi_count }} contatti in rubrica</span>
+            </div>
+            <p class="manual-panel-copy">Usa una persona già salvata oppure crea un nuovo contatto famiglia. Nome bambino ed età restano in rubrica per i laboratori successivi.</p>
+            <form method="POST" action="/admin/iscrizione-corso/aggiungi" class="form-admin-manuale">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Corso o laboratorio *</label>
+                        <select name="corso_id" required>
+                            <option value="">Seleziona corso</option>
+                            {% for c in corsi %}
+                            <option value="{{ c.id }}" {% if corso_filtro_attivo and corso_filtro_attivo.id == c.id %}selected{% endif %}>
+                                {{ c.titolo }} - {{ c.data }}{% if c.ora %} ore {{ c.ora }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Richiama dalla rubrica</label>
+                        <select name="persona_id" id="persona-corso-select">
+                            <option value="">Nuova persona/famiglia</option>
+                            {% for p in persone_corsi %}
+                            <option value="{{ p.id }}"
+                                    data-nome="{{ p.nome }}"
+                                    data-telefono="{{ p.telefono }}"
+                                    data-email="{{ p.email or '' }}"
+                                    data-codice-fiscale="{{ p.codice_fiscale or '' }}"
+                                    data-nome-bambino="{{ p.nome_bambino or '' }}"
+                                    data-eta-bambino="{{ p.eta_bambino or '' }}">
+                                {{ p.nome }}{% if p.nome_bambino %} · {{ p.nome_bambino }}{% endif %}{% if p.telefono %} · {{ p.telefono }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Nome genitore/adulto *</label>
+                        <input type="text" name="nome" id="persona-corso-nome" placeholder="Es. Mario Rossi">
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Telefono *</label>
+                        <input type="tel" name="telefono" id="persona-corso-telefono" placeholder="Es. 3331234567">
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Email</label>
+                        <input type="email" name="email" id="persona-corso-email" placeholder="nome@email.it">
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Codice fiscale</label>
+                        <input type="text" name="codice_fiscale" id="persona-corso-codice-fiscale" placeholder="Facoltativo">
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Nome bambino</label>
+                        <input type="text" name="nome_bambino" id="persona-corso-nome-bambino" placeholder="Es. Luca">
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Età bambino</label>
+                        <input type="text" name="eta_bambino" id="persona-corso-eta-bambino" placeholder="Es. 8 mesi, 3 anni">
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Flusso</label>
+                        <select name="tipo_richiesta">
+                            <option value="iscrizione_effettiva">Iscrizione effettiva</option>
+                            <option value="richiesta_iscrizione">Richiesta iscrizione</option>
+                            <option value="open_day">Open day</option>
+                            <option value="ricontatto">Da ricontattare</option>
+                        </select>
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Stato</label>
+                        <select name="stato">
+                            <option value="Confermato">Confermato</option>
+                            <option value="Nuova">Nuova</option>
+                            <option value="Contattato">Contattato</option>
+                            <option value="Annullato">Annullato</option>
+                        </select>
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Posti conteggiati</label>
+                        <input type="number" name="posti" min="0" step="1" value="1">
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Partecipazione</label>
+                        <input type="text" name="partecipazione" placeholder="Es. Iscrizione individuale, Coppia, Bambino/a">
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Note iscrizione</label>
+                        <input type="text" name="note" placeholder="Note legate a questo corso">
+                    </div>
+                </div>
+
+                <div class="form-gruppo">
+                    <label>Note rubrica</label>
+                    <textarea name="note_persona" rows="2" placeholder="Informazioni utili da ritrovare anche nelle prossime iscrizioni"></textarea>
+                </div>
+
+                <div class="manual-consensi">
+                    <label>
+                        <input type="checkbox" name="consenso_privacy" checked>
+                        <span>Privacy/contatto raccolto</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="consenso_immagini">
+                        <span>Consenso immagini raccolto</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn">Aggiungi al corso</button>
+            </form>
+        </div>
+
+        <details class="rubrica-corsi-panel">
+            <summary>
+                <span>Rubrica famiglie e partecipanti</span>
+                <strong>{{ persone_corsi_count }}</strong>
+            </summary>
+            {% if persone_corsi %}
+            <div class="rubrica-corsi-grid">
+                {% for p in persone_corsi %}
+                <article class="rubrica-corsi-card">
+                    <div>
+                        <strong>{{ p.nome }}</strong>
+                        <span>{{ p.telefono }}</span>
+                    </div>
+                    <p>{{ p.email or 'Email non indicata' }}</p>
+                    {% if p.nome_bambino or p.eta_bambino %}
+                    <p class="rubrica-bambino">
+                        Bambino: {{ p.nome_bambino or 'nome non indicato' }}{% if p.eta_bambino %}, {{ p.eta_bambino }}{% endif %}
+                    </p>
+                    {% endif %}
+                    {% if p.note %}
+                    <p class="rubrica-note">{{ p.note }}</p>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="nota">La rubrica si popolerà con le iscrizioni online o con gli inserimenti manuali.</p>
+            {% endif %}
+        </details>
+    </div>
+    {% endif %}
+
+    <div class="birth-path-admin" id="admin-percorsi-accompagnamento">
+        <div class="admin-section-heading">
+            <div>
+                <p class="admin-eyebrow">Modulo privato</p>
+                <h2>Corso di accompagnamento alla nascita</h2>
+            </div>
+            <span class="admin-total">{{ panoramica_percorsi_accompagnamento|length }} edizioni</span>
+        </div>
+
+        <div class="form-corso birth-path-create">
+            <h3>Crea edizione privata</h3>
+            <form method="POST" action="/admin/percorso-accompagnamento/aggiungi">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Titolo *</label>
+                        <input type="text" name="titolo" value="Iscrizione al corso" required>
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Link privato</label>
+                        <input type="text" name="slug" placeholder="es. accompagnamento-marzo-2027">
+                    </div>
+                </div>
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Capienza coppie</label>
+                        <input type="number" name="capienza_coppie" min="1" step="1" placeholder="Es. 8">
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Stato</label>
+                        <select name="stato">
+                            {% for stato in stati_percorso_accompagnamento %}
+                            <option value="{{ stato }}" {% if stato == 'Aperto' %}selected{% endif %}>{{ stato }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-gruppo">
+                        <label>Contatti</label>
+                        <input type="text" name="contatti" value="3806317175">
+                    </div>
+                </div>
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label>Descrizione interna</label>
+                        <input type="text" name="descrizione" placeholder="Es. Edizione primavera">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Crea edizione</button>
+            </form>
+        </div>
+
+        {% if panoramica_percorsi_accompagnamento %}
+        <div class="birth-path-grid">
+            {% for item in panoramica_percorsi_accompagnamento %}
+            {% set percorso = item.percorso %}
+            {% set presenze_percorso = presenze_accompagnamento.get(percorso.id, {}) %}
+            <article class="birth-path-card">
+                <div class="birth-path-head">
+                    <div>
+                        <span class="course-status">{{ percorso.stato }}</span>
+                        <h3>{{ percorso.titolo }}</h3>
+                        <p>{{ percorso.descrizione or 'Percorso privato per iscrizione al corso completo.' }}</p>
+                    </div>
+                    <div class="birth-path-actions">
+                        <a href="{{ url_for('iscrizione_accompagnamento_privata', slug=percorso.slug) }}" class="btn-azione blu" target="_blank" rel="noopener noreferrer">Apri link</a>
+                        <a href="{{ url_for('esporta_percorso_accompagnamento_pdf', id=percorso.id) }}" class="btn-azione verde">PDF iscritti</a>
+                    </div>
+                </div>
+
+                <div class="birth-path-stats">
+                    <div><strong>{{ item.iscritti_count }}</strong><span>coppie iscritte</span></div>
+                    <div><strong>{{ item.incontri_count }}</strong><span>incontri</span></div>
+                    <div><strong>{{ item.posti_liberi if item.posti_liberi is not none else '—' }}</strong><span>posti liberi</span></div>
+                </div>
+
+                <p class="private-link-copy">{{ request.host_url.rstrip('/') }}{{ url_for('iscrizione_accompagnamento_privata', slug=percorso.slug) }}</p>
+
+                <details class="birth-path-details" open>
+                    <summary>Calendario incontri</summary>
+                    {% if item.incontri %}
+                    <ol class="birth-meeting-list">
+                        {% for incontro in item.incontri %}
+                        <li>
+                            <strong>{{ incontro.numero }}. {{ incontro.professionista }}</strong>
+                            <span>{{ incontro.tema }}</span>
+                            <small>{{ incontro.data }}{% if incontro.ora %} alle {{ incontro.ora }}{% endif %} · Studio infermieristico</small>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    {% else %}
+                    <p class="nota">Non hai ancora inserito le date degli incontri.</p>
+                    {% endif %}
+
+                    <form method="POST" action="/admin/percorso-accompagnamento/{{ percorso.id }}/incontro/aggiungi" class="inline-admin-form">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-riga">
+                            <div class="form-gruppo">
+                                <label>N.</label>
+                                <input type="number" name="numero" min="1" max="9" step="1" value="{{ item.incontri_count + 1 if item.incontri_count < 9 else 9 }}" required>
+                            </div>
+                            <div class="form-gruppo">
+                                <label>Data *</label>
+                                <input type="date" name="data" required>
+                            </div>
+                            <div class="form-gruppo">
+                                <label>Ora</label>
+                                <input type="time" name="ora">
+                            </div>
+                        </div>
+                        <div class="form-riga">
+                            <div class="form-gruppo">
+                                <label>Professionista *</label>
+                                <select name="professionista" required>
+                                    <option value="">Seleziona</option>
+                                    <option value="Infermiera">Infermiera</option>
+                                    <option value="Ostetrica">Ostetrica</option>
+                                    <option value="Psicologa">Psicologa</option>
+                                    <option value="Osteopata">Osteopata</option>
+                                    <option value="Nutrizionista">Nutrizionista</option>
+                                </select>
+                            </div>
+                            <div class="form-gruppo">
+                                <label>Tema *</label>
+                                <input type="text" name="tema" placeholder="Es. Rientro a casa, allattamento, postura..." required>
+                            </div>
+                        </div>
+                        <div class="form-riga">
+                            <div class="form-gruppo">
+                                <label>Note</label>
+                                <input type="text" name="note" placeholder="Note interne sull'incontro">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-azione blu">Aggiungi incontro</button>
+                    </form>
+                </details>
+
+                <details class="birth-path-details">
+                    <summary>Iscritti e presenze</summary>
+                    {% if item.iscrizioni %}
+                    <div class="admin-table-wrap">
+                        <table class="tabella-admin">
+                            <thead>
+                                <tr>
+                                    <th>Iscritto</th>
+                                    <th>Contatti</th>
+                                    <th>DPP</th>
+                                    <th>Partner</th>
+                                    <th>Immagini</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for iscrizione in item.iscrizioni %}
+                                {% set extra = iscrizione.extra_dict() %}
+                                <tr>
+                                    <td>{{ iscrizione.nome }}</td>
+                                    <td>{{ iscrizione.telefono }}<br><span class="text-muted">{{ iscrizione.email }}</span></td>
+                                    <td>{{ extra.get('data_presunta_parto', '—') }}</td>
+                                    <td>{{ extra.get('partner_presente', '—') }}</td>
+                                    <td>{{ 'Si' if iscrizione.consenso_immagini else 'No' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if item.incontri %}
+                    <form method="POST" action="/admin/percorso-accompagnamento/{{ percorso.id }}/presenze" class="attendance-form">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <div class="admin-table-wrap">
+                            <table class="tabella-admin attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Iscritto</th>
+                                        {% for incontro in item.incontri %}
+                                        <th>{{ incontro.numero }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for iscrizione in item.iscrizioni %}
+                                    <tr>
+                                        <td>{{ iscrizione.nome }}</td>
+                                        {% for incontro in item.incontri %}
+                                        {% set presenza = presenze_percorso.get(iscrizione.id ~ '-' ~ incontro.id) %}
+                                        <td>
+                                            <select name="presenza_{{ iscrizione.id }}_{{ incontro.id }}">
+                                                <option value="" {% if not presenza or presenza.presente is none %}selected{% endif %}>—</option>
+                                                <option value="presente" {% if presenza and presenza.presente is sameas true %}selected{% endif %}>P</option>
+                                                <option value="assente" {% if presenza and presenza.presente is sameas false %}selected{% endif %}>A</option>
+                                            </select>
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="submit" class="btn-azione verde">Salva presenze</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <p class="nota">Nessuna iscrizione confermata per questa edizione.</p>
+                    {% endif %}
+                </details>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="nota nota-lg">Non hai ancora creato edizioni private del percorso nascita.</p>
+        {% endif %}
+    </div>
+
     {% if iscrizioni_nuove_count > 0 %}
     <p class="nota">{{ iscrizioni_nuove_count }} richiesta{% if iscrizioni_nuove_count != 1 %}e{% endif %} nuova{% if iscrizioni_nuove_count != 1 %}e{% endif %} da gestire.</p>
+    {% endif %}
+
+    <div class="admin-filtri admin-filtri-corsi">
+        <a href="/admin#admin-corsi" class="filtro-btn {% if not corso_filtro_attivo and not filtro_iscrizioni %}attivo{% endif %}">Tutte</a>
+        <a href="/admin?iscrizioni=open_day#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'open_day' %}attivo{% endif %}">Open day</a>
+        <a href="/admin?iscrizioni=ricontatto#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'ricontatto' %}attivo{% endif %}">Da ricontattare</a>
+    </div>
+
+    {% if corso_filtro_attivo %}
+    <p class="filtro-descrizione">Stai vedendo solo gli iscritti collegati a: <strong>{{ corso_filtro_attivo.titolo }}</strong> del {{ corso_filtro_attivo.data }}{% if corso_filtro_attivo.ora %} alle {{ corso_filtro_attivo.ora }}{% endif %}.</p>
+    {% elif filtro_iscrizioni == 'open_day' %}
+    <p class="filtro-descrizione">Stai vedendo solo le iscrizioni agli open day.</p>
+    {% elif filtro_iscrizioni == 'ricontatto' %}
+    <p class="filtro-descrizione">Stai vedendo solo le richieste senza una data aperta da ricontattare.</p>
     {% endif %}
 
     {% if iscrizioni_corsi %}
@@ -213,6 +674,7 @@
         <thead>
             <tr>
                 <th>Corso</th>
+                <th>Flusso</th>
                 <th>Nome</th>
                 <th>Contatti</th>
                 <th>Dettagli</th>
@@ -224,20 +686,35 @@
         <tbody>
             {% for i in iscrizioni_corsi %}
             {% set extra = i.extra_dict() %}
+            {% set nome_bambino = i.persona.nome_bambino if i.persona and i.persona.nome_bambino else extra.get('nome_bambino') %}
+            {% set eta_bambino = i.persona.eta_bambino if i.persona and i.persona.eta_bambino else extra.get('eta_bambino') %}
             <tr class="stato-{{ i.stato | lower | replace(' ', '-') }}">
                 <td>
                     <strong>{{ i.corso_titolo }}</strong><br>
                     <span class="text-muted">{{ i.creato_il.strftime('%d/%m/%Y %H:%M') }}</span>
                 </td>
                 <td>
+                    <span class="badge badge-flusso">{{ tipo_richiesta_labels.get(i.tipo_richiesta, i.tipo_richiesta) }}</span>
+                    <span class="admin-secondary">{{ i.posti }} post{% if i.posti != 1 %}i{% else %}o{% endif %}</span>
+                </td>
+                <td>
                     {{ i.nome }}<br>
-                    <span class="text-muted">CF: {{ i.codice_fiscale }}</span>
+                    <span class="text-muted">CF: {{ i.codice_fiscale or 'Non indicato' }}</span>
+                    {% if i.persona %}
+                    <span class="admin-secondary">In rubrica</span>
+                    {% endif %}
+                    {% if nome_bambino or eta_bambino %}
+                    <span class="admin-secondary">Bambino: {{ nome_bambino or 'nome non indicato' }}{% if eta_bambino %}, {{ eta_bambino }}{% endif %}</span>
+                    {% endif %}
                 </td>
                 <td>
                     {{ i.telefono }}<br>
                     <span class="text-muted">{{ i.email or 'Email non indicata' }}</span>
                 </td>
                 <td>
+                    {% if i.corso %}
+                    <p><strong>Data collegata:</strong> {{ i.corso.data }}{% if i.corso.ora %} ore {{ i.corso.ora }}{% endif %}</p>
+                    {% endif %}
                     {% if i.data_corso %}<p><strong>Data:</strong> {{ i.data_corso }}</p>{% endif %}
                     {% if i.partecipazione %}<p><strong>Tipo:</strong> {{ i.partecipazione }}</p>{% endif %}
                     {% if extra.ente_azienda %}<p><strong>Azienda/gruppo:</strong> {{ extra.ente_azienda }}</p>{% endif %}
@@ -266,6 +743,8 @@
     <div class="card-admin-lista">
         {% for i in iscrizioni_corsi %}
         {% set extra = i.extra_dict() %}
+        {% set nome_bambino = i.persona.nome_bambino if i.persona and i.persona.nome_bambino else extra.get('nome_bambino') %}
+        {% set eta_bambino = i.persona.eta_bambino if i.persona and i.persona.eta_bambino else extra.get('eta_bambino') %}
         <div class="card-admin stato-{{ i.stato | lower | replace(' ', '-') }}">
             <div class="card-admin-header">
                 <strong>{{ i.nome }}</strong>
@@ -273,8 +752,14 @@
             </div>
             <div class="card-admin-body">
                 <p><span>Corso</span> {{ i.corso_titolo }}</p>
+                <p><span>Flusso</span> {{ tipo_richiesta_labels.get(i.tipo_richiesta, i.tipo_richiesta) }}</p>
+                <p><span>Posti</span> {{ i.posti }}</p>
                 <p><span>Telefono</span> {{ i.telefono }}</p>
                 <p><span>Email</span> {{ i.email or 'Non indicata' }}</p>
+                {% if nome_bambino or eta_bambino %}
+                <p><span>Bambino</span> {{ nome_bambino or 'Nome non indicato' }}{% if eta_bambino %}, {{ eta_bambino }}{% endif %}</p>
+                {% endif %}
+                {% if i.persona %}<p><span>Rubrica</span> Salvato</p>{% endif %}
                 {% if i.data_corso %}<p><span>Data</span> {{ i.data_corso }}</p>{% endif %}
                 {% if i.partecipazione %}<p><span>Tipo</span> {{ i.partecipazione }}</p>{% endif %}
                 {% if extra.ente_azienda %}<p><span>Azienda/gruppo</span> {{ extra.ente_azienda }}</p>{% endif %}
@@ -333,11 +818,25 @@
                     <input type="number" name="durata_ore" id="durata-corso-admin" min="0.5" max="12" step="0.5" value="2" required>
                 </div>
                 <div class="form-gruppo">
+                    <label>Capienza</label>
+                    <input type="number" name="capienza_massima" min="1" step="1" placeholder="Es. 12">
+                </div>
+                <div class="form-gruppo">
                     <label>Data *</label>
                     <input type="date" name="data" required>
                 </div>
             </div>
             <div class="form-riga">
+                <div class="form-gruppo">
+                    <label>Stato corso</label>
+                    <select name="stato">
+                        <option value="Aperto">Aperto</option>
+                        <option value="Completo">Completo</option>
+                        <option value="Chiuso">Chiuso</option>
+                        <option value="Annullato">Annullato</option>
+                        <option value="Concluso">Concluso</option>
+                    </select>
+                </div>
                 <div class="form-gruppo">
                     <label>Ora</label>
                     <input type="time" name="ora">
@@ -361,22 +860,30 @@
             <tr>
                 <th>Titolo</th>
                 <th>Tipo</th>
+                <th>Stato</th>
                 <th>Data</th>
                 <th>Ora</th>
                 <th>Durata</th>
+                <th>Iscritti</th>
                 <th>Luogo</th>
                 <th>Descrizione</th>
                 <th>Elimina</th>
             </tr>
         </thead>
         <tbody>
-            {% for c in corsi %}
+            {% for item in panoramica_corsi %}
+            {% set c = item.corso %}
             <tr>
                 <td>{{ c.titolo }}</td>
                 <td>{{ corsi_admin_tipi.get(c.tipo, {}).get('label', c.tipo or '—') }}</td>
+                <td><span class="badge">{{ item.stato }}</span></td>
                 <td>{{ c.data }}</td>
                 <td>{{ c.ora or '—' }}</td>
                 <td>{{ c.durata_ore|int if c.durata_ore == c.durata_ore|int else c.durata_ore }} ore</td>
+                <td>
+                    <strong>{{ item.attive_count }}</strong> richieste<br>
+                    <span class="text-muted">{{ item.posti_attivi }} posti{% if item.capienza %} / {{ item.capienza }}{% endif %}</span>
+                </td>
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>

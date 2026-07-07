@@ -3,11 +3,25 @@
 
 {% block contenuto %}
 <section class="pagina-interna pagina-consulenza">
-    <p class="eyebrow">Iscrizione corso</p>
+    <p class="eyebrow">{{ 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else 'Iscrizione corso' }}</p>
     <h2>{{ corso.titolo }}</h2>
 
     {% if corso_tipo == 'bls-d' %}
     <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Questo modulo è dedicato alle iscrizioni individuali.</p>
+    <div class="blsd-choice-panel" aria-label="Scegli come richiedere il corso BLSD">
+        <article class="blsd-choice-card">
+            <span>Privati</span>
+            <h3>Iscrizione individuale</h3>
+            <p>Per partecipare a una data già aperta in studio e ricevere la gestione della richiesta direttamente dal sito.</p>
+            <a href="#iscrizione-individuale" class="link-azione">Vai al modulo</a>
+        </article>
+        <article class="blsd-choice-card blsd-choice-card-azienda">
+            <span>Aziende e gruppi</span>
+            <h3>Corso BLSD personalizzato</h3>
+            <p>Per organizzare la formazione in studio o nella tua realtà, con data, sede e numero partecipanti definiti insieme.</p>
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="link-azione" target="_blank" rel="noopener noreferrer">Richiedi il corso</a>
+        </article>
+    </div>
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa porti a casa</p>
@@ -28,14 +42,6 @@
                 <p>Capire come usare il defibrillatore e come inserirlo nella sequenza di intervento.</p>
             </article>
         </div>
-    </div>
-    <div class="azienda-callout azienda-callout-form">
-        <div>
-            <p class="eyebrow">Aziende e gruppi</p>
-            <h3>Rendi il tuo ambiente di lavoro più sicuro con un corso BLSD personalizzato</h3>
-            <p>Nessun pacchetto standard: la formazione la costruiamo insieme, su misura per la tua realtà.</p>
-        </div>
-        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="btn btn-secondaria" target="_blank" rel="noopener noreferrer">Richiedi il corso in studio o in azienda</a>
     </div>
     {% elif corso_tipo == 'disostruzione-pediatrica' %}
     <p class="sottotitolo">Il corso si terrà presso lo studio in Via C. D'Agnese 43 e avrà una durata di circa 2 ore / 2 ore e mezza, con prove pratiche su lattante e bambino e laboratorio sui tagli sicuri.</p>
@@ -61,25 +67,25 @@
         </div>
     </div>
     {% else %}
-    <p class="sottotitolo">Un incontro in presenza di circa 2 ore per arrivare più preparati al rientro a casa, alla cura quotidiana e ai primi giorni con il neonato. Ti ricontatteremo per confermare l'inserimento nel corso.</p>
+    <p class="sottotitolo">Iscriviti all'open day gratuito per conoscere il percorso, fare domande e capire se il corso completo è adatto alla tua famiglia. L'iscrizione al corso completo avverrà solo tramite link privato fornito successivamente.</p>
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
-            <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Una preparazione concreta al rientro con il neonato</h3>
-            <p>Il percorso aiuta a trasformare domande e paure in azioni pratiche: cosa preparare, cosa osservare e come orientarsi nei primi giorni.</p>
+            <p class="eyebrow">Cosa chiarisci all'open day</p>
+            <h3>Capire il percorso prima di iscriverti davvero</h3>
+            <p>L'incontro serve a conoscere contenuti, professionisti, organizzazione e obiettivi del corso completo, senza confondere la richiesta open day con l'iscrizione definitiva.</p>
         </div>
         <div class="course-value-grid">
             <article>
-                <span>Casa</span>
-                <p>Organizzazione degli spazi, materiali utili e prime routine sostenibili.</p>
+                <span>Percorso</span>
+                <p>Come sono organizzati gli incontri, quali temi vengono affrontati e con quale approccio.</p>
             </article>
             <article>
-                <span>Neonato</span>
-                <p>Bagnetto, cordone, cambio, pianto, segnali da osservare e cura quotidiana.</p>
+                <span>Domande</span>
+                <p>Uno spazio per portare dubbi su nascita, rientro a casa, primi giorni e ruolo del partner.</p>
             </article>
             <article>
-                <span>Sonno sicuro</span>
-                <p>Ambiente del sonno, abitudini prudenti e dubbi frequenti dei primi giorni.</p>
+                <span>Prossimo passo</span>
+                <p>Se il percorso è adatto, l'iscrizione effettiva avverrà con un modulo privato separato.</p>
             </article>
         </div>
     </div>
@@ -102,7 +108,7 @@
     </div>
     {% endif %}
 
-    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}">
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}"{% if corso_tipo == 'bls-d' %} id="iscrizione-individuale"{% endif %}>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <h3>Dati partecipante</h3>
@@ -126,6 +132,21 @@
             <label for="email">Email</label>
             <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}">
         </div>
+
+        {% if corso_tipo in ['disostruzione-pediatrica', 'laboratorio-infanzia'] %}
+        <h3>Dati bambino</h3>
+        <p class="nota-form">Facoltativi, ma utili se vuoi essere ricontattato per laboratori o attività dedicate all'età del bambino.</p>
+        <div class="form-riga">
+            <div class="form-gruppo">
+                <label for="nome_bambino">Nome bambino</label>
+                <input type="text" id="nome_bambino" name="nome_bambino" value="{{ form_data.get('nome_bambino', '') }}">
+            </div>
+            <div class="form-gruppo">
+                <label for="eta_bambino">Età bambino</label>
+                <input type="text" id="eta_bambino" name="eta_bambino" value="{{ form_data.get('eta_bambino', '') }}" placeholder="Es. 8 mesi, 3 anni">
+            </div>
+        </div>
+        {% endif %}
 
         {% if corso_tipo == 'bls-d' %}
         <h3>Dettagli corso</h3>
@@ -312,9 +333,9 @@
         </div>
 
         {% if corso.has_open_dates %}
-        <h3>Data corso</h3>
+        <h3>Data open day</h3>
         <div class="form-gruppo">
-            <label for="data_corso">Data corso *</label>
+            <label for="data_corso">Data open day *</label>
             <select id="data_corso" name="data_corso" required>
                 <option value="">-- Seleziona --</option>
                 {% for option in corso.data_options %}
@@ -343,7 +364,7 @@
         <div class="form-gruppo">
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
-                <span class="privacy-text">Confermo di voler procedere con la richiesta di iscrizione al corso *</span>
+                <span class="privacy-text">Confermo di voler procedere con l'iscrizione all'open day gratuito *</span>
             </label>
         </div>
         {% endif %}
@@ -353,7 +374,15 @@
             <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
         </div>
 
-        <button type="submit" class="btn">{{ 'Lascia i dati per essere ricontattato' if not corso.has_open_dates else 'Invia richiesta di iscrizione' }}</button>
+        <button type="submit" class="btn">
+            {% if not corso.has_open_dates %}
+                Lascia i dati per essere ricontattato
+            {% elif corso_tipo == 'accompagnamento-nascita' %}
+                Iscriviti all'open day
+            {% else %}
+                Invia richiesta di iscrizione
+            {% endif %}
+        </button>
     </form>
 </section>
 {% endblock %}

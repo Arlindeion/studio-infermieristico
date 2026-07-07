@@ -42,11 +42,11 @@
 - I testi possono essere modificati liberamente quando migliorano chiarezza, fiducia, proof of value o conversione, mantenendo tono sanitario, umano e non sensazionalistico.
 
 ## Posizionamento commerciale
-- Il progetto non è solo un sito vetrina: deve sostenere tre aree di business con pari dignità.
-- Prestazioni infermieristiche.
+- Il progetto non è solo un sito vetrina: deve sostenere la crescita commerciale dello studio, con focus prioritario su corsi in presenza e consulenze online per neogenitori. Le prestazioni infermieristiche restano presenti e prenotabili, ma non devono dominare header, homepage o messaggio principale salvo richiesta esplicita.
 - Corsi in presenza: BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia.
 - Consulenze per neogenitori sulla gestione del neonato, del sonno e dei primi mesi.
-- Le modifiche grafiche e testuali devono mantenere equilibrio tra queste aree, senza spingere eccessivamente un solo servizio salvo richiesta esplicita.
+- Prestazioni infermieristiche: flusso sanitario separato, chiaro e accessibile, ma con priorità visiva secondaria rispetto ai nuovi servizi da lanciare.
+- Le modifiche grafiche e testuali devono mantenere equilibrio tra corsi e consulenze, senza spingere eccessivamente un solo servizio salvo richiesta esplicita.
 - Il ruolo percepito del sito deve avvicinarsi a "guida per famiglie", senza perdere la credibilità di studio infermieristico.
 - Pubblico prioritario per i contenuti famiglia: neomamma stanca, genitori, partner, nonni e caregiver che cercano indicazioni pratiche e rassicuranti.
 - Le consulenze verranno lanciate insieme al sito e saranno sostenute da una campagna social dedicata; costruire le pagine in modo che siano pronte a ricevere quel traffico.
@@ -58,6 +58,25 @@
 - Aziende e gruppi: contatto diretto, soprattutto per BLSD in studio o in azienda; non far prenotare direttamente un'azienda dal form individuale.
 - Consulenze neogenitori: flusso dedicato e separato dalla prenotazione sanitaria; in fase iniziale può essere contatto diretto, poi potrà diventare prenotazione dedicata.
 - Pagamenti online: possibile evoluzione futura, da implementare solo quando flussi, stati admin, email e calendario saranno stabili.
+
+## Roadmap gestionale commerciale
+- Il sito deve evolvere verso un piccolo gestionale commerciale dello studio: non solo moduli, ma controllo di prenotazioni, corsi, consulenze, aziende, ricontatti e calendario.
+- Prestazioni sanitarie: conferma sempre manuale. Prima della produzione verrà fornito l'elenco delle durate slot da allineare al gestionale sanitario.
+- Appuntamenti a domicilio: non devono essere prenotati direttamente online; vanno gestiti con contatto diretto come i corsi aziendali, perché richiedono valutazione di spostamento, zona e fattibilità.
+- Stati appuntamento: mantenere quelli esistenti e aggiungere solo `Da ricontattare` quando serve distinguere una richiesta non ancora gestibile con data/orario.
+- Modifica/annullamento appuntamento da email: il paziente deve avere un link per modificare o annullare. Consentire fino a 24 ore prima se l'appuntamento cade da martedì a sabato; se cade di lunedì, consentire entro il sabato precedente alle 12:00. Dopo modifica, lo stato torna `In attesa` e va inviata una notifica a `sc.studioinfermieristico@gmail.com`.
+- Corsi: l'iscrizione online è una richiesta finché non sarà implementato il pagamento anticipato. La capienza massima verrà fornita corso per corso; le iscrizioni di coppia valgono come 2 posti.
+- Corso di accompagnamento alla nascita: il flusso ha due livelli. Le date pubbliche sono open day gratuiti conoscitivi con iscrizione tramite modulo sul sito. Il corso completo usa invece un modulo di iscrizione accessibile solo tramite link privato generico, non presente in navigazione e non indicizzato. Se il link viene inoltrato, l'iscrizione viene comunque accettata. L'invio del modulo privato vale come iscrizione effettiva e va salvato come `Confermato`.
+- Percorso accompagnamento alla nascita: il corso completo è una serie di 9 incontri con vari professionisti. In admin deve essere gestito come edizione/percorso con calendario incontri, iscritti confermati, registro presenze ed export PDF. Una coppia conta come 1 posto. Nel modulo privato raccogliere solo i dati necessari, inclusa la data presunta del parto; non raccogliere altri dati sanitari se non richiesti esplicitamente.
+- Corso pieno: proporre la data successiva se disponibile; se non esiste una data utile, mostrare un form di ricontatto con preferenze indicative, come mattina/pomeriggio o giorno della settimana.
+- Corsi in admin: prevedere stati propri (`Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`), colori distinti per tipologia/stato e filtri pubblici per permettere all'utente di vedere rapidamente solo i corsi cercati.
+- Modelli corso: ogni tipologia deve avere un modello standard riutilizzabile, così l'admin può duplicare o creare nuove date senza riscrivere tutto.
+- Admin: deve diventare una cabina di regia con viste per `oggi`, `questa settimana`, `questo mese`, sezioni separate per prenotazioni, corsi, iscrizioni, ricontatti, consulenze e aziende.
+- Google Calendar: resta il collante tra Arzamed e sito. Arzamed e prenotazioni online devono lavorare insieme per alleggerire la segreteria. Quando l'admin inserisce corsi o prenotazioni in giorni/orari occupati da note o eventi Google, il sito deve mostrare un alert di conferma ma permettere comunque l'inserimento.
+- Corsi modificati: quando un corso con iscritti viene modificato, chiedere se inviare una email automatica agli utenti con la descrizione della modifica.
+- Esportazioni: prevedere esportazione PDF degli iscritti/partecipanti corso.
+- Pagamenti futuri: pagamento online solo per consulenze online e alcuni corsi, con possibilità di rateizzazione. Non introdurre pagamenti prima di avere policy, stati, email, capienze e calendario stabili.
+- Policy: preparare una bozza per cancellazioni, spostamenti, rimborsi, rate e assenze; va validata prima della produzione e con attenzione legale/fiscale.
 
 
 ## Comandi utili
@@ -84,8 +103,9 @@ Se aggiorni un database `appuntamenti.db` già esistente (con dati reali), dopo 
 ```bash
 python3 migrazione_google_event_id.py
 python3 migrazione_corsi_google_event_id.py
+python3 migrazione_gestione_iscritti_corsi.py
 ```
-Aggiungono le colonne necessarie per collegare appuntamenti e corsi agli eventi Google Calendar corrispondenti; per i corsi aggiungono anche `tipo` e `durata_ore`. Non serve se il database viene creato da zero (lo schema aggiornato include già queste colonne).
+Aggiungono le colonne necessarie per collegare appuntamenti e corsi agli eventi Google Calendar corrispondenti; per i corsi aggiungono anche `tipo`, `durata_ore`, stato/capienza, collegamento tra iscrizioni e singole date corso, rubrica famiglie/partecipanti, collegamento tra iscrizioni e persona salvata e tabelle del modulo privato per il percorso di accompagnamento alla nascita. Non serve se il database viene creato da zero (lo schema aggiornato include già queste colonne).
 
 ## Struttura
 - `app.py` — applicazione Flask principale (modelli, route, email, scheduler)
@@ -102,7 +122,12 @@ Aggiungono le colonne necessarie per collegare appuntamenti e corsi agli eventi 
 ## Modelli / dominio
 - `Admin` — utente area admin (Flask-Login)
 - `Appuntamento` — prenotazione paziente. `stato` ∈ {`In attesa`, `Confermato`, `Annullato`}
-- `Corso` — evento mostrato in homepage
+- `Corso` — evento corso/laboratorio mostrato in homepage e gestito in admin
+- `PersonaCorso` — rubrica famiglie/partecipanti per corsi e laboratori, con dati genitore/adulto e bambino
+- `IscrizioneCorso` — richiesta o iscrizione collegata a un corso e, quando possibile, a una persona in rubrica
+- `PercorsoAccompagnamento` — edizione privata del corso di accompagnamento alla nascita
+- `IncontroAccompagnamento` — singolo incontro del percorso nascita, con data, professionista e tema
+- `PresenzaAccompagnamento` — registro presenze degli iscritti agli incontri del percorso nascita
 - Admin default: `admin` / `cambiami123` (creato da `app.py` se il DB è vuoto)
 
 ## Sicurezza

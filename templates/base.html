@@ -7,10 +7,11 @@
     {% if google_analytics_id %}
     <meta name="google-analytics-id" content="{{ google_analytics_id }}">
     {% endif %}
+    {% block head_extra %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=2.6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=2.8">
 </head>
 <body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}">
 
@@ -32,21 +33,26 @@
         <a href="/chi-sono">CHI SONO</a>
         <div class="nav-dropdown">
             <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
-                PERCORSI
+                CORSI E ISCRIZIONI
                 <span class="nav-chevron" aria-hidden="true"></span>
             </button>
             <div class="nav-dropdown-menu">
-                <a href="/iscrizione-corsi">Corsi e iscrizioni</a>
-                <a href="/iscrizione-corsi/bls-d">BLSD</a>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
-                <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
-                <a href="/prima-della-nascita">Prima della nascita</a>
-                <a href="/dopo-la-nascita">Dopo la nascita</a>
-                <a href="/consulenze-online">Consulenze online</a>
-                <a href="/#calendario-corsi">Calendario corsi</a>
+                <a href="/iscrizione-corsi">
+                    <strong>Corsi in presenza</strong>
+                    <small>Panoramica e prossime iscrizioni</small>
+                </a>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica">
+                    <strong>Disostruzione pediatrica</strong>
+                    <small>Manovre e tagli sicuri</small>
+                </a>
+                <a href="/iscrizione-corsi/accompagnamento-nascita">
+                    <strong>Accompagnamento alla nascita</strong>
+                    <small>Open day e percorso completo</small>
+                </a>
             </div>
         </div>
-        <a href="/prestazioni-infermieristiche">PRESTAZIONI</a>
+        <a href="/iscrizione-corsi/bls-d" class="nav-blsd-link">BLSD</a>
+        <a href="/consulenze-online" class="nav-supporto-link">SOS NEOMAMMA</a>
         <a href="/faq">FAQ</a>
         <a href="/prenota" class="btn-prenota">PRENOTA</a>
     </nav>
@@ -70,16 +76,12 @@
         Home
     </a>
     <a href="/chi-sono">Chi sono</a>
-    <span class="nav-mobile-label">Percorsi</span>
+    <span class="nav-mobile-label">Corsi e iscrizioni</span>
     <a href="/iscrizione-corsi">Corsi e iscrizioni</a>
-    <a href="/iscrizione-corsi/bls-d">BLSD</a>
     <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
     <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
-    <a href="/prima-della-nascita">Prima della nascita</a>
-    <a href="/dopo-la-nascita">Dopo la nascita</a>
-    <a href="/consulenze-online">Consulenze online</a>
-    <a href="/#calendario-corsi">Calendario corsi</a>
-    <a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a>
+    <a href="/iscrizione-corsi/bls-d">BLSD</a>
+    <a href="/consulenze-online">SOS neomamma</a>
     <a href="/faq">FAQ</a>
     <a href="/prenota" class="nav-mobile-prenota">Prenota</a>
 </div>
@@ -119,7 +121,7 @@
 {% set sticky_label = 'Prenota' %}
 {% if endpoint == 'homepage' %}
     {% set sticky_href = '/#percorsi-principali' %}
-    {% set sticky_label = 'Scegli il percorso' %}
+    {% set sticky_label = 'Corsi e consulenze' %}
 {% elif endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
     {% set sticky_href = '/iscrizione-corsi' %}
     {% set sticky_label = 'Vai ai corsi' %}
@@ -127,7 +129,7 @@
     {% set sticky_href = 'https://wa.me/393806317175' %}
     {% set sticky_label = 'Richiedi informazioni' %}
 {% endif %}
-{% if endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
+{% if endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and endpoint != 'iscrizione_accompagnamento_privata' and endpoint != 'conferma_iscrizione_accompagnamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
 <div class="sticky-prenota">
     <a href="{{ sticky_href }}" class="sticky-prenota-btn"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
         {{ sticky_label }}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block titolo %}Iscrizione al corso — Accompagnamento alla nascita{% endblock %}
+{% block head_extra %}
+<meta name="robots" content="noindex,nofollow">
+{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna pagina-consulenza private-course-page">
+    <p class="eyebrow">Iscrizione privata</p>
+    <h2>Iscrizione al corso</h2>
+    <p class="sottotitolo">Completa l'iscrizione al percorso di accompagnamento alla nascita. Il corso prevede 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.</p>
+
+    <div class="private-course-hero">
+        <div>
+            <p class="eyebrow">Percorso confermato</p>
+            <h3>{{ percorso.titolo }}</h3>
+            <p>Dopo l'invio riceverai una conferma con il riepilogo delle date e i contatti dello studio.</p>
+        </div>
+        <div class="private-course-meta">
+            <span>{{ incontri|length }}/9 incontri inseriti</span>
+            <span>Studio infermieristico</span>
+            {% if posti_liberi is not none %}
+            <span>{{ posti_liberi }} posti coppia disponibili</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-message">{{ messages[0][1] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="private-course-layout">
+        <aside class="private-course-calendar">
+            <h3>Calendario incontri</h3>
+            {% if incontri %}
+            <ol>
+                {% for incontro in incontri %}
+                <li>
+                    <strong>{{ incontro.numero }}. {{ incontro.professionista }}</strong>
+                    <span>{{ incontro.tema }}</span>
+                    <small>{{ incontro.data }}{% if incontro.ora %} alle {{ incontro.ora }}{% endif %} · Studio infermieristico</small>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p>Le date verranno comunicate dallo studio prima dell'avvio del percorso.</p>
+            {% endif %}
+        </aside>
+
+        <div class="private-course-form-wrap">
+            {% if form_disponibile %}
+            <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_accompagnamento_privata', slug=percorso.slug) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+                <h3>Dati partecipante</h3>
+                <div class="form-gruppo">
+                    <label for="nome">Nome e cognome *</label>
+                    <input type="text" id="nome" name="nome" value="{{ form_data.get('nome', '') }}" required>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label for="telefono">Telefono *</label>
+                        <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" required>
+                    </div>
+                    <div class="form-gruppo">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" required>
+                    </div>
+                </div>
+
+                <div class="form-riga">
+                    <div class="form-gruppo">
+                        <label for="codice_fiscale">Codice fiscale *</label>
+                        <input type="text" id="codice_fiscale" name="codice_fiscale" value="{{ form_data.get('codice_fiscale', '') }}" required>
+                    </div>
+                    <div class="form-gruppo">
+                        <label for="data_presunta_parto">Data presunta del parto *</label>
+                        <input type="date" id="data_presunta_parto" name="data_presunta_parto" value="{{ form_data.get('data_presunta_parto', '') }}" required>
+                    </div>
+                </div>
+
+                <h3>Partecipazione</h3>
+                <div class="form-gruppo radio-stack">
+                    <p>Il partner sarà presente?</p>
+                    <label><input type="radio" name="partner_presente" value="Si" required {% if form_data.get('partner_presente') == 'Si' %}checked{% endif %}> Sì</label>
+                    <label><input type="radio" name="partner_presente" value="No" required {% if form_data.get('partner_presente') == 'No' %}checked{% endif %}> No</label>
+                </div>
+
+                <div class="form-gruppo">
+                    <label for="note">Note</label>
+                    <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
+                </div>
+
+                <h3>Consensi</h3>
+                <div class="form-gruppo checkbox-stack">
+                    <label>
+                        <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
+                        <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                    </label>
+                </div>
+                <div class="form-gruppo checkbox-stack">
+                    <label>
+                        <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
+                        <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
+                    </label>
+                    <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
+                </div>
+
+                <button type="submit" class="btn">Conferma iscrizione</button>
+            </form>
+            {% else %}
+            <div class="conferma-box">
+                <h2>Iscrizioni non disponibili</h2>
+                <p>Questo percorso non è aperto alle iscrizioni oppure ha raggiunto la capienza disponibile.</p>
+                <p>Per chiarimenti puoi contattare lo studio al numero {{ percorso.contatti or '3806317175' }}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -6,11 +6,12 @@ import urllib.error
 import ssl
 import certifi
 from urllib.parse import urlsplit
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, Response
 from dotenv import load_dotenv
 import os
 import secrets
 import time
+from collections import defaultdict
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 import icalendar
@@ -128,6 +129,15 @@ SERVIZI_VALIDI = [
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
 STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
+STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
+STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
+
+TIPI_RICHIESTA_CORSO = {
+    'richiesta_iscrizione': 'Richiesta iscrizione',
+    'open_day': 'Open day',
+    'iscrizione_effettiva': 'Iscrizione effettiva',
+    'ricontatto': 'Da ricontattare',
+}
 
 CORSI_ADMIN_TIPI = {
     'bls-d': {
@@ -168,6 +178,69 @@ CORSI_ISCRIVIBILI = {
 
 FAQ_ITEMS = [
     {
+        'id': 'corsi-disponibili',
+        'question': 'Quali corsi in presenza sono disponibili per famiglie, genitori e aziende?',
+        'answer': "I corsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita e laboratori per l'infanzia. I corsi sono pensati per trasformare dubbi e paura in gesti pratici, con una guida sanitaria chiara e vicina alle famiglie.",
+        'link_href': '/iscrizione-corsi',
+        'link_text': 'Scopri i corsi',
+    },
+    {
+        'id': 'iscrizione-corsi-online',
+        'question': 'Come funziona l\'iscrizione online ai corsi?',
+        'answer': "Dalla pagina corsi scegli il corso, compili il modulo e invii la richiesta. Se c'è una data aperta, la richiesta viene collegata a quella data; se non ci sono date disponibili, puoi lasciare i tuoi dati per essere ricontattato quando si apre una nuova possibilità.",
+        'link_href': '/iscrizione-corsi',
+        'link_text': 'Vai alle iscrizioni',
+    },
+    {
+        'id': 'blsd-privati-aziende',
+        'question': 'Come posso iscrivermi a un corso BLSD o richiederlo per un\'azienda?',
+        'answer': "Il BLSD ha due percorsi separati: i privati possono usare il modulo di iscrizione individuale per le date aperte, mentre aziende e gruppi devono contattare direttamente lo studio per organizzare un corso personalizzato in studio o in azienda.",
+        'link_href': '/iscrizione-corsi/bls-d',
+        'link_text': 'Vedi BLSD',
+    },
+    {
+        'id': 'disostruzione-pediatrica-tagli-sicuri',
+        'question': 'A cosa serve il corso di disostruzione pediatrica e tagli sicuri?',
+        'answer': "Il corso aiuta genitori, nonni e caregiver a conoscere le manovre di disostruzione su lattante e bambino e a ridurre il rischio a tavola con indicazioni pratiche sui tagli sicuri degli alimenti.",
+        'link_href': '/iscrizione-corsi/disostruzione-pediatrica',
+        'link_text': 'Scopri disostruzione pediatrica',
+    },
+    {
+        'id': 'accompagnamento-nascita-open-day',
+        'question': 'Come funziona il corso di accompagnamento alla nascita?',
+        'answer': "Il primo passaggio è l'open day gratuito: serve a conoscere il percorso, fare domande e capire se il corso completo è adatto alla famiglia. L'iscrizione vera e propria al percorso completo avviene solo tramite link privato fornito successivamente dallo studio.",
+        'link_href': '/iscrizione-corsi/accompagnamento-nascita',
+        'link_text': 'Vai all\'open day',
+    },
+    {
+        'id': 'percorso-privato-accompagnamento-nascita',
+        'question': 'Il link privato del corso di accompagnamento alla nascita conferma direttamente l\'iscrizione?',
+        'answer': "Sì. Il link privato è riservato al percorso completo: quando compili quel modulo, l'iscrizione viene registrata come confermata. Ricevi una email con riepilogo delle date, contatti dello studio e informazioni essenziali.",
+        'link_href': '/iscrizione-corsi/accompagnamento-nascita',
+        'link_text': 'Scopri il percorso nascita',
+    },
+    {
+        'id': 'durata-corsi',
+        'question': 'Quanto durano i corsi?',
+        'answer': "La durata dipende dal tipo di corso: il BLSD dura circa 4 ore, disostruzione pediatrica e laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
+        'link_href': '/iscrizione-corsi',
+        'link_text': 'Vedi i corsi',
+    },
+    {
+        'id': 'consulenze-sos-neomamma',
+        'question': 'Cos\'è SOS neomamma e quando può aiutare una famiglia?',
+        'answer': "SOS neomamma è il percorso di consulenza per i primi mesi: aiuta a fare ordine tra sonno sicuro, routine, cura quotidiana, poppate, pianto, dubbi pratici e segnali da osservare. È pensato per genitori che cercano una guida concreta, non giudicante e sostenibile.",
+        'link_href': '/consulenze-online',
+        'link_text': 'Scopri SOS neomamma',
+    },
+    {
+        'id': 'consulenze-online-presenza',
+        'question': 'Le consulenze per neogenitori sono online o in presenza?',
+        'answer': "Le consulenze possono essere pensate come supporto online o in studio, in base al bisogno della famiglia. Prima di attivare un percorso strutturato, lo studio può prevedere un primo contatto conoscitivo per capire il problema e indirizzare meglio il supporto.",
+        'link_href': '/consulenze-online',
+        'link_text': 'Vedi consulenze',
+    },
+    {
         'id': 'prenotare-prestazione-infermieristica',
         'question': 'Come posso prenotare una prestazione infermieristica?',
         'answer': "Puoi prenotare una prestazione infermieristica dalla pagina Prenota. Compili il modulo con i tuoi dati, scegli il servizio, la data e l'orario disponibili, accetti l'informativa privacy e invii la richiesta.",
@@ -177,9 +250,9 @@ FAQ_ITEMS = [
     {
         'id': 'prenotazione-corsi',
         'question': 'La pagina Prenota serve anche per iscriversi ai corsi?',
-        'answer': 'No. La prenotazione online è dedicata alle prestazioni sanitarie. Per i corsi, come disostruzione pediatrica e corso di accompagnamento alla nascita, usiamo una sezione separata di iscrizione.',
+        'answer': 'No. La pagina Prenota è dedicata alle prestazioni sanitarie. Le iscrizioni ai corsi, agli open day e alle richieste di ricontatto hanno un flusso separato nella sezione Corsi e iscrizioni.',
         'link_href': '/iscrizione-corsi',
-        'link_text': 'Vai alle iscrizioni corsi',
+        'link_text': 'Vai ai corsi',
     },
     {
         'id': 'prestazioni-disponibili',
@@ -197,39 +270,10 @@ FAQ_ITEMS = [
     },
     {
         'id': 'dopo-invio-prenotazione',
-        'question': 'Cosa succede dopo aver inviato una prenotazione?',
-        'answer': "Dopo l'invio, la richiesta arriva nell'area admin dello studio. Ricevi una email di conferma della richiesta e l'appuntamento viene gestito dallo studio; quando viene confermato, può essere sincronizzato con il calendario collegato al gestionale.",
+        'question': 'Cosa succede dopo aver inviato una prenotazione sanitaria?',
+        'answer': "Dopo l'invio, la richiesta arriva allo studio. Ricevi una email di conferma della richiesta e l'appuntamento viene gestito manualmente; quando viene confermato, può essere sincronizzato con il calendario collegato al gestionale.",
         'link_href': '/prenota',
         'link_text': 'Invia una richiesta',
-    },
-    {
-        'id': 'corsi-disponibili',
-        'question': 'Quali corsi sono disponibili per famiglie, neogenitori e aziende?',
-        'answer': "I percorsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita, laboratori per l'infanzia e consulenze per neogenitori. Ogni corso chiarisce cosa impari, per chi è indicato, durata e prossima azione: iscrizione individuale, interesse per nuove date o contatto diretto per aziende e gruppi.",
-        'link_href': '/iscrizione-corsi',
-        'link_text': 'Scopri i corsi',
-    },
-    {
-        'id': 'durata-corsi',
-        'question': 'Quanto durano i corsi?',
-        'answer': "La durata dipende dal tipo di corso: il BLSD dura 4 ore, mentre disostruzione pediatrica, corso di accompagnamento alla nascita e laboratorio per l'infanzia durano 2 ore. La durata può essere modificata in base all'organizzazione del corso.",
-        'link_href': '/#calendario-corsi',
-        'link_text': 'Vedi il calendario corsi',
-    },
-    {
-        'id': 'corsi-in-azienda',
-        'question': 'È possibile richiedere un corso BLSD in studio o in azienda?',
-        'answer': 'Sì. Nessun pacchetto standard: la formazione la costruiamo insieme, su misura per la tua realtà. Puoi richiedere il corso BLSD in studio o direttamente in azienda, definendo sede, numero di partecipanti e data.',
-        'link_href': 'https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda.',
-        'link_text': 'Richiedi il corso in studio o in azienda',
-        'link_external': True,
-    },
-    {
-        'id': 'consulenze-neogenitori',
-        'question': 'Offrite consulenze online o in presenza per neogenitori?',
-        'answer': 'Sì. Le consulenze per neogenitori aiutano a mettere ordine tra routine, sonno sicuro, cura quotidiana, poppate, pianto e dubbi dei primi mesi. Possono essere online o in studio e portano a pochi passi pratici, sostenibili per la famiglia.',
-        'link_href': '/consulenze-online',
-        'link_text': 'Scopri le consulenze',
     },
     {
         'id': 'privacy-dati-sanitari',
@@ -676,12 +720,56 @@ class Corso(db.Model):
     ora = db.Column(db.String(10), nullable=True)
     luogo = db.Column(db.String(200), nullable=True)
     durata_ore = db.Column(db.Float, default=DURATA_CORSO_DEFAULT_ORE, nullable=False)
+    capienza_massima = db.Column(db.Integer, nullable=True)
+    stato = db.Column(db.String(20), default='Aperto', nullable=False)
     creato_il = db.Column(db.DateTime, default=datetime.now)
     google_event_id = db.Column(db.String(255), nullable=True)
 
 
+class PersonaCorso(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=True)
+    codice_fiscale = db.Column(db.String(32), nullable=True)
+    nome_bambino = db.Column(db.String(100), nullable=True)
+    eta_bambino = db.Column(db.String(40), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now)
+    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class PercorsoAccompagnamento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titolo = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(120), unique=True, nullable=False)
+    descrizione = db.Column(db.Text, nullable=True)
+    capienza_coppie = db.Column(db.Integer, nullable=True)
+    luogo = db.Column(db.String(200), nullable=True)
+    contatti = db.Column(db.String(200), default='3806317175', nullable=True)
+    stato = db.Column(db.String(20), default='Aperto', nullable=False)
+    creato_il = db.Column(db.DateTime, default=datetime.now)
+
+
+class IncontroAccompagnamento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    percorso_id = db.Column(db.Integer, db.ForeignKey('percorso_accompagnamento.id'), nullable=False)
+    numero = db.Column(db.Integer, nullable=False)
+    data = db.Column(db.String(20), nullable=False)
+    ora = db.Column(db.String(10), nullable=True)
+    professionista = db.Column(db.String(100), nullable=False)
+    tema = db.Column(db.String(200), nullable=False)
+    luogo = db.Column(db.String(200), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now)
+    percorso = db.relationship('PercorsoAccompagnamento', backref=db.backref('incontri', lazy=True, cascade='all, delete-orphan'))
+
+
 class IscrizioneCorso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    corso_id = db.Column(db.Integer, db.ForeignKey('corso.id'), nullable=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=True)
+    percorso_accompagnamento_id = db.Column(db.Integer, db.ForeignKey('percorso_accompagnamento.id'), nullable=True)
     corso_tipo = db.Column(db.String(80), nullable=False)
     corso_titolo = db.Column(db.String(200), nullable=False)
     nome = db.Column(db.String(100), nullable=False)
@@ -692,10 +780,18 @@ class IscrizioneCorso(db.Model):
     partecipazione = db.Column(db.String(100), nullable=True)
     note = db.Column(db.Text, nullable=True)
     dati_extra = db.Column(db.Text, nullable=True)
+    tipo_richiesta = db.Column(db.String(40), default='richiesta_iscrizione', nullable=False)
+    posti = db.Column(db.Integer, default=1, nullable=False)
     consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
     consenso_immagini = db.Column(db.Boolean, default=False, nullable=False)
     stato = db.Column(db.String(20), default='Nuova', nullable=False)
     creato_il = db.Column(db.DateTime, default=datetime.now)
+    corso = db.relationship('Corso', backref=db.backref('iscrizioni', lazy=True))
+    persona = db.relationship('PersonaCorso', backref=db.backref('iscrizioni', lazy=True))
+    percorso_accompagnamento = db.relationship(
+        'PercorsoAccompagnamento',
+        backref=db.backref('iscrizioni', lazy=True)
+    )
 
     def extra_dict(self):
         if not self.dati_extra:
@@ -704,6 +800,17 @@ class IscrizioneCorso(db.Model):
             return json.loads(self.dati_extra)
         except json.JSONDecodeError:
             return {}
+
+
+class PresenzaAccompagnamento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    iscrizione_id = db.Column(db.Integer, db.ForeignKey('iscrizione_corso.id'), nullable=False)
+    incontro_id = db.Column(db.Integer, db.ForeignKey('incontro_accompagnamento.id'), nullable=False)
+    presente = db.Column(db.Boolean, nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    iscrizione = db.relationship('IscrizioneCorso', backref=db.backref('presenze_accompagnamento', lazy=True))
+    incontro = db.relationship('IncontroAccompagnamento', backref=db.backref('presenze', lazy=True))
 
 
 @login_manager.user_loader
@@ -862,6 +969,56 @@ def invia_email_nuova_iscrizione(iscrizione):
         logger.error(f'>>> Errore invio email alert iscrizione corso: {e}', exc_info=True)
 
 
+def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
+    """Invia conferma alla famiglia per il modulo privato del percorso nascita."""
+    if not iscrizione.email:
+        return
+    try:
+        logger.info(f'>>> Invio email conferma percorso accompagnamento a {iscrizione.email}...')
+        date_percorso = '\n'.join(_riepilogo_date_percorso(percorso)) or 'Le date verranno comunicate dallo studio.'
+        contatti = percorso.contatti or '3806317175'
+        msg = Message(
+            subject='Iscrizione confermata - Corso di accompagnamento alla nascita',
+            recipients=[iscrizione.email],
+            body=(
+                f'Gentile {iscrizione.nome},\n\n'
+                f'la tua iscrizione al corso di accompagnamento alla nascita è confermata.\n\n'
+                f'Percorso: {percorso.titolo}\n'
+                f'Luogo:    Studio infermieristico\n\n'
+                f'Calendario incontri:\n{date_percorso}\n\n'
+                f'Per qualsiasi necessità puoi contattarci al numero {contatti}.\n\n'
+                f'A presto,\n'
+                f'S.C. Studio Infermieristico'
+            )
+        )
+        mail.send(msg)
+        logger.info('>>> Email conferma percorso accompagnamento inviata con successo!')
+    except Exception as e:
+        logger.error(f'>>> Errore invio email conferma percorso accompagnamento: {e}', exc_info=True)
+
+
+def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
+    """Invia notifica semplice allo studio per una nuova iscrizione confermata."""
+    try:
+        logger.info('>>> Invio email alert iscrizione percorso accompagnamento...')
+        msg = Message(
+            subject=f'Nuova iscrizione confermata - {percorso.titolo}',
+            recipients=['sc.studioinfermieristico@gmail.com'],
+            body=(
+                f'Nuova iscrizione confermata al corso di accompagnamento alla nascita.\n\n'
+                f'Percorso: {percorso.titolo}\n'
+                f'Nome:     {iscrizione.nome}\n'
+                f'Telefono: {iscrizione.telefono}\n'
+                f'Email:    {iscrizione.email or "Non indicata"}\n\n'
+                f'Accedi all\'area admin per vedere i dettagli.'
+            )
+        )
+        mail.send(msg)
+        logger.info('>>> Email alert percorso accompagnamento inviata con successo!')
+    except Exception as e:
+        logger.error(f'>>> Errore invio email alert percorso accompagnamento: {e}', exc_info=True)
+
+
 def invia_email_ricordo_24h(appuntamento):
     """Invia email di promemoria 24 ore prima dell'appuntamento."""
     try:
@@ -991,8 +1148,234 @@ def _telefono_valido(telefono):
     return re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono) is not None
 
 
+def _normalizza_telefono(telefono):
+    return re.sub(r'\D+', '', telefono or '')
+
+
 def _checkbox_checked(field_name):
     return request.form.get(field_name) in ['on', 'si', 'ACCONSENTO', 'true', '1']
+
+
+def _posti_iscrizione_da_partecipazione(partecipazione):
+    if partecipazione and partecipazione.lower().startswith('coppia'):
+        return 2
+    return 1
+
+
+def _tipo_richiesta_da_corso(corso_tipo, corso_id):
+    if not corso_id:
+        return 'ricontatto'
+    if corso_tipo == 'accompagnamento-nascita':
+        return 'open_day'
+    return 'richiesta_iscrizione'
+
+
+def _label_tipo_richiesta(tipo_richiesta):
+    return TIPI_RICHIESTA_CORSO.get(tipo_richiesta, tipo_richiesta or 'Richiesta')
+
+
+def _persona_corso_da_contatti(telefono='', email=''):
+    email_normalizzata = (email or '').strip().lower()
+    telefono_normalizzato = _normalizza_telefono(telefono)
+
+    if email_normalizzata:
+        persona = PersonaCorso.query.filter(db.func.lower(PersonaCorso.email) == email_normalizzata).first()
+        if persona:
+            return persona
+
+    if telefono_normalizzato:
+        for persona in PersonaCorso.query.filter(PersonaCorso.telefono.isnot(None)).all():
+            if _normalizza_telefono(persona.telefono) == telefono_normalizzato:
+                return persona
+    return None
+
+
+def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fiscale='',
+                            nome_bambino='', eta_bambino='', note=''):
+    if nome:
+        persona.nome = nome
+    if telefono:
+        persona.telefono = telefono
+    if email:
+        persona.email = email
+    if codice_fiscale:
+        persona.codice_fiscale = codice_fiscale
+    if nome_bambino:
+        persona.nome_bambino = nome_bambino
+    if eta_bambino:
+        persona.eta_bambino = eta_bambino
+    if note:
+        if persona.note and note not in persona.note:
+            persona.note = f'{persona.note}\n{note}'
+        elif not persona.note:
+            persona.note = note
+    return persona
+
+
+def _trova_o_crea_persona_corso(nome, telefono, email='', codice_fiscale='',
+                                nome_bambino='', eta_bambino='', note=''):
+    persona = _persona_corso_da_contatti(telefono=telefono, email=email)
+    if persona:
+        return _aggiorna_persona_corso(
+            persona,
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            nome_bambino=nome_bambino,
+            eta_bambino=eta_bambino,
+            note=note
+        )
+
+    persona = PersonaCorso(
+        nome=nome,
+        telefono=telefono,
+        email=email or None,
+        codice_fiscale=codice_fiscale or None,
+        nome_bambino=nome_bambino or None,
+        eta_bambino=eta_bambino or None,
+        note=note or None,
+    )
+    db.session.add(persona)
+    return persona
+
+
+def _slugify(value):
+    value = (value or '').strip().lower()
+    value = re.sub(r'[^a-z0-9]+', '-', value)
+    value = value.strip('-')
+    return value or f'percorso-{secrets.token_hex(4)}'
+
+
+def _slug_unico_percorso(base_slug):
+    slug = _slugify(base_slug)
+    candidate = slug
+    counter = 2
+    while PercorsoAccompagnamento.query.filter_by(slug=candidate).first():
+        candidate = f'{slug}-{counter}'
+        counter += 1
+    return candidate
+
+
+def _incontri_percorso(percorso):
+    return sorted(percorso.incontri, key=lambda incontro: (incontro.numero or 0, incontro.data or '', incontro.ora or ''))
+
+
+def _iscrizioni_percorso(percorso):
+    return IscrizioneCorso.query.filter(
+        IscrizioneCorso.percorso_accompagnamento_id == percorso.id,
+        IscrizioneCorso.stato != 'Annullato'
+    ).order_by(IscrizioneCorso.creato_il.desc()).all()
+
+
+def _posti_liberi_percorso(percorso):
+    if not percorso.capienza_coppie:
+        return None
+    iscritti = IscrizioneCorso.query.filter(
+        IscrizioneCorso.percorso_accompagnamento_id == percorso.id,
+        IscrizioneCorso.stato != 'Annullato'
+    ).count()
+    return max(percorso.capienza_coppie - iscritti, 0)
+
+
+def _percorso_ha_posto(percorso):
+    posti_liberi = _posti_liberi_percorso(percorso)
+    return posti_liberi is None or posti_liberi > 0
+
+
+def _riepilogo_date_percorso(percorso):
+    righe = []
+    for incontro in _incontri_percorso(percorso):
+        data = _formatta_data_corso(incontro.data)
+        ora = f' ore {incontro.ora}' if incontro.ora else ''
+        luogo_testo = ' - Studio infermieristico'
+        righe.append(
+            f'{incontro.numero}. {data}{ora} - {incontro.professionista}: {incontro.tema}{luogo_testo}'
+        )
+    return righe
+
+
+def _panoramica_percorsi_accompagnamento(percorsi):
+    panoramica = []
+    for percorso in percorsi:
+        iscrizioni = _iscrizioni_percorso(percorso)
+        incontri = _incontri_percorso(percorso)
+        capienza = percorso.capienza_coppie
+        posti_liberi = None if capienza is None else max(capienza - len(iscrizioni), 0)
+        panoramica.append({
+            'percorso': percorso,
+            'iscrizioni': iscrizioni,
+            'incontri': incontri,
+            'iscritti_count': len(iscrizioni),
+            'incontri_count': len(incontri),
+            'capienza': capienza,
+            'posti_liberi': posti_liberi,
+        })
+    return panoramica
+
+
+def _presenze_per_percorso(percorso, iscrizioni=None, incontri=None):
+    iscrizioni = iscrizioni if iscrizioni is not None else _iscrizioni_percorso(percorso)
+    incontri = incontri if incontri is not None else _incontri_percorso(percorso)
+    iscrizione_ids = [iscrizione.id for iscrizione in iscrizioni]
+    incontro_ids = [incontro.id for incontro in incontri]
+    presenze = {}
+    if iscrizione_ids and incontro_ids:
+        righe = PresenzaAccompagnamento.query.filter(
+            PresenzaAccompagnamento.iscrizione_id.in_(iscrizione_ids),
+            PresenzaAccompagnamento.incontro_id.in_(incontro_ids)
+        ).all()
+        presenze = {(p.iscrizione_id, p.incontro_id): p for p in righe}
+    return presenze
+
+
+def _escape_pdf_text(value):
+    testo = str(value or '')
+    return testo.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+
+
+def _crea_pdf_testuale(titolo, righe):
+    righe_pdf = [titolo, ''] + [str(riga) for riga in righe]
+    righe_per_pagina = 42
+    pagine = [righe_pdf[i:i + righe_per_pagina] for i in range(0, len(righe_pdf), righe_per_pagina)] or [[]]
+    objects = [
+        b'<< /Type /Catalog /Pages 2 0 R >>',
+        None,
+        b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ]
+    page_ids = []
+    for pagina in pagine:
+        page_id = len(objects) + 1
+        content_id = page_id + 1
+        page_ids.append(page_id)
+        commands = ['BT', '/F1 11 Tf', '50 800 Td', '14 TL']
+        for riga in pagina:
+            commands.append(f'({_escape_pdf_text(riga)}) Tj')
+            commands.append('T*')
+        commands.append('ET')
+        content = '\n'.join(commands).encode('latin-1', 'replace')
+        objects.append(f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents {content_id} 0 R >>'.encode('latin-1'))
+        objects.append(f'<< /Length {len(content)} >>\nstream\n'.encode('latin-1') + content + b'\nendstream')
+
+    kids = ' '.join(f'{page_id} 0 R' for page_id in page_ids)
+    objects[1] = f'<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>'.encode('latin-1')
+
+    pdf = bytearray(b'%PDF-1.4\n')
+    offsets = [0]
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f'{index} 0 obj\n'.encode('latin-1'))
+        pdf.extend(obj)
+        pdf.extend(b'\nendobj\n')
+    xref_offset = len(pdf)
+    pdf.extend(f'xref\n0 {len(objects) + 1}\n'.encode('latin-1'))
+    pdf.extend(b'0000000000 65535 f \n')
+    for offset in offsets[1:]:
+        pdf.extend(f'{offset:010d} 00000 n \n'.encode('latin-1'))
+    pdf.extend(
+        f'trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF'.encode('latin-1')
+    )
+    return bytes(pdf)
 
 
 def _formatta_data_corso(data_iso):
@@ -1015,11 +1398,13 @@ def _opzioni_date_corso(corso_tipo):
     oggi = date.today().strftime('%Y-%m-%d')
     corsi = Corso.query.filter(
         Corso.tipo == corso_tipo,
-        Corso.data >= oggi
+        Corso.data >= oggi,
+        Corso.stato == 'Aperto'
     ).order_by(Corso.data, Corso.ora).all()
     return [
         {
             'value': str(corso.id),
+            'corso_id': corso.id,
             'label': _etichetta_data_corso(corso),
         }
         for corso in corsi
@@ -1059,19 +1444,25 @@ def iscrizione_corso(corso_tipo):
         telefono = request.form.get('telefono', '').strip()
         email = request.form.get('email', '').strip()
         codice_fiscale = request.form.get('codice_fiscale', '').strip()
+        nome_bambino = request.form.get('nome_bambino', '').strip()
+        eta_bambino = request.form.get('eta_bambino', '').strip()
         extra = {}
         data_corso_id = request.form.get('data_corso', '').strip()
-        opzioni_date = {option['value']: option['label'] for option in corso['data_options']}
+        opzioni_date = {option['value']: option for option in corso['data_options']}
+        corso_id = None
         if opzioni_date:
             if data_corso_id not in opzioni_date:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una data disponibile tra quelle aperte.')
-            data_corso = opzioni_date[data_corso_id]
+            data_scelta = opzioni_date[data_corso_id]
+            corso_id = data_scelta['corso_id']
+            data_corso = data_scelta['label']
         else:
             data_corso = 'Da ricontattare per prossime date'
             extra['richiesta_prossime_date'] = True
         partecipazione = request.form.get('partecipazione', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
         consenso_immagini = _checkbox_checked('consenso_immagini')
+        tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
 
         if not nome or len(nome) > 100:
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.')
@@ -1081,6 +1472,15 @@ def iscrizione_corso(corso_tipo):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un numero di telefono valido.')
         if email and not _email_valida(email):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.')
+        if len(nome_bambino) > 100:
+            return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.')
+        if len(eta_bambino) > 40:
+            return _render_iscrizione_con_errore(corso_tipo, 'L\'età del bambino è troppo lunga.')
+
+        if nome_bambino:
+            extra['nome_bambino'] = nome_bambino
+        if eta_bambino:
+            extra['eta_bambino'] = eta_bambino
 
         if corso_tipo == 'bls-d':
             if partecipazione not in corso['partecipazione_options']:
@@ -1164,7 +1564,18 @@ def iscrizione_corso(corso_tipo):
                 'telefono_partner': request.form.get('telefono_partner', '').strip(),
             }
 
+        persona = _trova_o_crea_persona_corso(
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            nome_bambino=nome_bambino,
+            eta_bambino=eta_bambino,
+        )
+
         iscrizione = IscrizioneCorso(
+            corso_id=corso_id,
+            persona=persona,
             corso_tipo=corso_tipo,
             corso_titolo=corso['titolo'],
             nome=nome,
@@ -1175,6 +1586,8 @@ def iscrizione_corso(corso_tipo):
             partecipazione=partecipazione,
             note=request.form.get('note', '').strip(),
             dati_extra=json.dumps(extra, ensure_ascii=False),
+            tipo_richiesta=tipo_richiesta,
+            posti=0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione),
             consenso_privacy=consenso_privacy,
             consenso_immagini=consenso_immagini,
         )
@@ -1194,6 +1607,148 @@ def iscrizione_corsi():
 @app.route('/iscrizione-corsi/conferma')
 def conferma_iscrizione_corso():
     return render_template('conferma_iscrizione_corso.html')
+
+
+def _render_accompagnamento_privato(percorso, messaggio=None):
+    if messaggio:
+        flash(messaggio, 'error')
+    incontri = _incontri_percorso(percorso)
+    posti_liberi = _posti_liberi_percorso(percorso)
+    form_disponibile = percorso.stato == 'Aperto' and _percorso_ha_posto(percorso)
+    return render_template(
+        'iscrizione_accompagnamento_privata.html',
+        percorso=percorso,
+        incontri=incontri,
+        posti_liberi=posti_liberi,
+        form_disponibile=form_disponibile,
+        form_data=request.form if request.method == 'POST' else {}
+    )
+
+
+@app.route('/iscrizione-accompagnamento/<slug>', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def iscrizione_accompagnamento_privata(slug):
+    percorso = PercorsoAccompagnamento.query.filter_by(slug=slug).first_or_404()
+
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            return _render_accompagnamento_privato(percorso, 'Richiesta non valida. Riprova.')
+        if percorso.stato != 'Aperto':
+            return _render_accompagnamento_privato(percorso, 'Le iscrizioni a questo percorso non sono aperte.')
+        if not _percorso_ha_posto(percorso):
+            return _render_accompagnamento_privato(percorso, 'Il percorso ha raggiunto la capienza massima.')
+
+        nome = request.form.get('nome', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        codice_fiscale = request.form.get('codice_fiscale', '').strip()
+        data_presunta_parto = request.form.get('data_presunta_parto', '').strip()
+        partner_presente = request.form.get('partner_presente', '').strip()
+        note = request.form.get('note', '').strip()
+        consenso_privacy = _checkbox_checked('consenso_privacy')
+        consenso_immagini = _checkbox_checked('consenso_immagini')
+
+        if not nome or len(nome) > 100:
+            return _render_accompagnamento_privato(percorso, 'Inserisci nome e cognome.')
+        if not telefono or not _telefono_valido(telefono):
+            return _render_accompagnamento_privato(percorso, 'Inserisci un numero di telefono valido.')
+        if not email or not _email_valida(email):
+            return _render_accompagnamento_privato(percorso, 'Inserisci un indirizzo email valido.')
+        if not codice_fiscale or len(codice_fiscale) > 32:
+            return _render_accompagnamento_privato(percorso, 'Inserisci il codice fiscale.')
+        if not data_presunta_parto:
+            return _render_accompagnamento_privato(percorso, 'Inserisci la data presunta del parto.')
+        if partner_presente not in ['Si', 'No']:
+            return _render_accompagnamento_privato(percorso, 'Indica se il partner sarà presente.')
+        if not consenso_privacy:
+            return _render_accompagnamento_privato(percorso, 'Devi autorizzare il trattamento dei dati personali.')
+
+        persona = _trova_o_crea_persona_corso(
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+        )
+        extra = {
+            'iscrizione_privata_accompagnamento': True,
+            'data_presunta_parto': data_presunta_parto,
+            'partner_presente': partner_presente,
+        }
+        iscrizione = IscrizioneCorso(
+            percorso_accompagnamento=percorso,
+            persona=persona,
+            corso_tipo='accompagnamento-nascita',
+            corso_titolo=percorso.titolo,
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            data_corso=f'Percorso di {len(_incontri_percorso(percorso))} incontri',
+            partecipazione=f'Coppia - partner {partner_presente.lower()}',
+            note=note,
+            dati_extra=json.dumps(extra, ensure_ascii=False),
+            tipo_richiesta='iscrizione_effettiva',
+            posti=1,
+            consenso_privacy=consenso_privacy,
+            consenso_immagini=consenso_immagini,
+            stato='Confermato',
+        )
+        db.session.add(iscrizione)
+        db.session.flush()
+        for incontro in _incontri_percorso(percorso):
+            db.session.add(PresenzaAccompagnamento(iscrizione=iscrizione, incontro=incontro))
+        db.session.commit()
+        invia_email_iscrizione_accompagnamento(iscrizione, percorso)
+        invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso)
+        return redirect(url_for('conferma_iscrizione_accompagnamento'))
+
+    return _render_accompagnamento_privato(percorso)
+
+
+@app.route('/iscrizione-accompagnamento/conferma')
+def conferma_iscrizione_accompagnamento():
+    return render_template('conferma_iscrizione_accompagnamento.html')
+
+
+def _panoramica_corsi(corsi):
+    iscrizioni_per_corso = defaultdict(list)
+    corso_ids = [corso.id for corso in corsi]
+    if corso_ids:
+        iscrizioni = IscrizioneCorso.query.filter(
+            IscrizioneCorso.corso_id.in_(corso_ids)
+        ).order_by(IscrizioneCorso.creato_il.desc()).all()
+        for iscrizione in iscrizioni:
+            iscrizioni_per_corso[iscrizione.corso_id].append(iscrizione)
+
+    panoramica = []
+    for corso in corsi:
+        iscrizioni_corso = iscrizioni_per_corso.get(corso.id, [])
+        attive = [i for i in iscrizioni_corso if i.stato != 'Annullato']
+        confermate = [i for i in attive if i.stato == 'Confermato']
+        open_day = [i for i in attive if i.tipo_richiesta == 'open_day']
+        effettive = [i for i in attive if i.tipo_richiesta == 'iscrizione_effettiva']
+        richieste = [
+            i for i in attive
+            if i.tipo_richiesta in ['richiesta_iscrizione', 'iscrizione_effettiva']
+        ]
+        posti_attivi = sum(i.posti or _posti_iscrizione_da_partecipazione(i.partecipazione) for i in attive)
+        capienza = corso.capienza_massima
+        posti_liberi = None if capienza is None else max(capienza - posti_attivi, 0)
+        panoramica.append({
+            'corso': corso,
+            'iscrizioni': iscrizioni_corso,
+            'attive_count': len(attive),
+            'confermate_count': len(confermate),
+            'open_day_count': len(open_day),
+            'effettive_count': len(effettive),
+            'richieste_count': len(richieste),
+            'posti_attivi': posti_attivi,
+            'capienza': capienza,
+            'posti_liberi': posti_liberi,
+            'stato': corso.stato or 'Aperto',
+        })
+    return panoramica
 
 
 @app.route('/prenota', methods=['GET', 'POST'])
@@ -1403,14 +1958,74 @@ def admin():
             appuntamenti = []
 
     corsi = Corso.query.order_by(Corso.data).all()
-    iscrizioni_corsi = IscrizioneCorso.query.order_by(IscrizioneCorso.creato_il.desc()).all()
+    panoramica_corsi = _panoramica_corsi(corsi)
+    persone_corsi = PersonaCorso.query.order_by(PersonaCorso.nome).all()
+    percorsi_accompagnamento = PercorsoAccompagnamento.query.order_by(PercorsoAccompagnamento.creato_il.desc()).all()
+    panoramica_percorsi_accompagnamento = _panoramica_percorsi_accompagnamento(percorsi_accompagnamento)
+    presenze_accompagnamento = {}
+    for item in panoramica_percorsi_accompagnamento:
+        percorso = item['percorso']
+        presenze = _presenze_per_percorso(percorso, item['iscrizioni'], item['incontri'])
+        presenze_accompagnamento[percorso.id] = {
+            f'{chiave[0]}-{chiave[1]}': presenza for chiave, presenza in presenze.items()
+    }
+    corso_filtro_id = request.args.get('corso_id', type=int)
+    filtro_iscrizioni = request.args.get('iscrizioni', '').strip()
+    filtro_tipo_corso = request.args.get('tipo_corso', '').strip()
+    if filtro_tipo_corso not in CORSI_ADMIN_TIPI:
+        filtro_tipo_corso = ''
+    filtro_tipo_corso_label = (
+        CORSI_ADMIN_TIPI[filtro_tipo_corso]['label']
+        if filtro_tipo_corso
+        else ''
+    )
+    corso_filtro_attivo = db.session.get(Corso, corso_filtro_id) if corso_filtro_id else None
+    iscrizioni_per_tipo_count = {
+        tipo: 0
+        for tipo in CORSI_ADMIN_TIPI
+    }
+    conteggi_tipo = db.session.query(
+        IscrizioneCorso.corso_tipo,
+        db.func.count(IscrizioneCorso.id)
+    ).group_by(IscrizioneCorso.corso_tipo).all()
+    for tipo, count in conteggi_tipo:
+        if tipo in iscrizioni_per_tipo_count:
+            iscrizioni_per_tipo_count[tipo] = count
+
+    iscrizioni_query = IscrizioneCorso.query
+    if corso_filtro_attivo:
+        iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.corso_id == corso_filtro_attivo.id)
+    else:
+        if filtro_tipo_corso:
+            iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.corso_tipo == filtro_tipo_corso)
+        if filtro_iscrizioni == 'ricontatto':
+            iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.tipo_richiesta == 'ricontatto')
+        elif filtro_iscrizioni == 'open_day':
+            iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.tipo_richiesta == 'open_day')
+
+    iscrizioni_corsi = iscrizioni_query.order_by(IscrizioneCorso.creato_il.desc()).all()
+    iscrizioni_totali_count = IscrizioneCorso.query.count()
     iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
     return render_template('admin.html',
                            appuntamenti=appuntamenti,
                            corsi=corsi,
+                           panoramica_corsi=panoramica_corsi,
                            corsi_admin_tipi=CORSI_ADMIN_TIPI,
+                           persone_corsi=persone_corsi,
+                           panoramica_percorsi_accompagnamento=panoramica_percorsi_accompagnamento,
+                           presenze_accompagnamento=presenze_accompagnamento,
+                           stati_percorso_accompagnamento=STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI,
                            iscrizioni_corsi=iscrizioni_corsi,
+                           iscrizioni_totali_count=iscrizioni_totali_count,
+                           persone_corsi_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
+                           tipo_richiesta_labels=TIPI_RICHIESTA_CORSO,
+                           corso_filtro_attivo=corso_filtro_attivo,
+                           filtro_tipo_corso=filtro_tipo_corso,
+                           filtro_tipo_corso_label=filtro_tipo_corso_label,
+                           iscrizioni_per_tipo_count=iscrizioni_per_tipo_count,
+                           iscrizioni_filtrate_count=len(iscrizioni_corsi),
+                           filtro_iscrizioni=filtro_iscrizioni,
                            filtro=filtro,
                            in_attesa_count=in_attesa_count)
 
@@ -1510,11 +2125,296 @@ def aggiungi_corso():
         ora=request.form.get('ora', ''),
         luogo=request.form.get('luogo', ''),
         durata_ore=_durata_corso_da_form(request.form.get('durata_ore', ''), tipo_corso),
+        capienza_massima=request.form.get('capienza_massima', type=int),
+        stato=request.form.get('stato', 'Aperto') if request.form.get('stato') in STATI_CORSO_VALIDI else 'Aperto',
     )
     db.session.add(corso)
     db.session.commit()
     crea_o_aggiorna_evento_calendario_corso(corso)
     return redirect(url_for('admin'))
+
+
+@app.route('/admin/percorso-accompagnamento/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_percorso_accompagnamento():
+    token = session.pop('_csrf_token', None)
+    if not token or token != request.form.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+    titolo = request.form.get('titolo', '').strip() or 'Iscrizione al corso'
+    slug_richiesto = request.form.get('slug', '').strip() or titolo
+    stato = request.form.get('stato', 'Aperto').strip()
+    if stato not in STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI:
+        stato = 'Aperto'
+
+    capienza_coppie = request.form.get('capienza_coppie', type=int)
+    if capienza_coppie is not None and capienza_coppie < 1:
+        capienza_coppie = None
+
+    percorso = PercorsoAccompagnamento(
+        titolo=titolo,
+        slug=_slug_unico_percorso(slug_richiesto),
+        descrizione=request.form.get('descrizione', '').strip(),
+        capienza_coppie=capienza_coppie,
+        luogo='Studio infermieristico',
+        contatti=request.form.get('contatti', '').strip() or '3806317175',
+        stato=stato,
+    )
+    db.session.add(percorso)
+    db.session.commit()
+    flash('Edizione privata del percorso creata.', 'success')
+    return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+
+@app.route('/admin/percorso-accompagnamento/<int:id>/incontro/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_incontro_accompagnamento(id):
+    token = session.pop('_csrf_token', None)
+    if not token or token != request.form.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+    percorso = db.get_or_404(PercorsoAccompagnamento, id)
+    numero = request.form.get('numero', type=int)
+    data = request.form.get('data', '').strip()
+    professionista = request.form.get('professionista', '').strip()
+    tema = request.form.get('tema', '').strip()
+    if not numero or numero < 1 or numero > 9:
+        flash('Inserisci un numero incontro da 1 a 9.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+    if not data or not professionista or not tema:
+        flash('Data, professionista e tema sono obbligatori.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+    incontro_esistente = IncontroAccompagnamento.query.filter_by(
+        percorso_id=percorso.id,
+        numero=numero
+    ).first()
+    if incontro_esistente:
+        flash('Esiste già un incontro con questo numero per il percorso selezionato.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+    incontro = IncontroAccompagnamento(
+        percorso=percorso,
+        numero=numero,
+        data=data,
+        ora=request.form.get('ora', '').strip(),
+        professionista=professionista,
+        tema=tema,
+        luogo='Studio infermieristico',
+        note=request.form.get('note', '').strip(),
+    )
+    db.session.add(incontro)
+    db.session.flush()
+    for iscrizione in _iscrizioni_percorso(percorso):
+        db.session.add(PresenzaAccompagnamento(iscrizione=iscrizione, incontro=incontro))
+    db.session.commit()
+    flash('Incontro aggiunto al percorso.', 'success')
+    return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+
+@app.route('/admin/percorso-accompagnamento/<int:id>/presenze', methods=['POST'])
+@login_required
+def aggiorna_presenze_accompagnamento(id):
+    token = session.pop('_csrf_token', None)
+    if not token or token != request.form.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+    percorso = db.get_or_404(PercorsoAccompagnamento, id)
+    iscrizioni = _iscrizioni_percorso(percorso)
+    incontri = _incontri_percorso(percorso)
+    presenze = _presenze_per_percorso(percorso, iscrizioni, incontri)
+
+    for iscrizione in iscrizioni:
+        for incontro in incontri:
+            campo = f'presenza_{iscrizione.id}_{incontro.id}'
+            valore = request.form.get(campo, '').strip()
+            presenza = presenze.get((iscrizione.id, incontro.id))
+            if not presenza:
+                presenza = PresenzaAccompagnamento(iscrizione=iscrizione, incontro=incontro)
+                db.session.add(presenza)
+            if valore == 'presente':
+                presenza.presente = True
+            elif valore == 'assente':
+                presenza.presente = False
+            else:
+                presenza.presente = None
+    db.session.commit()
+    flash('Registro presenze aggiornato.', 'success')
+    return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+
+@app.route('/admin/percorso-accompagnamento/<int:id>/export-pdf')
+@login_required
+def esporta_percorso_accompagnamento_pdf(id):
+    percorso = db.get_or_404(PercorsoAccompagnamento, id)
+    iscrizioni = _iscrizioni_percorso(percorso)
+    incontri = _incontri_percorso(percorso)
+    presenze = _presenze_per_percorso(percorso, iscrizioni, incontri)
+
+    righe = [
+        f'Percorso: {percorso.titolo}',
+        f'Stato: {percorso.stato}',
+        f'Capienza coppie: {percorso.capienza_coppie or "non impostata"}',
+        f'Iscrizioni confermate/attive: {len(iscrizioni)}',
+        '',
+        'Calendario incontri:',
+    ]
+    righe.extend(_riepilogo_date_percorso(percorso) or ['Date non ancora inserite.'])
+    righe.extend(['', 'Iscritti:'])
+    for iscrizione in iscrizioni:
+        extra = iscrizione.extra_dict()
+        consenso_immagini = 'Si' if iscrizione.consenso_immagini else 'No'
+        righe.append(
+            f'- {iscrizione.nome} | Tel {iscrizione.telefono} | Email {iscrizione.email or "non indicata"} | '
+            f'DPP {extra.get("data_presunta_parto", "non indicata")} | Partner {extra.get("partner_presente", "non indicato")} | '
+            f'Immagini {consenso_immagini}'
+        )
+        if incontri:
+            stati = []
+            for incontro in incontri:
+                presenza = presenze.get((iscrizione.id, incontro.id))
+                if not presenza or presenza.presente is None:
+                    valore = '-'
+                else:
+                    valore = 'P' if presenza.presente else 'A'
+                stati.append(f'{incontro.numero}:{valore}')
+            righe.append(f'  Presenze: {" ".join(stati)}')
+
+    pdf = _crea_pdf_testuale(f'Iscritti - {percorso.titolo}', righe)
+    filename = f'{percorso.slug}-iscritti.pdf'
+    return Response(
+        pdf,
+        mimetype='application/pdf',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+
+@app.route('/admin/iscrizione-corso/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_iscrizione_corso_manuale():
+    token = session.pop('_csrf_token', None)
+    if not token or token != request.form.get('_csrf_token'):
+        flash('Richiesta non valida. Riprova.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+
+    corso_id = request.form.get('corso_id', type=int)
+    corso = db.session.get(Corso, corso_id) if corso_id else None
+    if not corso:
+        flash('Seleziona un corso o laboratorio valido.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+
+    persona_id = request.form.get('persona_id', type=int)
+    persona = db.session.get(PersonaCorso, persona_id) if persona_id else None
+
+    nome = request.form.get('nome', '').strip()
+    telefono = request.form.get('telefono', '').strip()
+    email = request.form.get('email', '').strip()
+    codice_fiscale = request.form.get('codice_fiscale', '').strip()
+    nome_bambino = request.form.get('nome_bambino', '').strip()
+    eta_bambino = request.form.get('eta_bambino', '').strip()
+    note_persona = request.form.get('note_persona', '').strip()
+
+    if persona:
+        _aggiorna_persona_corso(
+            persona,
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            nome_bambino=nome_bambino,
+            eta_bambino=eta_bambino,
+            note=note_persona
+        )
+    else:
+        if not nome or len(nome) > 100:
+            flash('Inserisci nome e cognome della persona.', 'error')
+            return redirect(url_for('admin') + '#admin-corsi')
+        if not telefono or not _telefono_valido(telefono):
+            flash('Inserisci un numero di telefono valido.', 'error')
+            return redirect(url_for('admin') + '#admin-corsi')
+        persona = _trova_o_crea_persona_corso(
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            codice_fiscale=codice_fiscale,
+            nome_bambino=nome_bambino,
+            eta_bambino=eta_bambino,
+            note=note_persona
+        )
+
+    nome = nome or persona.nome
+    telefono = telefono or persona.telefono
+    email = email or persona.email or ''
+    codice_fiscale = codice_fiscale or persona.codice_fiscale or ''
+    nome_bambino = nome_bambino or persona.nome_bambino or ''
+    eta_bambino = eta_bambino or persona.eta_bambino or ''
+
+    if not nome or len(nome) > 100:
+        flash('Inserisci nome e cognome della persona.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    if not telefono or not _telefono_valido(telefono):
+        flash('Inserisci un numero di telefono valido.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    if email and not _email_valida(email):
+        flash('Inserisci un indirizzo email valido.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    if len(codice_fiscale) > 32:
+        flash('Il codice fiscale è troppo lungo.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    if len(nome_bambino) > 100:
+        flash('Il nome del bambino è troppo lungo.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    if len(eta_bambino) > 40:
+        flash('L\'età del bambino è troppo lunga.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+
+    tipo_richiesta = request.form.get('tipo_richiesta', 'iscrizione_effettiva').strip()
+    if tipo_richiesta not in TIPI_RICHIESTA_CORSO:
+        tipo_richiesta = 'iscrizione_effettiva'
+
+    stato = request.form.get('stato', 'Confermato').strip()
+    if stato not in STATI_ISCRIZIONE_VALIDI:
+        stato = 'Confermato'
+
+    partecipazione = request.form.get('partecipazione', '').strip() or 'Inserimento manuale'
+    posti = request.form.get('posti', type=int)
+    if posti is None or posti < 0:
+        posti = _posti_iscrizione_da_partecipazione(partecipazione)
+    if tipo_richiesta == 'ricontatto':
+        posti = 0
+
+    extra = {
+        'inserimento_admin': True,
+        'nome_bambino': nome_bambino,
+        'eta_bambino': eta_bambino,
+    }
+    extra = {chiave: valore for chiave, valore in extra.items() if valore not in ['', None]}
+
+    iscrizione = IscrizioneCorso(
+        corso_id=corso.id,
+        persona=persona,
+        corso_tipo=corso.tipo or '',
+        corso_titolo=corso.titolo,
+        nome=nome,
+        telefono=telefono,
+        email=email,
+        codice_fiscale=codice_fiscale,
+        data_corso=_etichetta_data_corso(corso),
+        partecipazione=partecipazione,
+        note=request.form.get('note', '').strip(),
+        dati_extra=json.dumps(extra, ensure_ascii=False),
+        tipo_richiesta=tipo_richiesta,
+        posti=posti,
+        consenso_privacy=_checkbox_checked('consenso_privacy'),
+        consenso_immagini=_checkbox_checked('consenso_immagini'),
+        stato=stato,
+    )
+    db.session.add(iscrizione)
+    db.session.commit()
+    flash('Iscritto aggiunto al corso e salvato in rubrica.', 'success')
+    return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
 
 @app.route('/admin/corso/elimina/<int:id>')
@@ -1526,6 +2426,13 @@ def elimina_corso(id):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     corso = db.get_or_404(Corso, id)
+    iscrizioni_attive = IscrizioneCorso.query.filter(
+        IscrizioneCorso.corso_id == corso.id,
+        IscrizioneCorso.stato != 'Annullato'
+    ).count()
+    if iscrizioni_attive:
+        flash('Non puoi eliminare un corso con iscrizioni attive. Annulla prima le iscrizioni o chiudi il corso.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
     elimina_evento_calendario_corso(corso)
     db.session.delete(corso)
     db.session.commit()

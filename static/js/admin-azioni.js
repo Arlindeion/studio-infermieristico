@@ -66,4 +66,44 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const filtroTipoCorso = document.getElementById('admin-course-type-filter');
+    if (filtroTipoCorso) {
+        filtroTipoCorso.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+
+    const personaCorsoSelect = document.getElementById('persona-corso-select');
+    const campiPersonaCorso = {
+        nome: document.getElementById('persona-corso-nome'),
+        telefono: document.getElementById('persona-corso-telefono'),
+        email: document.getElementById('persona-corso-email'),
+        codiceFiscale: document.getElementById('persona-corso-codice-fiscale'),
+        nomeBambino: document.getElementById('persona-corso-nome-bambino'),
+        etaBambino: document.getElementById('persona-corso-eta-bambino'),
+    };
+
+    if (personaCorsoSelect) {
+        personaCorsoSelect.addEventListener('change', function() {
+            const opzione = this.selectedOptions[0];
+            const dati = opzione ? opzione.dataset : {};
+
+            if (!this.value) {
+                Object.values(campiPersonaCorso).forEach(campo => {
+                    if (campo) {
+                        campo.value = '';
+                    }
+                });
+                return;
+            }
+
+            if (campiPersonaCorso.nome) campiPersonaCorso.nome.value = dati.nome || '';
+            if (campiPersonaCorso.telefono) campiPersonaCorso.telefono.value = dati.telefono || '';
+            if (campiPersonaCorso.email) campiPersonaCorso.email.value = dati.email || '';
+            if (campiPersonaCorso.codiceFiscale) campiPersonaCorso.codiceFiscale.value = dati.codiceFiscale || '';
+            if (campiPersonaCorso.nomeBambino) campiPersonaCorso.nomeBambino.value = dati.nomeBambino || '';
+            if (campiPersonaCorso.etaBambino) campiPersonaCorso.etaBambino.value = dati.etaBambino || '';
+        });
+    }
 });
