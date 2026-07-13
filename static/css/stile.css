@@ -1,25 +1,29 @@
 /* ─── VARIABILI COLORI ─── */
 :root {
-    --verde-salvia: #8FA685;
-    --verde-scuro: #526F50;
-    --verde-header: #5F7E58;
-    --verde-header-profondo: #4D6A49;
-    --verde-header-soft: #5D7A58;
-    --corallo-header: #C67870;
-    --corallo-header-profondo: #AD625D;
-    --verde-chiaro: #EEF5EA;
-    --rosa-antico: #D08F86;
-    --rosa-chiaro: #FFF0EC;
-    --corallo-soft: #E6A39B;
-    --avorio: #FFFDF9;
-    --testo: #403631;
-    --grigio: #766E68;
+    --verde-brand: #B1BBA5;
+    --verde-salvia: #B1BBA5;
+    --verde-scuro: #304438;
+    --verde-header: #506A59;
+    --verde-header-profondo: #3F5948;
+    --verde-header-soft: #6F8373;
+    --corallo-header: #9A4E56;
+    --corallo-header-profondo: #7F3E46;
+    --verde-chiaro: #E5E9E0;
+    --rosa-antico: #9A4E56;
+    --rosa-chiaro: #F2E8E8;
+    --corallo-soft: #BE777E;
+    --rosso-cuore: #9A4E56;
+    --blu-filo: #6F8373;
+    --carta: #F7F5F1;
+    --avorio: #FFFFFF;
+    --testo: #304438;
+    --grigio: #58635C;
     --bianco: #ffffff;
-    --sfondo: #FFF9F4;
-    --ombra-soft: 0 10px 30px rgba(92, 76, 64, 0.10);
-    --ombra-card: 0 8px 24px rgba(92, 76, 64, 0.08);
-    --font-body: 'Manrope', 'Segoe UI', Arial, sans-serif;
-    --font-display: 'Fraunces', Georgia, serif;
+    --sfondo: #F7F5F1;
+    --ombra-soft: 0 18px 44px rgba(48, 68, 56, 0.12);
+    --ombra-card: 0 8px 24px rgba(48, 68, 56, 0.07);
+    --font-body: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Arial Narrow', sans-serif;
 }
 
 /* ─── RESET E BASE ─── */
@@ -28,7 +32,7 @@
 body {
     font-family: var(--font-body);
     color: var(--testo);
-    background: linear-gradient(180deg, var(--sfondo) 0%, var(--avorio) 46%, var(--sfondo) 100%);
+    background: var(--sfondo);
     line-height: 1.6;
 }
 
@@ -46,7 +50,7 @@ textarea {
 }
 
 p {
-    color: #5a514b;
+    color: var(--grigio);
 }
 
 ::selection {
@@ -54,10 +58,10 @@ p {
     color: var(--testo);
 }
 
-header {
-    background: linear-gradient(100deg, #435f40 0%, var(--verde-header-profondo) 58%, #6d7b54 100%);
+body > header {
+    background: var(--verde-brand);
     backdrop-filter: blur(16px) saturate(1.08);
-    border-bottom: 1px solid rgba(255, 250, 246, 0.2);
+    border-bottom: 1px solid rgba(48, 68, 56, 0.18);
     padding: 0.45rem clamp(1rem, 3vw, 2.5rem);
     display: flex;
     align-items: center;
@@ -65,7 +69,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 8px 24px rgba(45, 64, 44, 0.18), inset 0 -1px 0 rgba(208, 143, 134, 0.28);
+    box-shadow: 0 8px 24px rgba(48, 68, 56, 0.12);
 }
 
 nav {
@@ -75,20 +79,20 @@ nav {
 }
 
 .nav-desktop {
-    background: rgba(35, 52, 34, 0.24);
-    border: 1px solid rgba(255, 253, 249, 0.22);
-    border-radius: 999px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     padding: 0.28rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: none;
 }
 
 nav a,
 .nav-dropdown-toggle {
-    color: #fffdf9;
+    color: var(--verde-scuro);
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    text-shadow: 0 1px 1px rgba(35, 49, 34, 0.16);
+    text-shadow: none;
     transition: color 0.2s, opacity 0.2s, transform 0.2s;
 }
 
@@ -98,13 +102,13 @@ nav a:focus-visible,
 .btn:focus-visible,
 .btn-prenota:focus-visible,
 .sticky-prenota-btn:focus-visible {
-    outline: 3px solid rgba(255, 240, 236, 0.72);
+    outline: 3px solid var(--verde-scuro);
     outline-offset: 3px;
 }
 
 nav > a:not(.btn-prenota),
 .nav-dropdown-toggle {
-    border-radius: 999px;
+    border-radius: 6px;
     padding: 0.58rem 0.8rem;
 }
 
@@ -129,12 +133,12 @@ nav > a:not(.btn-prenota):hover,
 .nav-dropdown-toggle:hover,
 .nav-dropdown:focus-within .nav-dropdown-toggle,
 .nav-dropdown.aperto .nav-dropdown-toggle {
-    background: rgba(255, 253, 249, 0.18);
+    background: rgba(48, 68, 56, 0.08);
 }
 
 nav a:hover,
 .nav-dropdown-toggle:hover {
-    color: #fff7ef;
+    color: var(--verde-scuro);
     opacity: 0.92;
     transform: translateY(-1px);
 }
@@ -160,7 +164,7 @@ nav a:hover,
     position: relative;
     width: 1.15rem;
     height: 1.15rem;
-    border: 1px solid rgba(255, 253, 249, 0.58);
+    border: 1px solid rgba(48, 68, 56, 0.42);
     border-radius: 50%;
     transform: none;
     transition: transform 0.18s ease;
@@ -182,7 +186,7 @@ nav a:hover,
 .nav-dropdown:hover .nav-chevron,
 .nav-dropdown:focus-within .nav-chevron,
 .nav-dropdown.aperto .nav-chevron {
-    background: rgba(255, 253, 249, 0.16);
+    background: rgba(48, 68, 56, 0.08);
 }
 
 .nav-dropdown:hover .nav-chevron::before,
@@ -250,13 +254,17 @@ nav a:hover,
 }
 
 .nav-blsd-link {
-    color: #fff8ea !important;
+    color: var(--verde-scuro) !important;
 }
 
 .nav-supporto-link {
-    background: rgba(255, 250, 246, 0.18);
-    border: 1px solid rgba(255, 240, 236, 0.3);
-    color: #fff7ef !important;
+    background: transparent;
+    border: 1px solid rgba(48, 68, 56, 0.42);
+    color: var(--verde-scuro) !important;
+}
+
+.nav-prestazioni-link {
+    color: rgba(48, 68, 56, 0.82) !important;
 }
 
 .nav-dropdown-menu a:hover {
@@ -267,7 +275,7 @@ nav a:hover,
 }
 
 .nav-supporto-link:hover {
-    background: rgba(255, 250, 246, 0.26) !important;
+    background: rgba(48, 68, 56, 0.1) !important;
 }
 
 .btn-prenota {
@@ -1485,7 +1493,7 @@ nav a:hover,
     background: var(--verde-header);
     color: var(--bianco);
     padding: 0.8rem 2rem;
-    border-radius: 999px;
+    border-radius: 7px;
     font-weight: 700;
     font-size: 1rem;
     border: none;
@@ -1498,6 +1506,19 @@ nav a:hover,
     background: var(--verde-header-profondo);
     transform: translateY(-2px);
     box-shadow: 0 12px 24px rgba(95, 126, 88, 0.24);
+}
+
+.btn-linea {
+    background: transparent;
+    border: 1.5px solid currentColor;
+    box-shadow: none;
+    color: var(--verde-scuro);
+}
+
+.btn-linea:hover {
+    background: var(--verde-scuro);
+    border-color: var(--verde-scuro);
+    color: var(--bianco);
 }
 
 /* ─── SEZIONI ─── */
@@ -3043,7 +3064,7 @@ footer p {
 }
 
 .logo-testo {
-    color: white;
+    color: var(--verde-scuro);
     font-size: 1.05rem;
     font-weight: 600;
     font-family: var(--font-display);
@@ -3510,7 +3531,7 @@ footer p {
     display: block;
     width: 24px;
     height: 2px;
-    background: white;
+    background: var(--verde-scuro);
     border-radius: 2px;
     transition: transform 0.3s, opacity 0.3s;
 }
@@ -3523,7 +3544,7 @@ footer p {
 .nav-mobile {
     display: none;
     flex-direction: column;
-    background: linear-gradient(180deg, #435f40, var(--verde-header-profondo) 58%, #6d7b54);
+    background: var(--verde-brand);
     position: sticky;
     top: 0;
     z-index: 99;
@@ -3544,16 +3565,16 @@ footer p {
 
 .nav-mobile a,
 .nav-mobile-label {
-    color: white;
+    color: var(--verde-scuro);
     font-size: 0.95rem;
     font-weight: 500;
     padding: 0.75rem 1.5rem;
-    border-bottom: 0.5px solid rgba(255,255,255,0.15);
+    border-bottom: 0.5px solid rgba(48, 68, 56, 0.14);
     transition: background 0.2s;
 }
 
 .nav-mobile-label {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(48, 68, 56, 0.72);
     font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -3562,7 +3583,7 @@ footer p {
     text-transform: uppercase;
 }
 
-.nav-mobile a:hover { background: rgba(255,255,255,0.1); }
+.nav-mobile a:hover { background: rgba(48, 68, 56, 0.08); }
 
 .nav-mobile-home {
     align-items: center;
@@ -3691,7 +3712,7 @@ footer p {
 
 /* ─── RESPONSIVE MOBILE ─── */
 @media (max-width: 640px) {
-    header {
+    body > header {
         padding: 0.4rem 1rem;
         flex-wrap: nowrap;
         justify-content: space-between;
@@ -3954,7 +3975,7 @@ footer p {
     .hamburger { display: flex; }
     .nav-mobile { display: flex; }
     .logo-testo { font-size: 0.8rem; }
-    header img { height: 60px !important; }
+    body > header img { height: 60px !important; }
     .carosello { height: 240px; }
     .cosa-faccio-grid { grid-template-columns: 1fr; }
     .form-riga { flex-direction: column; gap: 0; }
@@ -4171,7 +4192,11 @@ footer p {
 }
 
 /* Logo image and privacy link styles */
-.logo-img { height: 66px; width: auto; }
+.logo-img {
+    filter: brightness(0) saturate(100%) invert(23%) sepia(13%) saturate(830%) hue-rotate(94deg) brightness(91%) contrast(88%);
+    height: 66px;
+    width: auto;
+}
 footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 .logo-login { height: 120px; width: auto; }
 
@@ -4213,5 +4238,1046 @@ footer .privacy-link { color: #f1e7df; text-decoration: underline; }
     .filtro-btn {
         justify-content: center;
         text-align: center;
+    }
+}
+
+/* ─── IDENTITÀ E PAGINE COMMERCIALI V3 ─── */
+.site-footer {
+    background: var(--verde-header-profondo);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 3rem max(1.5rem, calc((100% - 1180px) / 2));
+    text-align: left;
+}
+
+.site-footer-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+}
+
+.site-footer strong {
+    color: var(--bianco);
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    margin-bottom: 0.65rem;
+}
+
+.site-footer p,
+.site-footer a,
+.site-footer .privacy-link {
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.site-footer a:hover {
+    color: var(--bianco);
+    text-decoration: underline;
+}
+
+.site-footer-legal {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    margin-top: 2rem;
+    padding-top: 1.2rem;
+}
+
+.section-intro {
+    max-width: 780px;
+}
+
+.section-intro h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.6vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.section-intro > p:not(.eyebrow) {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    margin-top: 1rem;
+    max-width: 680px;
+}
+
+.page-homepage .eyebrow,
+.page-consulenze-online .eyebrow {
+    color: var(--rosso-cuore);
+    letter-spacing: 0.11em;
+}
+
+.home-hero {
+    align-items: center;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.78fr);
+    max-width: 1180px;
+    min-height: calc(100vh - 88px);
+    padding: clamp(4rem, 8vw, 7rem) 2rem;
+}
+
+.home-hero-copy h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(3.2rem, 6.3vw, 5.9rem);
+    font-weight: 700;
+    letter-spacing: -0.055em;
+    line-height: 0.96;
+    margin: 0.6rem 0 1.5rem;
+    max-width: 760px;
+}
+
+.home-hero-lead {
+    color: var(--testo);
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+    line-height: 1.75;
+    max-width: 680px;
+}
+
+.home-hero-actions,
+.sleep-hero-actions,
+.home-birth-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.7rem;
+}
+
+.home-hero-note {
+    border-left: 3px solid var(--rosso-cuore);
+    color: var(--grigio);
+    font-size: 0.9rem;
+    margin-top: 1.2rem;
+    padding-left: 0.8rem;
+}
+
+.home-hero-media {
+    background: var(--verde-chiaro);
+    height: 560px;
+    overflow: hidden;
+    position: relative;
+}
+
+.home-hero-media::before,
+.sleep-hero-media::before {
+    border-left: 4px solid var(--rosso-cuore);
+    border-radius: 48%;
+    content: '';
+    height: 64%;
+    position: absolute;
+    right: -24px;
+    top: 15%;
+    transform: rotate(-7deg);
+    width: 90px;
+    z-index: 2;
+}
+
+.home-hero-media img,
+.sleep-hero-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.home-hero-signature {
+    background: rgba(247, 245, 241, 0.94);
+    bottom: 1.25rem;
+    display: grid;
+    gap: 0.2rem;
+    left: 1.25rem;
+    max-width: calc(100% - 2.5rem);
+    padding: 1rem 1.1rem;
+    position: absolute;
+    z-index: 3;
+}
+
+.home-hero-signature span {
+    color: var(--rosso-cuore);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.home-hero-signature strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+}
+
+.home-trust {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    border-top: 1px solid rgba(48, 68, 56, 0.16);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1180px;
+    padding: 0;
+}
+
+.home-trust div {
+    border-right: 1px solid rgba(48, 68, 56, 0.16);
+    padding: 1.5rem;
+}
+
+.home-trust div:last-child {
+    border-right: 0;
+}
+
+.home-trust strong,
+.home-trust span {
+    display: block;
+}
+
+.home-trust strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+}
+
+.home-trust span {
+    color: var(--grigio);
+    font-size: 0.84rem;
+    line-height: 1.4;
+    margin-top: 0.25rem;
+}
+
+.home-pillars,
+.home-dates,
+.home-birth,
+.home-method-proof,
+.home-clinical-band,
+.home-final-cta,
+.sleep-recognition,
+.sleep-age-band,
+.sleep-process,
+.sleep-options,
+.sleep-clinical-boundaries,
+.sleep-faq,
+.sleep-final-cta {
+    max-width: 1180px;
+    padding: clamp(4rem, 7vw, 6.5rem) 2rem;
+}
+
+.home-pillar-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1.08fr 0.92fr;
+    margin-top: 2.7rem;
+}
+
+.home-pillar {
+    border: 1px solid rgba(48, 68, 56, 0.2);
+    display: grid;
+    grid-template-rows: 260px 1fr;
+    overflow: hidden;
+}
+
+.home-pillar-media {
+    overflow: hidden;
+}
+
+.home-pillar-media img {
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+    width: 100%;
+}
+
+.home-pillar:hover .home-pillar-media img {
+    transform: scale(1.025);
+}
+
+.home-pillar-copy {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.home-pillar-sleep {
+    background: var(--verde-brand);
+    color: var(--testo);
+}
+
+.home-pillar-sleep .home-pillar-copy p,
+.home-pillar-sleep li,
+.home-pillar-sleep .link-azione {
+    color: var(--testo);
+}
+
+.home-pillar h3 {
+    color: inherit;
+    font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+}
+
+.home-pillar-label,
+.sleep-option-label {
+    color: var(--rosso-cuore) !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+}
+
+.home-pillar-sleep .home-pillar-label,
+.home-birth .eyebrow,
+.sleep-age-band > div:first-child span,
+.sleep-option-main .sleep-option-label,
+.sleep-final-cta .eyebrow {
+    color: var(--verde-scuro) !important;
+}
+
+.home-service-list,
+.home-proof-list {
+    list-style: none;
+    margin: 0.4rem 0 1.2rem;
+}
+
+.home-service-list li,
+.home-proof-list li {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    padding: 0.7rem 0;
+}
+
+.home-pillar-sleep .home-proof-list li {
+    border-color: rgba(48, 68, 56, 0.18);
+}
+
+.home-service-list a:hover {
+    color: var(--rosso-cuore);
+}
+
+.home-pillar .link-azione {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.home-dates {
+    align-items: start;
+    border-top: 1px solid rgba(48, 68, 56, 0.14);
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: 0.72fr 1.28fr;
+}
+
+.home-dates-copy {
+    position: sticky;
+    top: 112px;
+}
+
+.home-dates-copy h2,
+.home-birth h2,
+.home-method h2,
+.home-testimonials h2,
+.home-clinical-band h2,
+.home-final-cta h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.5vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.home-dates-copy > p:not(.eyebrow) {
+    line-height: 1.75;
+    margin: 1rem 0 1.5rem;
+}
+
+.home-dates .calendario-wrapper {
+    margin: 0;
+    width: 100%;
+}
+
+.home-birth {
+    background: var(--verde-brand);
+    color: var(--testo);
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: 1fr 0.86fr;
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.home-birth h2,
+.home-birth p {
+    color: var(--testo);
+}
+
+.home-birth-copy > p:not(.eyebrow) {
+    color: var(--grigio);
+    font-size: 1.04rem;
+    line-height: 1.75;
+    margin-top: 1.2rem;
+}
+
+.home-birth-actions .btn {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+.home-birth-actions span {
+    color: var(--grigio);
+    font-size: 0.85rem;
+    max-width: 220px;
+}
+
+.home-professionals div {
+    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 8rem 1fr;
+    padding: 1rem 0;
+}
+
+.home-professionals strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+}
+
+.home-professionals span {
+    color: var(--grigio);
+    font-size: 0.9rem;
+}
+
+.home-method-proof {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: 1fr 0.92fr;
+}
+
+.thread-steps {
+    margin-top: 2rem;
+    padding-left: 3.5rem;
+    position: relative;
+}
+
+.thread-steps::before {
+    background: var(--rosso-cuore);
+    content: '';
+    height: calc(100% - 2rem);
+    left: 1rem;
+    position: absolute;
+    top: 1rem;
+    width: 2px;
+}
+
+.thread-steps > div {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    min-height: 112px;
+    padding: 0 0 1.2rem;
+    position: relative;
+}
+
+.thread-steps > div + div {
+    padding-top: 1.2rem;
+}
+
+.thread-steps span {
+    align-items: center;
+    background: var(--sfondo);
+    border: 2px solid var(--rosso-cuore);
+    border-radius: 50%;
+    color: var(--rosso-cuore);
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    left: -3.5rem;
+    position: absolute;
+    top: 0;
+    width: 2rem;
+}
+
+.thread-steps > div + div span {
+    top: 1.2rem;
+}
+
+.thread-steps h3 {
+    color: var(--verde-scuro);
+    font-size: 1.15rem;
+    margin-bottom: 0.35rem;
+}
+
+.thread-steps p {
+    line-height: 1.65;
+}
+
+.home-testimonials {
+    border-left: 4px solid var(--rosso-cuore);
+    padding-left: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.home-testimonials figure {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    margin-top: 1.4rem;
+    padding-top: 1.4rem;
+}
+
+.home-testimonials blockquote {
+    color: var(--testo);
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    line-height: 1.45;
+}
+
+.home-testimonials figcaption {
+    color: var(--grigio);
+    font-size: 0.76rem;
+    margin-top: 0.7rem;
+}
+
+.home-clinical-band {
+    align-items: center;
+    border-bottom: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    display: flex;
+    gap: 2rem;
+    justify-content: space-between;
+    padding-bottom: 2.5rem;
+    padding-top: 2.5rem;
+}
+
+.home-clinical-band h2 {
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+}
+
+.home-clinical-band p:not(.eyebrow) {
+    margin-top: 0.65rem;
+    max-width: 720px;
+}
+
+.home-final-cta,
+.sleep-final-cta {
+    text-align: center;
+}
+
+.home-final-cta h2,
+.sleep-final-cta h2 {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 850px;
+}
+
+.home-final-cta .home-hero-actions {
+    justify-content: center;
+}
+
+/* Landing consulenza del sonno */
+.sleep-hero {
+    align-items: center;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.7fr);
+    max-width: 1180px;
+    padding: clamp(4rem, 8vw, 7rem) 2rem;
+}
+
+.sleep-hero h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(3rem, 5.4vw, 5rem);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+    margin: 0.6rem 0 1.4rem;
+}
+
+.sleep-hero-lead {
+    color: var(--testo);
+    font-size: 1.14rem;
+    line-height: 1.75;
+    max-width: 690px;
+}
+
+.sleep-authority {
+    border-left: 3px solid var(--rosso-cuore);
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 1.7rem;
+    padding-left: 0.9rem;
+}
+
+.sleep-authority strong {
+    color: var(--verde-scuro);
+}
+
+.sleep-authority span {
+    color: var(--grigio);
+    font-size: 0.88rem;
+}
+
+.sleep-hero-media {
+    height: 540px;
+    overflow: hidden;
+    position: relative;
+}
+
+.sleep-hero-media p {
+    background: rgba(80, 106, 89, 0.94);
+    bottom: 0;
+    color: var(--bianco);
+    left: 0;
+    line-height: 1.45;
+    padding: 1rem 1.2rem;
+    position: absolute;
+    right: 0;
+    z-index: 3;
+}
+
+.sleep-recognition,
+.sleep-process,
+.sleep-options,
+.sleep-faq {
+    border-top: 1px solid rgba(48, 68, 56, 0.14);
+}
+
+.sleep-signals {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 2.7rem;
+}
+
+.sleep-signals article {
+    border-top: 3px solid var(--verde-salvia);
+    padding-top: 1.2rem;
+}
+
+.sleep-signals span {
+    color: var(--rosso-cuore);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sleep-signals h3 {
+    color: var(--verde-scuro);
+    font-size: 1.35rem;
+    margin: 0.6rem 0;
+}
+
+.sleep-signals p {
+    line-height: 1.7;
+}
+
+.sleep-age-band {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 100%;
+    padding: 0;
+}
+
+.sleep-age-band > div {
+    padding: clamp(3rem, 6vw, 5rem) max(2rem, calc((100vw - 1180px) / 2));
+}
+
+.sleep-age-band > div:first-child {
+    background: var(--verde-brand);
+    padding-left: max(2rem, calc((100vw - 1180px) / 2));
+    padding-right: clamp(2rem, 5vw, 4rem);
+}
+
+.sleep-age-band > div:last-child {
+    background: var(--verde-chiaro);
+    border-top: 4px solid var(--blu-filo);
+    padding-left: clamp(2rem, 5vw, 4rem);
+    padding-right: max(2rem, calc((100vw - 1180px) / 2));
+}
+
+.sleep-age-band span {
+    color: var(--rosso-cuore);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sleep-age-band h2 {
+    font-size: clamp(1.65rem, 2.8vw, 2.45rem);
+    line-height: 1.08;
+    margin: 0.7rem 0 1rem;
+}
+
+.sleep-age-band > div:first-child h2,
+.sleep-age-band > div:first-child p {
+    color: var(--testo);
+}
+
+.sleep-age-band p {
+    line-height: 1.7;
+}
+
+.thread-steps-sleep {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: none;
+    padding-left: 0;
+    padding-top: 3.5rem;
+}
+
+.thread-steps-sleep::before {
+    height: 2px;
+    left: 1rem;
+    top: 1rem;
+    width: calc(100% - 2rem);
+}
+
+.thread-steps-sleep > div,
+.thread-steps-sleep > div + div {
+    min-height: 0;
+    padding: 0 0 1.2rem;
+}
+
+.thread-steps-sleep span,
+.thread-steps-sleep > div + div span {
+    left: 0;
+    top: -3.5rem;
+}
+
+.sleep-option-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 0.85fr 1.15fr;
+    margin-top: 2.7rem;
+}
+
+.sleep-option-grid article {
+    border: 1px solid rgba(48, 68, 56, 0.2);
+    padding: clamp(1.6rem, 3.5vw, 2.7rem);
+}
+
+.sleep-option-main {
+    background: var(--verde-brand);
+    color: var(--testo);
+}
+
+.sleep-option-grid h3 {
+    color: inherit;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+}
+
+.sleep-option-grid article > p:not(.sleep-option-label) {
+    color: inherit;
+    line-height: 1.7;
+}
+
+.sleep-option-grid ul {
+    list-style: none;
+    margin-top: 1.4rem;
+}
+
+.sleep-option-grid li {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    padding: 0.75rem 0;
+}
+
+.sleep-option-main li {
+    border-color: rgba(48, 68, 56, 0.18);
+}
+
+.sleep-options-note {
+    border-left: 3px solid var(--rosso-cuore);
+    line-height: 1.7;
+    margin-top: 1.5rem;
+    max-width: 880px;
+    padding-left: 1rem;
+}
+
+.sleep-clinical-boundaries {
+    align-items: start;
+    background: var(--verde-chiaro);
+    border-top: 4px solid var(--blu-filo);
+    display: grid;
+    gap: 3rem;
+    grid-template-columns: 1fr 0.85fr;
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.sleep-clinical-boundaries h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.sleep-clinical-boundaries p {
+    line-height: 1.7;
+    margin-top: 1rem;
+}
+
+.sleep-boundary-list {
+    border-left: 1px solid rgba(111, 131, 115, 0.3);
+    padding-left: 2rem;
+}
+
+.sleep-boundary-list strong {
+    color: var(--blu-filo);
+}
+
+.sleep-faq-list {
+    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    margin-top: 2.5rem;
+}
+
+.sleep-faq details {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.2);
+    padding: 1.1rem 0;
+}
+
+.sleep-faq summary {
+    color: var(--verde-scuro);
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 0.45rem 2.5rem 0.45rem 0;
+    position: relative;
+}
+
+.sleep-faq details p {
+    line-height: 1.7;
+    max-width: 780px;
+    padding: 0.5rem 0 0.5rem;
+}
+
+.sleep-final-cta {
+    background: var(--verde-brand);
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.sleep-final-cta h2,
+.sleep-final-cta p {
+    color: var(--testo);
+}
+
+.sleep-final-cta > p:not(.eyebrow) {
+    margin: 1rem auto 1.7rem;
+    max-width: 680px;
+}
+
+.sleep-final-cta .btn {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+@media (max-width: 900px) {
+    .site-footer-grid,
+    .home-hero,
+    .home-pillar-grid,
+    .home-dates,
+    .home-birth,
+    .home-method-proof,
+    .sleep-hero,
+    .sleep-clinical-boundaries {
+        grid-template-columns: 1fr;
+    }
+
+    .site-footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .home-hero {
+        min-height: 0;
+    }
+
+    .home-hero-media,
+    .sleep-hero-media {
+        height: 460px;
+    }
+
+    .home-trust {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .home-trust div:nth-child(2) {
+        border-right: 0;
+    }
+
+    .home-trust div:nth-child(-n+2) {
+        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    }
+
+    .home-dates-copy {
+        position: static;
+    }
+
+    .sleep-signals {
+        grid-template-columns: 1fr;
+    }
+
+    .sleep-age-band,
+    .sleep-option-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sleep-age-band > div,
+    .sleep-age-band > div:first-child,
+    .sleep-age-band > div:last-child {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .thread-steps-sleep {
+        grid-template-columns: 1fr;
+        padding-left: 3.5rem;
+        padding-top: 0;
+    }
+
+    .thread-steps-sleep::before {
+        height: calc(100% - 2rem);
+        left: 1rem;
+        top: 1rem;
+        width: 2px;
+    }
+
+    .thread-steps-sleep > div {
+        min-height: 112px;
+        padding: 0 0 1.2rem;
+    }
+
+    .thread-steps-sleep > div + div {
+        padding-top: 1.2rem;
+    }
+
+    .thread-steps-sleep span {
+        left: -3.5rem;
+        top: 0;
+    }
+
+    .thread-steps-sleep > div + div span {
+        left: -3.5rem;
+        top: 1.2rem;
+    }
+
+    .sleep-boundary-list {
+        border-left: 0;
+        border-top: 1px solid rgba(111, 131, 115, 0.3);
+        padding-left: 0;
+        padding-top: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    body.page-homepage {
+        padding-bottom: 0;
+    }
+
+    .site-footer {
+        padding: 2.5rem 1.2rem 6rem;
+    }
+
+    .site-footer-grid,
+    .home-trust {
+        grid-template-columns: 1fr;
+    }
+
+    .home-trust div,
+    .home-trust div:nth-child(2) {
+        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+        border-right: 0;
+    }
+
+    .home-trust div:last-child {
+        border-bottom: 0;
+    }
+
+    .home-hero,
+    .sleep-hero,
+    .home-pillars,
+    .home-dates,
+    .home-method-proof,
+    .home-clinical-band,
+    .home-final-cta,
+    .sleep-recognition,
+    .sleep-process,
+    .sleep-options,
+    .sleep-faq {
+        padding: 3.4rem 1.15rem;
+    }
+
+    .home-hero-copy h1 {
+        font-size: clamp(2.85rem, 15vw, 4.1rem);
+    }
+
+    .sleep-hero h1 {
+        font-size: clamp(2.65rem, 13vw, 3.7rem);
+    }
+
+    .home-hero-actions,
+    .sleep-hero-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .home-hero-actions .btn,
+    .sleep-hero-actions .btn {
+        width: 100%;
+    }
+
+    .home-hero-media,
+    .sleep-hero-media {
+        height: 360px;
+    }
+
+    .home-pillar {
+        grid-template-rows: 210px 1fr;
+    }
+
+    .home-birth,
+    .sleep-clinical-boundaries,
+    .sleep-final-cta {
+        padding: 3.5rem 1.15rem;
+    }
+
+    .home-professionals div {
+        gap: 0.35rem;
+        grid-template-columns: 1fr;
+    }
+
+    .thread-steps {
+        padding-left: 3rem;
+    }
+
+    .thread-steps span {
+        left: -3rem;
+    }
+
+    .thread-steps-sleep > div + div span {
+        left: -3rem;
+    }
+
+    .home-clinical-band {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .home-clinical-band .btn {
+        width: 100%;
+    }
+
+    .sleep-age-band > div,
+    .sleep-age-band > div:first-child,
+    .sleep-age-band > div:last-child {
+        padding: 3.2rem 1.15rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-pillar-media img {
+        transition: none;
     }
 }

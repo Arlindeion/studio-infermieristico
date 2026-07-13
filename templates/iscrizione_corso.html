@@ -6,7 +6,7 @@
     {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
     {% set page_eyebrow = 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else ('Iscrizione laboratorio' if corso_tipo == 'laboratorio-infanzia' else 'Iscrizione corso') %}
     <p class="eyebrow">{{ page_eyebrow }}</p>
-    <h2>{{ corso.titolo }}</h2>
+    <h1>{{ corso.titolo }}</h1>
 
     {% if corso_tipo == 'bls-d' %}
     <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Questo modulo è dedicato alle iscrizioni individuali.</p>

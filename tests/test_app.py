@@ -1187,5 +1187,41 @@ def test_google_analytics_presente_se_configurato(client):
     assert 'Preferenze cookie' in resp.text
 
 
+def test_homepage_ha_gerarchia_commerciale_e_seo(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1') == 1
+    assert 'Nei primi mesi, sapere cosa fare cambia tutto.' in resp.text
+    assert 'data-conversion="home_hero_corsi"' in resp.text
+    assert 'data-conversion="home_hero_call_sonno"' in resp.text
+    assert '<meta name="description"' in resp.text
+    assert '<link rel="canonical"' in resp.text
+    assert '<meta property="og:title"' in resp.text
+    assert '"@type": "MedicalBusiness"' in resp.text
+    assert 'class="btn-prenota"' not in resp.text
+
+
+def test_consulenza_online_e_verticale_sul_sonno(client):
+    resp = client.get('/consulenze-online')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1') == 1
+    assert 'Consulenza del sonno infantile · 0-12 mesi' in resp.text
+    assert 'Consulenza mirata' in resp.text
+    assert 'Percorso sonno personalizzato' in resp.text
+    assert 'spannolinamento' not in resp.text.lower()
+    assert 'ciuccio' not in resp.text.lower()
+    assert 'data-conversion="sleep_hero_call"' in resp.text
+    assert '"@type": "Service"' in resp.text
+
+
+def test_pagina_prestazioni_usa_h1(client):
+    resp = client.get('/prestazioni-infermieristiche')
+
+    assert resp.status_code == 200
+    assert '<h1>Prestazioni infermieristiche</h1>' in resp.text
+
+
 if __name__ == '__main__':
     pytest.main([__file__])

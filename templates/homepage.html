@@ -1,197 +1,103 @@
 {% extends "base.html" %}
-{% block titolo %}Corsi e consulenze per genitori — S.C. Studio Infermieristico{% endblock %}
+{% block titolo %}Corsi per genitori e consulenza del sonno | Selene Campetta{% endblock %}
+{% block meta_description %}Corsi pratici per genitori a Montesilvano e consulenza del sonno 0-12 mesi online o in studio con Selene Campetta, infermiera OPI Pescara.{% endblock %}
 
 {% block contenuto %}
 
-<section class="hero-consulenze">
-    <div class="hero-consulenze-testo">
+<section class="home-hero">
+    <div class="home-hero-copy">
         <p class="eyebrow">Con Selene, infermiera per bambini e famiglie</p>
-        <h1>Corsi e consulenze per genitori nei primi mesi</h1>
-        <p class="hero-lead">Se sei stanca, preoccupato o sommerso da consigli diversi, qui trovi una guida sanitaria concreta: corsi in presenza, consulenze per i primi mesi e prestazioni infermieristiche quando serve assistenza sanitaria.</p>
-        <div class="hero-choice-panel">
-            <div class="hero-quick-header">
-                <span>Dimmi cosa ti serve adesso</span>
-            </div>
-            <div class="hero-quick-paths" aria-label="Accessi principali">
-                <a href="/iscrizione-corsi" class="hero-quick-path">
-                    <span class="hero-path-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M5 18.5V6.8A1.8 1.8 0 0 1 6.8 5h10.4A1.8 1.8 0 0 1 19 6.8v11.7" />
-                            <path d="M4 18.5h16" />
-                            <path d="M8 9h8" />
-                            <path d="M8 12h5" />
-                            <path d="M8 15h3" />
-                        </svg>
-                    </span>
-                    <strong>Corsi in presenza</strong>
-                    <small>Per nascita, BLSD, disostruzione, svezzamento, gioco e sviluppo</small>
-                    <em>Guarda le date</em>
-                </a>
-                <a href="/consulenze-online" class="hero-quick-path">
-                    <span class="hero-path-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M7.5 12.2 12 16l4.5-3.8A3.7 3.7 0 0 0 18 9.3 3.1 3.1 0 0 0 15 6a3.5 3.5 0 0 0-3 1.8A3.5 3.5 0 0 0 9 6a3.1 3.1 0 0 0-3 3.3 3.7 3.7 0 0 0 1.5 2.9Z" />
-                            <path d="M4 13.5c1.7 3.6 4.4 5.4 8 5.4s6.3-1.8 8-5.4" />
-                        </svg>
-                    </span>
-                    <strong>Consulenze genitori</strong>
-                    <small>Per sonno, spannolinamento, ciuccio, routine e dubbi quotidiani</small>
-                    <em>Call conoscitiva gratuita</em>
-                </a>
-                <a href="/prenota" class="hero-quick-path">
-                    <span class="hero-path-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M4 13h3l1.4-3.4 3.1 7.4 2-5h2.1l1-2h3.4" />
-                            <path d="M6.5 18.6h11A2.5 2.5 0 0 0 20 16.1V7.9a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 7.9v8.2a2.5 2.5 0 0 0 2.5 2.5Z" />
-                        </svg>
-                    </span>
-                    <strong>Prestazioni</strong>
-                    <small>Per appuntamenti sanitari prenotabili online in studio</small>
-                    <em>Prenota prestazione</em>
-                </a>
-            </div>
+        <h1>Nei primi mesi, sapere cosa fare cambia tutto.</h1>
+        <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno 0-12 mesi, per trasformare dubbi e consigli discordanti in gesti, osservazioni e scelte che hanno senso nella vostra quotidianità.</p>
+        <div class="home-hero-actions" aria-label="Azioni principali">
+            <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
+            <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20homepage%20e%20vorrei%20richiedere%20la%20call%20gratuita%20per%20la%20consulenza%20del%20sonno." class="btn btn-linea" target="_blank" rel="noopener noreferrer" data-conversion="home_hero_call_sonno">Richiedi la call gratuita</a>
         </div>
-        <div class="hero-trust">
-            <span>Selene Campetta, infermiera OPI Pescara</span>
-            <span>Call conoscitiva gratuita</span>
-            <span>Corsi pratici per genitori e caregiver</span>
-        </div>
+        <p class="home-hero-note">La call dura 15 minuti e serve a capire se la consulenza è davvero il passo adatto.</p>
     </div>
-    <div class="hero-consulenze-media">
-        <img src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="Selene Campetta con modello anatomico del cuore">
-        <div class="hero-media-note">
-            <span>Parli con Selene</span>
+    <div class="home-hero-media">
+        <img src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="Selene Campetta, infermiera, con un cuore anatomico lavorato a uncinetto">
+        <div class="home-hero-signature">
+            <span>Selene Campetta · infermiera OPI Pescara</span>
             <strong>Competenza sanitaria, parole semplici</strong>
         </div>
     </div>
 </section>
 
-<section class="percorsi-consulenza" id="percorsi-principali">
-    <div class="home-path-map">
-        <aside class="path-map-intro">
-            <p class="eyebrow">Da dove parto?</p>
-            <h2>Una mappa breve, non un catalogo</h2>
-            <p>Raccontami cosa sta succedendo: nascita, sonno, svezzamento, sicurezza o dubbi quotidiani. Ti aiuto a capire se è più utile una consulenza, un corso o una prestazione sanitaria.</p>
-            <div class="guidance-topic-list" aria-label="Temi più richiesti">
-                <span>Sonno</span>
-                <span>Spannolinamento</span>
-                <span>Ciuccio</span>
-                <span>Svezzamento</span>
-            </div>
-            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20capire%20quale%20percorso%20fa%20per%20me." class="btn" target="_blank" rel="noopener noreferrer">Chiedi informazioni</a>
-        </aside>
-        <div class="pathway-list" aria-label="Percorsi principali">
-            <article class="pathway-row percorso-nascita">
-                <span class="pathway-kicker">Nascita</span>
-                <div>
-                    <h3>Corso di accompagnamento alla nascita</h3>
-                    <p>Open day gratuito e percorso completo con infermiera, ostetrica, psicologa, osteopata e nutrizionista.</p>
-                </div>
-                <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Scopri l'open day</a>
-            </article>
-            <article class="pathway-row percorso-primi-mesi">
-                <span class="pathway-kicker">Primi mesi</span>
-                <div>
-                    <h3>Consulenze genitori</h3>
-                    <p>Call conoscitiva gratuita, online o in studio, per sonno, routine, spannolinamento, ciuccio e dubbi quotidiani.</p>
-                </div>
-                <a href="/consulenze-online" class="link-azione">Richiedi una call</a>
-            </article>
-            <article class="pathway-row percorso-primo-soccorso">
-                <span class="pathway-kicker">Sicurezza</span>
-                <div>
-                    <h3>Disostruzione pediatrica, tagli sicuri e BLSD</h3>
-                    <p>Manovre, prevenzione del soffocamento, uso del defibrillatore e corsi personalizzati per gruppi o aziende.</p>
-                </div>
-                <div class="pathway-actions">
-                    <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Disostruzione</a>
-                    <a href="/iscrizione-corsi/bls-d" class="link-azione">BLSD</a>
-                </div>
-            </article>
-            <article class="pathway-row percorso-laboratori">
-                <span class="pathway-kicker">Infanzia</span>
-                <div>
-                    <h3>Laboratori svezzamento, gioco e sviluppo</h3>
-                    <p>Incontri pratici per alimentazione, gioco e tappe di crescita, con indicazioni adatte all'età del bambino.</p>
-                </div>
-                <a href="/iscrizione-corsi/laboratorio-infanzia" class="link-azione">Mostra le date</a>
-            </article>
-        </div>
-    </div>
+<section class="home-trust" aria-label="Elementi di fiducia">
+    <div><strong>Infermiera OPI</strong><span>Competenza professionale riconoscibile</span></div>
+    <div><strong>Attività reali</strong><span>Pratica, date e posti disponibili</span></div>
+    <div><strong>5 professionisti</strong><span>Nel percorso di accompagnamento alla nascita</span></div>
+    <div><strong>Studio e online</strong><span>Montesilvano per i corsi, tutta Italia per il sonno</span></div>
+</section>
 
-    <div class="azienda-callout home-azienda-callout">
-        <div>
-            <p class="eyebrow">Per aziende e gruppi</p>
-            <h3>Rendi il tuo ambiente di lavoro più sicuro con un corso BLSD personalizzato</h3>
-            <p>Nessun pacchetto standard: la formazione la costruiamo insieme, su misura per la tua realtà.</p>
-        </div>
-        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="btn" target="_blank" rel="noopener noreferrer">Richiedi il corso in studio o in azienda</a>
+<section class="home-pillars" id="percorsi-principali">
+    <header class="section-intro">
+        <p class="eyebrow">I due pilastri dello studio</p>
+        <h2>Imparare insieme, oppure fermarsi sul problema che pesa di più.</h2>
+        <p>I corsi lavorano sulla preparazione pratica e sulla sicurezza. La consulenza del sonno parte invece dalla storia di una singola famiglia.</p>
+    </header>
+
+    <div class="home-pillar-grid">
+        <article class="home-pillar home-pillar-courses">
+            <div class="home-pillar-media">
+                <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Selene durante le attività dedicate a bambini e famiglie">
+            </div>
+            <div class="home-pillar-copy">
+                <p class="home-pillar-label">In presenza · Pescara e provincia</p>
+                <h3>Corsi per arrivare preparati ai momenti importanti</h3>
+                <ul class="home-service-list">
+                    <li><a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica e tagli sicuri</a></li>
+                    <li><a href="/iscrizione-corsi/accompagnamento-nascita">Corso di accompagnamento alla nascita</a></li>
+                    <li><a href="/iscrizione-corsi/bls-d">BLSD per persone, gruppi e aziende</a></li>
+                    <li><a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori alimentari, gioco e sviluppo</a></li>
+                </ul>
+                <a href="/iscrizione-corsi" class="link-azione" data-conversion="home_pilastro_corsi">Guarda date e corsi</a>
+            </div>
+        </article>
+
+        <article class="home-pillar home-pillar-sleep">
+            <div class="home-pillar-media">
+                <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Selene Campetta durante una consulenza per genitori">
+            </div>
+            <div class="home-pillar-copy">
+                <p class="home-pillar-label">In studio o online · 0-12 mesi</p>
+                <h3>Consulenza del sonno infantile</h3>
+                <p>Quando risvegli, addormentamento e sonnellini sono difficili da leggere, osserviamo il quadro completo e costruiamo cambiamenti graduali, senza metodi rigidi.</p>
+                <ul class="home-proof-list">
+                    <li>Indicazioni adatte all'età e al contesto</li>
+                    <li>Attenzione al sonno sicuro</li>
+                    <li>Confini chiari con la valutazione pediatrica</li>
+                </ul>
+                <a href="/consulenze-online" class="link-azione" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
+            </div>
+        </article>
     </div>
 </section>
 
-<section class="home-compact-band">
-    <div class="metodo-testo">
-        <p class="eyebrow">Metodo</p>
-        <h2>Prima ascolto, poi traduciamo tutto in azioni possibili</h2>
-        <p>Partiamo dalla tua situazione reale: età del bambino, routine, dubbi, paure, spazi di casa e persone che ti aiutano. Poi trasformiamo le informazioni in scelte semplici da ricordare e sostenibili per la famiglia.</p>
-        <div class="metodo-lista metodo-lista-compatta">
-            <div>
-                <span>1</span>
-                <strong>Ascolto del contesto</strong>
-                <p>Capire chi siete, cosa vi preoccupa e cosa vi serve davvero.</p>
-            </div>
-            <div>
-                <span>2</span>
-                <strong>Pratica e spiegazioni chiare</strong>
-                <p>Manovre, esempi, routine e segnali concreti da osservare.</p>
-            </div>
-            <div>
-                <span>3</span>
-                <strong>Prossimi passi</strong>
-                <p>Poche indicazioni ordinate, sostenibili e adatte alla vostra quotidianità.</p>
-            </div>
-        </div>
+<section class="home-dates" id="calendario-corsi">
+    <div class="home-dates-copy">
+        <p class="eyebrow">Prossime date</p>
+        <h2>Trova l'incontro giusto o lascia il tuo interesse.</h2>
+        <p>Le date create dallo studio compaiono qui. Se un corso è pieno o non trovi ancora il giorno adatto, il modulo conserva la richiesta e Selene ti ricontatta alla nuova apertura.</p>
+        <a href="/iscrizione-corsi" class="btn btn-secondaria" data-conversion="home_date_corsi">Vedi tutti i corsi</a>
     </div>
-    <div class="bio-preview-testo bio-compact-card">
-        <p class="eyebrow">Chi ti accompagna</p>
-        <h2>Sono Selene Campetta, infermiera iscritta all'Albo OPI di Pescara</h2>
-        <p>Unisco competenza sanitaria e linguaggio semplice per aiutare genitori e famiglie nei passaggi delicati: nascita, primi mesi, cura quotidiana, sviluppo del bambino e sicurezza.</p>
-        <p>Non trovi giudizio o frasi fatte: trovi ascolto, pratica e indicazioni utilizzabili quando torni a casa.</p>
-        <a href="/chi-sono" class="btn">Conosci Selene</a>
-    </div>
-</section>
-
-<section class="sezione-calendario" id="calendario-corsi">
-    <h2>Prossimi incontri in calendario</h2>
-    <p class="sottotitolo">Date, corsi e appuntamenti formativi dedicati a famiglie e aziende.</p>
-
-    <div class="calendario-layout">
-        <div class="calendario-copy-card">
-            <p class="eyebrow">Date aperte</p>
-            <h3>Controlla il mese o entra in lista di interesse</h3>
-            <p>Quando creo un corso dall'area admin, la data entra nel calendario. Se non trovi ancora l'incontro giusto, puoi lasciare i tuoi dati e sarai ricontattato appena si apre una nuova data adatta.</p>
-            <div class="calendario-actions">
-                <a href="/iscrizione-corsi" class="btn">Vedi corsi</a>
-                <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20dei%20corsi." class="link-azione" target="_blank" rel="noopener noreferrer">Chiedi informazioni</a>
-            </div>
+    <div class="calendario-wrapper">
+        <div class="cal-header">
+            <button class="cal-nav" id="btn-prec" type="button" aria-label="Mese precedente">&#8592;</button>
+            <h3 id="cal-titolo"></h3>
+            <button class="cal-nav" id="btn-succ" type="button" aria-label="Mese successivo">&#8594;</button>
         </div>
-        <div class="calendario-wrapper">
-            <div class="cal-header">
-                <button class="cal-nav" id="btn-prec" type="button" aria-label="Mese precedente">&#8592;</button>
-                <h3 id="cal-titolo"></h3>
-                <button class="cal-nav" id="btn-succ" type="button" aria-label="Mese successivo">&#8594;</button>
-            </div>
-            <div class="cal-giorni-header">
-                <span>Lun</span><span>Mar</span><span>Mer</span>
-                <span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-            </div>
-            <div class="cal-griglia" id="cal-griglia"></div>
-            <div class="cal-dettaglio" id="cal-dettaglio" style="display:none;">
-                <h4 id="det-titolo"></h4>
-                <p id="det-ora"></p>
-                <p id="det-luogo"></p>
-                <p id="det-descrizione"></p>
-            </div>
+        <div class="cal-giorni-header">
+            <span>Lun</span><span>Mar</span><span>Mer</span>
+            <span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+        </div>
+        <div class="cal-griglia" id="cal-griglia"></div>
+        <div class="cal-dettaglio" id="cal-dettaglio" style="display:none;">
+            <h4 id="det-titolo"></h4>
+            <p id="det-ora"></p>
+            <p id="det-luogo"></p>
+            <p id="det-descrizione"></p>
         </div>
     </div>
 </section>
@@ -211,70 +117,82 @@
 </script>
 <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
 
-<section class="servizi-preview">
-    <h2>Per le prestazioni sanitarie, prenota qui</h2>
-    <p class="sottotitolo">La prenotazione online resta dedicata alle prestazioni infermieristiche: scegli il servizio, invia la richiesta e attendi la conferma.</p>
-    <div class="card-grid">
-        <div class="card">
-            <span class="prestazione-icona" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="m8.4 15.6 7.2-7.2" />
-                    <path d="m13.8 5.8 4.4 4.4" />
-                    <path d="m6.2 17.8 2.2-2.2" />
-                    <path d="m15.4 3.8 4.8 4.8" />
-                    <path d="M5 20.2c1.6-.2 3.2-.9 4.4-2.1l1.4-1.4-3.5-3.5-1.4 1.4A7.4 7.4 0 0 0 3.8 19" />
-                    <path d="M17.8 15.4c1.2 1.3 1.8 2.4 1.8 3.3a2.1 2.1 0 0 1-4.2 0c0-.9.6-2 1.8-3.3l.3-.3.3.3Z" />
-                </svg>
-            </span>
-            <h3>Iniezioni e flebo</h3>
-            <p>Somministrazione di farmaci su prescrizione, con attenzione a tempi e indicazioni ricevute.</p>
-        </div>
-        <div class="card">
-            <span class="prestazione-icona" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <rect x="4.2" y="8" width="15.6" height="8" rx="2.2" transform="rotate(-18 12 12)" />
-                    <path d="m8.2 12.2 7.6-2.5" />
-                    <path d="m9.4 15.6 7.6-2.5" />
-                    <path d="M11.2 9.2 13 14.8" />
-                </svg>
-            </span>
-            <h3>Medicazioni</h3>
-            <p>Gestione di ferite, ulcere e lesioni con monitoraggio dell'evoluzione.</p>
-        </div>
-        <div class="card">
-            <span class="prestazione-icona" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M4 13h3l1.4-3.4 3.1 7.4 2-5h2.1l1-2h3.4" />
-                    <path d="M6.5 18.6h11A2.5 2.5 0 0 0 20 16.1V7.9a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 7.9v8.2a2.5 2.5 0 0 0 2.5 2.5Z" />
-                </svg>
-            </span>
-            <h3>Controllo parametri</h3>
-            <p>Misurazione di pressione, glicemia, saturazione e altri valori utili.</p>
-        </div>
-        <div class="card">
-            <span class="prestazione-icona" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M4.5 11 12 4.8 19.5 11" />
-                    <path d="M6.4 10.2v8.9h11.2v-8.9" />
-                    <path d="M12 12.5v4" />
-                    <path d="M10 14.5h4" />
-                </svg>
-            </span>
-            <h3>Assistenza domiciliare</h3>
-            <p>Interventi a casa quando muoversi è complicato o poco pratico.</p>
+<section class="home-birth">
+    <div class="home-birth-copy">
+        <p class="eyebrow">Corso di accompagnamento alla nascita</p>
+        <h2>Nove incontri. Cinque professionisti. Una visione che continua anche a casa.</h2>
+        <p>Non è un insieme di lezioni isolate: il percorso mette in relazione gravidanza, parto, alimentazione, vissuti emotivi, corpo e prime cure del neonato.</p>
+        <div class="home-birth-actions">
+            <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="home_nascita_open_day">Scopri l'open day gratuito</a>
+            <span>Il corso completo viene presentato dopo l'open day.</span>
         </div>
     </div>
-    <div class="servizi-azione">
-        <a href="/prestazioni-infermieristiche" class="btn btn-secondaria">Vedi prestazioni</a>
-        <a href="/prenota" class="btn">Prenota</a>
+    <div class="home-professionals" aria-label="Professionisti del percorso nascita">
+        <div><strong>Infermiera</strong><span>Prime cure, sicurezza e rientro a casa</span></div>
+        <div><strong>Ostetrica</strong><span>Gravidanza, parto, puerperio e allattamento</span></div>
+        <div><strong>Psicologa</strong><span>Cambiamenti emotivi, coppia e nuove identità</span></div>
+        <div><strong>Osteopata</strong><span>Corpo, adattamenti e osservazione del neonato</span></div>
+        <div><strong>Nutrizionista</strong><span>Alimentazione in gravidanza e nel dopo nascita</span></div>
     </div>
 </section>
 
-<section class="sezione-instagram">
-    <h2>Uno sguardo allo studio</h2>
-    <p class="sottotitolo">Aggiornamenti, spunti pratici e vita quotidiana su @sc.studioinfermieristico</p>
-    <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
-    <script src="{{ url_for('static', filename='js/behold-widget.js') }}"></script>
+<section class="home-method-proof">
+    <div class="home-method">
+        <p class="eyebrow">Il metodo di Selene</p>
+        <h2>Prima ascolto. Poi mettiamo in ordine ciò che puoi osservare e fare.</h2>
+        <div class="thread-steps">
+            <div>
+                <span>1</span>
+                <h3>Partiamo dalla vita reale</h3>
+                <p>Età del bambino, dubbi, routine, persone presenti e ciò che avete già provato.</p>
+            </div>
+            <div>
+                <span>2</span>
+                <h3>Traduciamo le informazioni</h3>
+                <p>Gesti, segnali e spiegazioni comprensibili, senza formule uguali per tutti.</p>
+            </div>
+            <div>
+                <span>3</span>
+                <h3>Definiamo il passo successivo</h3>
+                <p>Poche indicazioni ordinate e confini chiari su quando coinvolgere un altro professionista.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="home-testimonials">
+        <p class="eyebrow">Dalle famiglie del percorso nascita</p>
+        <h2>La competenza si riconosce anche da ciò che resta dopo.</h2>
+        <figure>
+            <blockquote>“Gli incontri ci hanno aiutato a superare molte delle nostre ansie, fornendoci strumenti concreti per gestire i primi giorni a casa con il bambino.”</blockquote>
+            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
+        </figure>
+        <figure>
+            <blockquote>“Molto formativo grazie alle esperienze pratiche condivise dai professionisti, in un clima leggero, coinvolgente e divertente.”</blockquote>
+            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
+        </figure>
+        <figure>
+            <blockquote>“Il percorso ci ha aiutato nella crescita di coppia e ora viviamo l'arrivo del nostro piccolo con più serenità e consapevolezza.”</blockquote>
+            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
+        </figure>
+    </div>
+</section>
+
+<section class="home-clinical-band">
+    <div>
+        <p class="eyebrow">Prestazioni infermieristiche</p>
+        <h2>Hai bisogno di una prestazione sanitaria?</h2>
+        <p>Iniezioni, medicazioni, monitoraggi e altre prestazioni mantengono un percorso di prenotazione separato, con conferma manuale dello studio.</p>
+    </div>
+    <a href="/prestazioni-infermieristiche" class="btn btn-secondaria" data-conversion="home_prestazioni">Vai alle prestazioni</a>
+</section>
+
+<section class="home-final-cta">
+    <p class="eyebrow">Da dove vuoi iniziare?</p>
+    <h2>Un corso se vuoi prepararti. Una call se il sonno è già diventato difficile da leggere.</h2>
+    <div class="home-hero-actions">
+        <a href="/iscrizione-corsi" class="btn" data-conversion="home_finale_corsi">Scopri i corsi</a>
+        <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20vorrei%20richiedere%20la%20call%20gratuita%20per%20capire%20se%20la%20consulenza%20del%20sonno%20è%20adatta%20alla%20mia%20famiglia." class="btn btn-linea" target="_blank" rel="noopener noreferrer" data-conversion="home_finale_call_sonno">Richiedi la call gratuita</a>
+    </div>
 </section>
 
 {% endblock %}

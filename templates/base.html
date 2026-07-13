@@ -4,14 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titolo %}Studio Infermieristico{% endblock %}</title>
+    {% set page_description %}{% block meta_description %}Corsi pratici per genitori, consulenze sul sonno infantile e prestazioni infermieristiche con Selene Campetta a Montesilvano e online.{% endblock %}{% endset %}
+    <meta name="description" content="{{ page_description | striptags | trim }}">
+    <meta name="author" content="Selene Campetta, infermiera iscritta all'Albo OPI di Pescara">
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+    <link rel="canonical" href="{{ request.base_url }}">
+    <meta property="og:locale" content="it_IT">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="S.C. Studio Infermieristico">
+    <meta property="og:title" content="{{ self.titolo() | striptags | trim }}">
+    <meta property="og:description" content="{{ page_description | striptags | trim }}">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/selene-hero-home.jpg', _external=True) }}">
+    <meta property="og:image:alt" content="Selene Campetta, infermiera per bambini e famiglie">
+    <meta name="twitter:card" content="summary_large_image">
     {% if google_analytics_id %}
     <meta name="google-analytics-id" content="{{ google_analytics_id }}">
     {% endif %}
     {% block head_extra %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=2.9">
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=3.0">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "MedicalBusiness",
+        "@id": {{ (request.url_root ~ "#studio") | tojson }},
+        "name": "S.C. Studio Infermieristico",
+        "url": {{ request.url_root | tojson }},
+        "image": {{ url_for('static', filename='img/selene-hero-home.jpg', _external=True) | tojson }},
+        "telephone": "+39 380 631 7175",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Via C. D'Agnese 43",
+            "postalCode": "65015",
+            "addressLocality": "Montesilvano",
+            "addressRegion": "PE",
+            "addressCountry": "IT"
+        },
+        "areaServed": ["Montesilvano", "Pescara", "Provincia di Pescara", "Italia"],
+        "founder": {
+            "@type": "Person",
+            "name": "Selene Campetta",
+            "jobTitle": "Infermiera",
+            "memberOf": "Ordine delle Professioni Infermieristiche di Pescara"
+        },
+        "sameAs": ["https://www.instagram.com/sc.studioinfermieristico/"]
+    }
+    </script>
 </head>
 <body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}">
 
@@ -52,9 +93,9 @@
             </div>
         </div>
         <a href="/iscrizione-corsi/bls-d" class="nav-blsd-link">BLSD</a>
-        <a href="/consulenze-online" class="nav-supporto-link">CONSULENZE GENITORI</a>
+        <a href="/consulenze-online" class="nav-supporto-link">CONSULENZA SONNO</a>
         <a href="/faq">FAQ</a>
-        <a href="/prenota" class="btn-prenota">PRENOTA</a>
+        <a href="/prestazioni-infermieristiche" class="nav-prestazioni-link">PRESTAZIONI</a>
     </nav>
 
     <!-- HAMBURGER MOBILE -->
@@ -81,12 +122,13 @@
     <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
     <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
     <a href="/iscrizione-corsi/bls-d">BLSD</a>
-    <a href="/consulenze-online">Consulenze genitori</a>
+    <a href="/consulenze-online">Consulenza del sonno</a>
     <a href="/faq">FAQ</a>
-    <a href="/prenota" class="nav-mobile-prenota">Prenota</a>
+    <a href="/prestazioni-infermieristiche" class="nav-mobile-prenota">Prestazioni infermieristiche</a>
 </div>
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
+<script src="{{ url_for('static', filename='js/conversion-tracking.js') }}" defer></script>
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}" defer></script>
 {% endif %}
@@ -95,12 +137,31 @@
         {% block contenuto %}{% endblock %}
     </main>
 
-    <footer>
-        <p>© 2026 S.C. Studio Infermieristico — Via C.D'AGNESE 43 MONTESILVANO (PE) — Tel. 3806317175</p>
-        <p><a href="/privacy" class="privacy-link">Informativa Privacy</a>{% if google_analytics_id %} · <button type="button" class="cookie-preferences" id="cookie-preferences">Preferenze cookie</button>{% endif %}</p>
+    <footer class="site-footer">
+        <div class="site-footer-grid">
+            <div>
+                <strong>S.C. Studio Infermieristico</strong>
+                <p>Con Selene, competenza sanitaria e parole semplici per bambini e famiglie.</p>
+            </div>
+            <div>
+                <strong>Studio</strong>
+                <p>Via C. D'Agnese 43<br>65015 Montesilvano (PE)<br><a href="tel:+393806317175">380 631 7175</a></p>
+            </div>
+            <div>
+                <strong>Percorsi</strong>
+                <p><a href="/iscrizione-corsi">Corsi in presenza</a><br><a href="/consulenze-online">Consulenza del sonno</a><br><a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a></p>
+            </div>
+            <div>
+                <strong>Seguimi</strong>
+                <p><a href="https://www.instagram.com/sc.studioinfermieristico/" target="_blank" rel="noopener noreferrer">Instagram</a><br><a href="/privacy" class="privacy-link">Informativa privacy</a>{% if google_analytics_id %}<br><button type="button" class="cookie-preferences" id="cookie-preferences">Preferenze cookie</button>{% endif %}</p>
+            </div>
+        </div>
+        <p class="site-footer-legal">© 2026 S.C. Studio Infermieristico · Selene Campetta, infermiera iscritta all'Albo OPI di Pescara</p>
     </footer>
 
     <!-- WIDGET WHATSAPP -->
+{% set endpoint = request.endpoint or '' %}
+{% if endpoint in ['chi_siamo', 'faq'] %}
 <a href="https://wa.me/393806317175" 
    class="whatsapp-widget" 
    target="_blank" 
@@ -115,23 +176,20 @@
     </svg>
     <span class="whatsapp-tooltip">Contattami per saperne di più</span>
 </a>
+{% endif %}
 <!-- BARRA STICKY MOBILE -->
-{% set endpoint = request.endpoint or '' %}
 {% set sticky_href = '/prenota' %}
 {% set sticky_label = 'Prenota' %}
-{% if endpoint == 'homepage' %}
-    {% set sticky_href = 'https://wa.me/393806317175?text=Ciao%2C%20vorrei%20capire%20quale%20percorso%20fa%20per%20me.' %}
-    {% set sticky_label = 'Chiedi informazioni' %}
-{% elif endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
+{% if endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
     {% set sticky_href = '/iscrizione-corsi' %}
     {% set sticky_label = 'Vai ai corsi' %}
 {% elif endpoint in ['consulenze_online', 'prima_della_nascita', 'dopo_la_nascita'] %}
-    {% set sticky_href = 'https://wa.me/393806317175?text=Ciao%2C%20vorrei%20prenotare%20una%20call%20conoscitiva%20gratuita%20per%20le%20consulenze%20genitori.' %}
+    {% set sticky_href = 'https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20pagina%20sulla%20consulenza%20del%20sonno%20e%20vorrei%20richiedere%20la%20call%20gratuita.' %}
     {% set sticky_label = 'Call conoscitiva' %}
 {% endif %}
-{% if endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and endpoint != 'iscrizione_accompagnamento_privata' and endpoint != 'conferma_iscrizione_accompagnamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
+{% if endpoint != 'homepage' and endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and endpoint != 'iscrizione_accompagnamento_privata' and endpoint != 'conferma_iscrizione_accompagnamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
 <div class="sticky-prenota">
-    <a href="{{ sticky_href }}" class="sticky-prenota-btn"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
+    <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
         {{ sticky_label }}
     </a>
 </div>
