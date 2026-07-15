@@ -55,7 +55,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - Mantenere `Bricolage Grotesque` per i titoli e `Atkinson Hyperlegible` per testi e interfacce.
 - Preferire fotografie reali di Selene, dello studio e delle attività. Se manca il materiale usare `static/img/placeholder.png` e registrarlo nell'inventario.
 - Per locandine, PDF o materiali social leggere e applicare `docs/locandine.md` prima di creare il contenuto.
-- Evitare stock generici, gradienti gratuiti, emoji decorative, motivi botanici, icone incoerenti, card tutte uguali e componenti duplicati.
+- Evitare stock generici, emoji decorative, motivi botanici, icone incoerenti, card tutte uguali e componenti duplicati.
 - La linea rossa è una firma funzionale, non una decorazione da ripetere ovunque.
 - Ogni schermata deve avere una priorità visiva e ogni sezione uno scopo: informare, rassicurare o guidare all'azione pertinente.
 - Prima di creare colori, spaziature, ombre o componenti, verificare se esiste già uno stile equivalente.

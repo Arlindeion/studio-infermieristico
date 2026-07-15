@@ -86,7 +86,7 @@ La scelta del testo scuro nell'header è sia stilistica sia funzionale: crea con
 
 - Ogni schermata deve avere una priorità visiva riconoscibile.
 - Evitare card tutte uguali, sezioni alternate senza funzione e pulsanti a pillola usati ovunque.
-- Ridurre gradienti, ombre decorative e motivi botanici generici.
+- Evitare motivi botanici generici.
 - Riutilizzare componenti e spaziature già presenti in `static/css/stile.css`.
 - Il rosso è una firma, non un secondo colore dominante.
 - Le CTA devono essere brevi, specifiche e visivamente gerarchizzate.
