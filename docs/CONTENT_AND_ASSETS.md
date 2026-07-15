@@ -9,12 +9,14 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 ## Messaggi approvati
 
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
-- Promessa homepage attualmente implementata: `Nei primi mesi, sapere cosa fare cambia tutto.`
+- Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
+- Introduzione ai pilastri della homepage: `Partite da ciò che serve oggi alla vostra famiglia.`
 - Percezione desiderata: Selene è una professionista sanitaria competente e vicina, non un brand impersonale.
 - Corsi: apprendimento pratico, segnali da osservare, gesti da allenare e date disponibili.
 - Sonno: comprensione della situazione familiare e percorso non rigido, senza risultati garantiti.
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti.
+- Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
 
 ## Naming approvato
 

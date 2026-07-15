@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block titolo %}S.C. Studio Infermieristico{% endblock %}
-{% block meta_description %}Corsi pratici per genitori a Montesilvano e consulenza del sonno 0-12 mesi online o in studio con Selene Campetta, infermiera OPI Pescara.{% endblock %}
+{% block meta_description %}Corsi pratici per genitori a Montesilvano e consulenza del sonno 0-12 mesi online o in studio con Selene Campetta, infermiera iscritta all'Albo OPI di Pescara.{% endblock %}
 
 {% block contenuto %}
 
 <section class="home-hero">
     <div class="home-hero-copy">
         <p class="eyebrow">Con Selene, infermiera per bambini e famiglie</p>
-        <h1>Nei primi mesi, sapere cosa fare cambia tutto.</h1>
-        <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno 0-12 mesi, per trasformare dubbi e consigli discordanti in gesti, osservazioni e scelte che hanno senso nella vostra quotidianità.</p>
+        <h1>Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.</h1>
+        <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno 0–12 mesi, con Selene, per mettere ordine tra dubbi e consigli discordanti e trovare passi concreti adatti alla vostra quotidianità.</p>
         <div class="home-hero-actions" aria-label="Azioni principali">
             <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
             <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20homepage%20e%20vorrei%20richiedere%20la%20call%20gratuita%20per%20la%20consulenza%20del%20sonno." class="btn btn-linea" target="_blank" rel="noopener noreferrer" data-conversion="home_hero_call_sonno">Richiedi la call gratuita</a>
@@ -18,14 +18,14 @@
     <div class="home-hero-media">
         <img src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="Selene Campetta, infermiera, con un cuore anatomico lavorato a uncinetto">
         <div class="home-hero-signature">
-            <span>Selene Campetta · infermiera OPI Pescara</span>
+            <span>Selene Campetta · infermiera</span>
             <strong>Competenza sanitaria, parole semplici</strong>
         </div>
     </div>
 </section>
 
 <section class="home-trust" aria-label="Elementi di fiducia">
-    <div><strong>Infermiera OPI</strong><span>Competenza professionale riconoscibile</span></div>
+    <div><strong>Infermiera iscritta all'Albo OPI di Pescara</strong><span>Competenza professionale riconoscibile</span></div>
     <div><strong>Attività reali</strong><span>Pratica, date e posti disponibili</span></div>
     <div><strong>5 professionisti</strong><span>Nel percorso di accompagnamento alla nascita</span></div>
     <div><strong>Studio e online</strong><span>Montesilvano per i corsi, tutta Italia per il sonno</span></div>
@@ -34,8 +34,8 @@
 <section class="home-pillars" id="percorsi-principali">
     <header class="section-intro">
         <p class="eyebrow">I due pilastri dello studio</p>
-        <h2>Imparare insieme, oppure fermarsi sul problema che pesa di più.</h2>
-        <p>I corsi lavorano sulla preparazione pratica e sulla sicurezza. La consulenza del sonno parte invece dalla storia di una singola famiglia.</p>
+        <h2>Partite da ciò che serve oggi alla vostra famiglia.</h2>
+        <p>Un corso per prepararvi, fare pratica e imparare a prevenire i rischi. Oppure una consulenza del sonno costruita intorno alla vostra quotidianità e ai ritmi del vostro bambino.</p>
     </header>
 
     <div class="home-pillar-grid">
@@ -175,6 +175,23 @@
             <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
         </figure>
     </div>
+</section>
+
+<section class="home-instagram" aria-labelledby="home-instagram-title">
+    <header class="home-instagram-header">
+        <div>
+            <p class="eyebrow">Lo studio su Instagram</p>
+            <h2 id="home-instagram-title">Corsi, gesti e attività raccontati da vicino.</h2>
+        </div>
+        <div class="home-instagram-copy">
+            <p>Selene condivide momenti dei corsi, vita dello studio e indicazioni pratiche per bambini e famiglie.</p>
+            <a href="https://www.instagram.com/sc.studioinfermieristico/" class="link-azione" target="_blank" rel="noopener noreferrer">Segui lo studio su Instagram</a>
+        </div>
+    </header>
+    <div class="home-instagram-feed" aria-label="Ultimi contenuti pubblicati su Instagram">
+        <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
+    </div>
+    <script src="{{ url_for('static', filename='js/behold-widget.js') }}" defer></script>
 </section>
 
 <section class="home-clinical-band">

@@ -88,6 +88,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Decisione: mantenere Flask/Jinja server-side, JavaScript vanilla e SQLAlchemy PostgreSQL-ready senza framework frontend o dipendenze non necessarie.
 - Motivo: semplicità operativa e manutenzione sostenibile.
 
+## D-015 — Feed Instagram nella homepage
+
+- Data: 2026-07-15.
+- Stato: approvata.
+- Decisione: mantenere il feed Instagram come prova secondaria delle attività reali, dopo metodo e testimonianze e prima delle prestazioni e della CTA finale.
+- Motivo: mostrare continuità, corsi e vita reale dello studio senza competere con i percorsi commerciali principali.
+- Conseguenze: il collegamento diretto al profilo resta visibile anche se il feed esterno non viene caricato; Behold resta documentato nella privacy e autorizzato dalla Content Security Policy.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/privacy.html`.
+
 ## Modello per nuove decisioni
 
 ```markdown

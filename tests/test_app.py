@@ -1192,7 +1192,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
 
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
-    assert 'Nei primi mesi, sapere cosa fare cambia tutto.' in resp.text
+    assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
     assert 'data-conversion="home_hero_corsi"' in resp.text
     assert 'data-conversion="home_hero_call_sonno"' in resp.text
     assert '<meta name="description"' in resp.text
@@ -1200,6 +1200,10 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert '<meta property="og:title"' in resp.text
     assert '"@type": "MedicalBusiness"' in resp.text
     assert 'class="btn-prenota"' not in resp.text
+    assert '<behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>' in resp.text
+    assert 'behold-widget.js' in resp.text
+    assert resp.text.index('class="home-instagram"') < resp.text.index('class="home-clinical-band"')
+    assert resp.text.index('class="home-clinical-band"') < resp.text.index('class="home-final-cta"')
 
 
 def test_consulenza_online_e_verticale_sul_sonno(client):

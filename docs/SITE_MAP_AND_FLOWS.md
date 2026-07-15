@@ -42,8 +42,9 @@ Ordine da mantenere salvo decisione esplicita:
 5. Corso di accompagnamento alla nascita con cinque professionisti.
 6. Metodo di Selene.
 7. Testimonianze reali autorizzate.
-8. Prestazioni infermieristiche in fascia secondaria.
-9. CTA finale coerente con i due pilastri.
+8. Feed Instagram come prova secondaria delle attività reali, con collegamento diretto al profilo.
+9. Prestazioni infermieristiche in fascia secondaria.
+10. CTA finale coerente con i due pilastri.
 
 La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel hero e nella sezione immediatamente successiva.
 
