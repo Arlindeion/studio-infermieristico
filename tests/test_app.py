@@ -135,6 +135,53 @@ def test_holiday_flow(client):
     assert 'href="/faq">FAQ</a>' in resp.text
 
 
+def test_css_core_e_modulo_homepage(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'css/tokens.css' in resp.text
+    assert 'css/base.css' in resp.text
+    assert 'css/components.css' in resp.text
+    assert 'css/homepage.css' in resp.text
+    assert 'css/consulenza.css' not in resp.text
+    assert 'css/admin.css' not in resp.text
+    assert 'css/stile.css' not in resp.text
+
+
+def test_css_consulenza_caricato_solo_nella_landing(client):
+    consultation = client.get('/consulenze-online')
+    courses = client.get('/iscrizione-corsi')
+
+    assert consultation.status_code == 200
+    assert 'css/consulenza.css' in consultation.text
+    assert 'css/homepage.css' not in consultation.text
+    assert 'css/admin.css' not in consultation.text
+    assert courses.status_code == 200
+    assert 'css/consulenza.css' not in courses.text
+    assert 'css/homepage.css' not in courses.text
+    assert 'css/admin.css' not in courses.text
+
+
+def test_css_admin_caricato_nel_login(client):
+    resp = client.get('/admin/login')
+
+    assert resp.status_code == 200
+    assert 'css/tokens.css' in resp.text
+    assert 'css/base.css' in resp.text
+    assert 'css/components.css' in resp.text
+    assert 'css/admin.css' in resp.text
+    assert 'css/homepage.css' not in resp.text
+    assert 'css/consulenza.css' not in resp.text
+    assert 'css/stile.css' not in resp.text
+
+    _login_admin(client)
+    admin_resp = client.get('/admin')
+    assert admin_resp.status_code == 200
+    assert 'css/admin.css' in admin_resp.text
+    assert 'css/homepage.css' not in admin_resp.text
+    assert 'css/consulenza.css' not in admin_resp.text
+
+
 def test_faq_include_flussi_aggiornati(client):
     resp = client.get('/faq')
     assert resp.status_code == 200

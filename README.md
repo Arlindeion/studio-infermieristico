@@ -103,13 +103,15 @@ Le procedure e le integrazioni sono documentate in [docs/OPERATIONS.md](docs/OPE
 app.py                 applicazione, modelli, route, email e scheduler
 config.py              configurazioni development/production/testing
 templates/             pagine e componenti Jinja2
-static/css/stile.css   sistema visivo condiviso
+static/css/            token, base, componenti e moduli di pagina
 static/js/             comportamento client compatibile con la CSP
 static/img/            logo e fotografie
 tests/                 suite pytest
 docs/                  memoria strategica, funzionale e visiva
 migrazione_*.py        migrazioni SQLite una tantum
 ```
+
+I fogli di stile sono separati per responsabilità: `tokens.css`, `base.css` e `components.css` costituiscono il nucleo condiviso; `homepage.css`, `consulenza.css` e `admin.css` vengono caricati soltanto dove servono. Evitare `@import` e nuove sezioni versionate in coda ai file.
 
 ## Area amministrativa
 

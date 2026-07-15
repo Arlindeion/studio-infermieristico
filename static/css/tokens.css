@@ -1,0 +1,29 @@
+/* Design tokens */
+
+/* ─── VARIABILI COLORI ─── */
+:root {
+    --verde-brand: #B1BBA5;
+    --verde-salvia: #B1BBA5;
+    --verde-scuro: #304438;
+    --verde-header: #506A59;
+    --verde-header-profondo: #3F5948;
+    --verde-header-soft: #6F8373;
+    --corallo-header: #9A4E56;
+    --corallo-header-profondo: #7F3E46;
+    --verde-chiaro: #E5E9E0;
+    --rosa-antico: #9A4E56;
+    --rosa-chiaro: #F2E8E8;
+    --corallo-soft: #BE777E;
+    --rosso-cuore: #9A4E56;
+    --blu-filo: #6F8373;
+    --carta: #F7F5F1;
+    --avorio: #FFFFFF;
+    --testo: #304438;
+    --grigio: #58635C;
+    --bianco: #ffffff;
+    --sfondo: #F7F5F1;
+    --ombra-soft: 0 18px 44px rgba(48, 68, 56, 0.12);
+    --ombra-card: 0 8px 24px rgba(48, 68, 56, 0.07);
+    --font-body: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Arial Narrow', sans-serif;
+}

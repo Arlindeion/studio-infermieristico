@@ -1,6 +1,6 @@
 # Identità visiva e verbale
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 15 luglio 2026.
 
 ## Idea guida
 
@@ -16,7 +16,7 @@ La comunicazione descrive metodo, osservazione e strumenti pratici. Non promette
 
 ## Palette ufficiale
 
-I token implementati in `static/css/stile.css` sono la fonte tecnica dei colori.
+I token implementati in `static/css/tokens.css` sono la fonte tecnica dei colori.
 
 | Ruolo | Colore | Uso |
 |---|---|---|
@@ -87,7 +87,8 @@ La scelta del testo scuro nell'header è sia stilistica sia funzionale: crea con
 - Ogni schermata deve avere una priorità visiva riconoscibile.
 - Evitare card tutte uguali, sezioni alternate senza funzione e pulsanti a pillola usati ovunque.
 - Evitare motivi botanici generici.
-- Riutilizzare componenti e spaziature già presenti in `static/css/stile.css`.
+- Riutilizzare componenti e spaziature già presenti nei moduli di `static/css/`.
+- Mantenere separate le responsabilità: fondamenta in `base.css`, componenti condivisi in `components.css`, homepage e consulenza nei rispettivi moduli e interfaccia gestionale in `admin.css`.
 - Il rosso è una firma, non un secondo colore dominante.
 - Le CTA devono essere brevi, specifiche e visivamente gerarchizzate.
 

@@ -1,0 +1,1430 @@
+/* Shared components and internal pages */
+
+/* ─── BOTTONI ─── */
+.btn {
+    display: inline-block;
+    background: var(--verde-header);
+    color: var(--bianco);
+    padding: 0.8rem 2rem;
+    border-radius: 7px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(95, 126, 88, 0.2);
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    background: var(--verde-header-profondo);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(95, 126, 88, 0.24);
+}
+
+.btn-linea {
+    background: transparent;
+    border: 1.5px solid currentColor;
+    box-shadow: none;
+    color: var(--verde-scuro);
+}
+
+.btn-linea:hover {
+    background: var(--verde-scuro);
+    border-color: var(--verde-scuro);
+    color: var(--bianco);
+}
+
+/* ─── SEZIONI ─── */
+section {
+    padding: 4rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+section[id] {
+    scroll-margin-top: 100px;
+}
+
+.cta {
+    text-align: center;
+    background: var(--rosa-chiaro);
+    max-width: 100%;
+    padding: 4rem 2rem;
+    border-top: 1px solid rgba(208, 143, 134, 0.22);
+    border-bottom: 1px solid rgba(208, 143, 134, 0.22);
+}
+
+.cta h2 { color: var(--verde-scuro); margin-bottom: 1rem; font-size: 2rem; }
+.cta p { margin-bottom: 1.5rem; font-size: 1.1rem; color: #555; }
+
+/* ─── CARD ─── */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.card {
+    background: var(--avorio);
+    border-radius: 8px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border: 1px solid rgba(208, 143, 134, 0.15);
+    box-shadow: var(--ombra-card);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--rosa-antico), var(--verde-salvia));
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(208, 143, 134, 0.34);
+    box-shadow: var(--ombra-soft);
+}
+.card span { font-size: 2.5rem; display: block; margin-bottom: 1rem; }
+.card h3 { font-size: 1.05rem; color: var(--verde-scuro); margin-bottom: 0.5rem; }
+.card p { font-size: 0.9rem; color: #666; }
+
+/* ─── PAGINE INTERNE ─── */
+.pagina-interna { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+.pagina-interna h1 { font-size: 2.4rem; color: var(--verde-scuro); line-height: 1.15; margin-bottom: 0.8rem; }
+.pagina-interna h2 { font-size: 2.1rem; color: var(--verde-scuro); margin-bottom: 0.5rem; }
+.sottotitolo { color: var(--grigio); margin-bottom: 2.5rem; font-size: 1rem; }
+
+.faq-page {
+    max-width: 1040px;
+}
+
+.faq-page > .sottotitolo {
+    max-width: 760px;
+}
+
+.faq-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.faq-item {
+    background: var(--avorio);
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: flex;
+    flex-direction: column;
+    padding: 1.45rem;
+    position: relative;
+}
+
+.faq-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--verde-header), var(--rosa-antico));
+    border-radius: 8px 8px 0 0;
+}
+
+.faq-item h2 {
+    font-size: 1.2rem;
+    line-height: 1.35;
+    margin-bottom: 0.7rem;
+}
+
+.faq-item p {
+    font-size: 0.96rem;
+    line-height: 1.75;
+}
+
+.faq-map {
+    border: 1px solid rgba(143, 166, 133, 0.22);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(79, 95, 69, 0.12);
+    height: 180px;
+    margin: 0.35rem 0 1rem;
+    overflow: hidden;
+}
+
+.faq-map iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.faq-cta {
+    align-items: center;
+    background: linear-gradient(135deg, rgba(238, 245, 234, 0.98), rgba(255, 240, 236, 0.72));
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    margin-top: 1.2rem;
+    padding: 1.5rem;
+}
+
+.faq-cta h2 {
+    font-size: 1.45rem;
+    margin-bottom: 0.45rem;
+}
+
+.faq-cta p:last-child {
+    margin-bottom: 0;
+}
+
+/* ─── SERVIZI LISTA ─── */
+.servizio-lista { display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 3rem; }
+
+.servizio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    background: var(--avorio);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    box-shadow: var(--ombra-card);
+}
+
+.servizio-item span { font-size: 2rem; flex-shrink: 0; }
+.servizio-item h3 { color: var(--verde-scuro); margin-bottom: 0.3rem; }
+.servizio-item p { color: #666; font-size: 0.95rem; }
+
+/* ─── ORARI ─── */
+.orari { background: var(--verde-chiaro); border-radius: 8px; padding: 2rem; margin-top: 1rem; border: 1px solid rgba(143, 166, 133, 0.2); }
+.orari h3 { color: var(--verde-scuro); margin-bottom: 1rem; font-size: 1.2rem; }
+.orari table { width: 100%; border-collapse: collapse; }
+.orari td { padding: 0.6rem 0; border-bottom: 1px solid #c8dbc9; font-size: 0.95rem; }
+.orari td:last-child { text-align: right; font-weight: 600; color: var(--verde-scuro); }
+.nota { margin-top: 1rem; font-size: 0.9rem; color: var(--grigio); }
+.nota-lg { margin-top: 1.5rem; font-size: 0.9rem; color: var(--grigio); }
+.text-muted { color: var(--grigio); font-size: 0.85rem; }
+
+/* ─── CHI SIAMO ─── */
+.chi-siamo-contenuto { display: flex; gap: 3rem; align-items: flex-start; margin-bottom: 3rem; }
+.profilo { text-align: center; flex-shrink: 0; }
+.profilo-foto {
+    width: 190px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: var(--ombra-soft);
+    margin-bottom: 1rem;
+}
+.profilo h3 { color: var(--verde-scuro); font-size: 1.1rem; }
+.qualifica { font-size: 0.85rem; color: var(--grigio); margin-top: 0.3rem; }
+.bio p { margin-bottom: 1rem; color: #444; line-height: 1.8; }
+.valori h3 { font-size: 1.4rem; color: var(--verde-scuro); margin-bottom: 1.5rem; }
+.valori .card .valore-icona {
+    align-items: center;
+    background: var(--verde-chiaro);
+    border: 1px solid rgba(95, 126, 88, 0.18);
+    border-radius: 50%;
+    color: var(--verde-header);
+    display: inline-flex;
+    height: 58px;
+    justify-content: center;
+    margin-bottom: 1rem;
+    width: 58px;
+}
+
+.valori .card .valore-icona svg {
+    fill: none;
+    height: 31px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    width: 31px;
+}
+
+/* ─── FORM PRENOTAZIONE ─── */
+.form-prenotazione {
+    background: var(--avorio);
+    padding: 2.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(208, 143, 134, 0.16);
+    box-shadow: var(--ombra-soft);
+    max-width: 680px;
+}
+
+.form-gruppo { margin-bottom: 1.4rem; flex: 1; }
+
+.form-gruppo label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--testo);
+    font-size: 0.95rem;
+}
+
+.form-gruppo input,
+.form-gruppo select,
+.form-gruppo textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #c8dbc9;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--testo);
+    background: #fffaf6;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.form-gruppo input:focus,
+.form-gruppo select:focus,
+.form-gruppo textarea:focus {
+    outline: none;
+    border-color: var(--verde-salvia);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(143, 166, 133, 0.14);
+}
+
+.form-riga { display: flex; gap: 1.2rem; }
+.privacy { font-size: 0.8rem; color: #999; margin-bottom: 1.2rem; line-height: 1.5; }
+
+.form-gruppo .privacy-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.form-gruppo .privacy-checkbox {
+    width: auto;
+    flex: 0 0 auto;
+    margin-top: 0.25rem;
+}
+
+.privacy-text {
+    flex: 1;
+}
+
+.privacy-text .privacy-link {
+    color: var(--verde-scuro);
+    font-weight: 700;
+}
+
+.form-prenotazione .btn { width: 100%; padding: 1rem; font-size: 1rem; }
+
+.date-callout {
+    background: linear-gradient(135deg, rgba(238, 245, 234, 0.96), rgba(255, 240, 236, 0.72));
+    border: 1px solid rgba(143, 166, 133, 0.22);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(330px, 1.15fr);
+    gap: 1.25rem;
+    margin: 1rem 0 1.5rem;
+    overflow: hidden;
+    padding: 1.25rem;
+    position: relative;
+}
+
+.date-callout::before {
+    background: linear-gradient(180deg, var(--verde-header), var(--rosa-antico));
+    content: '';
+    inset: 0 auto 0 0;
+    position: absolute;
+    width: 5px;
+}
+
+.date-callout-copy {
+    padding-left: 0.55rem;
+}
+
+.date-callout h3 {
+    color: var(--verde-scuro);
+    font-size: 1.2rem;
+    line-height: 1.3;
+    margin-bottom: 0.45rem;
+}
+
+.date-callout-copy p:last-child {
+    color: #5a514b;
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+.date-callout-actions {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.date-action-card {
+    background: rgba(255, 253, 249, 0.72);
+    border: 1.5px solid rgba(82, 111, 80, 0.22);
+    border-radius: 8px;
+    color: var(--testo);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-height: 100%;
+    padding: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.date-action-card:hover,
+.date-action-card:focus-visible {
+    border-color: rgba(198, 120, 112, 0.7);
+    box-shadow: 0 12px 26px rgba(92, 76, 64, 0.12);
+    transform: translateY(-2px);
+}
+
+.date-action-card:focus-visible {
+    outline: 3px solid rgba(198, 120, 112, 0.22);
+    outline-offset: 3px;
+}
+
+.date-action-card-primary {
+    background: #fffdf9;
+    border-color: rgba(82, 111, 80, 0.46);
+    box-shadow: 0 10px 22px rgba(82, 111, 80, 0.12);
+}
+
+.date-action-card span {
+    color: var(--rosa-antico);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.date-action-card strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.03rem;
+    line-height: 1.25;
+}
+
+.date-action-card small {
+    color: var(--grigio);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.form-ricontatto-intro {
+    background: #fffdf9;
+    border: 1.5px solid rgba(82, 111, 80, 0.24);
+    border-left: 5px solid var(--verde-header);
+    border-radius: 8px;
+    margin-bottom: 1.35rem;
+    padding: 1rem 1.1rem;
+}
+
+.form-ricontatto-intro span {
+    color: var(--rosa-antico);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
+.form-ricontatto-intro p {
+    color: #5a514b;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.form-ricontatto-intro p + p {
+    margin-top: 0.25rem;
+}
+
+.form-ricontatto-intro strong {
+    color: var(--verde-scuro);
+}
+
+.nota-form {
+    background: #fffaf6;
+    border: 1px solid rgba(143, 166, 133, 0.16);
+    border-radius: 8px;
+    color: var(--grigio);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin: 0 0 1.2rem;
+    padding: 0.9rem 1rem;
+}
+
+.form-iscrizione-corso h3 {
+    color: var(--verde-scuro);
+    font-size: 1.1rem;
+    margin: 1.8rem 0 1rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(143, 166, 133, 0.22);
+}
+
+.form-iscrizione-corso h3:first-of-type {
+    margin-top: 0;
+}
+
+.radio-stack {
+    background: #fffaf6;
+    border: 1px solid rgba(143, 166, 133, 0.16);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.radio-stack p {
+    color: var(--testo);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.radio-stack label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: 1rem;
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+.radio-stack input {
+    width: auto;
+}
+
+.checkbox-stack {
+    background: #fffaf6;
+    border: 1px solid rgba(143, 166, 133, 0.16);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.checkbox-stack label {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.75rem;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+
+.checkbox-stack input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-top: 0.22rem;
+    width: auto;
+}
+
+.checkbox-stack span {
+    color: var(--testo);
+    font-weight: 700;
+}
+
+.checkbox-stack small {
+    color: var(--grigio);
+    display: block;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin-left: 1.75rem;
+    margin-top: 0.45rem;
+}
+
+.form-prenotazione .btn-privacy-mancante {
+    background: #a7a19b;
+}
+
+.form-prenotazione .btn-privacy-mancante:hover {
+    background: #8f8984;
+}
+
+.private-course-page {
+    max-width: 1180px;
+}
+
+.private-course-hero {
+    align-items: center;
+    background:
+        linear-gradient(135deg, rgba(238, 245, 234, 0.95), rgba(255, 250, 246, 0.96));
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+    margin: 1.4rem 0;
+    padding: 1.35rem;
+}
+
+.private-course-hero h3 {
+    color: var(--verde-scuro);
+    font-size: 1.5rem;
+    line-height: 1.25;
+    margin-bottom: 0.55rem;
+}
+
+.private-course-meta {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.private-course-meta span {
+    background: var(--avorio);
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    border-radius: 999px;
+    color: var(--verde-scuro);
+    font-size: 0.88rem;
+    font-weight: 800;
+    padding: 0.65rem 0.9rem;
+    text-align: center;
+}
+
+.private-course-layout {
+    align-items: start;
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+}
+
+.private-course-calendar,
+.private-course-form-wrap {
+    background: var(--avorio);
+    border: 1px solid rgba(143, 166, 133, 0.16);
+    border-radius: 8px;
+    box-shadow: var(--ombra-card);
+    padding: 1.35rem;
+}
+
+.private-course-calendar {
+    position: sticky;
+    top: 88px;
+}
+
+.private-course-calendar h3 {
+    color: var(--verde-scuro);
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+}
+
+.private-course-calendar ol {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+}
+
+.private-course-calendar li {
+    border-left: 4px solid var(--rosa-antico);
+    padding-left: 0.8rem;
+}
+
+.private-course-calendar strong,
+.private-course-calendar span,
+.private-course-calendar small {
+    display: block;
+}
+
+.private-course-calendar strong {
+    color: var(--verde-scuro);
+    font-size: 0.95rem;
+}
+
+.private-course-calendar span {
+    color: #51443d;
+    font-size: 0.9rem;
+    margin-top: 0.2rem;
+}
+
+.private-course-calendar small {
+    color: var(--grigio);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    margin-top: 0.25rem;
+}
+
+/* ─── CONFERMA ─── */
+.testo-centro { text-align: center; }
+
+.conferma-box {
+    background: var(--avorio);
+    padding: 3rem;
+    border-radius: 8px;
+    border: 1px solid rgba(143, 166, 133, 0.18);
+    box-shadow: var(--ombra-soft);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.conferma-icona { font-size: 4rem; display: block; margin-bottom: 1rem; }
+.conferma-box h2 { color: var(--verde-scuro); margin-bottom: 1rem; }
+.conferma-box p { color: #555; margin-bottom: 0.5rem; }
+.conferma-box .btn { margin-top: 1.5rem; }
+
+/* ─── PRIVACY ─── */
+.privacy-contenuto { margin-top: 2rem; }
+
+.privacy-blocco {
+    background: var(--avorio);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid rgba(208, 143, 134, 0.14);
+    box-shadow: var(--ombra-card);
+}
+
+.privacy-blocco h3 {
+    color: var(--verde-scuro);
+    font-size: 1.05rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--verde-chiaro);
+}
+
+.privacy-blocco p { color: #444; font-size: 0.95rem; line-height: 1.7; margin-bottom: 0.7rem; }
+.privacy-blocco ul { padding-left: 1.5rem; color: #444; font-size: 0.95rem; line-height: 1.9; }
+
+/* ─── FOOTER ─── */
+footer {
+    background: #51443d;
+    color: #f1e7df;
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    margin-top: 4rem;
+}
+
+footer p {
+    color: #f1e7df;
+}
+
+.cookie-preferences {
+    background: none;
+    border: none;
+    color: #f1e7df;
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+}
+
+.cookie-banner {
+    position: fixed;
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1200;
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    justify-content: space-between;
+    background: var(--avorio);
+    border: 1px solid rgba(143, 166, 133, 0.24);
+    border-radius: 8px;
+    box-shadow: var(--ombra-soft);
+    padding: 1rem 1.1rem;
+}
+
+.cookie-banner-text {
+    flex: 1;
+}
+
+.cookie-banner-text strong {
+    color: var(--verde-scuro);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.cookie-banner-text p {
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.cookie-banner-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn-cookie {
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 800;
+    min-height: 42px;
+    padding: 0.65rem 1rem;
+}
+
+.btn-cookie-primary {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+.btn-cookie-secondary {
+    background: var(--verde-chiaro);
+    color: var(--verde-scuro);
+}
+
+/* ─── CALENDARIO CORSI ─── */
+.calendario-wrapper {
+    background: var(--avorio);
+    border-radius: 8px;
+    padding: 2rem;
+    border: 1px solid rgba(143, 166, 133, 0.16);
+    box-shadow: var(--ombra-card);
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.cal-header h3 {
+    font-size: 1.2rem;
+    color: var(--verde-scuro);
+    font-weight: 600;
+}
+
+.cal-nav {
+    background: var(--verde-chiaro);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--verde-scuro);
+    transition: background 0.2s;
+}
+
+.cal-nav:hover { background: var(--verde-header); color: white; }
+
+.cal-giorni-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--grigio);
+    margin-bottom: 0.5rem;
+}
+
+.cal-griglia {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.cal-cella {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    color: var(--testo);
+    cursor: default;
+}
+
+.cal-cella.vuota { background: transparent; }
+
+.cal-cella.oggi {
+    background: var(--verde-chiaro);
+    font-weight: 700;
+    color: var(--verde-scuro);
+}
+
+.cal-cella.ha-corso {
+    background: var(--verde-header);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.cal-cella.ha-corso:hover {
+    background: var(--verde-header-profondo);
+    transform: scale(1.1);
+}
+
+.cal-dettaglio {
+    margin-top: 1.5rem;
+    background: var(--verde-chiaro);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    border-left: 4px solid var(--verde-salvia);
+}
+
+.cal-dettaglio h4 {
+    color: var(--verde-scuro);
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+}
+
+.cal-dettaglio p {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0.3rem;
+}
+
+/* ─── WIDGET WHATSAPP ─── */
+.whatsapp-widget {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    background: #25D366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.24);
+    z-index: 999;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+}
+
+.whatsapp-widget:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+}
+
+.whatsapp-tooltip {
+    position: absolute;
+    right: 70px;
+    background: #2c3e50;
+    color: white;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    font-family: var(--font-body);
+}
+
+.whatsapp-tooltip::before {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #2c3e50;
+}
+
+.whatsapp-widget:hover .whatsapp-tooltip {
+    opacity: 1;
+}
+.whatsapp-widget svg {
+    width: 70px;
+    height: 70px;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    text-decoration: none;
+}
+
+.logo-testo {
+    color: var(--verde-scuro);
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+}
+
+/* ─── HAMBURGER ─── */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 1rem;
+}
+
+.hamburger span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--verde-scuro);
+    border-radius: 2px;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.hamburger.aperto span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.aperto span:nth-child(2) { opacity: 0; }
+.hamburger.aperto span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ─── MENU MOBILE ─── */
+.nav-mobile {
+    display: none;
+    flex-direction: column;
+    background: var(--verde-brand);
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.35s ease;
+}
+
+.nav-mobile.aperto {
+    max-height: 760px;
+    padding: 0.5rem 0 1rem;
+}
+
+.nav-mobile.aperto ~ .whatsapp-widget,
+.nav-mobile.aperto ~ .sticky-prenota {
+    display: none;
+}
+
+.nav-mobile a,
+.nav-mobile-label {
+    color: var(--verde-scuro);
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 0.5px solid rgba(48, 68, 56, 0.14);
+    transition: background 0.2s;
+}
+
+.nav-mobile-label {
+    color: rgba(48, 68, 56, 0.72);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding-bottom: 0.35rem;
+    padding-top: 1rem;
+    text-transform: uppercase;
+}
+
+.nav-mobile a:hover { background: rgba(48, 68, 56, 0.08); }
+
+.nav-mobile-home {
+    align-items: center;
+    display: flex;
+    gap: 0.55rem;
+}
+
+.nav-mobile-home svg {
+    fill: none;
+    height: 20px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.85;
+    width: 20px;
+}
+
+.nav-mobile-prenota {
+    margin: 0.75rem 1.5rem 0;
+    background: white;
+    color: var(--verde-header) !important;
+    border-radius: 25px !important;
+    text-align: center;
+    font-weight: 700 !important;
+    border-bottom: none !important;
+    padding: 0.6rem 1.5rem !important;
+}
+
+.nav-mobile-prenota:hover {
+    background: var(--rosa-chiaro) !important;
+    color: var(--verde-header-profondo) !important;
+}
+@media (max-width: 1180px) {
+.nav-desktop {
+        display: none;
+    }
+.hamburger {
+        display: flex;
+    }
+.nav-mobile {
+        display: flex;
+    }
+.logo-testo {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 900px) {
+.chi-siamo-contenuto { flex-direction: column; align-items: center; }
+.proof-grid,
+.blsd-choice-panel,
+.course-flow-grid,
+.course-value-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+.private-course-layout {
+        grid-template-columns: 1fr;
+    }
+.course-directory-row {
+        grid-template-columns: 120px minmax(0, 1fr);
+    }
+.course-directory-row img {
+        height: 96px;
+        width: 120px;
+    }
+.course-directory-row > .link-azione {
+        grid-column: 2;
+        justify-self: start;
+    }
+.private-course-calendar {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+body > header {
+        padding: 0.4rem 1rem;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+    }
+.pagina-interna h2 { font-size: 1.5rem; }
+.pagina-interna h1 { font-size: 1.85rem; }
+.cta h2 { font-size: 1.5rem; }
+.azienda-callout {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 1.15rem;
+    }
+.azienda-callout .btn {
+        text-align: center;
+        white-space: normal;
+    }
+.private-course-hero {
+        grid-template-columns: 1fr;
+        padding: 1.1rem;
+    }
+.private-course-meta span {
+        text-align: left;
+    }
+.date-callout {
+        grid-template-columns: 1fr;
+        padding: 1.15rem;
+    }
+.date-callout-actions {
+        grid-template-columns: 1fr;
+    }
+.section-heading h2 {
+        font-size: 1.7rem;
+    }
+.proof-grid,
+.blsd-choice-panel,
+.course-flow-grid,
+.course-value-grid {
+        grid-template-columns: 1fr;
+    }
+.course-overview-strip {
+        grid-template-columns: 1fr;
+    }
+.course-overview-strip article {
+        border-bottom: 1px solid rgba(143, 166, 133, 0.16);
+        border-right: 0;
+    }
+.course-overview-strip article:last-child {
+        border-bottom: 0;
+    }
+.course-directory-row {
+        grid-template-columns: 88px minmax(0, 1fr);
+        gap: 0.8rem;
+        padding: 0.9rem;
+    }
+.course-directory-row img {
+        height: 82px;
+        width: 88px;
+    }
+.course-directory-copy h3 {
+        font-size: 1.05rem;
+    }
+.course-directory-copy p {
+        font-size: 0.88rem;
+    }
+.course-directory-row > .link-azione {
+        grid-column: 1 / -1;
+    }
+.proof-card,
+.course-flow,
+.course-value-panel {
+        padding: 1.1rem;
+    }
+.course-meta span {
+        font-size: 0.7rem;
+    }
+.pagina-consulenza .cta-interna {
+        margin-left: -1rem;
+        margin-right: -1rem;
+    }
+.cta p { font-size: 1rem; }
+.logo-testo { display: none; }
+body > header img { height: 60px !important; }
+.form-riga { flex-direction: column; gap: 0; }
+.pagina-interna { padding: 2rem 1rem; }
+.faq-list {
+        grid-template-columns: 1fr;
+    }
+.faq-item {
+        padding: 1.25rem;
+    }
+.faq-cta {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 1.25rem;
+    }
+section { padding: 2.5rem 1rem; }
+.whatsapp-tooltip { display: none; }
+.conferma-box { padding: 2rem 1.2rem; }
+.cal-cella { font-size: 0.8rem; }
+.calendario-wrapper { padding: 1.2rem; }
+.cal-griglia { gap: 3px; }
+.whatsapp-widget {
+        bottom: 5.9rem;
+        left: auto;
+        right: 1rem;
+        width: 52px;
+        height: 52px;
+    }
+.whatsapp-widget svg {
+        width: 60px;
+        height: 60px;
+    }
+.page-homepage .whatsapp-widget {
+        display: none;
+    }
+.cookie-banner {
+        align-items: stretch;
+        bottom: 5.7rem;
+        flex-direction: column;
+        left: 1rem;
+        right: 1rem;
+    }
+.cookie-banner-actions {
+        flex-direction: column;
+    }
+.btn-cookie {
+        width: 100%;
+    }
+.btn {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+.btn-prenota {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+.cal-cella {
+        min-height: clamp(36px, 10vw, 44px);
+        min-width: 0;
+        font-size: 0.95rem;
+    }
+nav a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+}
+
+
+/* ─── BARRA STICKY MOBILE ─── */
+.sticky-prenota {
+    display: none;
+}
+@media (max-width: 640px) {
+.sticky-prenota {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 998;
+        padding: 0.75rem 1rem;
+        background: white;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    }
+.sticky-prenota-btn {
+        display: block;
+        background: var(--verde-header);
+        color: white;
+        text-align: center;
+        padding: 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        transition: background 0.2s;
+    }
+.sticky-prenota-btn:hover {
+        background: var(--verde-header-profondo);
+    }
+body {
+        padding-bottom: 80px;
+    }
+body.page-prenota {
+        padding-bottom: 0;
+    }
+}
+
+
+/* Logo image and privacy link styles */
+.logo-img {
+    filter: brightness(0) saturate(100%) invert(23%) sepia(13%) saturate(830%) hue-rotate(94deg) brightness(91%) contrast(88%);
+    height: 66px;
+    width: auto;
+}
+footer .privacy-link { color: #f1e7df; text-decoration: underline; }
+.logo-login { height: 120px; width: auto; }
+
+.site-footer {
+    background: var(--verde-header-profondo);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 3rem max(1.5rem, calc((100% - 1180px) / 2));
+    text-align: left;
+}
+
+.site-footer-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+}
+
+.site-footer strong {
+    color: var(--bianco);
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    margin-bottom: 0.65rem;
+}
+
+.site-footer p,
+.site-footer a,
+.site-footer .privacy-link {
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.site-footer a:hover {
+    color: var(--bianco);
+    text-decoration: underline;
+}
+
+.site-footer-legal {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    margin-top: 2rem;
+    padding-top: 1.2rem;
+}
+
+.section-intro {
+    max-width: 780px;
+}
+
+.section-intro h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.6vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.section-intro > p:not(.eyebrow) {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    margin-top: 1rem;
+    max-width: 680px;
+}
+
+.thread-steps {
+    margin-top: 2rem;
+    padding-left: 3.5rem;
+    position: relative;
+}
+
+.thread-steps::before {
+    background: var(--rosso-cuore);
+    content: '';
+    height: calc(100% - 2rem);
+    left: 1rem;
+    position: absolute;
+    top: 1rem;
+    width: 2px;
+}
+
+.thread-steps > div {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    min-height: 112px;
+    padding: 0 0 1.2rem;
+    position: relative;
+}
+
+.thread-steps > div + div {
+    padding-top: 1.2rem;
+}
+
+.thread-steps span {
+    align-items: center;
+    background: var(--sfondo);
+    border: 2px solid var(--rosso-cuore);
+    border-radius: 50%;
+    color: var(--rosso-cuore);
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    left: -3.5rem;
+    position: absolute;
+    top: 0;
+    width: 2rem;
+}
+
+.thread-steps > div + div span {
+    top: 1.2rem;
+}
+
+.thread-steps h3 {
+    color: var(--verde-scuro);
+    font-size: 1.15rem;
+    margin-bottom: 0.35rem;
+}
+
+.thread-steps p {
+    line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+.site-footer-grid {
+        grid-template-columns: 1fr;
+    }
+.site-footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+.site-footer {
+        padding: 2.5rem 1.2rem 6rem;
+    }
+.site-footer-grid {
+        grid-template-columns: 1fr;
+    }
+}

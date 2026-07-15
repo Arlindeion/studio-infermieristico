@@ -25,7 +25,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/stile.css') }}?v=3.0">
+    {% set page_endpoint = request.endpoint or '' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=4.0">
+    {% if page_endpoint == 'homepage' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.0">
+    {% elif page_endpoint == 'consulenze_online' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.0">
+    {% endif %}
+    {% if page_endpoint in ['admin', 'modifica_appuntamento'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.0">
+    {% endif %}
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",

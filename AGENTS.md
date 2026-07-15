@@ -50,7 +50,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 
 - Comunicare fiducia sanitaria, calore familiare e professionalità.
 - S.C. Studio Infermieristico è la sede; per famiglie e neogenitori il riferimento umano è Selene.
-- Usare il sistema definito in `docs/BRAND_SYSTEM.md` e i token già presenti in `static/css/stile.css`.
+- Usare il sistema definito in `docs/BRAND_SYSTEM.md` e i token presenti in `static/css/tokens.css`.
 - Il salvia identitario è `#B1BBA5`; su questo fondo usare testo `#304438`, non bianco.
 - Mantenere `Bricolage Grotesque` per i titoli e `Atkinson Hyperlegible` per testi e interfacce.
 - Preferire fotografie reali di Selene, dello studio e delle attività. Se manca il materiale usare `static/img/placeholder.png` e registrarlo nell'inventario.
@@ -59,6 +59,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - La linea rossa è una firma funzionale, non una decorazione da ripetere ovunque.
 - Ogni schermata deve avere una priorità visiva e ogni sezione uno scopo: informare, rassicurare o guidare all'azione pertinente.
 - Prima di creare colori, spaziature, ombre o componenti, verificare se esiste già uno stile equivalente.
+- Collocare ogni nuova regola nel modulo CSS competente; non creare sezioni `V2`, `V3` o nuovi stili in coda a un file non pertinente.
 - Accessibilità obbligatoria: contrasto, focus, label, tastiera, target touch e leggibilità mobile.
 
 ## Testi e proof of value

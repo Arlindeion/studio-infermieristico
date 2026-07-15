@@ -1,0 +1,472 @@
+/* Sleep consultation landing page */
+
+.page-consulenze-online .eyebrow {
+    color: var(--rosso-cuore);
+    letter-spacing: 0.11em;
+}
+
+.sleep-hero-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.7rem;
+}
+
+.sleep-hero-media::before {
+    border-left: 4px solid var(--rosso-cuore);
+    border-radius: 48%;
+    content: '';
+    height: 64%;
+    position: absolute;
+    right: -24px;
+    top: 15%;
+    transform: rotate(-7deg);
+    width: 90px;
+    z-index: 2;
+}
+
+.sleep-hero-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.sleep-recognition,
+.sleep-age-band,
+.sleep-process,
+.sleep-options,
+.sleep-clinical-boundaries,
+.sleep-faq,
+.sleep-final-cta {
+    max-width: 1180px;
+    padding: clamp(4rem, 7vw, 6.5rem) 2rem;
+}
+
+.sleep-option-label {
+    color: var(--rosso-cuore) !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+}
+
+.sleep-age-band > div:first-child span,
+.sleep-option-main .sleep-option-label,
+.sleep-final-cta .eyebrow {
+    color: var(--verde-scuro) !important;
+}
+
+.sleep-final-cta {
+    text-align: center;
+}
+
+.sleep-final-cta h2 {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 850px;
+}
+
+.sleep-hero {
+    align-items: center;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.7fr);
+    max-width: 1180px;
+    padding: clamp(4rem, 8vw, 7rem) 2rem;
+}
+
+.sleep-hero h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(3rem, 5.4vw, 5rem);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+    margin: 0.6rem 0 1.4rem;
+}
+
+.sleep-hero-lead {
+    color: var(--testo);
+    font-size: 1.14rem;
+    line-height: 1.75;
+    max-width: 690px;
+}
+
+.sleep-authority {
+    border-left: 3px solid var(--rosso-cuore);
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 1.7rem;
+    padding-left: 0.9rem;
+}
+
+.sleep-authority strong {
+    color: var(--verde-scuro);
+}
+
+.sleep-authority span {
+    color: var(--grigio);
+    font-size: 0.88rem;
+}
+
+.sleep-hero-media {
+    height: 540px;
+    overflow: hidden;
+    position: relative;
+}
+
+.sleep-hero-media p {
+    background: rgba(80, 106, 89, 0.94);
+    bottom: 0;
+    color: var(--bianco);
+    left: 0;
+    line-height: 1.45;
+    padding: 1rem 1.2rem;
+    position: absolute;
+    right: 0;
+    z-index: 3;
+}
+
+.sleep-recognition,
+.sleep-process,
+.sleep-options,
+.sleep-faq {
+    border-top: 1px solid rgba(48, 68, 56, 0.14);
+}
+
+.sleep-signals {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 2.7rem;
+}
+
+.sleep-signals article {
+    border-top: 3px solid var(--verde-salvia);
+    padding-top: 1.2rem;
+}
+
+.sleep-signals span {
+    color: var(--rosso-cuore);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sleep-signals h3 {
+    color: var(--verde-scuro);
+    font-size: 1.35rem;
+    margin: 0.6rem 0;
+}
+
+.sleep-signals p {
+    line-height: 1.7;
+}
+
+.sleep-age-band {
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 100%;
+    padding: 0;
+}
+
+.sleep-age-band > div {
+    padding: clamp(3rem, 6vw, 5rem) max(2rem, calc((100vw - 1180px) / 2));
+}
+
+.sleep-age-band > div:first-child {
+    background: var(--verde-brand);
+    padding-left: max(2rem, calc((100vw - 1180px) / 2));
+    padding-right: clamp(2rem, 5vw, 4rem);
+}
+
+.sleep-age-band > div:last-child {
+    background: var(--verde-chiaro);
+    border-top: 4px solid var(--blu-filo);
+    padding-left: clamp(2rem, 5vw, 4rem);
+    padding-right: max(2rem, calc((100vw - 1180px) / 2));
+}
+
+.sleep-age-band span {
+    color: var(--rosso-cuore);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sleep-age-band h2 {
+    font-size: clamp(1.65rem, 2.8vw, 2.45rem);
+    line-height: 1.08;
+    margin: 0.7rem 0 1rem;
+}
+
+.sleep-age-band > div:first-child h2,
+.sleep-age-band > div:first-child p {
+    color: var(--testo);
+}
+
+.sleep-age-band p {
+    line-height: 1.7;
+}
+
+.thread-steps-sleep {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: none;
+    padding-left: 0;
+    padding-top: 3.5rem;
+}
+
+.thread-steps-sleep::before {
+    height: 2px;
+    left: 1rem;
+    top: 1rem;
+    width: calc(100% - 2rem);
+}
+
+.thread-steps-sleep > div,
+.thread-steps-sleep > div + div {
+    min-height: 0;
+    padding: 0 0 1.2rem;
+}
+
+.thread-steps-sleep span,
+.thread-steps-sleep > div + div span {
+    left: 0;
+    top: -3.5rem;
+}
+
+.sleep-option-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 0.85fr 1.15fr;
+    margin-top: 2.7rem;
+}
+
+.sleep-option-grid article {
+    border: 1px solid rgba(48, 68, 56, 0.2);
+    padding: clamp(1.6rem, 3.5vw, 2.7rem);
+}
+
+.sleep-option-main {
+    background: var(--verde-brand);
+    color: var(--testo);
+}
+
+.sleep-option-grid h3 {
+    color: inherit;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+}
+
+.sleep-option-grid article > p:not(.sleep-option-label) {
+    color: inherit;
+    line-height: 1.7;
+}
+
+.sleep-option-grid ul {
+    list-style: none;
+    margin-top: 1.4rem;
+}
+
+.sleep-option-grid li {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    padding: 0.75rem 0;
+}
+
+.sleep-option-main li {
+    border-color: rgba(48, 68, 56, 0.18);
+}
+
+.sleep-options-note {
+    border-left: 3px solid var(--rosso-cuore);
+    line-height: 1.7;
+    margin-top: 1.5rem;
+    max-width: 880px;
+    padding-left: 1rem;
+}
+
+.sleep-clinical-boundaries {
+    align-items: start;
+    background: var(--verde-chiaro);
+    border-top: 4px solid var(--blu-filo);
+    display: grid;
+    gap: 3rem;
+    grid-template-columns: 1fr 0.85fr;
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.sleep-clinical-boundaries h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.sleep-clinical-boundaries p {
+    line-height: 1.7;
+    margin-top: 1rem;
+}
+
+.sleep-boundary-list {
+    border-left: 1px solid rgba(111, 131, 115, 0.3);
+    padding-left: 2rem;
+}
+
+.sleep-boundary-list strong {
+    color: var(--blu-filo);
+}
+
+.sleep-faq-list {
+    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    margin-top: 2.5rem;
+}
+
+.sleep-faq details {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.2);
+    padding: 1.1rem 0;
+}
+
+.sleep-faq summary {
+    color: var(--verde-scuro);
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 700;
+    min-height: 44px;
+    padding: 0.45rem 2.5rem 0.45rem 0;
+    position: relative;
+}
+
+.sleep-faq details p {
+    line-height: 1.7;
+    max-width: 780px;
+    padding: 0.5rem 0 0.5rem;
+}
+
+.sleep-final-cta {
+    background: var(--verde-brand);
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.sleep-final-cta h2,
+.sleep-final-cta p {
+    color: var(--testo);
+}
+
+.sleep-final-cta > p:not(.eyebrow) {
+    margin: 1rem auto 1.7rem;
+    max-width: 680px;
+}
+
+.sleep-final-cta .btn {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+@media (max-width: 900px) {
+.sleep-hero,
+.sleep-clinical-boundaries {
+        grid-template-columns: 1fr;
+    }
+.sleep-hero-media {
+        height: 460px;
+    }
+.sleep-signals {
+        grid-template-columns: 1fr;
+    }
+.sleep-age-band,
+.sleep-option-grid {
+        grid-template-columns: 1fr;
+    }
+.sleep-age-band > div,
+.sleep-age-band > div:first-child,
+.sleep-age-band > div:last-child {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+.thread-steps-sleep {
+        grid-template-columns: 1fr;
+        padding-left: 3.5rem;
+        padding-top: 0;
+    }
+.thread-steps-sleep::before {
+        height: calc(100% - 2rem);
+        left: 1rem;
+        top: 1rem;
+        width: 2px;
+    }
+.thread-steps-sleep > div {
+        min-height: 112px;
+        padding: 0 0 1.2rem;
+    }
+.thread-steps-sleep > div + div {
+        padding-top: 1.2rem;
+    }
+.thread-steps-sleep span {
+        left: -3.5rem;
+        top: 0;
+    }
+.thread-steps-sleep > div + div span {
+        left: -3.5rem;
+        top: 1.2rem;
+    }
+.sleep-boundary-list {
+        border-left: 0;
+        border-top: 1px solid rgba(111, 131, 115, 0.3);
+        padding-left: 0;
+        padding-top: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+.sleep-hero,
+.sleep-recognition,
+.sleep-process,
+.sleep-options,
+.sleep-faq {
+        padding: 3.4rem 1.15rem;
+    }
+.sleep-hero h1 {
+        font-size: clamp(2.65rem, 13vw, 3.7rem);
+    }
+.sleep-hero-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+.sleep-hero-actions .btn {
+        width: 100%;
+    }
+.sleep-hero-media {
+        height: 360px;
+    }
+.sleep-clinical-boundaries,
+.sleep-final-cta {
+        padding: 3.5rem 1.15rem;
+    }
+.thread-steps-sleep > div + div span {
+        left: -3rem;
+    }
+.sleep-age-band > div,
+.sleep-age-band > div:first-child,
+.sleep-age-band > div:last-child {
+        padding: 3.2rem 1.15rem;
+    }
+.thread-steps {
+        padding-left: 3rem;
+    }
+.thread-steps span {
+        left: -3rem;
+    }
+}

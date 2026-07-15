@@ -1,0 +1,549 @@
+/* Homepage */
+
+.page-homepage .eyebrow {
+    color: var(--rosso-cuore);
+    letter-spacing: 0.11em;
+}
+
+.home-hero {
+    align-items: center;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.78fr);
+    max-width: 1180px;
+    min-height: calc(100vh - 88px);
+    padding: clamp(4rem, 8vw, 7rem) 2rem;
+}
+
+.home-hero-copy h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(3.2rem, 5vw, 4.7rem);
+    font-weight: 700;
+    letter-spacing: -0.055em;
+    line-height: 0.96;
+    margin: 0.6rem 0 1.5rem;
+    max-width: 760px;
+}
+
+.home-hero-lead {
+    color: var(--testo);
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+    line-height: 1.75;
+    max-width: 680px;
+}
+
+.home-hero-actions,
+.home-birth-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.7rem;
+}
+
+.home-hero-note {
+    border-left: 3px solid var(--rosso-cuore);
+    color: var(--grigio);
+    font-size: 0.9rem;
+    margin-top: 1.2rem;
+    padding-left: 0.8rem;
+}
+
+.home-hero-media {
+    background: var(--verde-chiaro);
+    height: 560px;
+    overflow: hidden;
+    position: relative;
+}
+
+.home-hero-media::before {
+    border-left: 4px solid var(--rosso-cuore);
+    border-radius: 48%;
+    content: '';
+    height: 64%;
+    position: absolute;
+    right: -24px;
+    top: 15%;
+    transform: rotate(-7deg);
+    width: 90px;
+    z-index: 2;
+}
+
+.home-hero-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.home-hero-signature {
+    background: rgba(247, 245, 241, 0.94);
+    bottom: 1.25rem;
+    display: grid;
+    gap: 0.2rem;
+    left: 1.25rem;
+    max-width: calc(100% - 2.5rem);
+    padding: 1rem 1.1rem;
+    position: absolute;
+    z-index: 3;
+}
+
+.home-hero-signature span {
+    color: var(--rosso-cuore);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.home-hero-signature strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+}
+
+.home-trust {
+    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    border-top: 1px solid rgba(48, 68, 56, 0.16);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1180px;
+    padding: 0;
+}
+
+.home-trust div {
+    border-right: 1px solid rgba(48, 68, 56, 0.16);
+    padding: 1.5rem;
+}
+
+.home-trust div:last-child {
+    border-right: 0;
+}
+
+.home-trust strong,
+.home-trust span {
+    display: block;
+}
+
+.home-trust strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+}
+
+.home-trust span {
+    color: var(--grigio);
+    font-size: 0.84rem;
+    line-height: 1.4;
+    margin-top: 0.25rem;
+}
+
+.home-pillars,
+.home-dates,
+.home-birth,
+.home-method-proof,
+.home-instagram,
+.home-clinical-band,
+.home-final-cta {
+    max-width: 1180px;
+    padding: clamp(4rem, 7vw, 6.5rem) 2rem;
+}
+
+.home-pillar-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1.08fr 0.92fr;
+    margin-top: 2.7rem;
+}
+
+.home-pillar {
+    border: 1px solid rgba(48, 68, 56, 0.2);
+    display: grid;
+    grid-template-rows: 260px 1fr;
+    overflow: hidden;
+}
+
+.home-pillar-media {
+    overflow: hidden;
+}
+
+.home-pillar-media img {
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+    width: 100%;
+}
+
+.home-pillar-courses .home-pillar-media img {
+    object-position: center 72%;
+}
+
+.home-pillar:hover .home-pillar-media img {
+    transform: scale(1.025);
+}
+
+.home-pillar-copy {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.home-pillar-sleep {
+    background: var(--verde-brand);
+    color: var(--testo);
+}
+
+.home-pillar-sleep .home-pillar-copy p,
+.home-pillar-sleep li,
+.home-pillar-sleep .link-azione {
+    color: var(--testo);
+}
+
+.home-pillar h3 {
+    color: inherit;
+    font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+}
+
+.home-pillar-label {
+    color: var(--rosso-cuore) !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+}
+
+.home-pillar-sleep .home-pillar-label,
+.home-birth .eyebrow {
+    color: var(--verde-scuro) !important;
+}
+
+.home-service-list,
+.home-proof-list {
+    list-style: none;
+    margin: 0.4rem 0 1.2rem;
+}
+
+.home-service-list li,
+.home-proof-list li {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    padding: 0.7rem 0;
+}
+
+.home-pillar-sleep .home-proof-list li {
+    border-color: rgba(48, 68, 56, 0.18);
+}
+
+.home-service-list a:hover {
+    color: var(--rosso-cuore);
+}
+
+.home-pillar .link-azione {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.home-dates {
+    align-items: start;
+    border-top: 1px solid rgba(48, 68, 56, 0.14);
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: 0.72fr 1.28fr;
+}
+
+.home-dates-copy {
+    position: sticky;
+    top: 112px;
+}
+
+.home-dates-copy h2,
+.home-birth h2,
+.home-method h2,
+.home-testimonials h2,
+.home-clinical-band h2,
+.home-final-cta h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.5vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.home-dates-copy > p:not(.eyebrow) {
+    line-height: 1.75;
+    margin: 1rem 0 1.5rem;
+}
+
+.home-dates .calendario-wrapper {
+    margin: 0;
+    width: 100%;
+}
+
+.home-birth {
+    background: var(--verde-brand);
+    color: var(--testo);
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: 1fr 0.86fr;
+    max-width: 100%;
+    padding-left: max(2rem, calc((100% - 1180px) / 2));
+    padding-right: max(2rem, calc((100% - 1180px) / 2));
+}
+
+.home-birth h2,
+.home-birth p {
+    color: var(--testo);
+}
+
+.home-birth-copy > p:not(.eyebrow) {
+    color: var(--grigio);
+    font-size: 1.04rem;
+    line-height: 1.75;
+    margin-top: 1.2rem;
+}
+
+.home-birth-actions .btn {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+.home-birth-actions span {
+    color: var(--grigio);
+    font-size: 0.85rem;
+    max-width: 220px;
+}
+
+.home-professionals div {
+    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 8rem 1fr;
+    padding: 1rem 0;
+}
+
+.home-professionals strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+}
+
+.home-professionals span {
+    color: var(--grigio);
+    font-size: 0.9rem;
+}
+
+.home-method-proof {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: 1fr 0.92fr;
+}
+
+.home-testimonials {
+    border-left: 4px solid var(--rosso-cuore);
+    padding-left: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.home-testimonials figure {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    margin-top: 1.4rem;
+    padding-top: 1.4rem;
+}
+
+.home-testimonials blockquote {
+    color: var(--testo);
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    line-height: 1.45;
+}
+
+.home-testimonials figcaption {
+    color: var(--grigio);
+    font-size: 0.76rem;
+    margin-top: 0.7rem;
+}
+
+.home-instagram {
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+}
+
+.home-instagram-header {
+    align-items: end;
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: 1.15fr 0.85fr;
+    margin-bottom: 2.5rem;
+}
+
+.home-instagram h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.5vw, 3.2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}
+
+.home-instagram-copy {
+    border-left: 3px solid var(--rosso-cuore);
+    padding-left: 1.4rem;
+}
+
+.home-instagram-copy p {
+    line-height: 1.7;
+}
+
+.home-instagram-copy .link-azione {
+    display: inline-flex;
+    margin-top: 0.8rem;
+}
+
+.home-instagram-feed {
+    background: var(--verde-chiaro);
+    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    border-top: 1px solid rgba(48, 68, 56, 0.16);
+    overflow: hidden;
+    padding: clamp(0.6rem, 1.5vw, 1rem);
+}
+
+.home-instagram-feed behold-widget {
+    display: block;
+}
+
+.home-clinical-band {
+    align-items: center;
+    border-bottom: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    display: flex;
+    gap: 2rem;
+    justify-content: space-between;
+    padding-bottom: 2.5rem;
+    padding-top: 2.5rem;
+}
+
+.home-clinical-band h2 {
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+}
+
+.home-clinical-band p:not(.eyebrow) {
+    margin-top: 0.65rem;
+    max-width: 720px;
+}
+
+.home-final-cta {
+    text-align: center;
+}
+
+.home-final-cta h2 {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 850px;
+}
+
+.home-final-cta .home-hero-actions {
+    justify-content: center;
+}
+
+@media (max-width: 900px) {
+.home-hero,
+.home-pillar-grid,
+.home-dates,
+.home-birth,
+.home-method-proof {
+        grid-template-columns: 1fr;
+    }
+.home-hero {
+        min-height: 0;
+    }
+.home-hero-media {
+        height: 460px;
+    }
+.home-trust {
+        grid-template-columns: repeat(2, 1fr);
+    }
+.home-trust div:nth-child(2) {
+        border-right: 0;
+    }
+.home-trust div:nth-child(-n+2) {
+        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    }
+.home-dates-copy {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+body.page-homepage {
+        padding-bottom: 0;
+    }
+.home-trust {
+        grid-template-columns: 1fr;
+    }
+.home-trust div,
+.home-trust div:nth-child(2) {
+        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+        border-right: 0;
+    }
+.home-trust div:last-child {
+        border-bottom: 0;
+    }
+.home-hero,
+.home-pillars,
+.home-dates,
+.home-method-proof,
+.home-instagram,
+.home-clinical-band,
+.home-final-cta {
+        padding: 3.4rem 1.15rem;
+    }
+.home-hero-copy h1 {
+        font-size: clamp(2.85rem, 12.5vw, 3.25rem);
+    }
+.home-hero-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+.home-hero-actions .btn {
+        width: 100%;
+    }
+.home-hero-media {
+        height: 360px;
+    }
+.home-pillar {
+        grid-template-rows: 210px 1fr;
+    }
+.home-instagram-header {
+        align-items: start;
+        grid-template-columns: 1fr;
+        margin-bottom: 2rem;
+    }
+.home-instagram-feed {
+        margin-left: -0.4rem;
+        margin-right: -0.4rem;
+        padding: 0.4rem;
+    }
+.home-birth {
+        padding: 3.5rem 1.15rem;
+    }
+.home-professionals div {
+        gap: 0.35rem;
+        grid-template-columns: 1fr;
+    }
+.home-clinical-band {
+        align-items: stretch;
+        flex-direction: column;
+    }
+.home-clinical-band .btn {
+        width: 100%;
+    }
+.thread-steps {
+        padding-left: 3rem;
+    }
+.thread-steps span {
+        left: -3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.home-pillar-media img {
+        transition: none;
+    }
+}

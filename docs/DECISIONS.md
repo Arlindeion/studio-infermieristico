@@ -104,7 +104,16 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Decisione: gradienti e ombre sono ammessi quando sostengono gerarchia, profondità o leggibilità e restano coerenti con palette e componenti esistenti.
 - Motivo: un divieto generale non rispecchiava più il linguaggio visivo effettivo della homepage e delle pagine commerciali.
 - Conseguenze: la manutenzione CSS elimina effetti soltanto insieme a componenti non più usati; nuovi effetti vanno comunque verificati rispetto ai token e agli stili equivalenti già presenti.
-- Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `static/css/stile.css`.
+- Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `static/css/`.
+
+## D-017 — CSS modulare per responsabilità
+
+- Data: 2026-07-15.
+- Stato: approvata.
+- Decisione: sostituire il foglio monolitico con moduli distinti per token, fondamenta, componenti condivisi, homepage, consulenza del sonno e amministrazione.
+- Motivo: rendere esplicito l'ambito di ogni regola e ridurre il rischio di sovrapposizioni durante le modifiche future.
+- Conseguenze: `base.html` carica sempre token, base e componenti; i moduli della homepage, della consulenza e dell'amministrazione vengono caricati soltanto dagli endpoint pertinenti. Gli adattamenti responsive restano vicini al relativo ambito e non si aggiungono sezioni versionate in coda ai file.
+- Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `templates/base.html`, `static/css/`.
 
 ## Modello per nuove decisioni
 
