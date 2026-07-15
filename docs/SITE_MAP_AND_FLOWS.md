@@ -1,0 +1,178 @@
+# Mappa del sito e flussi
+
+Ultimo aggiornamento: 13 luglio 2026.
+
+## Principio di architettura
+
+Il sito è una vetrina autorevole con un retrobottega gestionale leggero. I percorsi non devono convergere tutti su WhatsApp o su un'unica prenotazione generica.
+
+Le priorità commerciali sono:
+
+1. corsi in presenza;
+2. consulenza del sonno;
+3. prestazioni infermieristiche, sempre accessibili ma secondarie nella gerarchia promozionale.
+
+## Pagine pubbliche principali
+
+| Route | Scopo | Azione principale |
+|---|---|---|
+| `/` | Presentare Selene, prova di fiducia e due pilastri | Scoprire i corsi o richiedere la call sonno |
+| `/chi-sono` | Credenziali, metodo e volto umano | Approfondire il servizio pertinente |
+| `/iscrizione-corsi` | Elenco delle tipologie di corso | Scegliere un corso |
+| `/iscrizione-corsi/<corso_tipo>` | Data disponibile o raccolta interesse | Inviare la richiesta di iscrizione |
+| `/prima-della-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
+| `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
+| `/dopo-la-nascita` | Orientare verso attività e supporto dopo la nascita | Scegliere corso, laboratorio o consulenza pertinente |
+| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Richiedere la call gratuita |
+| `/prestazioni-infermieristiche` | Spiegare le prestazioni in studio | Accedere alla prenotazione sanitaria |
+| `/prenota` | Prenotare una prestazione sanitaria | Inviare una richiesta di appuntamento |
+| `/faq` | Rimuovere dubbi senza moltiplicare CTA | Proseguire nel flusso appropriato |
+| `/privacy` | Informativa sul trattamento dei dati | Nessuna CTA commerciale |
+
+Le pagine di conferma devono spiegare cosa è stato registrato e cosa succede dopo, senza far credere che una richiesta sia già confermata quando richiede verifica manuale.
+
+## Gerarchia della homepage
+
+Ordine da mantenere salvo decisione esplicita:
+
+1. Hero con Selene, una promessa e massimo due CTA: `Scopri i corsi` e `Richiedi la call gratuita`.
+2. Prova di fiducia: ruolo sanitario, OPI, attività reali.
+3. Due pilastri: corsi in presenza e consulenza del sonno.
+4. Prossime date disponibili.
+5. Corso di accompagnamento alla nascita con cinque professionisti.
+6. Metodo di Selene.
+7. Testimonianze reali autorizzate.
+8. Prestazioni infermieristiche in fascia secondaria.
+9. CTA finale coerente con i due pilastri.
+
+La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel hero e nella sezione immediatamente successiva.
+
+## Flusso corsi individuali
+
+```text
+Homepage/pagina corsi
+  → scelta tipologia
+  → data disponibile
+  → modulo di iscrizione
+  → richiesta salvata
+  → conferma o ricontatto manuale
+```
+
+- L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
+- Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto.
+- Se il corso è pieno, proporre una data successiva; se non esiste, raccogliere preferenze indicative e creare un ricontatto.
+- Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
+
+## Flusso corso di accompagnamento alla nascita
+
+Il percorso ha due livelli distinti.
+
+### Open day pubblico
+
+```text
+Pagina prima della nascita
+  → data open day
+  → modulo pubblico
+  → richiesta salvata
+  → incontro conoscitivo
+```
+
+L'open day serve sia alla famiglia per conoscere i professionisti sia al gruppo di lavoro per conoscere la famiglia.
+
+### Percorso completo privato
+
+```text
+Link privato generico
+  → edizione del percorso
+  → calendario di 9 incontri
+  → modulo essenziale
+  → iscrizione salvata come Confermato
+```
+
+- Il link non compare nella navigazione e non deve essere indicizzato.
+- Se viene inoltrato, l'iscrizione resta accettabile.
+- Raccogliere solo i dati necessari, inclusa la data presunta del parto; non acquisire altri dati sanitari senza necessità esplicita.
+- In admin l'edizione gestisce coppie, incontri, professionisti, presenze ed export PDF.
+
+## Flusso consulenza del sonno
+
+```text
+Homepage/campagna/condivisione
+  → landing sonno 0-12 mesi
+  → call conoscitiva gratuita di circa 15 minuti
+  → verifica di appropriatezza
+  → consulenza mirata oppure percorso personalizzato
+```
+
+- La landing deve essere verticale sul sonno e pronta per traffico freddo nazionale.
+- Deve chiarire problemi osservabili, differenze indicative tra 0-4 e 5-12 mesi, metodo, formule, confini clinici, FAQ e passo successivo.
+- `Consulenza mirata`: una difficoltà circoscritta.
+- `Percorso sonno personalizzato`: offerta principale quando più aspetti si influenzano.
+- Il pagamento, quando verrà introdotto, avviene dopo la call gratuita.
+- Nella fase pilota il flusso può terminare su WhatsApp o telefono; in futuro avrà prenotazione dedicata.
+- La consulenza non formula diagnosi, non prescrive terapie e non sostituisce il pediatra.
+
+## Flusso prestazioni sanitarie
+
+```text
+Pagina prestazioni
+  → `/prenota`
+  → scelta servizio/data/orario
+  → richiesta salvata come In attesa
+  → conferma manuale
+  → sincronizzazione Calendar ed email
+```
+
+- Le prestazioni sanitarie non condividono il form con corsi o consulenze.
+- Gli appuntamenti a domicilio non sono prenotabili direttamente: richiedono contatto e valutazione di zona e fattibilità.
+- La modifica di un appuntamento deve riportarlo a `In attesa` e notificare lo studio.
+- Regola desiderata per modifica/annullamento: fino a 24 ore prima da martedì a sabato; per il lunedì entro il sabato precedente alle 12:00.
+
+## Flusso aziende e gruppi
+
+```text
+Pagina corso/richiesta diretta
+  → contatto con contesto aziendale
+  → valutazione sede, partecipanti e data
+  → proposta manuale
+```
+
+Le aziende non devono utilizzare il form individuale. CTA consigliata: `Richiedi il corso in studio o in azienda`.
+
+## Uso di WhatsApp
+
+WhatsApp è appropriato per:
+
+- call sonno nella fase pilota;
+- genitori indecisi;
+- aziende e gruppi;
+- persone che non trovano una data adatta.
+
+Non deve diventare un widget indistinto o sostituire un modulo specifico già disponibile.
+
+## SEO e autorevolezza
+
+- Un solo `h1` descrittivo per pagina.
+- Titolo, meta description, canonical e Open Graph specifici.
+- Dati strutturati `MedicalBusiness` per la sede e `Service` per il sonno.
+- Ruolo di Selene, iscrizione OPI Pescara, sede e contatti visibili.
+- Fonti affidabili quando vengono fatte affermazioni cliniche o di sicurezza.
+- Il titolo breve della homepage nella scheda browser è `S.C. Studio Infermieristico`.
+
+## Misurazione delle conversioni
+
+Le CTA principali devono avere `data-conversion`. Distinguere almeno:
+
+- corsi;
+- call sonno;
+- prestazioni;
+- aziende/gruppi.
+
+`static/js/conversion-tracking.js` invia eventi solo dopo il consenso e quando GA4 è disponibile. Prima di una campagna verificare la coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto.
+
+## Evoluzioni previste
+
+- Quiz guidato `Da dove parto?` per chi non sa quale servizio scegliere.
+- Prenotazione e pagamento dedicati alle consulenze.
+- Landing verticali per campagne specifiche: sonno/primi mesi, disostruzione, open day nascita.
+- Pagamento online soltanto quando policy, stati, email, capienza e calendario sono stabili.
