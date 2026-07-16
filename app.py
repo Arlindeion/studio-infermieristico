@@ -185,6 +185,10 @@ CORSI_ISCRIVIBILI = {
     },
 }
 
+STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20Carmine%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
+STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20Carmine%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
+
+
 FAQ_ITEMS = [
     {
         'id': 'corsi-disponibili',
@@ -295,7 +299,7 @@ FAQ_ITEMS = [
         'id': 'dove-si-trova-studio',
         'question': 'Dove si trova S.C. Studio Infermieristico e come posso contattarlo?',
         'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattare lo studio al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
-        'map_embed_src': "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed",
+        'map_embed_src': STUDIO_MAP_EMBED_SRC,
         'link_href': 'https://wa.me/393806317175',
         'link_text': 'Contatta lo studio',
         'link_external': True,
@@ -1388,7 +1392,11 @@ def faq():
 
 @app.route('/prestazioni-infermieristiche')
 def prestazioni():
-    return render_template('prestazioni_infermieristiche.html')
+    return render_template(
+        'prestazioni_infermieristiche.html',
+        studio_map_embed_src=STUDIO_MAP_EMBED_SRC,
+        studio_map_link=STUDIO_MAP_LINK,
+    )
 
 
 @app.route('/prima-della-nascita')

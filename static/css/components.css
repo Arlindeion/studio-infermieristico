@@ -234,6 +234,52 @@ section[id] {
 .nota-lg { margin-top: 1.5rem; font-size: 0.9rem; color: var(--grigio); }
 .text-muted { color: var(--grigio); font-size: 0.85rem; }
 
+.studio-location {
+    margin-top: 2.5rem;
+}
+
+.studio-location__header {
+    align-items: flex-end;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    margin-bottom: 1.1rem;
+}
+
+.studio-location h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.studio-location address {
+    color: var(--grigio);
+    font-style: normal;
+    line-height: 1.5;
+}
+
+.studio-location__header .link-azione {
+    align-items: center;
+    display: inline-flex;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+.studio-location__map {
+    background: var(--verde-chiaro);
+    border: 1px solid var(--salvia-bordo-a22);
+    border-radius: 12px;
+    box-shadow: var(--ombra-card);
+    height: clamp(280px, 38vw, 360px);
+    overflow: hidden;
+}
+
+.studio-location__map iframe {
+    border: 0;
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
 /* ─── CHI SIAMO ─── */
 .chi-siamo-contenuto { display: flex; gap: 3rem; align-items: flex-start; margin-bottom: 3rem; }
 .profilo { text-align: center; flex-shrink: 0; }
@@ -1130,6 +1176,14 @@ section { padding: 2.5rem 1rem; }
     display: none;
 }
 @media (max-width: 640px) {
+.studio-location__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+.studio-location__map {
+        height: 300px;
+    }
 .sticky-prenota {
         display: block;
         position: fixed;

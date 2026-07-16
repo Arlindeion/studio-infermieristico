@@ -78,6 +78,26 @@
         <p class="nota">Per ulteriori informazioni, durante gli orari dello studio puoi contattare il numero: <strong>3806317175</strong></p>
     </div>
 
+    <div class="studio-location" aria-labelledby="studio-location-title">
+        <div class="studio-location__header">
+            <div>
+                <p class="eyebrow">Lo studio</p>
+                <h2 id="studio-location-title">Dove ci troviamo</h2>
+                <address>Via Carmine D'Agnese 43, 65015 Montesilvano (PE)</address>
+            </div>
+            <a href="{{ studio_map_link }}" class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="prestazioni_mappa">Apri in Google Maps</a>
+        </div>
+        <div class="studio-location__map">
+            <iframe
+                src="{{ studio_map_embed_src }}"
+                title="Mappa di S.C. Studio Infermieristico in Via Carmine D'Agnese 43 a Montesilvano"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+
 </section>
 
 {% endblock %}
