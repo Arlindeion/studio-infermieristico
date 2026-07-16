@@ -932,138 +932,6 @@ footer p {
     height: 70px;
 }
 
-.logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    text-decoration: none;
-}
-
-.logo-testo {
-    color: var(--verde-scuro);
-    font-size: 1.05rem;
-    font-weight: 600;
-    font-family: var(--font-display);
-    letter-spacing: 0.02em;
-    line-height: 1.3;
-}
-
-/* ─── HAMBURGER ─── */
-.hamburger {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    margin-right: 1rem;
-}
-
-.hamburger span {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background: var(--verde-scuro);
-    border-radius: 2px;
-    transition: transform 0.3s, opacity 0.3s;
-}
-
-.hamburger.aperto span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger.aperto span:nth-child(2) { opacity: 0; }
-.hamburger.aperto span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-/* ─── MENU MOBILE ─── */
-.nav-mobile {
-    display: none;
-    flex-direction: column;
-    background: var(--verde-brand);
-    position: sticky;
-    top: 0;
-    z-index: 99;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.35s ease, padding 0.35s ease;
-}
-
-.nav-mobile.aperto {
-    max-height: 760px;
-    padding: 0.5rem 0 1rem;
-}
-
-.nav-mobile.aperto ~ .whatsapp-widget,
-.nav-mobile.aperto ~ .sticky-prenota {
-    display: none;
-}
-
-.nav-mobile a,
-.nav-mobile-label {
-    color: var(--verde-scuro);
-    font-size: 0.95rem;
-    font-weight: 500;
-    padding: 0.75rem 1.5rem;
-    border-bottom: 0.5px solid var(--verde-scuro-a14);
-    transition: background 0.2s;
-}
-
-.nav-mobile-label {
-    color: var(--verde-scuro-a72);
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    padding-bottom: 0.35rem;
-    padding-top: 1rem;
-    text-transform: uppercase;
-}
-
-.nav-mobile a:hover { background: var(--verde-scuro-a08); }
-
-.nav-mobile-home {
-    align-items: center;
-    display: flex;
-    gap: 0.55rem;
-}
-
-.nav-mobile-home svg {
-    fill: none;
-    height: 20px;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.85;
-    width: 20px;
-}
-
-.nav-mobile-prenota {
-    margin: 0.75rem 1.5rem 0;
-    background: white;
-    color: var(--verde-header) !important;
-    border-radius: 25px !important;
-    text-align: center;
-    font-weight: 700 !important;
-    border-bottom: none !important;
-    padding: 0.6rem 1.5rem !important;
-}
-
-.nav-mobile-prenota:hover {
-    background: var(--rosa-chiaro) !important;
-    color: var(--verde-header-profondo) !important;
-}
-@media (max-width: 1180px) {
-.nav-desktop {
-        display: none;
-    }
-.hamburger {
-        display: flex;
-    }
-.nav-mobile {
-        display: flex;
-    }
-.logo-testo {
-        font-size: 0.9rem;
-    }
-}
-
 @media (max-width: 900px) {
 .chi-siamo-contenuto { flex-direction: column; align-items: center; }
 .proof-grid,
@@ -1092,11 +960,6 @@ footer p {
 }
 
 @media (max-width: 640px) {
-body > header {
-        padding: 0.4rem 1rem;
-        flex-wrap: nowrap;
-        justify-content: space-between;
-    }
 .pagina-interna h2 { font-size: 1.5rem; }
 .pagina-interna h1 { font-size: 1.85rem; }
 .cta h2 { font-size: 1.5rem; }
@@ -1173,8 +1036,6 @@ body > header {
         margin-right: -1rem;
     }
 .cta p { font-size: 1rem; }
-.logo-testo { display: none; }
-body > header img { height: 60px !important; }
 .form-riga { flex-direction: column; gap: 0; }
 .pagina-interna { padding: 2rem 1rem; }
 .faq-list {
@@ -1227,20 +1088,10 @@ section { padding: 2.5rem 1rem; }
         align-items: center;
         justify-content: center;
     }
-.btn-prenota {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-    }
 .cal-cella {
         min-height: clamp(36px, 10vw, 44px);
         min-width: 0;
         font-size: 0.95rem;
-    }
-nav a {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
     }
 }
 
@@ -1287,11 +1138,6 @@ body.page-prenota {
 
 
 /* Logo image and privacy link styles */
-.logo-img {
-    filter: brightness(0) saturate(100%) invert(23%) sepia(13%) saturate(830%) hue-rotate(94deg) brightness(91%) contrast(88%);
-    height: 66px;
-    width: auto;
-}
 footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 .logo-login { height: 120px; width: auto; }
 

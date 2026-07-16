@@ -1,6 +1,6 @@
 # Roadmap
 
-Stato aggiornato al 13 luglio 2026. Obiettivo indicativo: lancio grafico all'inizio di settembre 2026, non ancora annunciato e quindi modificabile.
+Stato aggiornato al 16 luglio 2026. Obiettivo indicativo: lancio grafico all'inizio di settembre 2026, non ancora annunciato e quindi modificabile.
 
 ## Criterio di priorità
 
@@ -11,7 +11,7 @@ Stato aggiornato al 13 luglio 2026. Obiettivo indicativo: lancio grafico all'ini
 ## Completato o già implementato
 
 - Identità principale definita: salvia dello studio, tipografia, linea rossa e fotografia reale.
-- Header salvia con testo scuro e footer verde profondo.
+- Header salvia responsive con testo scuro, gerarchia corsi/sonno verificata e footer verde profondo.
 - Homepage riorganizzata intorno a corsi e consulenza del sonno.
 - Landing verticale sul sonno infantile 0-12 mesi con call gratuita e due formule.
 - Prestazioni infermieristiche mantenute in un flusso separato.

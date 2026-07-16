@@ -124,6 +124,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: i moduli applicativi non contengono valori `rgba()` letterali; un test automatico impedisce di reintrodurli e verifica che ogni token alpha utilizzato sia definito.
 - Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `static/css/tokens.css`, `tests/test_app.py`.
 
+## D-019 — Header orientato ai due percorsi principali
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: mantenere l'header salvia con naming e navigazione scuri e rendere immediatamente distinguibili `Corsi` come percorso prioritario in studio e `Consulenza sonno` come percorso online 0–12 mesi. Il simbolo anatomico usa il tratto bianco solo dentro un campo verde profondo compatto, mai direttamente sul salvia. `Corsi` usa un piccolo pannello funzionale verde azione con testo bianco, mentre il sonno resta su salvia chiaro con testo scuro. La casetta con il cuore mantiene l'accesso esplicito alla homepage. La linea rossa funziona come indicatore della sezione attiva e dell'elemento esplorato; su mobile i due percorsi aprono il pannello di navigazione prima dei collegamenti secondari.
+- Motivo: rendere la gerarchia commerciale leggibile senza trasformare la navigazione in un catalogo e usare la firma del filo rosso come feedback funzionale, non ornamentale.
+- Conseguenze: l'header è condiviso da tutte le pagine pubbliche, le prestazioni restano visibili ma secondarie e il menu corsi raccoglie i soli accessi principali senza modificare i flussi di iscrizione. Apertura, chiusura, focus, tastiera e movimento ridotto sono gestiti in `menu-mobile.js`.
+- Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/base.html`, `static/css/base.css`, `static/js/menu-mobile.js`.
+
 ## Modello per nuove decisioni
 
 ```markdown

@@ -134,7 +134,10 @@ def test_holiday_flow(client):
     resp = client.get('/')
     assert resp.status_code == 200
     assert b'S.C. Studio Infermieristico' in resp.data  # adeguare in base al contenuto effettivo
-    assert 'href="/faq">FAQ</a>' in resp.text
+    assert 'data-site-header' in resp.text
+    assert 'aria-label="Navigazione principale"' in resp.text
+    assert 'aria-label="Torna alla homepage"' in resp.text
+    assert 'href="/faq"' in resp.text
 
 
 def test_css_core_e_modulo_homepage(client):

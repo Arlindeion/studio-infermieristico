@@ -73,11 +73,11 @@ Prima di pubblicare immagini con partecipanti, soprattutto minori, verificare il
 - Titolo breve della scheda browser in homepage: `S.C. Studio Infermieristico`.
 - Nei contenuti per genitori parlare in prima persona quando è Selene a offrire il supporto.
 
-Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia usare la variante che resta leggibile con navigazione scura; nel footer profondo usare la variante chiara.
+Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia il simbolo anatomico può usare il tratto bianco solo dentro un campo verde profondo compatto; non va usato bianco direttamente sul salvia. Il naming resta coerente con la navigazione scura; nel footer profondo usare la variante chiara.
 
 ## Header e footer
 
-- Header: fondo salvia identitario, logo e testi verde scuro.
+- Header: fondo salvia identitario, simbolo bianco in un campo verde profondo compatto, naming e testi verde scuro.
 - Footer: verde profondo e testo chiaro.
 - Le prestazioni infermieristiche restano nella navigazione, ma non diventano il pulsante dominante.
 - La navigazione deve mantenere chiari i due pilastri: corsi e consulenza del sonno.

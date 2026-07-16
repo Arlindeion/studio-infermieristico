@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 16 luglio 2026.
 
 ## Scopo
 
@@ -42,6 +42,13 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - `Richiedi il corso in studio o in azienda`
 
 Usare `Scrivimi` solo quando non esiste un'azione più specifica. WhatsApp non deve sostituire automaticamente moduli e flussi dedicati.
+
+## Microtesti dell'header
+
+- I due accessi principali sono `In studio · Corsi` e `Online · 0–12 mesi · Consulenza sonno`.
+- Il pannello corsi introduce l'offerta con `Imparare insieme, provare davvero.` e rimanda alla panoramica con `Scopri tutti i corsi`.
+- Il menu mobile si apre con `Da dove vuoi partire?` e `Scegli il percorso più vicino a ciò che serve oggi.`.
+- `Prestazioni infermieristiche`, `Chi sono` e `Domande frequenti` restano collegamenti secondari, sempre accessibili.
 
 ## Testimonianze
 
