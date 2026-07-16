@@ -17,7 +17,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti.
 - Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
-- Prestazioni infermieristiche: la sezione `Dove ci troviamo` indica Via Carmine D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps.
+- Prestazioni infermieristiche: la sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
 
 ## Naming approvato
 

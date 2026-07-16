@@ -185,8 +185,8 @@ CORSI_ISCRIVIBILI = {
     },
 }
 
-STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20Carmine%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
-STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20Carmine%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
+STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
+STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
 
 
 FAQ_ITEMS = [

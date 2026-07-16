@@ -1360,7 +1360,8 @@ def test_pagina_prestazioni_usa_h1(client):
     assert 'Per ulteriori informazioni, durante gli orari dello studio' in resp.text
     assert 'urgenze fuori orario' not in resp.text
     assert '<h2 id="studio-location-title">Dove ci troviamo</h2>' in resp.text
-    assert "Via Carmine D'Agnese 43, 65015 Montesilvano (PE)" in resp.text
+    assert "Via C. D'Agnese 43, 65015 Montesilvano (PE)" in resp.text
+    assert 'Via Carmine' not in resp.text
     assert 'data-conversion="prestazioni_mappa"' in resp.text
     assert 'https://www.google.com/maps?q=' in resp.text
     assert 'loading="lazy"' in resp.text
