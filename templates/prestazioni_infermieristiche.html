@@ -7,6 +7,11 @@
     <h1>Prestazioni infermieristiche</h1>
     <p class="sottotitolo">Tutti i servizi sono eseguiti da personale infermieristico qualificato e abilitato.</p>
 
+    <div class="prestazioni-actions" aria-label="Prenotazione prestazioni infermieristiche">
+        <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota">Prenota una prestazione</a>
+        <p>Scegli servizio, data e orario: lo studio verificherà la richiesta e ti invierà la conferma.</p>
+    </div>
+
     <div class="pagina-hero-img">
         <img src="{{ url_for('static', filename='img/selene-prestazioni.jpg') }}" alt="Prestazioni infermieristiche in studio">
     </div>
@@ -70,7 +75,7 @@
             <tr><td>Sabato</td><td>08:00 — 12:00</td></tr>
             <tr><td>Domenica</td><td>Chiuso</td></tr>
         </table>
-        <p class="nota">Per urgenze fuori orario contattare il numero: <strong>3806317175</strong></p>
+        <p class="nota">Per ulteriori informazioni, durante gli orari dello studio puoi contattare il numero: <strong>3806317175</strong></p>
     </div>
 
 </section>

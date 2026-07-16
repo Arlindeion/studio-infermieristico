@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 import pytest
@@ -138,6 +139,56 @@ def test_holiday_flow(client):
     assert 'aria-label="Navigazione principale"' in resp.text
     assert 'aria-label="Torna alla homepage"' in resp.text
     assert 'href="/faq"' in resp.text
+    assert 'aria-label="Prestazioni infermieristiche"' in resp.text
+
+
+def test_header_elenca_tutte_le_tipologie_di_corso(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert resp.text.count('href="/iscrizione-corsi/laboratorio-infanzia"') == 3
+    assert 'Laboratori, gioco e sviluppo' in resp.text
+    assert 'Laboratori alimentari, gioco e sviluppo' in resp.text
+
+
+def test_comportamento_javascript_header():
+    project_root = Path(app_module.__file__).resolve().parent
+    test_file = project_root / 'tests' / 'js' / 'menu-mobile.test.js'
+    result = subprocess.run(
+        ['node', '--test', str(test_file)],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize('route', ['/', '/chi-sono', '/faq', '/iscrizione-corsi'])
+def test_widget_whatsapp_presente_solo_nelle_pagine_di_orientamento(client, route):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert 'class="whatsapp-widget"' in resp.text
+    assert 'data-conversion="whatsapp_floating_' in resp.text
+
+
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/consulenze-online',
+        '/prestazioni-infermieristiche',
+        '/prenota',
+        '/iscrizione-corsi/disostruzione-pediatrica',
+        '/admin/login',
+    ],
+)
+def test_widget_whatsapp_assente_dai_flussi_specifici(client, route):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert 'class="whatsapp-widget"' not in resp.text
 
 
 def test_css_core_e_modulo_homepage(client):
@@ -1303,6 +1354,11 @@ def test_pagina_prestazioni_usa_h1(client):
 
     assert resp.status_code == 200
     assert '<h1>Prestazioni infermieristiche</h1>' in resp.text
+    assert 'href="/prenota"' in resp.text
+    assert 'Prenota una prestazione' in resp.text
+    assert 'data-conversion="prestazioni_prenota"' in resp.text
+    assert 'Per ulteriori informazioni, durante gli orari dello studio' in resp.text
+    assert 'urgenze fuori orario' not in resp.text
 
 
 if __name__ == '__main__':

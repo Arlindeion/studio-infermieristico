@@ -201,6 +201,14 @@ p {
     white-space: nowrap;
 }
 
+.site-nav__link--secondary {
+    align-content: center;
+    display: grid;
+    line-height: 1.08;
+    text-align: left;
+    white-space: normal;
+}
+
 .site-nav__link.is-current {
     color: var(--verde-scuro);
 }
@@ -759,7 +767,7 @@ button.site-nav__pillar {
     }
 
     .mobile-courses__links.is-open {
-        max-height: 190px;
+        max-height: 240px;
     }
 
     .mobile-courses__links a {

@@ -13,6 +13,7 @@ Il contesto dell'attività, l'identità e le priorità non sono duplicati in que
 - APScheduler e integrazione Google Calendar
 - Jinja2, CSS e JavaScript vanilla
 - pytest
+- Node.js, usato solo dal test comportamentale del menu senza dipendenze npm
 
 ## Avvio locale
 
