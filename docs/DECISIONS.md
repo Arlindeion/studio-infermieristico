@@ -78,7 +78,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 
 ## D-013 — Settembre come obiettivo flessibile
 
-- Stato: approvata.
+- Stato: sostituita da D-025.
 - Decisione: puntare all'inizio di settembre 2026 senza trattarlo come scadenza pubblica rigida.
 - Motivo: permettere un lancio grafico coerente anche se alcuni automatismi inizialmente rimandano al contatto diretto.
 
@@ -177,6 +177,24 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: aumentare riconoscibilità, profondità e qualità percepita senza trasformare la homepage in un catalogo di componenti ripetuti.
 - Conseguenze: il corso di accompagnamento alla nascita usa una grande scheda verde chiaro separata dall'header salvia e un pannello carta autonomo per i cinque professionisti; metodo e testimonianze distinguono sequenza e prova sociale; calendario, Instagram e CTA finali condividono geometrie e bordi senza manipolare il rendering interno dei servizi esterni. La linea rossa segnala priorità o relazione soltanto nei punti funzionali.
 - Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `templates/homepage.html`, `static/css/homepage.css`.
+
+## D-025 — Gate interno del 15 settembre
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: considerare riuscito il lancio al 15 settembre 2026 soltanto in presenza di due risultati congiunti: sito tecnicamente pronto e sicuro e prima campagna pubblicitaria online/social pronta a partire con la nuova identità grafica.
+- Motivo: collegare il lavoro di prodotto alla capacità reale di iniziare l'acquisizione, senza ridurre il lancio a un restyling.
+- Conseguenze: il 15 settembre è un checkpoint interno, non una scadenza pubblica; sicurezza, privacy, affidabilità dei dati e collaudo dei flussi restano condizioni non rinviabili; `ROADMAP.md` separa i criteri tecnici e commerciali del gate.
+- Collegamenti: `PROJECT_BRIEF.md`, `ROADMAP.md`, `OPERATIONS.md`.
+
+## D-026 — Test di tre mesi per la consulenza del sonno
+
+- Data: 2026-07-16.
+- Stato: approvata per la fase di validazione.
+- Decisione: promuovere per tre mesi la consulenza del sonno 0-12 mesi attraverso annunci e contenuti social che portano alla scelta diretta dello slot. Il servizio resta nazionale; Abruzzo e regioni confinanti possono essere un limite tattico iniziale della distribuzione pubblicitaria soltanto per controllare la spesa. WhatsApp resta secondario per chi è indeciso.
+- Motivo: raccogliere evidenze sull'intera fascia coperta dalla formazione di Selene, ridurre l'attrito tra annuncio e call e costruire prove specifiche per un servizio che non dispone ancora di testimonianze proprie.
+- Conseguenze: l'obiettivo interno è arrivare ad almeno tre testimonianze reali, autorizzate e pubblicabili al mese sulla consulenza del sonno; non si promettono risultati e non si usano testimonianze di altri servizi. Il funnel misura almeno slot prenotato, call confermata, call svolta, formula scelta e consenso alla testimonianza. Budget, costo massimo per contatto e tono creativo/video restano da definire sui dati del test.
+- Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `locandine.md`.
 
 ## Modello per nuove decisioni
 

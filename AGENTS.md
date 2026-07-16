@@ -44,7 +44,7 @@ Gerarchia commerciale:
 2. consulenza del sonno 0-12 mesi, da validare e lanciare a livello nazionale;
 3. prestazioni infermieristiche, sempre accessibili e prenotabili ma visivamente secondarie.
 
-Non trasformare la homepage in un catalogo e non lasciare che un solo servizio oscuri gli altri due livelli. Il lancio grafico è previsto idealmente per l'inizio di settembre 2026, ma non è una scadenza pubblica rigida. Consultare brief e roadmap prima di ampliare l'ambito.
+Non trasformare la homepage in un catalogo e non lasciare che un solo servizio oscuri gli altri due livelli. Il checkpoint interno è il 15 settembre 2026: il sito deve essere tecnicamente pronto e sicuro e deve esistere una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica e non giustifica il rinvio delle attività P0. Consultare brief e roadmap prima di ampliare l'ambito.
 
 ## Design e UX
 
@@ -82,10 +82,12 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - Nessuna data/corso pieno: proposta della data successiva o richiesta di ricontatto.
 - Aziende e gruppi: contatto diretto; non usare il form individuale.
 - Appuntamenti a domicilio: contatto e valutazione manuale; non prenotazione diretta.
-- Consulenza del sonno: landing e call gratuita dedicate; nella fase pilota può terminare su WhatsApp o telefono.
+- Consulenza del sonno: landing, prenotazione breve dedicata e call gratuita; WhatsApp resta secondario per chi è indeciso e non sostituisce il calendario.
 - Percorso nascita: open day pubblico e modulo completo privato non indicizzato.
 
-WhatsApp è appropriato per call sonno pilota, persone indecise, aziende/gruppi e assenza di date. Non deve sostituire un modulo specifico già disponibile.
+WhatsApp è appropriato per persone indecise sulla call sonno, aziende/gruppi e assenza di date. Non deve sostituire un modulo specifico già disponibile.
+
+La consulenza del sonno resta disponibile online a livello nazionale. Un eventuale limite geografico della campagna è una scelta tattica di spesa e non modifica pubblico, posizionamento o testi della landing.
 
 Le regole dettagliate su stati, capienza, coppie, modifiche e conferme sono in `docs/SITE_MAP_AND_FLOWS.md`. Non modificarle implicitamente durante un intervento grafico.
 

@@ -16,14 +16,14 @@ Le priorità commerciali sono:
 
 | Route | Scopo | Azione principale |
 |---|---|---|
-| `/` | Presentare Selene, prova di fiducia e due pilastri | Scoprire i corsi o richiedere la call sonno |
+| `/` | Presentare Selene, prova di fiducia e due pilastri | Scoprire i corsi o scegliere l'orario della call sonno |
 | `/chi-sono` | Credenziali, metodo e volto umano | Approfondire il servizio pertinente |
 | `/iscrizione-corsi` | Elenco delle tipologie di corso | Scegliere un corso |
 | `/iscrizione-corsi/<corso_tipo>` | Data disponibile o raccolta interesse | Inviare la richiesta di iscrizione |
 | `/prima-della-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
 | `/dopo-la-nascita` | Orientare verso attività e supporto dopo la nascita | Scegliere corso, laboratorio o consulenza pertinente |
-| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere la call gratuita |
+| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere l'orario della call gratuita |
 | `/prenota-call-sonno` | Prenotazione breve della call gratuita | Riservare provvisoriamente uno slot |
 | `/questionario-sonno/<token>` | Questionario privato inviato dopo la call | Preparare la formula concordata |
 | `/prestazioni-infermieristiche` | Spiegare le prestazioni in studio | Accedere alla prenotazione sanitaria |
@@ -37,7 +37,7 @@ Le pagine di conferma devono spiegare cosa è stato registrato e cosa succede do
 
 Ordine da mantenere salvo decisione esplicita:
 
-1. Hero con Selene, una promessa e massimo due CTA: `Scopri i corsi` e `Richiedi la call gratuita`.
+1. Hero con Selene, una promessa e massimo due CTA: `Scopri i corsi` e `Scegli l’orario della call`.
 2. Prova di fiducia: ruolo sanitario, OPI, attività reali.
 3. Due pilastri: corsi in presenza e consulenza del sonno.
 4. Prossime date disponibili.
@@ -126,6 +126,21 @@ Homepage/campagna/condivisione
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
 - La consulenza non formula diagnosi, non prescrive terapie e non sostituisce il pediatra.
 
+### Percorso dalla campagna
+
+```text
+Annuncio o contenuto social
+  → `/consulenze-online`
+  → `Scegli l’orario della call`
+  → `/prenota-call-sonno`
+  → slot provvisorio e successiva conferma
+```
+
+- La campagna iniziale dura tre mesi e promuove il servizio 0-12 mesi senza creare una diversa offerta per ogni creatività.
+- Ogni annuncio può partire da una difficoltà osservabile, come addormentamento, risvegli o pisolini, ma deve rimandare alla stessa landing e allo stesso flusso.
+- Un eventuale targeting limitato ad Abruzzo e regioni confinanti serve solo a controllare la spesa: la pagina, l'idoneità e l'erogazione online restano nazionali.
+- WhatsApp può aiutare chi non è pronto a prenotare, ma non compete visivamente con la CTA principale.
+
 ## Flusso prestazioni sanitarie
 
 ```text
@@ -157,8 +172,7 @@ Le aziende non devono utilizzare il form individuale. CTA consigliata: `Richiedi
 
 WhatsApp è appropriato per:
 
-- call sonno nella fase pilota;
-- genitori indecisi;
+- genitori indecisi sulla call sonno;
 - aziende e gruppi;
 - persone che non trovano una data adatta.
 

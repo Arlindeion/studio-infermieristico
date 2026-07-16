@@ -1,6 +1,15 @@
 # Roadmap
 
-Stato aggiornato al 16 luglio 2026. Obiettivo indicativo: lancio grafico all'inizio di settembre 2026, non ancora annunciato e quindi modificabile.
+Stato aggiornato al 16 luglio 2026. Il checkpoint interno è il 15 settembre 2026 e richiede sia un sito tecnicamente pronto e sicuro sia una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica.
+
+## Gate interno del 15 settembre
+
+Il checkpoint è superato soltanto quando sono veri entrambi i risultati:
+
+1. le attività P0 di sicurezza, dati, produzione e collaudo sono concluse;
+2. la campagna iniziale sulla consulenza del sonno è pronta, misurabile e sostenuta da landing, contenuti social e processo di gestione dei contatti coerenti.
+
+La sola finalizzazione grafica non basta. Se un requisito P0 resta aperto, il sito non è pronto all'esposizione pubblica anche se la campagna è stata preparata.
 
 ## Criterio di priorità
 
@@ -29,7 +38,7 @@ Stato aggiornato al 16 luglio 2026. Obiettivo indicativo: lancio grafico all'ini
 
 Le funzionalità già presenti devono comunque superare il collaudo pre-lancio: “implementato” non equivale automaticamente a “pronto per produzione”.
 
-## Prima del lancio
+## Per superare il gate del 15 settembre
 
 ### P0 — sicurezza, dati e produzione
 
@@ -70,13 +79,20 @@ Le funzionalità già presenti devono comunque superare il collaudo pre-lancio: 
 - Definire una risposta operativa standard dopo la richiesta della call.
 - Stabilire un piano editoriale sostenibile e un volume di contenuti compatibile con il lavoro clinico.
 - Configurare GA4 e verificare gli eventi di conversione prima di qualsiasi campagna.
-- Definire un piccolo budget test soltanto dopo avere verificato landing e gestione dei contatti.
+- Preparare il test pubblicitario di tre mesi sulla consulenza del sonno 0-12 mesi, con una difficoltà riconoscibile per creatività e CTA `Scegli l’orario della call`.
+- Definire il percorso di misura da annuncio a slot, call confermata, call svolta, formula scelta e testimonianza autorizzata.
+- Preparare un set iniziale coordinato di annunci e contenuti social con la nuova identità, senza usare prove o risultati non ancora disponibili.
+- Definire una procedura rispettosa per chiedere, conservare e pubblicare il consenso alle future testimonianze sulla consulenza del sonno.
+- Decidere il perimetro geografico iniziale in funzione del budget; l'eventuale partenza da Abruzzo e regioni confinanti non deve restringere la landing o la disponibilità nazionale del servizio.
+- Definire un piccolo budget test soltanto dopo avere verificato landing, tracciamento e capacità di gestione dei contatti.
 
 ## Dopo il lancio
 
 ### P2 — validazione e ottimizzazione
 
 - Misurare richieste qualificate, provenienza, tasso call/percorso e carico di lavoro.
+- Verificare mensilmente l'obiettivo interno di almeno tre testimonianze reali e autorizzate sulla consulenza del sonno, senza trasformarlo in un obbligo per le famiglie.
+- Rivedere creatività, geografia e messaggi durante i tre mesi senza modificare contemporaneamente tutte le variabili.
 - Rivedere prezzi e formato della consulenza sulla base dei dati reali.
 - Costruire una mailing list con consenso e segmentazione minima.
 - Migliorare il processo di ricontatto e il calendario editoriale.
@@ -99,7 +115,7 @@ Le funzionalità già presenti devono comunque superare il collaudo pre-lancio: 
 
 Non introdurre pagamenti prima che policy, stati, email, capienza e calendario siano stabili.
 
-## Criteri di uscita per il lancio grafico
+## Criteri di uscita per il lancio
 
 Il sito può essere considerato pronto quando:
 
@@ -110,7 +126,8 @@ Il sito può essere considerato pronto quando:
 - test automatici e controlli visuali sono superati;
 - analytics e cookie rispettano il consenso;
 - ciò che non è automatizzato rimanda in modo chiaro a telefono o WhatsApp;
-- Selene è pronta a gestire manualmente il volume di richieste generato.
+- Selene è pronta a gestire manualmente il volume di richieste generato;
+- la campagna iniziale dispone di creatività coordinate, percorso di conversione verificato e misurazione coerente con il consenso.
 
 ## Aggiornamento della roadmap
 

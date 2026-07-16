@@ -1,6 +1,6 @@
 # S.C. Studio Infermieristico — sito web
 
-Applicazione Flask con sito pubblico, prenotazione delle prestazioni infermieristiche, iscrizione ai corsi e area amministrativa.
+Applicazione Flask con sito pubblico, prenotazione delle prestazioni infermieristiche, iscrizione ai corsi, call e questionario della consulenza del sonno e area amministrativa.
 
 Il contesto dell'attività, l'identità e le priorità non sono duplicati in questo file. Prima di intervenire sul progetto leggere [AGENTS.md](AGENTS.md) e l'indice in [docs/README.md](docs/README.md).
 

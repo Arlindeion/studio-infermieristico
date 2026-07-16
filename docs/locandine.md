@@ -226,7 +226,7 @@ Evitare:
 
 Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
-- `Richiedi la call gratuita`
+- `Scegli l’orario della call`
 - `Iscrizione individuale`
 - `Scopri le prossime date`
 - `Prenota`
@@ -234,14 +234,26 @@ Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
 WhatsApp è adatto a:
 
-- call sonno nella fase pilota;
-- famiglie già interessate o indecise;
+- famiglie indecise sulla call sonno;
 - aziende e gruppi;
 - persone che non trovano una data.
 
 Quando esiste un modulo specifico, usare il modulo come CTA. Recuperare sempre URL, telefono e contatti dalle fonti correnti del sito; non riscriverli a memoria.
 
 Nei PDF rendere link, indirizzo email e numero di telefono cliccabili quando tecnicamente possibile.
+
+### Campagna iniziale sulla consulenza del sonno
+
+Il test dura tre mesi e promuove la consulenza del sonno 0-12 mesi. Per ogni annuncio, video o contenuto sponsorizzato:
+
+- partire da una sola difficoltà osservabile, non dal tema generico del sonno;
+- mantenere `Scegli l’orario della call` come CTA primaria verso la landing e il calendario;
+- usare l'identità dello studio e la presenza reale di Selene, senza creare un sottobrand;
+- non inventare testimonianze, casi o risultati: le prove specifiche del servizio saranno aggiunte solo quando reali e autorizzate;
+- non restringere la promessa alla sola area geografica dell'annuncio: il servizio resta nazionale e online;
+- trattare un eventuale targeting su Abruzzo e regioni confinanti come scelta di distribuzione legata al budget.
+
+Budget, costo massimo per contatto e tono creativo/video non sono ancora approvati. Consultare `PROJECT_BRIEF.md` e `DECISIONS.md` prima di produrre la serie definitiva.
 
 ## Prezzi
 

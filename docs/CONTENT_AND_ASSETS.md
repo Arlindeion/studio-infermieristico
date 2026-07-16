@@ -40,14 +40,12 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 ## CTA approvate
 
 - `Scopri i corsi`
-- `Richiedi la call gratuita`
-- `Scegli la call gratuita`
 - `Scegli l’orario della call`
 - `Prenota`
 - `Iscrizione individuale`
 - `Richiedi il corso in studio o in azienda`
 
-Usare `Scrivimi` solo quando non esiste un'azione più specifica. WhatsApp non deve sostituire automaticamente moduli e flussi dedicati.
+`Scegli l’orario della call` è la forma canonica per la consulenza del sonno: non tornare a `Richiedi la call gratuita` o `Scegli la call gratuita` finché esiste il calendario diretto. Usare `Scrivimi` solo quando non esiste un'azione più specifica. WhatsApp non deve sostituire automaticamente moduli e flussi dedicati.
 
 ## Microtesti dell'header
 
@@ -59,10 +57,25 @@ Usare `Scrivimi` solo quando non esiste un'azione più specifica. WhatsApp non d
 ## Testimonianze
 
 - Fonte disponibile: feedback spontanei del corso di accompagnamento alla nascita.
+- Consulenza del sonno: non sono ancora disponibili testimonianze dirette autorizzate.
 - Pubblicazione: solo dopo autorizzazione, eventualmente in forma anonima.
 - Regola editoriale: si possono correggere refusi minimi, ma non alterare significato, tono o risultato dichiarato.
 - Non attribuire una testimonianza sulla nascita alla consulenza del sonno o ad altri servizi.
 - Conservare la prova del consenso fuori dal repository pubblico e secondo la policy privacy.
+- Obiettivo interno del test: almeno tre testimonianze pubblicabili al mese sulla consulenza del sonno, richieste solo dopo il servizio e mai presentate come obbligo o contropartita.
+
+## Materiali per la campagna sonno
+
+Il primo test pubblicitario dura tre mesi e deve usare la nuova identità senza introdurre un sottobrand.
+
+- Offerta: consulenza del sonno 0-12 mesi, con `Capire prima di cambiare.` come sintesi possibile e `Scegli l’orario della call` come CTA.
+- Angoli creativi: una difficoltà riconoscibile per contenuto, per esempio addormentamento serale, risvegli frequenti, pisolini brevi o necessità di forte supporto.
+- Percorso: ogni contenuto rimanda alla landing nazionale e al calendario della call; WhatsApp resta un'alternativa discreta per chi è indeciso.
+- Prova: usare competenze, metodo e presenza reale di Selene. Non simulare testimonianze, risultati o casi clinici.
+- Fotografia: preferire Selene, studio e attività reali; `placeholder.png` è ammesso solo come guida interna e va sostituito prima della pubblicazione.
+- Geografia: un targeting iniziale in Abruzzo e regioni confinanti non deve cambiare i testi nazionali della landing.
+
+Budget, costo massimo per contatto, frequenza editoriale e tono dei video restano da definire prima dell'attivazione. I KPI e l'obiettivo di raccolta delle testimonianze sono documentati in `PROJECT_BRIEF.md`.
 
 ## Inventario immagini in uso
 
@@ -107,9 +120,11 @@ I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_op
 - Selezione e rinomina delle cinque fotografie generiche.
 - Eventuali nuove fotografie professionali promesse prima del push grafico finale.
 - Testimonianze autorizzate e selezionate per il sito.
+- Prime testimonianze specifiche della consulenza del sonno, oggi non disponibili.
 - Fotografia o composizione Open Graph definitiva.
 - Informazioni complete e fonti per eventuali contenuti sanitari approfonditi.
-- Contenuti coordinati per il lancio social.
+- Set coordinato iniziale di annunci e contenuti social per il test di tre mesi.
+- Testo e procedura di consenso per le testimonianze future.
 
 ## Criteri di selezione
 
