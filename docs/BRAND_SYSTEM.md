@@ -1,6 +1,6 @@
 # Identità visiva e verbale
 
-Ultimo aggiornamento: 15 luglio 2026.
+Ultimo aggiornamento: 16 luglio 2026.
 
 ## Idea guida
 
@@ -31,6 +31,8 @@ I token implementati in `static/css/tokens.css` sono la fonte tecnica dei colori
 Sul salvia `#B1BBA5` utilizzare testo `#304438`, non bianco. Il bianco è riservato a `#506A59` e `#3F5948`, dove il contrasto è sufficiente.
 
 Non introdurre verdi smeraldo, bosco, turchese o “sanitari” freddi come dominanti. Non aggiungere nuovi colori prima di verificare i token già esistenti.
+
+Le varianti semitrasparenti sono centralizzate in `tokens.css` con la convenzione `--famiglia-aXX`, dove `XX` indica l'opacità percentuale. Gradienti, bordi e ombre nei moduli applicativi devono richiamare queste variabili invece di dichiarare direttamente nuovi valori `rgba()`.
 
 ## Tipografia
 

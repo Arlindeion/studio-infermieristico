@@ -51,6 +51,7 @@
 
 .home-hero-media {
     background: var(--verde-chiaro);
+    box-shadow: var(--ombra-card);
     height: 560px;
     overflow: hidden;
     position: relative;
@@ -77,7 +78,7 @@
 }
 
 .home-hero-signature {
-    background: rgba(247, 245, 241, 0.94);
+    background: var(--carta-a94);
     bottom: 1.25rem;
     display: grid;
     gap: 0.2rem;
@@ -103,8 +104,8 @@
 }
 
 .home-trust {
-    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
-    border-top: 1px solid rgba(48, 68, 56, 0.16);
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-top: 1px solid var(--verde-scuro-a16);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     max-width: 1180px;
@@ -112,7 +113,7 @@
 }
 
 .home-trust div {
-    border-right: 1px solid rgba(48, 68, 56, 0.16);
+    border-right: 1px solid var(--verde-scuro-a16);
     padding: 1.5rem;
 }
 
@@ -157,10 +158,12 @@
 }
 
 .home-pillar {
-    border: 1px solid rgba(48, 68, 56, 0.2);
+    border: 1px solid var(--verde-scuro-a20);
+    box-shadow: var(--ombra-card);
     display: grid;
     grid-template-rows: 260px 1fr;
     overflow: hidden;
+    transition: box-shadow 0.2s ease;
 }
 
 .home-pillar-media {
@@ -178,8 +181,13 @@
     object-position: center 72%;
 }
 
+@media (hover: hover) and (pointer: fine) {
+.home-pillar:hover {
+        box-shadow: var(--ombra-soft);
+    }
 .home-pillar:hover .home-pillar-media img {
-    transform: scale(1.025);
+        transform: scale(1.025);
+    }
 }
 
 .home-pillar-copy {
@@ -229,12 +237,12 @@
 
 .home-service-list li,
 .home-proof-list li {
-    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid var(--verde-scuro-a18);
     padding: 0.7rem 0;
 }
 
 .home-pillar-sleep .home-proof-list li {
-    border-color: rgba(48, 68, 56, 0.18);
+    border-color: var(--verde-scuro-a18);
 }
 
 .home-service-list a:hover {
@@ -248,7 +256,7 @@
 
 .home-dates {
     align-items: start;
-    border-top: 1px solid rgba(48, 68, 56, 0.14);
+    border-top: 1px solid var(--verde-scuro-a14);
     display: grid;
     gap: clamp(2rem, 5vw, 4rem);
     grid-template-columns: 0.72fr 1.28fr;
@@ -316,7 +324,7 @@
 }
 
 .home-professionals div {
-    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    border-top: 1px solid var(--verde-scuro-a20);
     display: grid;
     gap: 1rem;
     grid-template-columns: 8rem 1fr;
@@ -340,12 +348,20 @@
 }
 
 .home-testimonials {
+    align-self: start;
+    background: var(--avorio);
+    border: 1px solid var(--verde-scuro-a14);
     border-left: 4px solid var(--rosso-cuore);
-    padding-left: clamp(1.5rem, 3vw, 2.5rem);
+    box-shadow: var(--ombra-card);
+    padding: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.home-testimonials h2 {
+    font-size: clamp(1.9rem, 2.8vw, 2.65rem);
 }
 
 .home-testimonials figure {
-    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid var(--verde-scuro-a18);
     margin-top: 1.4rem;
     padding-top: 1.4rem;
 }
@@ -364,7 +380,7 @@
 }
 
 .home-instagram {
-    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid var(--verde-scuro-a18);
 }
 
 .home-instagram-header {
@@ -398,8 +414,8 @@
 
 .home-instagram-feed {
     background: var(--verde-chiaro);
-    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
-    border-top: 1px solid rgba(48, 68, 56, 0.16);
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-top: 1px solid var(--verde-scuro-a16);
     overflow: hidden;
     padding: clamp(0.6rem, 1.5vw, 1rem);
 }
@@ -410,8 +426,8 @@
 
 .home-clinical-band {
     align-items: center;
-    border-bottom: 1px solid rgba(48, 68, 56, 0.18);
-    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    border-bottom: 1px solid var(--verde-scuro-a18);
+    border-top: 1px solid var(--verde-scuro-a18);
     display: flex;
     gap: 2rem;
     justify-content: space-between;
@@ -463,7 +479,7 @@
         border-right: 0;
     }
 .home-trust div:nth-child(-n+2) {
-        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+        border-bottom: 1px solid var(--verde-scuro-a16);
     }
 .home-dates-copy {
         position: static;
@@ -479,7 +495,7 @@ body.page-homepage {
     }
 .home-trust div,
 .home-trust div:nth-child(2) {
-        border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+        border-bottom: 1px solid var(--verde-scuro-a16);
         border-right: 0;
     }
 .home-trust div:last-child {
@@ -523,6 +539,9 @@ body.page-homepage {
 .home-birth {
         padding: 3.5rem 1.15rem;
     }
+.home-testimonials {
+        padding: 1.5rem 1.25rem;
+    }
 .home-professionals div {
         gap: 0.35rem;
         grid-template-columns: 1fr;
@@ -543,6 +562,7 @@ body.page-homepage {
 }
 
 @media (prefers-reduced-motion: reduce) {
+.home-pillar,
 .home-pillar-media img {
         transition: none;
     }

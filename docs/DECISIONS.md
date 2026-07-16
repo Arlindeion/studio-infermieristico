@@ -115,6 +115,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: `base.html` carica sempre token, base e componenti; i moduli della homepage, della consulenza e dell'amministrazione vengono caricati soltanto dagli endpoint pertinenti. Gli adattamenti responsive restano vicini al relativo ambito e non si aggiungono sezioni versionate in coda ai file.
 - Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `templates/base.html`, `static/css/`.
 
+## D-018 — Trasparenze centralizzate nei token
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: mantenere ogni colore `rgba()` in `tokens.css` e richiamarlo negli altri moduli tramite variabili con convenzione `--famiglia-aXX`.
+- Motivo: evitare varianti alpha duplicate o quasi identiche disperse tra componenti, gradienti e ombre.
+- Conseguenze: i moduli applicativi non contengono valori `rgba()` letterali; un test automatico impedisce di reintrodurli e verifica che ogni token alpha utilizzato sia definito.
+- Collegamenti: `AGENTS.md`, `BRAND_SYSTEM.md`, `static/css/tokens.css`, `tests/test_app.py`.
+
 ## Modello per nuove decisioni
 
 ```markdown

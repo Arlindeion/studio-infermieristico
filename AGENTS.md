@@ -59,6 +59,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - La linea rossa è una firma funzionale, non una decorazione da ripetere ovunque.
 - Ogni schermata deve avere una priorità visiva e ogni sezione uno scopo: informare, rassicurare o guidare all'azione pertinente.
 - Prima di creare colori, spaziature, ombre o componenti, verificare se esiste già uno stile equivalente.
+- Usare i token alpha di `static/css/tokens.css` per ogni colore semitrasparente; non inserire `rgba()` letterali negli altri moduli CSS.
 - Collocare ogni nuova regola nel modulo CSS competente; non creare sezioni `V2`, `V3` o nuovi stili in coda a un file non pertinente.
 - Accessibilità obbligatoria: contrasto, focus, label, tastiera, target touch e leggibilità mobile.
 

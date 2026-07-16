@@ -117,7 +117,7 @@
 }
 
 .sleep-hero-media p {
-    background: rgba(80, 106, 89, 0.94);
+    background: var(--verde-header-a94);
     bottom: 0;
     color: var(--bianco);
     left: 0;
@@ -132,7 +132,7 @@
 .sleep-process,
 .sleep-options,
 .sleep-faq {
-    border-top: 1px solid rgba(48, 68, 56, 0.14);
+    border-top: 1px solid var(--verde-scuro-a14);
 }
 
 .sleep-signals {
@@ -249,7 +249,7 @@
 }
 
 .sleep-option-grid article {
-    border: 1px solid rgba(48, 68, 56, 0.2);
+    border: 1px solid var(--verde-scuro-a20);
     padding: clamp(1.6rem, 3.5vw, 2.7rem);
 }
 
@@ -277,12 +277,12 @@
 }
 
 .sleep-option-grid li {
-    border-top: 1px solid rgba(48, 68, 56, 0.18);
+    border-top: 1px solid var(--verde-scuro-a18);
     padding: 0.75rem 0;
 }
 
 .sleep-option-main li {
-    border-color: rgba(48, 68, 56, 0.18);
+    border-color: var(--verde-scuro-a18);
 }
 
 .sleep-options-note {
@@ -318,7 +318,7 @@
 }
 
 .sleep-boundary-list {
-    border-left: 1px solid rgba(111, 131, 115, 0.3);
+    border-left: 1px solid var(--verde-header-soft-a30);
     padding-left: 2rem;
 }
 
@@ -327,12 +327,12 @@
 }
 
 .sleep-faq-list {
-    border-top: 1px solid rgba(48, 68, 56, 0.2);
+    border-top: 1px solid var(--verde-scuro-a20);
     margin-top: 2.5rem;
 }
 
 .sleep-faq details {
-    border-bottom: 1px solid rgba(48, 68, 56, 0.2);
+    border-bottom: 1px solid var(--verde-scuro-a20);
     padding: 1.1rem 0;
 }
 
@@ -424,7 +424,7 @@
     }
 .sleep-boundary-list {
         border-left: 0;
-        border-top: 1px solid rgba(111, 131, 115, 0.3);
+        border-top: 1px solid var(--verde-header-soft-a30);
         padding-left: 0;
         padding-top: 1rem;
     }

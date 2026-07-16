@@ -11,14 +11,14 @@
     font-size: 1rem;
     border: none;
     cursor: pointer;
-    box-shadow: 0 8px 18px rgba(95, 126, 88, 0.2);
+    box-shadow: 0 8px 18px var(--verde-azione-soft-a20);
     transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .btn:hover {
     background: var(--verde-header-profondo);
     transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(95, 126, 88, 0.24);
+    box-shadow: 0 12px 24px var(--verde-azione-soft-a24);
 }
 
 .btn-linea {
@@ -50,8 +50,8 @@ section[id] {
     background: var(--rosa-chiaro);
     max-width: 100%;
     padding: 4rem 2rem;
-    border-top: 1px solid rgba(208, 143, 134, 0.22);
-    border-bottom: 1px solid rgba(208, 143, 134, 0.22);
+    border-top: 1px solid var(--corallo-tenue-a22);
+    border-bottom: 1px solid var(--corallo-tenue-a22);
 }
 
 .cta h2 { color: var(--verde-scuro); margin-bottom: 1rem; font-size: 2rem; }
@@ -70,7 +70,7 @@ section[id] {
     border-radius: 8px;
     padding: 2rem 1.5rem;
     text-align: center;
-    border: 1px solid rgba(208, 143, 134, 0.15);
+    border: 1px solid var(--corallo-tenue-a15);
     box-shadow: var(--ombra-card);
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     position: relative;
@@ -89,7 +89,7 @@ section[id] {
 
 .card:hover {
     transform: translateY(-4px);
-    border-color: rgba(208, 143, 134, 0.34);
+    border-color: var(--corallo-tenue-a34);
     box-shadow: var(--ombra-soft);
 }
 .card span { font-size: 2.5rem; display: block; margin-bottom: 1rem; }
@@ -118,7 +118,7 @@ section[id] {
 
 .faq-item {
     background: var(--avorio);
-    border: 1px solid rgba(143, 166, 133, 0.18);
+    border: 1px solid var(--salvia-bordo-a18);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
     display: flex;
@@ -150,9 +150,9 @@ section[id] {
 }
 
 .faq-map {
-    border: 1px solid rgba(143, 166, 133, 0.22);
+    border: 1px solid var(--salvia-bordo-a22);
     border-radius: 8px;
-    box-shadow: 0 10px 24px rgba(79, 95, 69, 0.12);
+    box-shadow: 0 10px 24px var(--oliva-a12);
     height: 180px;
     margin: 0.35rem 0 1rem;
     overflow: hidden;
@@ -166,8 +166,8 @@ section[id] {
 
 .faq-cta {
     align-items: center;
-    background: linear-gradient(135deg, rgba(238, 245, 234, 0.98), rgba(255, 240, 236, 0.72));
-    border: 1px solid rgba(143, 166, 133, 0.18);
+    background: linear-gradient(135deg, var(--verde-chiaro-a98), var(--rosa-caldo-a72));
+    border: 1px solid var(--salvia-bordo-a18);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
     display: flex;
@@ -196,7 +196,7 @@ section[id] {
     background: var(--avorio);
     padding: 1.5rem;
     border-radius: 8px;
-    border: 1px solid rgba(143, 166, 133, 0.18);
+    border: 1px solid var(--salvia-bordo-a18);
     box-shadow: var(--ombra-card);
 }
 
@@ -205,7 +205,7 @@ section[id] {
 .servizio-item p { color: #666; font-size: 0.95rem; }
 
 /* ─── ORARI ─── */
-.orari { background: var(--verde-chiaro); border-radius: 8px; padding: 2rem; margin-top: 1rem; border: 1px solid rgba(143, 166, 133, 0.2); }
+.orari { background: var(--verde-chiaro); border-radius: 8px; padding: 2rem; margin-top: 1rem; border: 1px solid var(--salvia-bordo-a20); }
 .orari h3 { color: var(--verde-scuro); margin-bottom: 1rem; font-size: 1.2rem; }
 .orari table { width: 100%; border-collapse: collapse; }
 .orari td { padding: 0.6rem 0; border-bottom: 1px solid #c8dbc9; font-size: 0.95rem; }
@@ -232,7 +232,7 @@ section[id] {
 .valori .card .valore-icona {
     align-items: center;
     background: var(--verde-chiaro);
-    border: 1px solid rgba(95, 126, 88, 0.18);
+    border: 1px solid var(--verde-azione-soft-a18);
     border-radius: 50%;
     color: var(--verde-header);
     display: inline-flex;
@@ -257,7 +257,7 @@ section[id] {
     background: var(--avorio);
     padding: 2.5rem;
     border-radius: 8px;
-    border: 1px solid rgba(208, 143, 134, 0.16);
+    border: 1px solid var(--corallo-tenue-a16);
     box-shadow: var(--ombra-soft);
     max-width: 680px;
 }
@@ -291,7 +291,7 @@ section[id] {
     outline: none;
     border-color: var(--verde-salvia);
     background: white;
-    box-shadow: 0 0 0 4px rgba(143, 166, 133, 0.14);
+    box-shadow: 0 0 0 4px var(--salvia-bordo-a14);
 }
 
 .form-riga { display: flex; gap: 1.2rem; }
@@ -323,8 +323,8 @@ section[id] {
 .form-prenotazione .btn { width: 100%; padding: 1rem; font-size: 1rem; }
 
 .date-callout {
-    background: linear-gradient(135deg, rgba(238, 245, 234, 0.96), rgba(255, 240, 236, 0.72));
-    border: 1px solid rgba(143, 166, 133, 0.22);
+    background: linear-gradient(135deg, var(--verde-chiaro-a96), var(--rosa-caldo-a72));
+    border: 1px solid var(--salvia-bordo-a22);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
     display: grid;
@@ -368,8 +368,8 @@ section[id] {
 }
 
 .date-action-card {
-    background: rgba(255, 253, 249, 0.72);
-    border: 1.5px solid rgba(82, 111, 80, 0.22);
+    background: var(--carta-luminosa-a72);
+    border: 1.5px solid var(--verde-supporto-a22);
     border-radius: 8px;
     color: var(--testo);
     display: flex;
@@ -382,20 +382,20 @@ section[id] {
 
 .date-action-card:hover,
 .date-action-card:focus-visible {
-    border-color: rgba(198, 120, 112, 0.7);
-    box-shadow: 0 12px 26px rgba(92, 76, 64, 0.12);
+    border-color: var(--corallo-medio-a70);
+    box-shadow: 0 12px 26px var(--terra-a12);
     transform: translateY(-2px);
 }
 
 .date-action-card:focus-visible {
-    outline: 3px solid rgba(198, 120, 112, 0.22);
+    outline: 3px solid var(--corallo-medio-a22);
     outline-offset: 3px;
 }
 
 .date-action-card-primary {
     background: #fffdf9;
-    border-color: rgba(82, 111, 80, 0.46);
-    box-shadow: 0 10px 22px rgba(82, 111, 80, 0.12);
+    border-color: var(--verde-supporto-a46);
+    box-shadow: 0 10px 22px var(--verde-supporto-a12);
 }
 
 .date-action-card span {
@@ -421,7 +421,7 @@ section[id] {
 
 .form-ricontatto-intro {
     background: #fffdf9;
-    border: 1.5px solid rgba(82, 111, 80, 0.24);
+    border: 1.5px solid var(--verde-supporto-a24);
     border-left: 5px solid var(--verde-header);
     border-radius: 8px;
     margin-bottom: 1.35rem;
@@ -454,7 +454,7 @@ section[id] {
 
 .nota-form {
     background: #fffaf6;
-    border: 1px solid rgba(143, 166, 133, 0.16);
+    border: 1px solid var(--salvia-bordo-a16);
     border-radius: 8px;
     color: var(--grigio);
     font-size: 0.92rem;
@@ -468,7 +468,7 @@ section[id] {
     font-size: 1.1rem;
     margin: 1.8rem 0 1rem;
     padding-bottom: 0.45rem;
-    border-bottom: 1px solid rgba(143, 166, 133, 0.22);
+    border-bottom: 1px solid var(--salvia-bordo-a22);
 }
 
 .form-iscrizione-corso h3:first-of-type {
@@ -477,7 +477,7 @@ section[id] {
 
 .radio-stack {
     background: #fffaf6;
-    border: 1px solid rgba(143, 166, 133, 0.16);
+    border: 1px solid var(--salvia-bordo-a16);
     border-radius: 8px;
     padding: 1rem;
 }
@@ -503,7 +503,7 @@ section[id] {
 
 .checkbox-stack {
     background: #fffaf6;
-    border: 1px solid rgba(143, 166, 133, 0.16);
+    border: 1px solid var(--salvia-bordo-a16);
     border-radius: 8px;
     padding: 1rem;
 }
@@ -551,8 +551,8 @@ section[id] {
 .private-course-hero {
     align-items: center;
     background:
-        linear-gradient(135deg, rgba(238, 245, 234, 0.95), rgba(255, 250, 246, 0.96));
-    border: 1px solid rgba(143, 166, 133, 0.18);
+        linear-gradient(135deg, var(--verde-chiaro-a95), var(--avorio-caldo-a96));
+    border: 1px solid var(--salvia-bordo-a18);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
     display: grid;
@@ -576,7 +576,7 @@ section[id] {
 
 .private-course-meta span {
     background: var(--avorio);
-    border: 1px solid rgba(143, 166, 133, 0.18);
+    border: 1px solid var(--salvia-bordo-a18);
     border-radius: 999px;
     color: var(--verde-scuro);
     font-size: 0.88rem;
@@ -595,7 +595,7 @@ section[id] {
 .private-course-calendar,
 .private-course-form-wrap {
     background: var(--avorio);
-    border: 1px solid rgba(143, 166, 133, 0.16);
+    border: 1px solid var(--salvia-bordo-a16);
     border-radius: 8px;
     box-shadow: var(--ombra-card);
     padding: 1.35rem;
@@ -654,7 +654,7 @@ section[id] {
     background: var(--avorio);
     padding: 3rem;
     border-radius: 8px;
-    border: 1px solid rgba(143, 166, 133, 0.18);
+    border: 1px solid var(--salvia-bordo-a18);
     box-shadow: var(--ombra-soft);
     max-width: 500px;
     margin: 0 auto;
@@ -673,7 +673,7 @@ section[id] {
     border-radius: 8px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.2rem;
-    border: 1px solid rgba(208, 143, 134, 0.14);
+    border: 1px solid var(--corallo-tenue-a14);
     box-shadow: var(--ombra-card);
 }
 
@@ -725,7 +725,7 @@ footer p {
     gap: 1.25rem;
     justify-content: space-between;
     background: var(--avorio);
-    border: 1px solid rgba(143, 166, 133, 0.24);
+    border: 1px solid var(--salvia-bordo-a24);
     border-radius: 8px;
     box-shadow: var(--ombra-soft);
     padding: 1rem 1.1rem;
@@ -777,7 +777,7 @@ footer p {
     background: var(--avorio);
     border-radius: 8px;
     padding: 2rem;
-    border: 1px solid rgba(143, 166, 133, 0.16);
+    border: 1px solid var(--salvia-bordo-a16);
     box-shadow: var(--ombra-card);
 }
 
@@ -888,7 +888,7 @@ footer p {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.24);
+    box-shadow: 0 8px 24px var(--whatsapp-a24);
     z-index: 999;
     transition: transform 0.2s, box-shadow 0.2s;
     text-decoration: none;
@@ -896,7 +896,7 @@ footer p {
 
 .whatsapp-widget:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+    box-shadow: 0 6px 24px var(--nero-a25);
 }
 
 .whatsapp-tooltip {
@@ -1002,12 +1002,12 @@ footer p {
     font-size: 0.95rem;
     font-weight: 500;
     padding: 0.75rem 1.5rem;
-    border-bottom: 0.5px solid rgba(48, 68, 56, 0.14);
+    border-bottom: 0.5px solid var(--verde-scuro-a14);
     transition: background 0.2s;
 }
 
 .nav-mobile-label {
-    color: rgba(48, 68, 56, 0.72);
+    color: var(--verde-scuro-a72);
     font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1016,7 +1016,7 @@ footer p {
     text-transform: uppercase;
 }
 
-.nav-mobile a:hover { background: rgba(48, 68, 56, 0.08); }
+.nav-mobile a:hover { background: var(--verde-scuro-a08); }
 
 .nav-mobile-home {
     align-items: center;
@@ -1136,7 +1136,7 @@ body > header {
         grid-template-columns: 1fr;
     }
 .course-overview-strip article {
-        border-bottom: 1px solid rgba(143, 166, 133, 0.16);
+        border-bottom: 1px solid var(--salvia-bordo-a16);
         border-right: 0;
     }
 .course-overview-strip article:last-child {
@@ -1259,8 +1259,8 @@ nav a {
         z-index: 998;
         padding: 0.75rem 1rem;
         background: white;
-        border-top: 1px solid rgba(0,0,0,0.08);
-        box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+        border-top: 1px solid var(--nero-a08);
+        box-shadow: 0 -4px 16px var(--nero-a08);
     }
 .sticky-prenota-btn {
         display: block;
@@ -1297,7 +1297,7 @@ footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 
 .site-footer {
     background: var(--verde-header-profondo);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--bianco-a90);
     padding: 3rem max(1.5rem, calc((100% - 1180px) / 2));
     text-align: left;
 }
@@ -1319,7 +1319,7 @@ footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 .site-footer p,
 .site-footer a,
 .site-footer .privacy-link {
-    color: rgba(255, 255, 255, 0.74);
+    color: var(--bianco-a74);
     font-size: 0.9rem;
     line-height: 1.7;
 }
@@ -1330,7 +1330,7 @@ footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 }
 
 .site-footer-legal {
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: 1px solid var(--bianco-a14);
     margin-top: 2rem;
     padding-top: 1.2rem;
 }
@@ -1370,7 +1370,7 @@ footer .privacy-link { color: #f1e7df; text-decoration: underline; }
 }
 
 .thread-steps > div {
-    border-bottom: 1px solid rgba(48, 68, 56, 0.16);
+    border-bottom: 1px solid var(--verde-scuro-a16);
     min-height: 112px;
     padding: 0 0 1.2rem;
     position: relative;

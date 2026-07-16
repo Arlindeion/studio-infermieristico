@@ -1,5 +1,7 @@
 import os
+import re
 import sys
+from pathlib import Path
 import pytest
 import icalendar
 from unittest.mock import MagicMock, patch
@@ -146,6 +148,32 @@ def test_css_core_e_modulo_homepage(client):
     assert 'css/consulenza.css' not in resp.text
     assert 'css/admin.css' not in resp.text
     assert 'css/stile.css' not in resp.text
+
+
+def test_css_rgba_letterali_solo_nei_token():
+    css_directory = Path(app_module.__file__).resolve().parent / 'static' / 'css'
+    tokens_path = css_directory / 'tokens.css'
+    stylesheets = sorted(css_directory.glob('*.css'))
+
+    for stylesheet in stylesheets:
+        if stylesheet == tokens_path:
+            continue
+        assert 'rgba(' not in stylesheet.read_text().lower(), stylesheet.name
+
+    tokens = tokens_path.read_text()
+    alpha_definitions = re.findall(r'(--[a-z0-9-]+-a\d{2})\s*:\s*rgba\(', tokens)
+    assert alpha_definitions
+    assert len(alpha_definitions) == len(set(alpha_definitions))
+
+    alpha_references = {
+        token
+        for stylesheet in stylesheets
+        for token in re.findall(
+            r'var\((--[a-z0-9-]+-a\d{2})\)',
+            stylesheet.read_text(),
+        )
+    }
+    assert alpha_references <= set(alpha_definitions)
 
 
 def test_css_consulenza_caricato_solo_nella_landing(client):
