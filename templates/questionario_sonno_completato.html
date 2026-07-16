@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titolo %}Questionario inviato | Selene Campetta{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+{% block contenuto %}
+<section class="sleep-confirmation">
+    <p class="eyebrow">Questionario ricevuto</p>
+    <h1>Grazie, {{ call.nome }}.</h1>
+    <p>Ho ricevuto le tue risposte e potrò usarle per preparare la consulenza concordata. Non devi inviare altro.</p>
+    <a class="btn" href="/">Torna alla home</a>
+</section>
+{% endblock %}

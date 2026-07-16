@@ -268,7 +268,7 @@ Le due formule hanno funzioni differenti:
 
 La formula breve deve apparire appropriata a casi limitati, non come versione scontata del percorso.
 
-La call conoscitiva gratuita di circa 15 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+La call conoscitiva gratuita di circa 20 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
 
 Inserire in modo leggibile, senza tono difensivo:
 

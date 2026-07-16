@@ -43,6 +43,7 @@ Non introdurre framework frontend, SQL grezzo o dipendenze non necessarie.
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale di scrittura | Sì |
 | `GOOGLE_CALENDAR_ID` | Calendario su cui scrivere | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
+| `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
 
 Le credenziali restano in `.env` o nel secret manager dell'hosting. Il JSON dell'account di servizio non va committato.
 
@@ -50,6 +51,8 @@ Le credenziali restano in `.env` o nel secret manager dell'hosting. Il JSON dell
 
 - `Admin`: utente dell'area riservata.
 - `Appuntamento`: prenotazione sanitaria e relativo stato.
+- `CallSonno`: richiesta breve, stato, slot Calendar e invito al questionario.
+- `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
 - `PersonaCorso`: rubrica dei partecipanti e delle famiglie.
 - `IscrizioneCorso`: richiesta collegata, quando possibile, a corso e persona.
@@ -63,6 +66,7 @@ Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.m
 ## Stati
 
 - Appuntamenti: `In attesa`, `Confermato`, `Annullato`.
+- Call sonno: `In attesa`, `Confermata`, `Annullata`, `Conclusa`.
 - Iscrizioni corso: `Nuova`, `Contattato`, `Confermato`, `Annullato`.
 - Corsi: `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 - Percorsi nascita: `Bozza`, `Aperto`, `Chiuso`, `Concluso`.
@@ -73,7 +77,7 @@ Lo stato `Da ricontattare` è previsto dalla roadmap quando serve distinguere ri
 
 - Lettura: `GOOGLE_CALENDAR_ICS_URL` permette di conoscere impegni e chiusure segnati sul calendario sincronizzato da Arzamed.
 - Cache: controllata da `CALENDARIO_CACHE_SECONDI`.
-- Scrittura: un account di servizio crea o aggiorna eventi quando appuntamenti o corsi vengono confermati.
+- Scrittura: un account di servizio crea o aggiorna eventi quando appuntamenti o corsi vengono confermati; le call sonno vengono invece inserite subito come provvisorie per bloccare lo slot anche in Arzamed.
 - L'account di servizio deve avere sul calendario soltanto i permessi necessari.
 - Un conflitto con un evento Calendar deve generare un alert, non impedire in assoluto l'inserimento admin.
 
@@ -110,6 +114,7 @@ python3 migrazione_google_event_id.py
 python3 migrazione_corsi_google_event_id.py
 python3 migrazione_gestione_iscritti_corsi.py
 python3 migrazione_registro_eventi.py
+python3 migrazione_call_sonno.py
 ```
 
 Non eseguire migrazioni una tantum alla cieca su dati reali. Fare prima un backup e verificare lo schema.

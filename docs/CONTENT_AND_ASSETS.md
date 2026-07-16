@@ -12,8 +12,11 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
 - Introduzione ai pilastri della homepage: `Partite da ciò che serve oggi alla vostra famiglia.`
 - Percezione desiderata: Selene è una professionista sanitaria competente e vicina, non un brand impersonale.
+- Voce: usare la prima persona singolare quando Selene parla alle famiglie, descrive il proprio metodo o anticipa un contatto; mantenere `Selene Campetta` e la terza persona per biografia, credenziali, metadati, testi legali e informazioni istituzionali.
 - Corsi: apprendimento pratico, segnali da osservare, gesti da allenare e date disponibili.
 - Sonno: comprensione della situazione familiare e percorso non rigido, senza risultati garantiti.
+- Metodo sonno: lettura scientifica, relazionale e centrata sulla famiglia; osservare fisiologia, maturazione, ritmi, ambiente e bisogni prima di scegliere cambiamenti graduali e sostenibili.
+- Sintesi campagna sonno: `Capire prima di cambiare.`
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti.
 - Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
@@ -38,6 +41,8 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 
 - `Scopri i corsi`
 - `Richiedi la call gratuita`
+- `Scegli la call gratuita`
+- `Scegli l’orario della call`
 - `Prenota`
 - `Iscrizione individuale`
 - `Richiedi il corso in studio o in azienda`
@@ -70,7 +75,7 @@ Usare `Scrivimi` solo quando non esiste un'azione più specifica. WhatsApp non d
 | `static/img/selene-dopo-nascita.jpg` | 1280×1920 | Dopo la nascita e disostruzione nell'elenco corsi | In uso; verificare se è la scelta più specifica per disostruzione |
 | `static/img/selene-blsd.jpg` | 1280×1920 | Elenco corsi BLSD | In uso |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |
-| `static/img/placeholder.png` | 600×600 | Laboratori per l'infanzia | Da sostituire prima del lancio |
+| `static/img/placeholder.png` | 600×600 | Laboratori per l'infanzia; guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
 | `static/img/logo.PNG` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; normalizzare il nome con i riferimenti `logo.png` prima del deploy Linux |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
 

@@ -3,11 +3,16 @@
 /* ─── RESET E BASE ─── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html {
+    overflow-x: clip;
+}
+
 body {
     font-family: var(--font-body);
     color: var(--testo);
     background: var(--sfondo);
     line-height: 1.6;
+    overflow-x: clip;
 }
 
 a { text-decoration: none; color: inherit; }
@@ -582,6 +587,7 @@ button.site-nav__pillar {
         height: calc(100dvh - 73px);
         left: 0;
         opacity: 0;
+        overflow: hidden;
         pointer-events: none;
         position: fixed;
         right: 0;

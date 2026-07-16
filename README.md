@@ -62,6 +62,7 @@ CALENDARIO_CACHE_SECONDI=300
 GOOGLE_SERVICE_ACCOUNT_FILE=
 GOOGLE_CALENDAR_ID=
 GOOGLE_ANALYTICS_ID=
+SONNO_CALL_URL=
 ```
 
 `DATABASE_URL` è facoltativa: senza questa variabile viene utilizzato `appuntamenti.db`. Gli URL `postgres://` e `postgresql://` vengono normalizzati per il driver `psycopg`.
@@ -92,6 +93,7 @@ python3 migrazione_google_event_id.py
 python3 migrazione_corsi_google_event_id.py
 python3 migrazione_gestione_iscritti_corsi.py
 python3 migrazione_registro_eventi.py
+python3 migrazione_call_sonno.py
 ```
 
 Non servono per un database creato da zero. Prima di portare in produzione un database PostgreSQL con dati reali, generare e verificare le migrazioni Alembic invece di affidarsi a `db.create_all()`.

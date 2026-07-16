@@ -30,11 +30,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=4.4">
     {% if page_endpoint == 'homepage' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.1">
-    {% elif page_endpoint == 'consulenze_online' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
+    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.2">
     {% endif %}
-    {% if page_endpoint in ['admin', 'modifica_appuntamento'] %}
+    {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">
     {% endif %}
     <script type="application/ld+json">
@@ -69,7 +69,7 @@
 
 {% set current_endpoint = request.endpoint or '' %}
 {% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'dopo_la_nascita', 'conferma_iscrizione_corso'] %}
-{% set sleep_active = current_endpoint == 'consulenze_online' %}
+{% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
 {% set nursing_active = current_endpoint in ['prestazioni', 'prenota', 'modifica_appuntamento', 'conferma'] %}
 
 <a class="skip-link" href="#contenuto-principale">Vai al contenuto</a>
@@ -253,7 +253,7 @@
 
     <!-- WIDGET WHATSAPP -->
 {% set endpoint = request.endpoint or '' %}
-{% set whatsapp_widget_endpoints = ['homepage', 'chi_siamo', 'faq', 'iscrizione_corsi'] %}
+{% set whatsapp_widget_endpoints = ['homepage', 'chi_siamo', 'faq', 'iscrizione_corsi', 'consulenze_online', 'prenota_call_sonno'] %}
 {% if endpoint in whatsapp_widget_endpoints %}
 <a href="https://wa.me/393806317175" 
    class="whatsapp-widget" 
@@ -277,11 +277,14 @@
 {% if endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
     {% set sticky_href = '/iscrizione-corsi' %}
     {% set sticky_label = 'Vai ai corsi' %}
-{% elif endpoint in ['consulenze_online', 'prima_della_nascita', 'dopo_la_nascita'] %}
-    {% set sticky_href = 'https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20pagina%20sulla%20consulenza%20del%20sonno%20e%20vorrei%20richiedere%20la%20call%20gratuita.' %}
-    {% set sticky_label = 'Call conoscitiva' %}
+{% elif endpoint == 'consulenze_online' %}
+    {% set sticky_href = '/prenota-call-sonno' %}
+    {% set sticky_label = 'Scegli l’orario della call' %}
+{% elif endpoint in ['prima_della_nascita', 'dopo_la_nascita'] %}
+    {% set sticky_href = 'https://wa.me/393806317175' %}
+    {% set sticky_label = 'Scrivimi' %}
 {% endif %}
-{% if endpoint != 'homepage' and endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and endpoint != 'iscrizione_accompagnamento_privata' and endpoint != 'conferma_iscrizione_accompagnamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
+{% if endpoint not in ['homepage', 'prenota', 'modifica_appuntamento', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'conferma_iscrizione_accompagnamento', 'login'] and not endpoint.startswith('admin') %}
 <div class="sticky-prenota">
     <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
         {{ sticky_label }}

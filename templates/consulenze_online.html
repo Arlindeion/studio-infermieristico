@@ -29,136 +29,105 @@
 <section class="sleep-hero">
     <div class="sleep-hero-copy">
         <p class="eyebrow">Consulenza del sonno infantile · 0-12 mesi</p>
-        <h1>Capire il sonno del tuo bambino, senza applicare un metodo rigido.</h1>
-        <p class="sleep-hero-lead">Se risvegli, addormentamenti o sonnellini sono diventati difficili da leggere, partiamo dalla vostra quotidianità. Osserviamo ciò che accade, distinguiamo cosa è fisiologico e costruiamo cambiamenti graduali e sostenibili.</p>
+        <h1>Capire prima di cambiare.</h1>
+        <p class="sleep-hero-lead">Se risvegli, addormentamenti o sonnellini sono diventati difficili da leggere, partiamo da ciò che accade davvero nella vostra famiglia. Senza formule uguali per tutti.</p>
         <div class="sleep-hero-actions">
-            <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20pagina%20sulla%20consulenza%20del%20sonno%20e%20vorrei%20richiedere%20la%20call%20gratuita." class="btn" target="_blank" rel="noopener noreferrer" data-conversion="sleep_hero_call">Richiedi la call gratuita</a>
-            <a href="#come-funziona" class="link-azione" data-conversion="sleep_hero_metodo">Scopri come funziona</a>
+            <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_hero_call">Scegli l’orario della call</a>
+            <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20non%20so%20se%20la%20consulenza%20del%20sonno%20fa%20per%20noi%20e%20vorrei%20capirlo." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="sleep_hero_whatsapp">Non sai se fa per te? Scrivimi</a>
         </div>
         <div class="sleep-authority">
             <strong>Selene Campetta</strong>
-            <span>Infermiera iscritta all'Albo OPI di Pescara · online in tutta Italia o in studio a Montesilvano</span>
+            <span>Infermiera iscritta all'Albo OPI di Pescara</span>
         </div>
+        <ul class="sleep-hero-facts" aria-label="Informazioni essenziali">
+            <li>Call iniziale gratuita di circa 20 minuti</li>
+            <li>Online in tutta Italia o in studio a Montesilvano</li>
+        </ul>
     </div>
     <div class="sleep-hero-media">
         <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Selene Campetta durante una consulenza per genitori">
-        <p>Competenza sanitaria, ascolto della famiglia e attenzione alla sicurezza.</p>
+        <p>Ascolto della famiglia, competenza sanitaria e attenzione alla sicurezza.</p>
     </div>
 </section>
 
-<section class="sleep-recognition">
-    <header class="section-intro">
+<section class="sleep-fit">
+    <div class="sleep-fit-copy">
         <p class="eyebrow">Quando può essere utile</p>
-        <h2>Il problema non è sempre “dormire poco”. Spesso è non capire più cosa sta succedendo.</h2>
-    </header>
-    <div class="sleep-signals">
+        <h2>Quando il sonno occupa troppo spazio nelle vostre giornate.</h2>
+        <p>Non serve aspettare che tutto diventi ingestibile. Possiamo fare chiarezza anche su una sola difficoltà che continua a ripresentarsi.</p>
+        <ul class="sleep-situation-list">
+            <li>Addormentamento difficile la sera</li>
+            <li>Risvegli notturni frequenti</li>
+            <li>Pisolini difficili o molto brevi</li>
+            <li>Addormentamento solo con un forte supporto</li>
+            <li>Cambiamenti, regressioni o distacchi</li>
+        </ul>
+    </div>
+    <aside class="sleep-age-focus" aria-label="Approccio da zero a dodici mesi">
+        <span class="sleep-age-number">0–12</span>
+        <strong>mesi, con attenzioni diverse in ogni fase.</strong>
+        <p>Nei primi mesi mettiamo al centro fisiologia, sicurezza e aspettative realistiche. Quando il ritmo matura, possiamo leggere meglio sonnellini, associazioni e routine.</p>
+    </aside>
+</section>
+
+<section class="sleep-call-path" aria-labelledby="sleep-call-path-title">
+    <div class="sleep-call-main">
+        <p class="eyebrow">Il passo importante</p>
+        <h2 id="sleep-call-path-title">Partiamo da una call gratuita di circa 20 minuti.</h2>
+        <p>Scegli un orario e indicami soltanto l’età e la difficoltà principale. Durante la call capiremo se la consulenza è il passo adatto.</p>
+        <div class="sleep-hero-actions">
+            <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_mid_call">Scegli l’orario della call</a>
+        </div>
+        <p class="sleep-call-note">L’orario resta provvisorio finché non ti invio la conferma entro il giorno lavorativo successivo.</p>
+    </div>
+    <aside class="sleep-after-call">
+        <p class="eyebrow">Solo se decidi di proseguire</p>
+        <h3>Non devi scegliere un percorso adesso.</h3>
+        <p>Dopo la call valuteremo la <strong>Consulenza mirata</strong> per una difficoltà precisa oppure il <strong>Percorso sonno personalizzato</strong> quando più aspetti si intrecciano.</p>
+        <p>Conoscerai costi e passaggi prima di fissare la consulenza.</p>
+    </aside>
+</section>
+
+<section class="sleep-together" id="come-funziona">
+    <div class="sleep-together-intro">
+        <header class="section-intro">
+            <p class="eyebrow">Cosa facciamo insieme</p>
+            <h2>Osserviamo, scegliamo pochi cambiamenti, adattiamo.</h2>
+        </header>
+        <figure class="sleep-together-media">
+            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="">
+        </figure>
+    </div>
+    <div class="sleep-together-list">
         <article>
-            <span>Risvegli</span>
-            <h3>La notte si frammenta</h3>
-            <p>I risvegli sono frequenti, cambiano senza un motivo chiaro o rendono difficile recuperare energie.</p>
+            <span>01</span>
+            <div>
+                <h3>Leggiamo il contesto</h3>
+                <p>Età, maturazione, ritmi, ambiente, addormentamento e bisogni della famiglia: il sonno non viene isolato dal resto della giornata.</p>
+            </div>
         </article>
         <article>
-            <span>Addormentamento</span>
-            <h3>Ogni sera richiede molto tempo</h3>
-            <p>La routine si allunga, ciò che funzionava non funziona più o il bambino fatica a lasciarsi accompagnare.</p>
+            <span>02</span>
+            <div>
+                <h3>Distinguiamo cosa può cambiare</h3>
+                <p>Separiamo ciò che è fisiologico da ciò su cui è utile intervenire, senza forzare routine o applicare protocolli prestabiliti.</p>
+            </div>
         </article>
         <article>
-            <span>Sonnellini</span>
-            <h3>Le giornate non hanno un ritmo leggibile</h3>
-            <p>I riposi sono brevi, imprevedibili o difficili da mettere in relazione con la sera e con la notte.</p>
+            <span>03</span>
+            <div>
+                <h3>Adattiamo le indicazioni</h3>
+                <p>Costruiamo passi graduali e sostenibili, rispettando la relazione e ciò che osservate mentre li mettete in pratica.</p>
+            </div>
         </article>
     </div>
-</section>
-
-<section class="sleep-age-band">
-    <div>
-        <span>0-4 mesi</span>
-        <h2>Prima vengono fisiologia, sicurezza e aspettative realistiche.</h2>
-        <p>Nei primi mesi non si forza una routine: si osservano segnali, finestre di veglia, ambiente e modalità sicure di riposo.</p>
-    </div>
-    <div>
-        <span>5-12 mesi</span>
-        <h2>Più avanti possiamo leggere schemi e cambiamenti possibili.</h2>
-        <p>Quando il ritmo matura, lavoriamo su associazioni, sonnellini, addormentamento e coerenza della routine familiare.</p>
-    </div>
-</section>
-
-<section class="sleep-process" id="come-funziona">
-    <header class="section-intro">
-        <p class="eyebrow">Come funziona</p>
-        <h2>Un percorso di osservazione, non una sequenza di regole.</h2>
-        <p>La call gratuita di 15 minuti viene prima di tutto: serve a comprendere la richiesta e a evitare di proporti un servizio non adatto.</p>
-    </header>
-    <div class="thread-steps thread-steps-sleep">
-        <div>
-            <span>1</span>
-            <h3>Raccogliamo le informazioni</h3>
-            <p>Età, storia, routine, sonnellini, addormentamenti, risvegli e ciò che avete già provato.</p>
-        </div>
-        <div>
-            <span>2</span>
-            <h3>Osserviamo i giorni reali</h3>
-            <p>Quando serve, un diario rende visibili collegamenti che nella stanchezza quotidiana sfuggono.</p>
-        </div>
-        <div>
-            <span>3</span>
-            <h3>Costruiamo indicazioni condivise</h3>
-            <p>Niente ricette universali: definiamo priorità, cambiamenti graduali e segnali da osservare.</p>
-        </div>
-        <div>
-            <span>4</span>
-            <h3>Verifichiamo ciò che accade</h3>
-            <p>Nel percorso completo controlliamo insieme cosa è sostenibile e cosa deve essere adattato.</p>
-        </div>
-    </div>
-</section>
-
-<section class="sleep-options">
-    <header class="section-intro">
-        <p class="eyebrow">Due modi di lavorare</p>
-        <h2>Una domanda precisa non richiede lo stesso lavoro di una situazione complessa.</h2>
-    </header>
-    <div class="sleep-option-grid">
-        <article class="sleep-option-minor">
-            <p class="sleep-option-label">Per una sola difficoltà</p>
-            <h3>Consulenza mirata</h3>
-            <p>Un questionario breve e un incontro dedicato a un problema ben definito, con una sintesi essenziale delle indicazioni concordate.</p>
-            <ul>
-                <li>Una domanda circoscritta</li>
-                <li>Incontro di 50 minuti</li>
-                <li>Senza diario completo o assistenza successiva</li>
-            </ul>
-        </article>
-        <article class="sleep-option-main">
-            <p class="sleep-option-label">Il percorso principale</p>
-            <h3>Percorso sonno personalizzato</h3>
-            <p>Quando più aspetti si influenzano tra loro, serve osservare il quadro completo e accompagnare la famiglia mentre prova i cambiamenti.</p>
-            <ul>
-                <li>Questionario e diario del sonno</li>
-                <li>Incontro approfondito e indicazioni scritte</li>
-                <li>Verifica e supporto concordato</li>
-            </ul>
-        </article>
-    </div>
-    <p class="sleep-options-note">Non devi scegliere da sola: durante la call Selene ti indica quale formula è coerente con il problema e ti spiega costi e passaggi prima di fissare.</p>
-</section>
-
-<section class="sleep-clinical-boundaries">
-    <div>
-        <p class="eyebrow">Confini professionali</p>
-        <h2>Accompagnamento concreto, senza sostituire il pediatra.</h2>
-        <p>La consulenza non formula diagnosi, non prescrive terapie e non promette un risultato garantito. Se emergono segnali che richiedono una valutazione clinica, il passo corretto è coinvolgere il pediatra o il professionista competente.</p>
-    </div>
-    <div class="sleep-boundary-list">
-        <p><strong>Sì:</strong> osservazione, educazione, routine, sonno sicuro e supporto alle scelte familiari.</p>
-        <p><strong>No:</strong> diagnosi, trattamento di patologie o protocolli uguali per tutti.</p>
-    </div>
+    <p class="sleep-method-boundary"><strong>Il mio confine professionale:</strong> la consulenza non formula diagnosi e non sostituisce il pediatra. Se emergono segnali clinici, vi indico di coinvolgere il professionista competente.</p>
 </section>
 
 <section class="sleep-faq">
     <header class="section-intro">
         <p class="eyebrow">Domande frequenti</p>
-        <h2>Prima della call</h2>
+        <h2>Hai ancora un dubbio?</h2>
     </header>
     <div class="sleep-faq-list">
         <details>
@@ -170,21 +139,20 @@
             <p>No. La call gratuita serve proprio a distinguere una domanda circoscritta da una situazione che richiede osservazione e verifica.</p>
         </details>
         <details>
-            <summary>Userete un metodo per farlo dormire?</summary>
-            <p>No. Si parte dall'età, dalla fisiologia, dalla sicurezza e dagli equilibri della famiglia. Le indicazioni vengono costruite sul contesto reale.</p>
-        </details>
-        <details>
-            <summary>Cosa succede dopo il primo contatto?</summary>
-            <p>Selene raccoglie brevemente la richiesta, chiarisce se il servizio è adatto e, solo dopo, propone formato, tempi e costo.</p>
+            <summary>Applicate un metodo rigido per farlo dormire?</summary>
+            <p>No. Parto dall'età, dalla fisiologia, dalla sicurezza e dagli equilibri della famiglia. Le indicazioni vengono costruite sul contesto reale.</p>
         </details>
     </div>
 </section>
 
 <section class="sleep-final-cta">
     <p class="eyebrow">Il primo passo è breve e gratuito</p>
-    <h2>Raccontami cosa sta succedendo. Capiremo insieme se e come iniziare.</h2>
-    <p>Scrivi età del bambino e difficoltà principale: ti risponderà direttamente Selene per concordare la call conoscitiva.</p>
-    <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20vorrei%20richiedere%20la%20call%20gratuita%20per%20la%20consulenza%20del%20sonno.%20Et%C3%A0%20del%20bambino%3A%20____.%20La%20difficolt%C3%A0%20principale%20%C3%A8%3A%20____." class="btn" target="_blank" rel="noopener noreferrer" data-conversion="sleep_final_call">Richiedi la call gratuita</a>
+    <h2>Scegli un orario. Al resto penseremo durante la call.</h2>
+    <p>Prima di sentirci ti chiedo soltanto l’età e la difficoltà principale.</p>
+    <div class="sleep-hero-actions sleep-final-actions">
+        <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_final_call">Scegli l’orario della call</a>
+        <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20ho%20un%20dubbio%20sulla%20consulenza%20del%20sonno." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="sleep_final_whatsapp">Se sei indeciso, scrivimi su WhatsApp</a>
+    </div>
 </section>
 
 {% endblock %}

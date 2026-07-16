@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titolo %}Richiesta call ricevuta | Selene Campetta{% endblock %}
+{% block meta_description %}La richiesta per la call gratuita sul sonno è stata ricevuta.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="sleep-confirmation">
+    <p class="eyebrow">Richiesta ricevuta</p>
+    <h1>Lo slot è riservato provvisoriamente.</h1>
+    {% if call %}<p class="sleep-confirmation-slot">{{ call.data }} · ore {{ call.ora }}</p>{% endif %}
+    <div class="sleep-pending-alert" role="alert">
+        <strong>La call non è ancora confermata</strong>
+        <p>Attendi la mia email di conferma. Ti confermerò lo slot oppure ti contatterò per concordare telefonicamente un orario diverso entro il giorno lavorativo successivo.</p>
+    </div>
+    <p>Prima della call non devi compilare altro. Se nel frattempo hai un dubbio, puoi scrivermi direttamente.</p>
+    <div class="sleep-hero-actions">
+        <a class="btn" href="/" data-conversion="sleep_confirmation_home">Torna alla home</a>
+        <a class="link-azione" href="https://wa.me/393806317175" target="_blank" rel="noopener noreferrer" data-conversion="sleep_confirmation_whatsapp">Scrivi su WhatsApp</a>
+    </div>
+</section>
+{% endblock %}

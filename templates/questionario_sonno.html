@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block titolo %}Questionario riservato sul sonno | Selene Campetta{% endblock %}
+{% block meta_description %}Questionario privato per preparare la consulenza sul sonno infantile.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+{% block contenuto %}
+{% macro field(name, label, required=false, type='text', help='') %}
+<div class="form-gruppo">
+    <label for="{{ name }}">{{ label }}{% if required %} *{% endif %}</label>
+    <input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ form_data.get(name, '') }}" {% if required %}required{% endif %}>
+    {% if help %}<small>{{ help }}</small>{% endif %}
+</div>
+{% endmacro %}
+{% macro area(name, label, required=false, help='') %}
+<div class="form-gruppo">
+    <label for="{{ name }}">{{ label }}{% if required %} *{% endif %}</label>
+    <textarea id="{{ name }}" name="{{ name }}" rows="4" maxlength="2000" {% if required %}required{% endif %}>{{ form_data.get(name, '') }}</textarea>
+    {% if help %}<small>{{ help }}</small>{% endif %}
+</div>
+{% endmacro %}
+
+<section class="sleep-questionnaire-page">
+    <header class="sleep-booking-intro">
+        <p class="eyebrow">Area riservata · {{ formule_sonno.get(call.formula_scelta, call.formula_scelta) if formule_sonno is defined else call.formula_scelta }}</p>
+        <h1>Conosciamo il sonno nella vostra quotidianità.</h1>
+        <p>Le risposte mi servono per preparare la consulenza che abbiamo concordato. Non sostituiscono una valutazione pediatrica e il modulo non va usato per urgenze.</p>
+        <div class="sleep-known-data"><strong>{{ call.nome }}</strong><span>{{ call.email }} · {{ call.telefono }} · bambino di {{ call.eta_bambino_mesi }} mesi</span></div>
+    </header>
+    {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-message" role="alert">{{ messages[0] }}</div>{% endif %}{% endwith %}
+
+    <form method="post" class="form-prenotazione sleep-questionnaire-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        <fieldset>
+            <legend>1. Il bambino e chi lo accompagna</legend>
+            <div class="sleep-form-grid">
+                {{ field('nome_bambino', 'Nome del bambino', true) }}
+                {{ field('data_nascita', 'Data di nascita', true, 'date') }}
+            </div>
+            {{ area('nascita', 'È nato a termine o prematuro? Ci sono aspetti della nascita utili da conoscere?') }}
+            {{ field('eta_corretta', 'Età corretta, se indicata dal pediatra') }}
+            {{ area('gestione_sonno', 'Chi si occupa più spesso di addormentamenti e risvegli?') }}
+        </fieldset>
+
+        <fieldset>
+            <legend>2. Alimentazione e addormentamento</legend>
+            {{ field('alimentazione', 'Tipo di alimentazione attuale', true, help='Latte materno, misto, formula, alimentazione complementare o combinazioni.') }}
+            {{ field('poppate_notturne', 'Quante poppate o pasti avvengono di notte?') }}
+            {{ field('addormentamento_seno', 'Si addormenta al seno? Sempre, a volte o no?') }}
+        </fieldset>
+
+        <fieldset>
+            <legend>3. Una giornata reale</legend>
+            <div class="sleep-form-grid">
+                {{ field('risveglio_mattino', 'Orario abituale del risveglio') }}
+                {{ field('ora_addormentamento', 'Orario abituale di addormentamento') }}
+            </div>
+            {{ area('pisolini', 'Quanti pisolini fa e quanto durano?') }}
+            {{ area('routine_serale', 'Descrivi la routine prima della notte') }}
+            {{ area('cambiamenti_routine', 'La routine è cambiata recentemente?') }}
+        </fieldset>
+
+        <fieldset>
+            <legend>4. Dove e come dorme</legend>
+            {{ field('dove_si_addormenta', 'Dove si addormenta di solito?') }}
+            {{ field('dove_dorme', 'Dove dorme durante notte e pisolini?', true) }}
+            {{ area('supporti_addormentamento', 'Quale supporto usa per addormentarsi?', help='Per esempio braccio, seno, movimento, presenza, ciuccio.') }}
+            {{ area('risvegli_dettaglio', 'Quanti risvegli osservate e quanto durano?') }}
+            {{ area('riaddormentamento', 'Come riesce a riaddormentarsi?') }}
+            {{ field('risveglio_precoce', 'Ci sono risvegli molto precoci? Se sì, a che ora?') }}
+        </fieldset>
+
+        <fieldset>
+            <legend>5. Difficoltà, tentativi e obiettivi</legend>
+            {{ field('durata_difficolta', 'Da quanto dura la difficoltà?', true) }}
+            {{ area('tentativi_fatti', 'Che cosa avete già provato? Che cosa ha aiutato, anche solo un po’?') }}
+            {{ area('eventi_recenti', 'Ci sono stati eventi recenti?', help='Malattia, dentizione, nido, trasloco, distacchi, nascita di un fratello o altro.') }}
+            {{ area('momento_piu_difficile', 'Qual è il momento più difficile della giornata o della notte?') }}
+            {{ area('cambiamento_desiderato', 'Quale cambiamento vi sarebbe concretamente utile?', true) }}
+            {{ area('cosa_non_cambiare', 'C’è qualcosa che non volete cambiare?', help='Per esempio allattamento o vicinanza durante il sonno.') }}
+            {{ field('partecipanti_consulenza', 'Chi parteciperà alla consulenza?') }}
+        </fieldset>
+
+        <fieldset>
+            <legend>6. Confini clinici e indicazioni già ricevute</legend>
+            {{ area('condizioni_note', 'Ci sono condizioni già valutate dal pediatra o da altri professionisti?') }}
+            {{ area('terapie_indicazioni', 'Ci sono terapie o indicazioni mediche in corso pertinenti al sonno?') }}
+            {{ area('professionisti_coinvolti', 'Quali professionisti sono già coinvolti?') }}
+            {{ area('note_finali', 'C’è altro che dovrei sapere per prepararmi?') }}
+        </fieldset>
+
+        <div class="form-gruppo">
+            <label class="privacy-label"><input type="checkbox" name="consenso_dati_sanitari" required class="privacy-checkbox"><span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link">informativa privacy</a> e acconsento al trattamento dei dati personali e sanitari inseriti per erogare la consulenza. *</span></label>
+        </div>
+        <div class="form-gruppo">
+            <label class="privacy-label"><input type="checkbox" name="consenso_marketing" class="privacy-checkbox"><span class="privacy-text">Desidero ricevere aggiornamenti su corsi e servizi. Consenso facoltativo e revocabile.</span></label>
+        </div>
+        <button class="btn" type="submit">Inviami il questionario</button>
+    </form>
+</section>
+{% endblock %}

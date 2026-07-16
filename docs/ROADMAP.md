@@ -12,8 +12,10 @@ Stato aggiornato al 16 luglio 2026. Obiettivo indicativo: lancio grafico all'ini
 
 - Identità principale definita: salvia dello studio, tipografia, linea rossa e fotografia reale.
 - Header salvia responsive con testo scuro, gerarchia corsi/sonno verificata e footer verde profondo.
-- Homepage riorganizzata intorno a corsi e consulenza del sonno.
-- Landing verticale sul sonno infantile 0-12 mesi con call gratuita e due formule.
+- Homepage riorganizzata intorno a corsi e consulenza del sonno, con schede editoriali differenziate, priorità visiva ai corsi, sezione nascita separata dall'header, calendario accessibile e stato vuoto orientato al ricontatto.
+- Landing `call-first` sul sonno infantile 0-12 mesi, con gerarchia responsive e call gratuita come azione dominante.
+- Prenotazione breve della call sonno con slot provvisorio, controllo incrociato database/Calendar, gestione admin ed email di conferma.
+- Questionario sonno privato sul sito, inviabile solo dopo la call e la scelta della formula.
 - Prestazioni infermieristiche mantenute in un flusso separato.
 - Metadati condivisi, canonical, Open Graph e dati strutturati principali.
 - Tracciamento differenziato delle CTA predisposto per GA4 e subordinato al consenso.
@@ -47,11 +49,12 @@ Le funzionalità già presenti devono comunque superare il collaudo pre-lancio: 
 - Testare iscrizione a ogni tipologia di corso, capienza, iscrizione di coppia, corso pieno e lista di interesse.
 - Testare open day e modulo privato del percorso nascita con conteggio posti corretto.
 - Simulare i fallimenti di email e Calendar verificando che il dato principale non venga perso.
+- Collaudare con il Calendar reale l'intero flusso call sonno: richiesta, blocco provvisorio, conferma, modifica concordata, annullamento e invio questionario.
 - Verificare che gli appuntamenti domiciliari e le aziende non entrino nei flussi individuali.
 
 ### P1 — contenuti, design e SEO
 
-- Sostituire il placeholder dei laboratori con una fotografia definitiva autorizzata.
+- Sostituire i placeholder con immagini definitive autorizzate: fotografia dei laboratori e seconda immagine contestuale della landing sonno.
 - Valutare e assegnare le fotografie aggiuntive prima del push grafico finale.
 - Inserire testimonianze reali autorizzate senza alterarne il significato.
 - Controllare tutte le pagine a 1440 px e 390 px, inclusi menu, form, tabelle admin, footer e stati vuoti.

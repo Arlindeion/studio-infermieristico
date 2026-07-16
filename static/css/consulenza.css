@@ -5,99 +5,57 @@
     letter-spacing: 0.11em;
 }
 
-.sleep-hero-actions {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.9rem;
-    margin-top: 1.7rem;
-}
-
-.sleep-hero-media::before {
-    border-left: 4px solid var(--rosso-cuore);
-    border-radius: 48%;
-    content: '';
-    height: 64%;
-    position: absolute;
-    right: -24px;
-    top: 15%;
-    transform: rotate(-7deg);
-    width: 90px;
-    z-index: 2;
-}
-
-.sleep-hero-media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
-.sleep-recognition,
-.sleep-age-band,
-.sleep-process,
-.sleep-options,
-.sleep-clinical-boundaries,
+.sleep-hero,
+.sleep-fit,
+.sleep-together,
 .sleep-faq,
 .sleep-final-cta {
     max-width: 1180px;
-    padding: clamp(4rem, 7vw, 6.5rem) 2rem;
-}
-
-.sleep-option-label {
-    color: var(--rosso-cuore) !important;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.09em;
-    margin-bottom: 0.6rem;
-    text-transform: uppercase;
-}
-
-.sleep-age-band > div:first-child span,
-.sleep-option-main .sleep-option-label,
-.sleep-final-cta .eyebrow {
-    color: var(--verde-scuro) !important;
-}
-
-.sleep-final-cta {
-    text-align: center;
-}
-
-.sleep-final-cta h2 {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 850px;
+    padding: clamp(4rem, 7vw, 6rem) 2rem;
 }
 
 .sleep-hero {
     align-items: center;
     display: grid;
-    gap: clamp(2.5rem, 6vw, 5rem);
-    grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.7fr);
-    max-width: 1180px;
-    padding: clamp(4rem, 8vw, 7rem) 2rem;
+    gap: clamp(2.5rem, 6vw, 5.5rem);
+    grid-template-columns: minmax(0, 1.05fr) minmax(330px, 0.72fr);
+    padding-top: clamp(4.5rem, 8vw, 7rem);
 }
 
 .sleep-hero h1 {
     color: var(--verde-scuro);
-    font-size: clamp(3rem, 5.4vw, 5rem);
-    letter-spacing: -0.05em;
-    line-height: 0.98;
-    margin: 0.6rem 0 1.4rem;
+    font-size: clamp(3.3rem, 5.8vw, 5.4rem);
+    letter-spacing: -0.055em;
+    line-height: 0.94;
+    margin: 0.65rem 0 1.4rem;
+    max-width: 690px;
 }
 
 .sleep-hero-lead {
     color: var(--testo);
-    font-size: 1.14rem;
-    line-height: 1.75;
-    max-width: 690px;
+    font-size: 1.16rem;
+    line-height: 1.68;
+    max-width: 660px;
+}
+
+.sleep-hero-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.95rem 1.2rem;
+    margin-top: 1.7rem;
+}
+
+.sleep-hero-actions .link-azione {
+    align-items: center;
+    min-height: 44px;
 }
 
 .sleep-authority {
     border-left: 3px solid var(--rosso-cuore);
     display: grid;
-    gap: 0.2rem;
-    margin-top: 1.7rem;
+    gap: 0.12rem;
+    margin-top: 2rem;
     padding-left: 0.9rem;
 }
 
@@ -110,247 +68,397 @@
     font-size: 0.88rem;
 }
 
-.sleep-hero-media {
-    height: 540px;
-    overflow: hidden;
+.sleep-hero-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1.4rem;
+    list-style: none;
+    margin-top: 1.25rem;
+}
+
+.sleep-hero-facts li {
+    color: var(--grigio);
+    font-size: 0.86rem;
+    padding-left: 0.9rem;
     position: relative;
 }
 
-.sleep-hero-media p {
-    background: var(--verde-header-a94);
-    bottom: 0;
-    color: var(--bianco);
+.sleep-hero-facts li::before {
+    background: var(--verde-brand);
+    border-radius: 50%;
+    content: '';
+    height: 0.42rem;
     left: 0;
-    line-height: 1.45;
-    padding: 1rem 1.2rem;
     position: absolute;
-    right: 0;
-    z-index: 3;
+    top: 0.42rem;
+    width: 0.42rem;
 }
 
-.sleep-recognition,
-.sleep-process,
-.sleep-options,
-.sleep-faq {
-    border-top: 1px solid var(--verde-scuro-a14);
+.sleep-hero-media {
+    position: relative;
 }
 
-.sleep-signals {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(3, 1fr);
-    margin-top: 2.7rem;
+.sleep-hero-media::before {
+    border: 3px solid var(--rosso-cuore);
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 50%;
+    content: '';
+    height: 106px;
+    position: absolute;
+    right: -20px;
+    top: 68px;
+    transform: rotate(18deg);
+    width: 106px;
+    z-index: 2;
 }
 
-.sleep-signals article {
-    border-top: 3px solid var(--verde-salvia);
-    padding-top: 1.2rem;
+.sleep-hero-media img {
+    border-radius: 220px 220px 24px 24px;
+    display: block;
+    height: 510px;
+    object-fit: cover;
+    width: 100%;
 }
 
-.sleep-signals span {
-    color: var(--rosso-cuore);
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+.sleep-hero-media p {
+    color: var(--grigio);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    margin: 0.8rem auto 0;
+    max-width: 330px;
+    text-align: center;
 }
 
-.sleep-signals h3 {
-    color: var(--verde-scuro);
-    font-size: 1.35rem;
-    margin: 0.6rem 0;
-}
-
-.sleep-signals p {
-    line-height: 1.7;
-}
-
-.sleep-age-band {
-    display: grid;
-    gap: 0;
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 100%;
-    padding: 0;
-}
-
-.sleep-age-band > div {
-    padding: clamp(3rem, 6vw, 5rem) max(2rem, calc((100vw - 1180px) / 2));
-}
-
-.sleep-age-band > div:first-child {
-    background: var(--verde-brand);
-    padding-left: max(2rem, calc((100vw - 1180px) / 2));
-    padding-right: clamp(2rem, 5vw, 4rem);
-}
-
-.sleep-age-band > div:last-child {
+.sleep-fit {
+    align-items: center;
     background: var(--verde-chiaro);
-    border-top: 4px solid var(--blu-filo);
-    padding-left: clamp(2rem, 5vw, 4rem);
-    padding-right: max(2rem, calc((100vw - 1180px) / 2));
-}
-
-.sleep-age-band span {
-    color: var(--rosso-cuore);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.sleep-age-band h2 {
-    font-size: clamp(1.65rem, 2.8vw, 2.45rem);
-    line-height: 1.08;
-    margin: 0.7rem 0 1rem;
-}
-
-.sleep-age-band > div:first-child h2,
-.sleep-age-band > div:first-child p {
-    color: var(--testo);
-}
-
-.sleep-age-band p {
-    line-height: 1.7;
-}
-
-.thread-steps-sleep {
     display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(4, 1fr);
-    max-width: none;
-    padding-left: 0;
-    padding-top: 3.5rem;
-}
-
-.thread-steps-sleep::before {
-    height: 2px;
-    left: 1rem;
-    top: 1rem;
-    width: calc(100% - 2rem);
-}
-
-.thread-steps-sleep > div,
-.thread-steps-sleep > div + div {
-    min-height: 0;
-    padding: 0 0 1.2rem;
-}
-
-.thread-steps-sleep span,
-.thread-steps-sleep > div + div span {
-    left: 0;
-    top: -3.5rem;
-}
-
-.sleep-option-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: 0.85fr 1.15fr;
-    margin-top: 2.7rem;
-}
-
-.sleep-option-grid article {
-    border: 1px solid var(--verde-scuro-a20);
-    padding: clamp(1.6rem, 3.5vw, 2.7rem);
-}
-
-.sleep-option-main {
-    background: var(--verde-brand);
-    color: var(--testo);
-}
-
-.sleep-option-grid h3 {
-    color: inherit;
-    font-size: clamp(1.8rem, 3vw, 2.6rem);
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    margin-bottom: 1rem;
-}
-
-.sleep-option-grid article > p:not(.sleep-option-label) {
-    color: inherit;
-    line-height: 1.7;
-}
-
-.sleep-option-grid ul {
-    list-style: none;
-    margin-top: 1.4rem;
-}
-
-.sleep-option-grid li {
-    border-top: 1px solid var(--verde-scuro-a18);
-    padding: 0.75rem 0;
-}
-
-.sleep-option-main li {
-    border-color: var(--verde-scuro-a18);
-}
-
-.sleep-options-note {
-    border-left: 3px solid var(--rosso-cuore);
-    line-height: 1.7;
-    margin-top: 1.5rem;
-    max-width: 880px;
-    padding-left: 1rem;
-}
-
-.sleep-clinical-boundaries {
-    align-items: start;
-    background: var(--verde-chiaro);
-    border-top: 4px solid var(--blu-filo);
-    display: grid;
-    gap: 3rem;
-    grid-template-columns: 1fr 0.85fr;
+    gap: clamp(2.5rem, 7vw, 6.5rem);
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.72fr);
     max-width: 100%;
     padding-left: max(2rem, calc((100% - 1180px) / 2));
     padding-right: max(2rem, calc((100% - 1180px) / 2));
 }
 
-.sleep-clinical-boundaries h2 {
+.sleep-fit h2,
+.sleep-together h2 {
     color: var(--verde-scuro);
-    font-size: clamp(2rem, 3.4vw, 3rem);
-    letter-spacing: -0.035em;
-    line-height: 1.05;
+    font-size: clamp(2.1rem, 4vw, 3.5rem);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
 }
 
-.sleep-clinical-boundaries p {
+.sleep-fit-copy > p:not(.eyebrow) {
+    font-size: 1.05rem;
     line-height: 1.7;
+    margin-top: 1.15rem;
+    max-width: 650px;
+}
+
+.sleep-situation-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    margin-top: 2rem;
+}
+
+.sleep-situation-list li {
+    border-top: 1px solid var(--verde-scuro-a18);
+    color: var(--verde-scuro);
+    font-weight: 700;
+    line-height: 1.35;
+    min-height: 62px;
+    padding: 1rem 1rem 0.8rem 1.25rem;
+    position: relative;
+}
+
+.sleep-situation-list li::before {
+    background: var(--rosso-cuore);
+    content: '';
+    height: 2px;
+    left: 0;
+    position: absolute;
+    top: 1.55rem;
+    width: 0.55rem;
+}
+
+.sleep-age-focus {
+    background: var(--verde-brand);
+    border-radius: 34px 34px 8px 34px;
+    color: var(--verde-scuro);
+    padding: clamp(2rem, 4vw, 3.2rem);
+}
+
+.sleep-age-number {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(4.4rem, 8vw, 6.8rem);
+    font-weight: 800;
+    letter-spacing: -0.08em;
+    line-height: 0.85;
+    margin-bottom: 1rem;
+}
+
+.sleep-age-focus strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    line-height: 1.1;
+}
+
+.sleep-age-focus p {
+    color: var(--verde-scuro);
+    line-height: 1.65;
+    margin-top: 1.2rem;
+}
+
+.sleep-together {
+    display: grid;
+    gap: clamp(2.5rem, 7vw, 6rem);
+    grid-template-columns: minmax(270px, 0.8fr) minmax(0, 1.2fr);
+}
+
+.sleep-together-intro {
+    min-width: 0;
+}
+
+.sleep-together-media {
+    height: 220px;
+    margin-top: 2rem;
+    max-width: 440px;
+    position: relative;
+}
+
+.sleep-together-media::before {
+    background: var(--rosa-chiaro);
+    border-radius: 14% 24% 12% 19% / 20% 31% 16% 26%;
+    bottom: -10px;
+    content: '';
+    left: 12px;
+    position: absolute;
+    right: -12px;
+    top: 10px;
+    transform: rotate(-1.2deg);
+}
+
+.sleep-together-media img {
+    border-radius: 11% 27% 9% 22% / 17% 34% 14% 29%;
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    width: 100%;
+}
+
+.sleep-together-list article {
+    align-items: start;
+    border-top: 1px solid var(--verde-scuro-a18);
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: 42px 1fr;
+    padding: 1.35rem 0;
+}
+
+.sleep-together-list article:first-child {
+    border-top: 3px solid var(--rosso-cuore);
+}
+
+.sleep-together-list span {
+    color: var(--rosso-cuore);
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding-top: 0.15rem;
+}
+
+.sleep-together-list h3 {
+    color: var(--verde-scuro);
+    font-size: 1.25rem;
+    margin-bottom: 0.4rem;
+}
+
+.sleep-together-list p {
+    line-height: 1.62;
+}
+
+.sleep-method-boundary {
+    border-top: 1px solid var(--verde-scuro-a18);
+    font-size: 0.92rem;
+    grid-column: 1 / -1;
+    line-height: 1.55;
+    margin-top: -1.5rem;
+    padding-top: 1.15rem;
+}
+
+.sleep-method-boundary strong {
+    color: var(--verde-scuro);
+}
+
+.sleep-call-path {
+    background: var(--verde-brand);
+    display: grid;
+    gap: 1.5rem clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.78fr);
+    max-width: 100%;
+    padding: clamp(3.8rem, 6vw, 5.2rem) max(2rem, calc((100% - 1180px) / 2));
+}
+
+.sleep-call-main {
+    align-self: center;
+    max-width: 650px;
+}
+
+.sleep-call-path .eyebrow {
+    color: var(--verde-scuro);
+}
+
+.sleep-call-path h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    letter-spacing: -0.04em;
+    line-height: 1.03;
+    max-width: 610px;
+}
+
+.sleep-call-main > p:not(.eyebrow, .sleep-call-note) {
+    color: var(--verde-scuro);
+    line-height: 1.65;
     margin-top: 1rem;
+    max-width: 610px;
 }
 
-.sleep-boundary-list {
-    border-left: 1px solid var(--verde-header-soft-a30);
-    padding-left: 2rem;
+.sleep-call-path .sleep-hero-actions {
+    margin-top: 1.35rem;
 }
 
-.sleep-boundary-list strong {
-    color: var(--blu-filo);
+.sleep-call-path .btn {
+    background: var(--verde-header);
+    color: var(--bianco);
+}
+
+.sleep-call-path .link-azione {
+    color: var(--verde-scuro);
+}
+
+.sleep-call-note {
+    border-left: 3px solid var(--rosso-cuore);
+    color: var(--verde-scuro);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-top: 1.25rem;
+    padding-left: 0.9rem;
+}
+
+.sleep-after-call {
+    align-self: center;
+    background: var(--carta-luminosa-a74);
+    border: 1px solid var(--bianco-a52);
+    border-radius: 26px 26px 8px 26px;
+    padding: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.sleep-after-call h3 {
+    color: var(--verde-scuro);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    line-height: 1.08;
+    margin-bottom: 1rem;
+}
+
+.sleep-after-call p:not(.eyebrow) {
+    line-height: 1.65;
+}
+
+.sleep-after-call p + p {
+    margin-top: 0.8rem;
+}
+
+.sleep-final-cta .eyebrow {
+    color: var(--verde-scuro) !important;
+}
+
+.sleep-faq {
+    align-items: start;
+    border-top: 1px solid var(--verde-scuro-a14);
+    display: grid;
+    gap: clamp(2.5rem, 7vw, 6rem);
+    grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.3fr);
+    max-width: 1180px;
+    padding-bottom: clamp(3.5rem, 5vw, 4.8rem);
+    padding-top: clamp(3.5rem, 5vw, 4.8rem);
 }
 
 .sleep-faq-list {
     border-top: 1px solid var(--verde-scuro-a20);
-    margin-top: 2.5rem;
 }
 
 .sleep-faq details {
     border-bottom: 1px solid var(--verde-scuro-a20);
-    padding: 1.1rem 0;
+    padding: 0.75rem 0;
 }
 
 .sleep-faq summary {
+    align-items: center;
     color: var(--verde-scuro);
     cursor: pointer;
+    display: flex;
     font-family: var(--font-display);
     font-size: 1.12rem;
     font-weight: 700;
+    justify-content: space-between;
+    list-style: none;
     min-height: 44px;
-    padding: 0.45rem 2.5rem 0.45rem 0;
+    padding: 0.45rem 0;
     position: relative;
 }
 
+.sleep-faq summary::-webkit-details-marker {
+    display: none;
+}
+
+.sleep-faq summary::after {
+    align-items: center;
+    border: 1px solid var(--verde-scuro-a20);
+    border-radius: 50%;
+    color: var(--rosso-cuore);
+    content: '+';
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 400;
+    height: 2rem;
+    justify-content: center;
+    line-height: 1;
+    margin-left: 1.25rem;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    width: 2rem;
+}
+
+.sleep-faq details[open] summary::after {
+    background: var(--verde-header);
+    border-color: var(--verde-header);
+    color: var(--bianco);
+    content: '−';
+    transform: rotate(180deg);
+}
+
+.sleep-faq summary:hover::after {
+    border-color: var(--rosso-cuore);
+}
+
+.sleep-faq summary:focus-visible,
+.sleep-hero-actions .link-azione:focus-visible {
+    border-radius: 4px;
+    outline: 3px solid var(--verde-scuro);
+    outline-offset: 4px;
+}
+
 .sleep-faq details p {
-    line-height: 1.7;
+    line-height: 1.65;
     max-width: 780px;
-    padding: 0.5rem 0 0.5rem;
+    padding: 0.35rem 3.3rem 0.65rem 0;
 }
 
 .sleep-final-cta {
@@ -358,14 +466,21 @@
     max-width: 100%;
     padding-left: max(2rem, calc((100% - 1180px) / 2));
     padding-right: max(2rem, calc((100% - 1180px) / 2));
+    text-align: center;
 }
 
-.sleep-final-cta h2,
-.sleep-final-cta p {
+.sleep-final-cta h2 {
     color: var(--testo);
+    font-size: clamp(2.1rem, 4vw, 3.6rem);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 900px;
 }
 
 .sleep-final-cta > p:not(.eyebrow) {
+    color: var(--testo);
     margin: 1rem auto 1.7rem;
     max-width: 680px;
 }
@@ -375,68 +490,222 @@
     color: var(--bianco);
 }
 
+.sleep-final-actions {
+    justify-content: center;
+}
+
+.page-consulenze-online .site-footer {
+    margin-top: 0;
+}
+
+.sleep-booking-page,
+.sleep-questionnaire-page,
+.sleep-confirmation {
+    margin: 0 auto;
+    max-width: 980px;
+    padding: clamp(3.5rem, 7vw, 6rem) 2rem;
+}
+
+.sleep-booking-page {
+    max-width: 900px;
+}
+
+.sleep-booking-intro h1,
+.sleep-confirmation h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(2.7rem, 6vw, 4.8rem);
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    margin: 0.55rem 0 1.2rem;
+}
+
+.sleep-booking-intro > p:last-child,
+.sleep-confirmation > p {
+    font-size: 1.08rem;
+    line-height: 1.7;
+    max-width: 720px;
+}
+
+.sleep-pending-alert {
+    background: var(--rosa-chiaro);
+    border-left: 5px solid var(--rosso-cuore);
+    border-radius: 0 18px 18px 0;
+    margin: 2rem 0;
+    padding: 1.25rem 1.4rem;
+}
+
+.sleep-pending-alert strong {
+    color: var(--verde-scuro);
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 0.35rem;
+}
+
+.sleep-pending-alert p {
+    line-height: 1.6;
+}
+
+.sleep-booking-form,
+.sleep-questionnaire-form {
+    margin-top: 2rem;
+}
+
+.sleep-form-grid,
+.sleep-slot-grid {
+    display: grid;
+    gap: 0 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sleep-difficulty-fieldset,
+.sleep-questionnaire-form fieldset {
+    border: 1px solid var(--verde-scuro-a16);
+    border-radius: 20px;
+    margin: 0 0 1.6rem;
+    padding: clamp(1.2rem, 3vw, 2rem);
+}
+
+.sleep-difficulty-fieldset legend,
+.sleep-questionnaire-form legend {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 0 0.5rem;
+}
+
+.sleep-radio-list {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sleep-radio-list label {
+    align-items: center;
+    background: var(--carta);
+    border: 1px solid var(--verde-scuro-a14);
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    gap: 0.7rem;
+    line-height: 1.35;
+    min-height: 54px;
+    padding: 0.8rem 1rem;
+}
+
+.sleep-radio-list input {
+    accent-color: var(--rosso-cuore);
+    flex: 0 0 auto;
+    height: 20px;
+    width: 20px;
+}
+
+.sleep-other-field {
+    margin: 1rem 0 0;
+}
+
+.sleep-slot-grid {
+    background: var(--verde-chiaro);
+    border-radius: 20px;
+    margin-bottom: 1.4rem;
+    padding: 1.4rem;
+}
+
+.sleep-slot-grid .form-gruppo {
+    margin-bottom: 0;
+}
+
+.sleep-slot-grid small,
+.sleep-questionnaire-form small {
+    color: var(--grigio);
+    display: block;
+    line-height: 1.45;
+    margin-top: 0.4rem;
+}
+
+.sleep-undecided {
+    margin: 1.4rem 0 0;
+    text-align: center;
+}
+
+.sleep-undecided a {
+    color: var(--verde-scuro);
+    font-weight: 700;
+}
+
+.sleep-confirmation {
+    min-height: 60vh;
+}
+
+.sleep-confirmation-slot {
+    color: var(--rosso-cuore);
+    font-family: var(--font-display);
+    font-size: 1.4rem !important;
+    font-weight: 700;
+}
+
+.sleep-known-data {
+    border-left: 3px solid var(--rosso-cuore);
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 1.5rem;
+    padding-left: 1rem;
+}
+
+.sleep-known-data span {
+    color: var(--grigio);
+}
+
+.sleep-questionnaire-form fieldset {
+    background: var(--carta-luminosa-a72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sleep-faq summary::after {
+        transition: none;
+    }
+}
+
 @media (max-width: 900px) {
 .sleep-hero,
-.sleep-clinical-boundaries {
+.sleep-fit,
+.sleep-together,
+.sleep-call-path {
         grid-template-columns: 1fr;
+    }
+.sleep-faq {
+        display: block;
+    }
+.sleep-faq-list {
+        margin-top: 1.8rem;
     }
 .sleep-hero-media {
-        height: 460px;
+        margin: 0 auto;
+        max-width: 560px;
+        width: 100%;
     }
-.sleep-signals {
-        grid-template-columns: 1fr;
+.sleep-hero-media img {
+        height: 520px;
     }
-.sleep-age-band,
-.sleep-option-grid {
-        grid-template-columns: 1fr;
-    }
-.sleep-age-band > div,
-.sleep-age-band > div:first-child,
-.sleep-age-band > div:last-child {
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-.thread-steps-sleep {
-        grid-template-columns: 1fr;
-        padding-left: 3.5rem;
-        padding-top: 0;
-    }
-.thread-steps-sleep::before {
-        height: calc(100% - 2rem);
-        left: 1rem;
-        top: 1rem;
-        width: 2px;
-    }
-.thread-steps-sleep > div {
-        min-height: 112px;
-        padding: 0 0 1.2rem;
-    }
-.thread-steps-sleep > div + div {
-        padding-top: 1.2rem;
-    }
-.thread-steps-sleep span {
-        left: -3.5rem;
-        top: 0;
-    }
-.thread-steps-sleep > div + div span {
-        left: -3.5rem;
-        top: 1.2rem;
-    }
-.sleep-boundary-list {
-        border-left: 0;
-        border-top: 1px solid var(--verde-header-soft-a30);
-        padding-left: 0;
-        padding-top: 1rem;
+.sleep-together-media {
+        height: 280px;
+        max-width: 560px;
     }
 }
 
 @media (max-width: 640px) {
 .sleep-hero,
-.sleep-recognition,
-.sleep-process,
-.sleep-options,
-.sleep-faq {
+.sleep-fit {
         padding: 3.4rem 1.15rem;
+    }
+.sleep-together,
+.sleep-faq {
+        padding: 3rem 1.15rem;
+    }
+.sleep-call-path,
+.sleep-final-cta {
+        padding: 3rem 1.15rem;
     }
 .sleep-hero h1 {
         font-size: clamp(2.65rem, 13vw, 3.7rem);
@@ -448,25 +717,76 @@
 .sleep-hero-actions .btn {
         width: 100%;
     }
-.sleep-hero-media {
+.sleep-hero-actions .link-azione {
+        justify-content: center;
+        text-align: center;
+    }
+.sleep-hero-media img {
+        border-radius: 180px 180px 18px 18px;
         height: 360px;
     }
-.sleep-clinical-boundaries,
-.sleep-final-cta {
-        padding: 3.5rem 1.15rem;
+.sleep-hero-media::before {
+        right: -4px;
     }
-.thread-steps-sleep > div + div span {
-        left: -3rem;
+.sleep-situation-list {
+        grid-template-columns: 1fr;
     }
-.sleep-age-band > div,
-.sleep-age-band > div:first-child,
-.sleep-age-band > div:last-child {
-        padding: 3.2rem 1.15rem;
+.sleep-age-focus {
+        align-items: center;
+        border-radius: 26px 26px 8px 26px;
+        display: grid;
+        gap: 0.4rem 1rem;
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 1.6rem 1.4rem;
     }
-.thread-steps {
-        padding-left: 3rem;
+.sleep-age-number {
+        font-size: clamp(3.6rem, 18vw, 4.4rem);
+        margin-bottom: 0;
     }
-.thread-steps span {
-        left: -3rem;
+.sleep-age-focus strong {
+        font-size: 1.15rem;
+    }
+.sleep-age-focus p {
+        grid-column: 1 / -1;
+        margin-top: 0.55rem;
+    }
+.sleep-after-call {
+        padding: 1.45rem;
+    }
+.sleep-after-call h3 {
+        font-size: 1.45rem;
+    }
+.sleep-faq-list {
+        margin-top: 1.45rem;
+    }
+.sleep-faq details {
+        padding: 0.55rem 0;
+    }
+.sleep-faq summary {
+        font-size: 1.05rem;
+    }
+.sleep-faq details p {
+        padding-right: 0;
+    }
+.sleep-together-media {
+        height: 210px;
+        margin-top: 1.6rem;
+    }
+.sleep-together-list article {
+        gap: 0.8rem;
+        grid-template-columns: 34px 1fr;
+    }
+.sleep-form-grid,
+.sleep-slot-grid,
+.sleep-radio-list {
+        grid-template-columns: 1fr;
+    }
+.sleep-slot-grid {
+        gap: 1rem;
+    }
+.sleep-booking-page,
+.sleep-questionnaire-page,
+.sleep-confirmation {
+        padding: 3.4rem 1.15rem;
     }
 }

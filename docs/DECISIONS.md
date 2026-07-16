@@ -31,7 +31,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-005 — Call gratuita prima del pagamento
 
 - Stato: approvata.
-- Decisione: call conoscitiva gratuita di circa 15 minuti prima di proporre o far pagare una consulenza.
+- Decisione: call conoscitiva gratuita di circa 20 minuti prima di proporre o far pagare una consulenza.
 - Motivo: qualificare il contatto ed evitare servizi non appropriati.
 
 ## D-006 — Gerarchia della homepage
@@ -132,6 +132,51 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: rendere la gerarchia commerciale leggibile senza trasformare la navigazione in un catalogo e usare la firma del filo rosso come feedback funzionale, non ornamentale.
 - Conseguenze: l'header è condiviso da tutte le pagine pubbliche, le prestazioni restano visibili ma secondarie e il menu corsi raccoglie i soli accessi principali senza modificare i flussi di iscrizione. Apertura, chiusura, focus, tastiera e movimento ridotto sono gestiti in `menu-mobile.js`.
 - Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/base.html`, `static/css/base.css`, `static/js/menu-mobile.js`.
+
+## D-020 — Prenotazione e qualificazione della call sonno
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: la landing sonno porta a una prenotazione breve dedicata. La call dura circa 20 minuti, mentre lo slot tecnico di 30 minuti include 10 minuti finali di margine e viene salvato e bloccato subito come `In attesa` anche su Google Calendar. Diventa confermato soltanto con l'email di Selene entro il giorno lavorativo successivo. Un eventuale nuovo orario viene concordato prima al telefono e salvato come già accettato. Il questionario approfondito resta sul sito, privato e accessibile tramite token soltanto dopo la call e la scelta della formula.
+- Motivo: ridurre l'attrito prima del primo contatto, evitare sovrapposizioni con Arzamed e raccogliere dati approfonditi solo quando servono realmente.
+- Conseguenze: `/prenota-call-sonno` non condivide modello o stati con le prestazioni sanitarie; WhatsApp è secondario per gli indecisi; non esiste una proposta di modifica in attesa di accettazione; il salvataggio principale precede email e Calendar.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `CONTENT_AND_ASSETS.md`, `app.py`.
+
+## D-021 — Landing sonno editoriale e compatta
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: organizzare `/consulenze-online` come landing `call-first`: difficoltà riconoscibili, accesso immediato al calendario, metodo essenziale, domande e CTA finale. Le due formule vengono soltanto nominate dopo la CTA, perché la persona non deve sceglierle prima del contatto. Mantenere la fotografia reale di Selene nella hero e riservare un secondo spazio fotografico dentro la sezione sul metodo.
+- Motivo: rendere la pagina più fresca, leggibile e mirata, riducendo ripetizioni e carico cognitivo senza adottare codici visivi estranei all'identità sanitaria.
+- Conseguenze: la CTA `Scegli l’orario della call` compare nella hero, subito dopo il riconoscimento del problema e alla fine. Nel blocco centrale l'azione occupa più spazio della rassicurazione sulle formule e non compete con un secondo collegamento WhatsApp. Le FAQ usano una composizione editoriale compatta a due colonne su desktop e controlli `details` chiaramente interattivi; su mobile pannello 0–12, fotografie e spaziature vengono ridotti per anticipare la call. I dettagli delle due formule e la sezione separata sui risultati attesi non precedono più la conversione. `placeholder.png` definisce temporaneamente posizione, proporzioni e ritaglio della seconda immagine, con testo alternativo vuoto finché non esiste un soggetto reale da descrivere; va sostituito prima del lancio. Bricolage Grotesque, Atkinson Hyperlegible, palette salvia e linea rossa restano gli elementi distintivi.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/consulenze_online.html`, `static/css/consulenza.css`.
+
+## D-022 — Ritagli morbidi per le fotografie della homepage
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: alleggerire le fotografie principali della homepage con sagome asimmetriche a bordi morbidi, ispirate a ritagli manuali. La hero usa un secondo livello salvia leggermente sfalsato; le immagini dei due pilastri usano forme alternate e più contenute.
+- Motivo: valorizzare la fotografia reale e dare ritmo alla pagina senza ripetere l'arco della landing sonno o introdurre decorazioni estranee al brand.
+- Conseguenze: le forme non devono coprire volti, mani o manufatti significativi; non vengono applicate automaticamente a calendari, feed esterni o immagini puramente funzionali. La linea rossa conserva un ruolo funzionale e non accompagna ogni ritaglio.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `static/css/homepage.css`.
+
+## D-023 — Homepage orientata ai corsi con percorsi leggibili
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: mantenere corsi e consulenza del sonno come due accessi principali, rendendo i corsi visivamente prioritari con azione piena e collocando date e percorso nascita prima delle prove secondarie. Quando non esistono date, il calendario viene sostituito da uno stato vuoto compatto che raccoglie l'interesse; quando le date esistono, si apre sul primo mese utile. Prestazioni infermieristiche restano in una fascia separata e secondaria.
+- Motivo: evitare che una card colorata o un calendario vuoto contraddicano la gerarchia commerciale e ridurre la lunghezza senza eliminare metodo e testimonianze autorizzate.
+- Conseguenze: le CTA dirette alla call usano il nome coerente `Scegli l’orario della call`; link, date e controlli del calendario rispettano tastiera e target touch; il widget Instagram mantiene il proprio rendering nativo e il collegamento diretto al profilo resta sempre visibile; su mobile la fiducia iniziale usa una griglia 2×2.
+- Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/calendario.js`.
+
+## D-024 — Sistema editoriale delle schede in homepage
+
+- Data: 2026-07-16.
+- Stato: approvata.
+- Decisione: estendere alla homepage il linguaggio contemporaneo dell'header attraverso schede asimmetriche, tab funzionali, superfici carta e salvia chiaro, ombre contenute e fotografie reali con ritagli morbidi. Le schede non devono essere tutte equivalenti: corsi resta il pannello più ampio e con CTA piena, sonno mantiene un trattamento secondario, prestazioni resta una fascia compatta.
+- Motivo: aumentare riconoscibilità, profondità e qualità percepita senza trasformare la homepage in un catalogo di componenti ripetuti.
+- Conseguenze: il corso di accompagnamento alla nascita usa una grande scheda verde chiaro separata dall'header salvia e un pannello carta autonomo per i cinque professionisti; metodo e testimonianze distinguono sequenza e prova sociale; calendario, Instagram e CTA finali condividono geometrie e bordi senza manipolare il rendering interno dei servizi esterni. La linea rossa segnala priorità o relazione soltanto nei punti funzionali.
+- Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `templates/homepage.html`, `static/css/homepage.css`.
 
 ## Modello per nuove decisioni
 

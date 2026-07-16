@@ -19,11 +19,13 @@ document.addEventListener('DOMContentLoaded', function() {
             '#admin-corsi': 'corsi',
             '#admin-eventi': 'eventi',
             '#admin-prenotazioni': 'prenotazioni',
+            '#admin-call-sonno': 'call-sonno',
         };
         const hashPerPannello = {
             corsi: '#admin-corsi',
             eventi: '#admin-eventi',
             prenotazioni: '#admin-prenotazioni',
+            'call-sonno': '#admin-call-sonno',
         };
         const pannelloIniziale = pannelliPerHash[window.location.hash] || 'prenotazioni';
         mostraPannelloAdmin(pannelloIniziale);

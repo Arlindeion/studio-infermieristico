@@ -54,7 +54,7 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Laboratori alimentari/gioco | 20-25 € a bambino | Circa 4 al mese; gruppi di 4-6 bambini | I bambini che ritornano sono il pubblico più ricorrente. |
 | Corso di accompagnamento alla nascita | 225 € a coppia | 9 incontri; media 5 coppie; capienza 7-8 | Il prezzo è per coppia. Una coppia conta come un posto nel percorso. |
 | Consulenza mirata sul sonno | 75 € | Singola difficoltà circoscritta | Formula breve, non sostitutiva del percorso quando più fattori si influenzano. |
-| Percorso sonno personalizzato | 180 € | Percorso principale | Offerta da validare; preceduta da call conoscitiva gratuita di circa 15 minuti. |
+| Percorso sonno personalizzato | 180 € | Percorso principale | Offerta da validare; preceduta da call conoscitiva gratuita di circa 20 minuti. |
 | Prestazioni infermieristiche | Variabile | Frequenza variabile | Da circa 12 € per un'iniezione a circa 60 € per un Holter; prezzi delle piattaforme esterne maggiorati dalle commissioni. |
 
 Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo l'accordo reale e al netto di spese, imposte, contributi e materiali. Nel percorso nascita gli altri professionisti fatturano direttamente i propri compensi: l'intero prezzo non è ricavo di Selene.

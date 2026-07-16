@@ -27,6 +27,12 @@
             <strong>{{ in_attesa_count }}</strong>
             {% endif %}
         </button>
+        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false">
+            <span>Call sonno</span>
+            {% if call_sonno_in_attesa_count > 0 %}
+            <strong>{{ call_sonno_in_attesa_count }}</strong>
+            {% endif %}
+        </button>
         <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false">
             <span>Corsi</span>
             {% if iscrizioni_nuove_count > 0 %}
@@ -209,6 +215,53 @@
     <p class="nota nota-lg">Nessun appuntamento in questa categoria.</p>
     {% endif %}
 
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="call-sonno" id="admin-call-sonno">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Consulenza 0-12 mesi</p>
+            <h2>Call sul sonno</h2>
+        </div>
+        <span class="admin-total">{{ call_sonno|length }} richieste</span>
+    </div>
+    <p class="filtro-descrizione">Le nuove richieste bloccano subito lo slot. Conferma l’orario scelto oppure, dopo l’accordo telefonico, modificalo: il nuovo orario sarà già considerato accettato.</p>
+
+    {% if call_sonno %}
+    <div class="admin-table-wrap">
+        <table class="tabella-admin">
+            <thead><tr><th>Famiglia</th><th>Richiesta</th><th>Quando</th><th>Stato</th><th>Azioni</th></tr></thead>
+            <tbody>
+            {% for call in call_sonno %}
+            <tr class="stato-{{ call.stato|lower|replace(' ', '-') }}">
+                <td><strong class="admin-primary">{{ call.nome }}</strong><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
+                <td><strong class="admin-primary">{{ call.eta_bambino_mesi }} mesi</strong><span class="admin-secondary">{{ call.difficolta_altro or call.difficolta_principale }}</span></td>
+                <td><strong class="admin-primary">{{ call.data }}</strong><span class="admin-secondary">ore {{ call.ora }} · call 20 min · blocco 30 min</span></td>
+                <td><span class="badge">{{ call.stato }}</span>{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
+                <td class="azioni admin-call-actions">
+                    {% if call.questionario %}<a class="btn-azione blu" href="{{ url_for('visualizza_questionario_sonno_admin', id=call.id) }}">Leggi questionario</a>{% endif %}
+                    {% if call.stato == 'In attesa' %}
+                    <form method="post" action="{{ url_for('conferma_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Conferma</button></form>
+                    {% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}<a class="btn-azione blu" href="{{ url_for('modifica_call_sonno_admin', id=call.id) }}">Modifica dopo accordo</a>{% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}
+                    <form method="post" action="{{ url_for('annulla_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>
+                    {% endif %}
+                    {% if call.stato in ['Confermata', 'Conclusa'] and not call.questionario %}
+                    <form class="admin-questionnaire-send" method="post" action="{{ url_for('invia_questionario_sonno_admin', id=call.id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <label for="formula-{{ call.id }}">Dopo la call</label>
+                        <select id="formula-{{ call.id }}" name="formula_scelta" required><option value="">Formula concordata</option>{% for valore, etichetta in formule_sonno.items() %}<option value="{{ valore }}" {% if call.formula_scelta == valore %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}</select>
+                        <button class="btn-azione verde" type="submit">{% if call.questionario_inviato_il %}Reinvia questionario{% else %}Invia questionario{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}<p class="nota nota-lg">Nessuna call sul sonno ricevuta.</p>{% endif %}
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="eventi" id="admin-eventi">

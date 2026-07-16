@@ -54,6 +54,9 @@ class Config:
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID')
     GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID')
+    # Collegamento della videochiamata, incluso nelle conferme delle call sonno
+    # solo quando configurato. In alternativa Selene comunica la modalità.
+    SONNO_CALL_URL = os.environ.get('SONNO_CALL_URL')
 
 class DevelopmentConfig(Config):
     """Configurazione di sviluppo."""
@@ -87,6 +90,7 @@ class TestingConfig(Config):
     GOOGLE_SERVICE_ACCOUNT_FILE = None
     GOOGLE_CALENDAR_ID = None
     GOOGLE_ANALYTICS_ID = None
+    SONNO_CALL_URL = None
 
 config = {
     'development': DevelopmentConfig,

@@ -133,6 +133,58 @@ SERVIZI_VALIDI = [
 ]
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
+STATI_CALL_SONNO_VALIDI = ['In attesa', 'Confermata', 'Annullata', 'Conclusa']
+FORMULE_SONNO = {
+    'mirata': 'Consulenza mirata',
+    'percorso': 'Percorso sonno personalizzato',
+}
+DIFFICOLTA_SONNO = [
+    'Addormentamento difficile la sera',
+    'Risvegli notturni frequenti',
+    'Pisolini difficili o brevi',
+    'Addormentamento solo con forte supporto (braccio/seno)',
+    'Cambiamenti / regressioni / distacchi',
+    'Altro',
+]
+QUESTIONARIO_SONNO_LABELS = {
+    'nome_bambino': 'Nome del bambino',
+    'data_nascita': 'Data di nascita',
+    'nascita': 'Nascita e prematurità',
+    'eta_corretta': 'Età corretta',
+    'gestione_sonno': 'Chi gestisce il sonno',
+    'alimentazione': 'Alimentazione',
+    'poppate_notturne': 'Poppate o pasti notturni',
+    'addormentamento_seno': 'Addormentamento al seno',
+    'risveglio_mattino': 'Risveglio del mattino',
+    'pisolini': 'Pisolini',
+    'routine_serale': 'Routine serale',
+    'ora_addormentamento': 'Orario di addormentamento',
+    'cambiamenti_routine': 'Cambiamenti della routine',
+    'dove_si_addormenta': 'Dove si addormenta',
+    'dove_dorme': 'Dove dorme',
+    'supporti_addormentamento': 'Supporti per addormentarsi',
+    'risvegli_dettaglio': 'Risvegli',
+    'riaddormentamento': 'Come si riaddormenta',
+    'risveglio_precoce': 'Risveglio precoce',
+    'durata_difficolta': 'Durata della difficoltà',
+    'tentativi_fatti': 'Tentativi già fatti',
+    'eventi_recenti': 'Eventi recenti',
+    'momento_piu_difficile': 'Momento più difficile',
+    'cambiamento_desiderato': 'Cambiamento desiderato',
+    'cosa_non_cambiare': 'Cosa non cambiare',
+    'partecipanti_consulenza': 'Partecipanti alla consulenza',
+    'condizioni_note': 'Condizioni già valutate',
+    'terapie_indicazioni': 'Terapie o indicazioni',
+    'professionisti_coinvolti': 'Professionisti coinvolti',
+    'note_finali': 'Note finali',
+}
+DURATA_CALL_SONNO_MINUTI = 20
+BLOCCO_CALL_SONNO_MINUTI = 30
+ORARI_CALL_SONNO = [
+    f'{ora:02d}:{minuto:02d}'
+    for ora in [8, 9, 10, 11, 12, 15, 16, 17, 18]
+    for minuto in [0, 30]
+]
 STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
@@ -200,7 +252,7 @@ FAQ_ITEMS = [
     {
         'id': 'iscrizione-corsi-online',
         'question': 'Come funziona l\'iscrizione online ai corsi?',
-        'answer': "Dalla pagina corsi scegli il corso, compili il modulo e invii la richiesta. Se c'è una data aperta, la richiesta viene collegata a quella data; se non ci sono date disponibili, puoi lasciare i tuoi dati per essere ricontattato quando si apre una nuova possibilità.",
+        'answer': "Dalla pagina corsi scegli il corso, compili il modulo e invii la richiesta. Se c'è una data aperta, la richiesta viene collegata a quella data; se non ci sono date disponibili, puoi lasciare i tuoi dati e ti ricontatterò quando si apre una nuova possibilità.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Vai alle iscrizioni',
     },
@@ -240,16 +292,16 @@ FAQ_ITEMS = [
         'link_text': 'Vedi i corsi',
     },
     {
-        'id': 'consulenze-genitori',
-        'question': 'Cosa sono le consulenze genitori e quando possono aiutare una famiglia?',
-        'answer': "Le consulenze genitori sono incontri online o in studio per chi cerca una guida concreta su sonno, routine, spannolinamento, togliere il ciuccio, cura quotidiana e dubbi pratici dei primi mesi. Sono pensate per fare ordine senza giudizio e capire, anche con una call conoscitiva gratuita, quale passo è davvero utile.",
+        'id': 'consulenza-sonno-infantile',
+        'question': 'Quando può essere utile una consulenza sul sonno infantile?',
+        'answer': "La consulenza è dedicata al sonno dei bambini da 0 a 12 mesi e può essere utile quando addormentamento, risvegli o pisolini sono diventati difficili da leggere. Partiamo da una call gratuita per capire la situazione e verificare insieme quale passo sia davvero adatto alla famiglia.",
         'link_href': '/consulenze-online',
-        'link_text': 'Scopri le consulenze genitori',
+        'link_text': 'Scopri la consulenza del sonno',
     },
     {
         'id': 'consulenze-online-presenza',
-        'question': 'Le consulenze per neogenitori sono online o in presenza?',
-        'answer': "Le consulenze possono essere pensate come supporto online o in studio, in base al bisogno della famiglia. Prima di attivare un percorso strutturato, lo studio può prevedere un primo contatto conoscitivo per capire il problema e indirizzare meglio il supporto.",
+        'question': 'La consulenza sul sonno è online o in presenza?',
+        'answer': "La consulenza può svolgersi online in tutta Italia o in studio a Montesilvano. Prima di iniziare puoi scegliere una call gratuita: mi serve per comprendere la difficoltà principale e verificare se il servizio è adatto.",
         'link_href': '/consulenze-online',
         'link_text': 'Vedi consulenze',
     },
@@ -298,10 +350,10 @@ FAQ_ITEMS = [
     {
         'id': 'dove-si-trova-studio',
         'question': 'Dove si trova S.C. Studio Infermieristico e come posso contattarlo?',
-        'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattare lo studio al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
+        'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattarmi al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
         'map_embed_src': STUDIO_MAP_EMBED_SRC,
         'link_href': 'https://wa.me/393806317175',
-        'link_text': 'Contatta lo studio',
+        'link_text': 'Scrivimi su WhatsApp',
         'link_external': True,
     },
 ]
@@ -439,18 +491,20 @@ def _scarica_calendario_ics():
         return _cache_calendario['calendario']
 
 
-def orari_occupati_da_calendario(data_str):
-    """Restituisce l'insieme degli orari (stringhe 'HH:MM') di ORARI_DISPONIBILI
-    che risultano occupati, per la data indicata, da eventi sul calendario
-    Google (appuntamenti Arzamed o chiusure studio)."""
+def _intervalli_calendario(data_str, ignore_google_event_id=None):
+    """Restituisce gli intervalli occupati nel giorno richiesto.
+
+    La forma a intervalli permette di confrontare durate diverse senza
+    lasciare sovrapposizioni invisibili.
+    """
     calendario = _scarica_calendario_ics()
     if calendario is None:
-        return set()
+        return []
 
     try:
         giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
     except ValueError:
-        return set()
+        return []
 
     inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
     fine_giornata = inizio_giornata + timedelta(days=1)
@@ -459,10 +513,13 @@ def orari_occupati_da_calendario(data_str):
         eventi = recurring_ical_events.of(calendario).between(inizio_giornata, fine_giornata)
     except Exception as e:
         logger.error(f'>>> Errore nell\'espansione degli eventi del calendario: {e}', exc_info=True)
-        return set()
+        return []
 
-    occupati = set()
+    intervalli = []
     for evento in eventi:
+        uid = str(evento.get('UID') or '')
+        if ignore_google_event_id and uid.startswith(ignore_google_event_id):
+            continue
         inizio_evento = evento.get('DTSTART').dt
         fine_evento = evento.get('DTEND').dt if evento.get('DTEND') else inizio_evento
 
@@ -485,15 +542,34 @@ def orari_occupati_da_calendario(data_str):
         else:
             fine_evento = fine_evento.astimezone(FUSO_ORARIO)
 
-        for orario in ORARI_DISPONIBILI:
-            ora, minuto = map(int, orario.split(':'))
-            inizio_slot = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
-            fine_slot = inizio_slot + timedelta(minutes=DURATA_SLOT_MINUTI)
+        intervalli.append((inizio_evento, fine_evento))
 
-            # Due intervalli si sovrappongono se ciascuno inizia prima che
-            # l'altro finisca.
-            if inizio_slot < fine_evento and inizio_evento < fine_slot:
-                occupati.add(orario)
+    return intervalli
+
+
+def intervallo_occupato_da_calendario(data_str, ora, durata_minuti, ignore_google_event_id=None):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+        ore, minuti = map(int, ora.split(':'))
+    except (ValueError, TypeError):
+        return True
+    inizio_slot = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(
+        hour=ore,
+        minute=minuti,
+    )
+    fine_slot = inizio_slot + timedelta(minutes=durata_minuti)
+    return any(
+        inizio_slot < fine_evento and inizio_evento < fine_slot
+        for inizio_evento, fine_evento in _intervalli_calendario(data_str, ignore_google_event_id)
+    )
+
+
+def orari_occupati_da_calendario(data_str):
+    """Restituisce gli slot sanitari da 30 minuti occupati su Calendar."""
+    occupati = {
+        ora for ora in ORARI_DISPONIBILI
+        if intervallo_occupato_da_calendario(data_str, ora, DURATA_SLOT_MINUTI)
+    }
 
     return occupati
 
@@ -673,6 +749,104 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
             {'errore': str(e)},
         )
     return False
+
+
+def _corpo_evento_da_call_sonno(call):
+    inizio, fine = _intervallo_locale(call.data, call.ora, BLOCCO_CALL_SONNO_MINUTI)
+    in_attesa = call.stato == 'In attesa'
+    return {
+        'summary': f'Call sonno{" (da confermare)" if in_attesa else ""}: {call.nome}',
+        'description': (
+            f'Telefono: {call.telefono}\n'
+            f'Email: {call.email}\n'
+            f'Stato: {call.stato}\n'
+            f'(Richiesta dal sito web)'
+        ),
+        'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
+        'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+        'status': 'tentative' if in_attesa else 'confirmed',
+        'transparency': 'opaque',
+    }
+
+
+def crea_o_aggiorna_evento_calendario_call_sonno(call):
+    """Blocca subito la call su Calendar; il salvataggio DB resta prioritario."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Call sonno salvata, ma il blocco su Google Calendar non è stato creato.',
+            'CallSonno',
+            call.id,
+        )
+        return False
+    corpo = _corpo_evento_da_call_sonno(call)
+    try:
+        if call.google_event_id:
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=call.google_event_id,
+                body=corpo,
+            ).execute()
+        else:
+            evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            call.google_event_id = evento.get('id')
+            db.session.commit()
+        _cache_calendario['scaricato_il'] = 0
+        registra_evento(
+            'google_calendar',
+            'successo',
+            'Call sonno sincronizzata su Google Calendar.',
+            'CallSonno',
+            call.id,
+            {'google_event_id': call.google_event_id},
+        )
+        return True
+    except Exception as errore:
+        logger.error(f'>>> Errore Calendar per call sonno {call.id}: {errore}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore durante la sincronizzazione Calendar della call sonno.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
+def elimina_evento_calendario_call_sonno(call):
+    if not call.google_event_id:
+        return True
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Call annullata, ma il blocco non è stato rimosso da Google Calendar.',
+            'CallSonno',
+            call.id,
+        )
+        return False
+    try:
+        servizio.events().delete(calendarId=calendar_id, eventId=call.google_event_id).execute()
+        call.google_event_id = None
+        db.session.commit()
+        _cache_calendario['scaricato_il'] = 0
+        return True
+    except HttpError as errore:
+        if getattr(errore, 'status_code', None) not in (404, 410):
+            registra_evento('google_calendar', 'errore', 'Errore eliminazione call sonno da Calendar.', 'CallSonno', call.id, {'errore': str(errore)})
+            return False
+        call.google_event_id = None
+        db.session.commit()
+        return True
+    except Exception as errore:
+        registra_evento('google_calendar', 'errore', 'Errore eliminazione call sonno da Calendar.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
 
 
 def crea_o_aggiorna_evento_calendario_corso(corso):
@@ -918,6 +1092,45 @@ class Appuntamento(db.Model):
     google_event_id = db.Column(db.String(255), nullable=True)
 
 
+class CallSonno(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    eta_bambino_mesi = db.Column(db.Integer, nullable=False)
+    difficolta_principale = db.Column(db.String(120), nullable=False)
+    difficolta_altro = db.Column(db.String(300), nullable=True)
+    consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
+    data = db.Column(db.String(20), nullable=False, index=True)
+    ora = db.Column(db.String(10), nullable=False)
+    stato = db.Column(db.String(20), default='In attesa', nullable=False, index=True)
+    google_event_id = db.Column(db.String(255), nullable=True)
+    formula_scelta = db.Column(db.String(30), nullable=True)
+    token_questionario = db.Column(db.String(96), unique=True, nullable=True, index=True)
+    questionario_inviato_il = db.Column(db.DateTime, nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+
+class QuestionarioSonno(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    call_sonno_id = db.Column(db.Integer, db.ForeignKey('call_sonno.id'), unique=True, nullable=False)
+    risposte = db.Column(db.Text, nullable=False)
+    consenso_dati_sanitari = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_marketing = db.Column(db.Boolean, default=False, nullable=False)
+    compilato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    call_sonno = db.relationship(
+        'CallSonno',
+        backref=db.backref('questionario', uselist=False, cascade='all, delete-orphan'),
+    )
+
+    def risposte_dict(self):
+        try:
+            return json.loads(self.risposte)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+
 class Corso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titolo = db.Column(db.String(200), nullable=False)
@@ -1064,6 +1277,89 @@ def load_user(user_id):
     return db.session.get(Admin, int(user_id))
 
 
+def _intervallo_locale(data_str, ora, durata_minuti):
+    giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    ore, minuti = map(int, ora.split(':'))
+    inizio = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(
+        hour=ore,
+        minute=minuti,
+    )
+    return inizio, inizio + timedelta(minutes=durata_minuti)
+
+
+def _intervalli_si_sovrappongono(primo, secondo):
+    return primo[0] < secondo[1] and secondo[0] < primo[1]
+
+
+def _giorno_lavorativo_call(giorno):
+    return giorno.weekday() < 5 and not is_festivo(giorno)
+
+
+def prima_data_call_disponibile(da_giorno=None):
+    candidato = (da_giorno or date.today()) + timedelta(days=1)
+    while not _giorno_lavorativo_call(candidato):
+        candidato += timedelta(days=1)
+    return candidato
+
+
+def orario_call_prenotabile(data_str, ora):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return False
+    return (
+        ora in ORARI_CALL_SONNO
+        and _giorno_lavorativo_call(giorno)
+        and giorno >= prima_data_call_disponibile()
+    )
+
+
+def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_appuntamento_id=None):
+    """Controlla sovrapposizioni con prestazioni, call e corsi salvati."""
+    try:
+        intervallo_richiesto = _intervallo_locale(data_str, ora, durata_minuti)
+    except (ValueError, TypeError):
+        return True
+
+    appuntamenti_query = Appuntamento.query.filter(
+        Appuntamento.data == data_str,
+        Appuntamento.stato != 'Annullato',
+    )
+    if ignore_appuntamento_id is not None:
+        appuntamenti_query = appuntamenti_query.filter(Appuntamento.id != ignore_appuntamento_id)
+    for appuntamento in appuntamenti_query.all():
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(appuntamento.data, appuntamento.ora, DURATA_SLOT_MINUTI),
+        ):
+            return True
+
+    call_query = CallSonno.query.filter(
+        CallSonno.data == data_str,
+        CallSonno.stato != 'Annullata',
+    )
+    if ignore_call_id is not None:
+        call_query = call_query.filter(CallSonno.id != ignore_call_id)
+    for call in call_query.all():
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(call.data, call.ora, BLOCCO_CALL_SONNO_MINUTI),
+        ):
+            return True
+
+    corsi = Corso.query.filter(Corso.data == data_str, Corso.stato != 'Annullato').all()
+    for corso in corsi:
+        if not corso.ora:
+            return True
+        durata = int((corso.durata_ore or DURATA_CORSO_DEFAULT_ORE) * 60)
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(corso.data, corso.ora, durata),
+        ):
+            return True
+    return False
+
+
 # ─── INIZIALIZZAZIONE DATABASE ───
 # Questo blocco viene eseguito sia con flask run che con python3 app.py
 
@@ -1083,6 +1379,118 @@ with app.app_context():
 
 # ─── EMAIL ───
 
+def invia_email_ricezione_call_sonno(call):
+    try:
+        msg = Message(
+            subject='Richiesta call sonno ricevuta - attendi la conferma',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'ho ricevuto la tua richiesta per la call gratuita sul sonno.\n\n'
+                f'Data richiesta: {call.data}\n'
+                f'Orario richiesto: {call.ora}\n'
+                f'Durata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n\n'
+                f'Lo slot è riservato provvisoriamente, ma la call non è ancora confermata. '
+                f'Attendi la mia email di conferma prima di considerare fissato l’appuntamento. '
+                f'Ti confermerò lo slot oppure ti contatterò per concordare un orario diverso '
+                f'entro il giorno lavorativo successivo.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email ricezione call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_alert_call_sonno(call):
+    try:
+        msg = Message(
+            subject=f'Nuova call sonno da confermare - {call.nome}',
+            recipients=['sc.studioinfermieristico@gmail.com'],
+            body=(
+                f'Nuova richiesta di call sonno.\n\n'
+                f'Nome: {call.nome}\nTelefono: {call.telefono}\nEmail: {call.email}\n'
+                f'Età bambino: {call.eta_bambino_mesi} mesi\n'
+                f'Difficoltà: {call.difficolta_altro or call.difficolta_principale}\n'
+                f'Quando: {call.data} alle {call.ora}\n\n'
+                f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email alert call sonno non inviata allo studio.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_conferma_call_sonno(call, modificata=False):
+    try:
+        call_url = app.config.get('SONNO_CALL_URL')
+        istruzioni = (
+            f'Collegamento per la call: {call_url}\n'
+            if call_url
+            else 'Ti comunicherò la modalità di collegamento prima della call.\n'
+        )
+        msg = Message(
+            subject='Call sonno confermata - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'la tua call gratuita è {"stata riprogrammata e " if modificata else ""}confermata.\n\n'
+                f'Data: {call.data}\nOra: {call.ora}\nDurata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n'
+                f'{istruzioni}\n'
+                f'Prima della call non devi compilare altri moduli.\n\n'
+                f'Per necessità puoi contattarmi al 3806317175.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email conferma call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_annullamento_call_sonno(call):
+    try:
+        mail.send(Message(
+            subject='Call sonno annullata - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\nla call richiesta per il {call.data} alle {call.ora} '
+                f'è stata annullata. Per fissare un nuovo momento puoi contattarmi al 3806317175.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email annullamento call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_questionario_sonno(call):
+    try:
+        link = url_for('questionario_sonno', token=call.token_questionario, _external=True)
+        formula = FORMULE_SONNO.get(call.formula_scelta, 'percorso scelto')
+        mail.send(Message(
+            subject='Il questionario per iniziare il percorso sul sonno',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\ncome concordato dopo la call, puoi compilare il questionario '
+                f'riservato per {formula}. Le risposte mi permetteranno di preparare il lavoro sulla vostra situazione reale.\n\n'
+                f'Compila il questionario: {link}\n\n'
+                f'Il collegamento è personale: non inoltrarlo. Se hai dubbi, scrivimi su WhatsApp.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email questionario sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
 def invia_email_conferma(appuntamento):
     """Invia email di conferma al paziente dopo la conferma dell'appuntamento."""
     try:
@@ -1096,7 +1504,7 @@ def invia_email_conferma(appuntamento):
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
-                f'Per qualsiasi necessità puoi contattarci al numero 3806317175.\n\n'
+                f'Per qualsiasi necessità puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1119,13 +1527,13 @@ def invia_email_spostamento(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento è stato spostato '
+                f'ti informo che il tuo appuntamento è stato spostato '
                 f'alle seguenti nuove data e ora:\n\n'
                 f'Servizio:     {appuntamento.servizio}\n'
                 f'Nuova data:   {appuntamento.data}\n'
                 f'Nuovo orario: {appuntamento.ora}\n\n'
                 f'Se hai domande o necessiti di ulteriori modifiche '
-                f'puoi contattarci al numero 3806317175.\n\n'
+                f'puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1148,12 +1556,12 @@ def invia_email_annullamento(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento è stato cancellato.\n\n'
+                f'ti informo che il tuo appuntamento è stato cancellato.\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
                 f'Se desideri fissare un nuovo appuntamento puoi prenotare '
-                f'direttamente dal nostro sito o contattarci al numero 3806317175.\n\n'
+                f'direttamente dal sito o contattarmi al numero 3806317175.\n\n'
                 f'Ci scusiamo per l\'inconveniente.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
@@ -1247,7 +1655,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
                 f'Percorso: {percorso.titolo}\n'
                 f'Luogo:    Studio infermieristico\n\n'
                 f'Calendario incontri:\n{date_percorso}\n\n'
-                f'Per qualsiasi necessità puoi contattarci al numero {contatti}.\n\n'
+                f'Per qualsiasi necessità puoi contattarmi al numero {contatti}.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1295,12 +1703,12 @@ def invia_email_ricordo_24h(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'Ti ricordiamo che hai un appuntamento domani:\n\n'
+                f'Ti ricordo che hai un appuntamento domani:\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
                 f'Se hai bisogno di modificare o cancellare l\'appuntamento, '
-                f'puoi contattarci al numero 3806317175.\n\n'
+                f'puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1993,6 +2401,164 @@ def conferma_iscrizione_accompagnamento():
     return render_template('conferma_iscrizione_accompagnamento.html')
 
 
+def _orari_call_occupati(data_str, ignore_call_id=None, ignore_google_event_id=None):
+    return {
+        ora for ora in ORARI_CALL_SONNO
+        if slot_occupato_db(data_str, ora, BLOCCO_CALL_SONNO_MINUTI, ignore_call_id)
+        or intervallo_occupato_da_calendario(
+            data_str,
+            ora,
+            BLOCCO_CALL_SONNO_MINUTI,
+            ignore_google_event_id,
+        )
+    }
+
+
+@app.route('/prenota-call-sonno', methods=['GET', 'POST'])
+@limiter.limit('5 per hour')
+def prenota_call_sonno():
+    prima_data = prima_data_call_disponibile().isoformat()
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('prenota_call_sonno.html', form_data=request.form, prima_data=prima_data,
+                                   difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+
+        nome = request.form.get('nome', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        difficolta = request.form.get('difficolta_principale', '').strip()
+        difficolta_altro = request.form.get('difficolta_altro', '').strip()
+        data_scelta = request.form.get('data', '').strip()
+        ora = request.form.get('ora', '').strip()
+        eta_raw = request.form.get('eta_bambino_mesi', '').strip()
+
+        errori = []
+        try:
+            eta_mesi = int(eta_raw)
+        except ValueError:
+            eta_mesi = -1
+        if not nome or len(nome) > 100:
+            errori.append('Inserisci nome e cognome (massimo 100 caratteri).')
+        if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
+            errori.append('Inserisci un numero di telefono valido.')
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            errori.append('Inserisci un indirizzo email valido.')
+        if eta_mesi < 0 or eta_mesi > 12:
+            errori.append('L’età del bambino deve essere compresa tra 0 e 12 mesi.')
+        if difficolta not in DIFFICOLTA_SONNO:
+            errori.append('Seleziona la difficoltà principale.')
+        if difficolta == 'Altro' and not difficolta_altro:
+            errori.append('Descrivi brevemente la difficoltà principale.')
+        if len(difficolta_altro) > 300:
+            errori.append('La descrizione può contenere al massimo 300 caratteri.')
+        if not request.form.get('consenso_privacy'):
+            errori.append('Devi accettare l’informativa privacy per procedere.')
+        if not orario_call_prenotabile(data_scelta, ora):
+            errori.append('Scegli un giorno lavorativo e uno degli orari disponibili.')
+        elif (
+            slot_occupato_db(data_scelta, ora, BLOCCO_CALL_SONNO_MINUTI)
+            or intervallo_occupato_da_calendario(data_scelta, ora, BLOCCO_CALL_SONNO_MINUTI)
+        ):
+            errori.append('Questo orario non è più disponibile. Scegline un altro.')
+
+        if errori:
+            for errore in errori:
+                flash(errore, 'error')
+            return render_template('prenota_call_sonno.html', form_data=request.form, prima_data=prima_data,
+                                   difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+
+        nuova_call = CallSonno(
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            eta_bambino_mesi=eta_mesi,
+            difficolta_principale=difficolta,
+            difficolta_altro=difficolta_altro if difficolta == 'Altro' else None,
+            consenso_privacy=True,
+            data=data_scelta,
+            ora=ora,
+        )
+        db.session.add(nuova_call)
+        db.session.commit()
+        crea_o_aggiorna_evento_calendario_call_sonno(nuova_call)
+        invia_email_ricezione_call_sonno(nuova_call)
+        invia_email_alert_call_sonno(nuova_call)
+        session['ultima_call_sonno'] = nuova_call.id
+        return redirect(url_for('conferma_call_sonno'))
+
+    return render_template('prenota_call_sonno.html', form_data={}, prima_data=prima_data,
+                           difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+
+
+@app.route('/prenota-call-sonno/conferma')
+def conferma_call_sonno():
+    call_id = session.get('ultima_call_sonno')
+    call = db.session.get(CallSonno, call_id) if call_id else None
+    return render_template('conferma_call_sonno.html', call=call)
+
+
+@app.route('/api/orari-call-sonno/<data_str>')
+@limiter.limit('30 per minute')
+def api_orari_call_sonno(data_str):
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', data_str):
+        abort(400)
+    if not _giorno_lavorativo_call(datetime.strptime(data_str, '%Y-%m-%d').date()):
+        return jsonify({'occupati': ORARI_CALL_SONNO})
+    return jsonify({'occupati': sorted(_orari_call_occupati(data_str))})
+
+
+@app.route('/questionario-sonno/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def questionario_sonno(token):
+    if not re.match(r'^[A-Za-z0-9_-]{32,96}$', token):
+        abort(404)
+    call = CallSonno.query.filter_by(token_questionario=token).first_or_404()
+    if not call.formula_scelta:
+        abort(404)
+    if call.questionario:
+        return render_template('questionario_sonno_completato.html', call=call)
+
+    if request.method == 'POST':
+        csrf = session.pop('_csrf_token', None)
+        if not csrf or csrf != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+        if not request.form.get('consenso_dati_sanitari'):
+            flash('Il consenso al trattamento dei dati sanitari è necessario per inviare il questionario.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+
+        campi = [
+            'nome_bambino', 'data_nascita', 'nascita', 'eta_corretta', 'gestione_sonno',
+            'alimentazione', 'poppate_notturne', 'addormentamento_seno', 'risveglio_mattino',
+            'pisolini', 'routine_serale', 'ora_addormentamento', 'cambiamenti_routine',
+            'dove_si_addormenta', 'dove_dorme', 'supporti_addormentamento', 'risvegli_dettaglio',
+            'riaddormentamento', 'risveglio_precoce', 'durata_difficolta', 'tentativi_fatti',
+            'eventi_recenti', 'momento_piu_difficile', 'cambiamento_desiderato',
+            'cosa_non_cambiare', 'partecipanti_consulenza', 'condizioni_note',
+            'terapie_indicazioni', 'professionisti_coinvolti', 'note_finali',
+        ]
+        risposte = {campo: request.form.get(campo, '').strip()[:2000] for campo in campi}
+        obbligatori = ['nome_bambino', 'data_nascita', 'alimentazione', 'dove_dorme',
+                       'durata_difficolta', 'cambiamento_desiderato']
+        if any(not risposte[campo] for campo in obbligatori):
+            flash('Completa tutti i campi contrassegnati come obbligatori.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+
+        db.session.add(QuestionarioSonno(
+            call_sonno=call,
+            risposte=json.dumps(risposte, ensure_ascii=False),
+            consenso_dati_sanitari=True,
+            consenso_marketing=bool(request.form.get('consenso_marketing')),
+        ))
+        db.session.commit()
+        registra_evento('questionario_sonno', 'successo', 'Questionario sonno compilato.', 'CallSonno', call.id)
+        return redirect(url_for('questionario_sonno', token=token))
+
+    return render_template('questionario_sonno.html', call=call, form_data={}, formule_sonno=FORMULE_SONNO)
+
+
 def _panoramica_corsi(corsi):
     iscrizioni_per_corso = defaultdict(list)
     corso_ids = [corso.id for corso in corsi]
@@ -2121,11 +2687,7 @@ def prenota():
         # questo controllo lato server evita doppie prenotazioni nel caso in
         # cui qualcuno invii comunque la richiesta (bypassando il JS, o per
         # una prenotazione fatta nel frattempo da un altro utente).
-        gia_occupato_db = Appuntamento.query.filter(
-            Appuntamento.data == data_scelta,
-            Appuntamento.ora == ora,
-            Appuntamento.stato != 'Annullato'
-        ).first() is not None
+        gia_occupato_db = slot_occupato_db(data_scelta, ora, DURATA_SLOT_MINUTI)
         gia_occupato_calendario = ora in orari_occupati_da_calendario(data_scelta)
         if gia_occupato_db or gia_occupato_calendario:
             flash('Questo orario non è più disponibile. Scegline un altro.')
@@ -2288,6 +2850,8 @@ def admin():
     iscrizioni_corsi = iscrizioni_query.order_by(IscrizioneCorso.creato_il.desc()).all()
     iscrizioni_totali_count = IscrizioneCorso.query.count()
     iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
+    call_sonno = CallSonno.query.order_by(CallSonno.data, CallSonno.ora).all()
+    call_sonno_in_attesa_count = CallSonno.query.filter_by(stato='In attesa').count()
     registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
     eventi_critici_count = RegistroEvento.query.filter(
         RegistroEvento.esito.in_(['errore', 'avviso']),
@@ -2306,6 +2870,9 @@ def admin():
                            iscrizioni_totali_count=iscrizioni_totali_count,
                            persone_corsi_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
+                           call_sonno=call_sonno,
+                           call_sonno_in_attesa_count=call_sonno_in_attesa_count,
+                           formule_sonno=FORMULE_SONNO,
                            registro_eventi=registro_eventi,
                            eventi_critici_count=eventi_critici_count,
                            tipo_richiesta_labels=TIPI_RICHIESTA_CORSO,
@@ -2317,6 +2884,132 @@ def admin():
                            filtro_iscrizioni=filtro_iscrizioni,
                            filtro=filtro,
                            in_attesa_count=in_attesa_count)
+
+
+def _csrf_admin_valido():
+    token = request.form.get('_csrf_token')
+    return bool(token and token == session.get('_csrf_token'))
+
+
+@app.route('/admin/call-sonno/<int:id>/conferma', methods=['POST'])
+@login_required
+def conferma_call_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    if call.stato == 'Annullata':
+        abort(400)
+    call.stato = 'Confermata'
+    db.session.commit()
+    invia_email_conferma_call_sonno(call)
+    if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+        flash('Call confermata, ma Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+    else:
+        flash('Call confermata e comunicazione inviata.', 'success')
+    return redirect(url_for('admin') + '#admin-call-sonno')
+
+
+@app.route('/admin/call-sonno/<int:id>/annulla', methods=['POST'])
+@login_required
+def annulla_call_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    call.stato = 'Annullata'
+    db.session.commit()
+    invia_email_annullamento_call_sonno(call)
+    if not elimina_evento_calendario_call_sonno(call):
+        flash('Call annullata, ma il blocco Calendar non è stato rimosso.', 'error')
+    else:
+        flash('Call annullata.', 'success')
+    return redirect(url_for('admin') + '#admin-call-sonno')
+
+
+@app.route('/admin/call-sonno/<int:id>/modifica', methods=['GET', 'POST'])
+@login_required
+def modifica_call_sonno_admin(id):
+    call = db.get_or_404(CallSonno, id)
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+        nuova_data = request.form.get('data', '').strip()
+        nuova_ora = request.form.get('ora', '').strip()
+        try:
+            giorno = datetime.strptime(nuova_data, '%Y-%m-%d').date()
+        except ValueError:
+            giorno = None
+        valido = (
+            giorno is not None and giorno >= date.today() and _giorno_lavorativo_call(giorno)
+            and nuova_ora in ORARI_CALL_SONNO
+        )
+        occupato = valido and (
+            slot_occupato_db(nuova_data, nuova_ora, BLOCCO_CALL_SONNO_MINUTI, call.id)
+            or intervallo_occupato_da_calendario(
+                nuova_data,
+                nuova_ora,
+                BLOCCO_CALL_SONNO_MINUTI,
+                call.google_event_id,
+            )
+        )
+        if not valido or occupato:
+            flash('Data o orario non disponibile. Verifica gli impegni e riprova.', 'error')
+            return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+        call.data = nuova_data
+        call.ora = nuova_ora
+        call.stato = 'Confermata'
+        db.session.commit()
+        invia_email_conferma_call_sonno(call, modificata=True)
+        if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+            flash('Nuovo orario salvato, ma Calendar non è stato aggiornato.', 'error')
+        else:
+            flash('Nuovo orario confermato e comunicato alla famiglia.', 'success')
+        return redirect(url_for('admin') + '#admin-call-sonno')
+    return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+
+
+@app.route('/admin/call-sonno/<int:id>/questionario', methods=['GET'])
+@login_required
+def visualizza_questionario_sonno_admin(id):
+    call = db.get_or_404(CallSonno, id)
+    if not call.questionario:
+        abort(404)
+    risposte = call.questionario.risposte_dict()
+    risposte_ordinate = [
+        (etichetta, risposte.get(campo, ''))
+        for campo, etichetta in QUESTIONARIO_SONNO_LABELS.items()
+        if risposte.get(campo)
+    ]
+    return render_template(
+        'admin_questionario_sonno.html',
+        call=call,
+        risposte=risposte_ordinate,
+        formula=FORMULE_SONNO.get(call.formula_scelta, call.formula_scelta),
+    )
+
+
+@app.route('/admin/call-sonno/<int:id>/questionario', methods=['POST'])
+@login_required
+def invia_questionario_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    formula = request.form.get('formula_scelta', '').strip()
+    if formula not in FORMULE_SONNO:
+        flash('Seleziona la formula concordata.', 'error')
+        return redirect(url_for('admin') + '#admin-call-sonno')
+    call.formula_scelta = formula
+    call.stato = 'Conclusa'
+    if not call.token_questionario:
+        call.token_questionario = secrets.token_urlsafe(48)
+    call.questionario_inviato_il = datetime.now()
+    db.session.commit()
+    if invia_email_questionario_sonno(call):
+        flash('Questionario privato inviato.', 'success')
+    else:
+        flash('Il link è stato creato, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    return redirect(url_for('admin') + '#admin-call-sonno')
 
 
 @app.route('/admin/aggiorna/<int:id>/<stato>')
@@ -2372,12 +3065,12 @@ def modifica_appuntamento(id):
             flash('Lo studio è chiuso nella data o nell\'orario selezionato. Scegli un altro appuntamento.', 'error')
             return render_template('modifica_appuntamento.html', a=appuntamento)
 
-        gia_occupato_db = Appuntamento.query.filter(
-            Appuntamento.id != appuntamento.id,
-            Appuntamento.data == nuova_data,
-            Appuntamento.ora == nuova_ora,
-            Appuntamento.stato != 'Annullato'
-        ).first() is not None
+        gia_occupato_db = slot_occupato_db(
+            nuova_data,
+            nuova_ora,
+            DURATA_SLOT_MINUTI,
+            ignore_appuntamento_id=appuntamento.id,
+        )
         orari_occupati_calendario = orari_occupati_da_calendario(nuova_data)
         if nuova_data == appuntamento.data:
             orari_occupati_calendario.discard(appuntamento.ora)
@@ -2752,14 +3445,16 @@ def aggiorna_stato_iscrizione_corso(id, stato):
 @app.route('/api/orari-occupati/<data>')
 def orari_occupati(data):
     # Restituisce la lista degli orari occupati per la data specificata (YYYY-MM-DD)
-    # Escludi gli appuntamenti annullati (stato != 'Annullato') in quanto liberano lo slot
     ignore_id = request.args.get('ignore_id', type=int)
-    occupati = Appuntamento.query.filter(
-        Appuntamento.data == data,
-        Appuntamento.stato != 'Annullato'
-    ).with_entities(Appuntamento.ora).all()
-    # Converti la lista di tuple in una lista di stringhe
-    orari = {ora for (ora,) in occupati}
+    orari = {
+        ora for ora in ORARI_DISPONIBILI
+        if slot_occupato_db(
+            data,
+            ora,
+            DURATA_SLOT_MINUTI,
+            ignore_appuntamento_id=ignore_id,
+        )
+    }
     # Aggiungi chiusure ricorrenti dello studio: domeniche, festivi e sabato pomeriggio
     orari |= orari_non_prenotabili_per_chiusura(data)
     # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)

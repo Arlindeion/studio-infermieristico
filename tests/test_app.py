@@ -1,5 +1,6 @@
 import os
 import re
+import secrets
 import subprocess
 import sys
 from pathlib import Path
@@ -25,6 +26,8 @@ from app import (
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
     RegistroEvento,
+    CallSonno,
+    QuestionarioSonno,
 )
 
 @pytest.fixture
@@ -75,6 +78,125 @@ def test_database_empty(app):
         assert IncontroAccompagnamento.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 0
         assert RegistroEvento.query.count() == 0
+        assert CallSonno.query.count() == 0
+        assert QuestionarioSonno.query.count() == 0
+
+
+def _csrf_call_sonno(client):
+    response = client.get('/prenota-call-sonno')
+    return re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+
+
+def _dati_call_sonno(client, data=None, ora='09:00'):
+    data = data or app_module.prima_data_call_disponibile().isoformat()
+    return {
+        'nome': 'Anna Verdi',
+        'telefono': '333 1234567',
+        'email': 'anna@example.com',
+        'eta_bambino_mesi': '7',
+        'difficolta_principale': 'Risvegli notturni frequenti',
+        'data': data,
+        'ora': ora,
+        'consenso_privacy': 'on',
+        '_csrf_token': _csrf_call_sonno(client),
+    }
+
+
+def test_prenotazione_call_sonno_blocca_subito_lo_slot(client):
+    dati = _dati_call_sonno(client)
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post('/prenota-call-sonno', data=dati, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert 'Lo slot è riservato provvisoriamente' in response.text
+    assert 'La call non è ancora confermata' in response.text
+    with flask_app.app_context():
+        call = CallSonno.query.one()
+        assert call.stato == 'In attesa'
+        assert call.consenso_privacy is True
+
+    availability = client.get(f'/api/orari-call-sonno/{dati["data"]}').get_json()
+    assert '09:00' in availability['occupati']
+
+
+def test_call_sonno_dura_20_minuti_e_blocca_30_minuti_in_agenda(app):
+    data = app_module.prima_data_call_disponibile().isoformat()
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, data=data, ora='09:00', stato='In attesa',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        corpo_evento = app_module._corpo_evento_da_call_sonno(call)
+        inizio = datetime.fromisoformat(corpo_evento['start']['dateTime'])
+        fine = datetime.fromisoformat(corpo_evento['end']['dateTime'])
+
+        assert app_module.DURATA_CALL_SONNO_MINUTI == 20
+        assert app_module.BLOCCO_CALL_SONNO_MINUTI == 30
+        assert fine - inizio == app_module.timedelta(minutes=30)
+        assert app_module.slot_occupato_db(data, '09:20', 10) is True
+        assert app_module.slot_occupato_db(data, '09:30', 10) is False
+        assert '09:20' not in app_module.ORARI_CALL_SONNO
+        assert '09:30' in app_module.ORARI_CALL_SONNO
+
+
+def test_call_sonno_non_si_sovrappone_a_prestazione(client):
+    data = app_module.prima_data_call_disponibile().isoformat()
+    with flask_app.app_context():
+        db.session.add(Appuntamento(
+            nome='Paziente', telefono='3331234567', email='p@example.com',
+            servizio='Medicazione semplice', data=data, ora='09:00', stato='Confermato',
+        ))
+        db.session.commit()
+
+    response = client.post('/prenota-call-sonno', data=_dati_call_sonno(client, data, '09:00'))
+    assert 'Questo orario non è più disponibile' in response.text
+    with flask_app.app_context():
+        assert CallSonno.query.count() == 0
+
+
+def test_questionario_sonno_disponibile_solo_dopo_invito(client):
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, data='2026-09-21', ora='09:00', stato='Conclusa',
+            formula_scelta='percorso', token_questionario=secrets.token_urlsafe(48),
+        )
+        db.session.add(call)
+        db.session.commit()
+        token = call.token_questionario
+
+    response = client.get(f'/questionario-sonno/{token}')
+    assert response.status_code == 200
+    assert 'noindex,nofollow,noarchive' in response.text
+    csrf = re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+    payload = {
+        '_csrf_token': csrf,
+        'nome_bambino': 'Leo',
+        'data_nascita': '2026-02-01',
+        'alimentazione': 'Mista',
+        'dove_dorme': 'Lettino in camera dei genitori',
+        'durata_difficolta': 'Da alcune settimane',
+        'cambiamento_desiderato': 'Ridurre i risvegli più lunghi',
+        'consenso_dati_sanitari': 'on',
+    }
+    completed = client.post(f'/questionario-sonno/{token}', data=payload, follow_redirects=True)
+    assert 'Questionario ricevuto' in completed.text
+    with flask_app.app_context():
+        assert QuestionarioSonno.query.count() == 1
+        call_id = CallSonno.query.one().id
+
+    protected = client.get(f'/admin/call-sonno/{call_id}/questionario')
+    assert protected.status_code == 302
+    _login_admin(client)
+    admin_view = client.get(f'/admin/call-sonno/{call_id}/questionario')
+    assert admin_view.status_code == 200
+    assert 'Questionario sonno di Anna Verdi' in admin_view.text
+    assert 'Ridurre i risvegli più lunghi' in admin_view.text
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -165,7 +287,7 @@ def test_comportamento_javascript_header():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-@pytest.mark.parametrize('route', ['/', '/chi-sono', '/faq', '/iscrizione-corsi'])
+@pytest.mark.parametrize('route', ['/', '/chi-sono', '/faq', '/iscrizione-corsi', '/consulenze-online', '/prenota-call-sonno'])
 def test_widget_whatsapp_presente_solo_nelle_pagine_di_orientamento(client, route):
     resp = client.get(route)
 
@@ -177,7 +299,6 @@ def test_widget_whatsapp_presente_solo_nelle_pagine_di_orientamento(client, rout
 @pytest.mark.parametrize(
     'route',
     [
-        '/consulenze-online',
         '/prestazioni-infermieristiche',
         '/prenota',
         '/iscrizione-corsi/disostruzione-pediatrica',
@@ -230,14 +351,17 @@ def test_css_rgba_letterali_solo_nei_token():
     assert alpha_references <= set(alpha_definitions)
 
 
-def test_css_consulenza_caricato_solo_nella_landing(client):
+def test_css_consulenza_caricato_nel_percorso_sonno(client):
     consultation = client.get('/consulenze-online')
+    booking = client.get('/prenota-call-sonno')
     courses = client.get('/iscrizione-corsi')
 
     assert consultation.status_code == 200
     assert 'css/consulenza.css' in consultation.text
     assert 'css/homepage.css' not in consultation.text
     assert 'css/admin.css' not in consultation.text
+    assert booking.status_code == 200
+    assert 'css/consulenza.css' in booking.text
     assert courses.status_code == 200
     assert 'css/consulenza.css' not in courses.text
     assert 'css/homepage.css' not in courses.text
@@ -267,7 +391,7 @@ def test_css_admin_caricato_nel_login(client):
 def test_faq_include_flussi_aggiornati(client):
     resp = client.get('/faq')
     assert resp.status_code == 200
-    assert 'consulenze genitori' in resp.text
+    assert 'consulenza del sonno' in resp.text
     assert 'BLSD' in resp.text
     assert 'link privato' in resp.text
     assert 'open day gratuito' in resp.text
@@ -1324,6 +1448,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
     assert 'data-conversion="home_hero_corsi"' in resp.text
     assert 'data-conversion="home_hero_call_sonno"' in resp.text
+    assert resp.text.count('Scegli l’orario della call') == 2
     assert '<meta name="description"' in resp.text
     assert '<link rel="canonical"' in resp.text
     assert '<meta property="og:title"' in resp.text
@@ -1333,6 +1458,51 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'behold-widget.js' in resp.text
     assert resp.text.index('class="home-instagram"') < resp.text.index('class="home-clinical-band"')
     assert resp.text.index('class="home-clinical-band"') < resp.text.index('class="home-final-cta"')
+    assert 'class="home-birth-shell"' in resp.text
+    assert 'class="home-professionals-label"' in resp.text
+    assert 'class="home-testimonial-featured"' in resp.text
+
+
+def test_homepage_senza_date_mostra_un_ricontatto_compatto(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'home-dates home-dates--empty' in resp.text
+    assert 'Le prossime date stanno arrivando.' in resp.text
+    assert 'data-conversion="home_date_interesse"' in resp.text
+    assert 'id="cal-griglia"' not in resp.text
+
+
+def test_homepage_con_date_mostra_il_calendario_accessibile(client):
+    _crea_data_corso('disostruzione-pediatrica', data='2099-07-16')
+
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'home-dates--empty' not in resp.text
+    assert 'id="cal-griglia"' in resp.text
+    assert 'id="cal-dettaglio" role="status" aria-live="polite"' in resp.text
+
+
+def test_calendario_homepage_usa_controlli_accessibili():
+    script = (Path(app_module.__file__).resolve().parent / 'static' / 'js' / 'calendario.js').read_text()
+
+    assert "document.createElement('button')" in script
+    assert "pulsante.type = 'button'" in script
+    assert "pulsante.setAttribute('aria-expanded', 'false')" in script
+    assert "Mostra i dettagli" in script
+    assert "'Orario: '" in script
+    assert "'Luogo: '" in script
+
+
+def test_homepage_non_forza_il_layout_del_widget_instagram():
+    stylesheet = (Path(app_module.__file__).resolve().parent / 'static' / 'css' / 'homepage.css').read_text()
+    regola_widget = re.search(r'\.home-instagram-feed behold-widget\s*\{([^}]*)\}', stylesheet)
+
+    assert regola_widget is not None
+    assert 'transform:' not in regola_widget.group(1)
+    assert 'width:' not in regola_widget.group(1)
+    assert 'height:' not in regola_widget.group(1)
 
 
 def test_consulenza_online_e_verticale_sul_sonno(client):
@@ -1346,6 +1516,18 @@ def test_consulenza_online_e_verticale_sul_sonno(client):
     assert 'spannolinamento' not in resp.text.lower()
     assert 'ciuccio' not in resp.text.lower()
     assert 'data-conversion="sleep_hero_call"' in resp.text
+    assert 'data-conversion="sleep_mid_call"' in resp.text
+    assert 'data-conversion="sleep_mid_whatsapp"' not in resp.text
+    assert 'data-conversion="sleep_final_call"' in resp.text
+    assert resp.text.count('Scegli l’orario della call') >= 3
+    assert 'Hai ancora un dubbio?' in resp.text
+    assert 'Applicate un metodo rigido per farlo dormire?' in resp.text
+    assert 'circa 20 minuti' in resp.text
+    assert '15 minuti' not in resp.text
+    assert resp.text.index('class="sleep-fit"') < resp.text.index('class="sleep-call-path"')
+    assert resp.text.index('class="sleep-call-path"') < resp.text.index('class="sleep-together"')
+    assert 'class="sleep-options"' not in resp.text
+    assert 'class="sleep-expectations"' not in resp.text
     assert '"@type": "Service"' in resp.text
 
 

@@ -1,6 +1,6 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 16 luglio 2026.
 
 ## Principio di architettura
 
@@ -23,7 +23,9 @@ Le priorità commerciali sono:
 | `/prima-della-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
 | `/dopo-la-nascita` | Orientare verso attività e supporto dopo la nascita | Scegliere corso, laboratorio o consulenza pertinente |
-| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Richiedere la call gratuita |
+| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere la call gratuita |
+| `/prenota-call-sonno` | Prenotazione breve della call gratuita | Riservare provvisoriamente uno slot |
+| `/questionario-sonno/<token>` | Questionario privato inviato dopo la call | Preparare la formula concordata |
 | `/prestazioni-infermieristiche` | Spiegare le prestazioni in studio | Accedere alla prenotazione sanitaria |
 | `/prenota` | Prenotare una prestazione sanitaria | Inviare una richiesta di appuntamento |
 | `/faq` | Rimuovere dubbi senza moltiplicare CTA | Proseguire nel flusso appropriato |
@@ -100,8 +102,12 @@ Link privato generico
 ```text
 Homepage/campagna/condivisione
   → landing sonno 0-12 mesi
-  → call conoscitiva gratuita di circa 15 minuti
-  → verifica di appropriatezza
+  → prenotazione breve della call gratuita
+  → slot riservato subito come In attesa su database e Calendar
+  → conferma oppure accordo telefonico e modifica entro il giorno lavorativo successivo
+  → call conoscitiva di circa 20 minuti
+  → scelta condivisa della formula
+  → questionario privato sul sito
   → consulenza mirata oppure percorso personalizzato
 ```
 
@@ -110,7 +116,14 @@ Homepage/campagna/condivisione
 - `Consulenza mirata`: una difficoltà circoscritta.
 - `Percorso sonno personalizzato`: offerta principale quando più aspetti si influenzano.
 - Il pagamento, quando verrà introdotto, avviene dopo la call gratuita.
-- Nella fase pilota il flusso può terminare su WhatsApp o telefono; in futuro avrà prenotazione dedicata.
+- La prima data pubblica selezionabile è il giorno lavorativo successivo; le call sono disponibili dal lunedì al venerdì negli spazi liberi.
+- Lo slot tecnico dura 30 minuti: circa 20 minuti di call e 10 minuti di margine operativo. Tutti i controlli di disponibilità e gli eventi Calendar usano l'intero blocco.
+- Ogni conflitto con prestazioni, corsi, call, eventi manuali o Arzamed/Google Calendar rende lo slot non prenotabile.
+- Lo stato `In attesa` blocca immediatamente lo slot ma non equivale a conferma. La pagina e l'email devono dirlo senza ambiguità.
+- Se l'orario cambia, Selene concorda prima telefonicamente il nuovo slot; il salvataggio admin vale come accettazione e invia direttamente la conferma. Non esiste uno stato “proposta da accettare”.
+- Prima della call vengono richiesti soltanto contatti, età 0-12 mesi, difficoltà principale e slot.
+- Il questionario completo viene inviato solo dopo la call, quando la famiglia sceglie una formula. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile.
+- WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
 - La consulenza non formula diagnosi, non prescrive terapie e non sostituisce il pediatra.
 
 ## Flusso prestazioni sanitarie
