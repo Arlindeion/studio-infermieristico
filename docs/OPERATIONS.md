@@ -1,6 +1,6 @@
 # Operatività tecnica
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 17 luglio 2026.
 
 ## Architettura
 
@@ -118,6 +118,11 @@ python3 migrazione_call_sonno.py
 ```
 
 Non eseguire migrazioni una tantum alla cieca su dati reali. Fare prima un backup e verificare lo schema.
+
+`migrazione_call_sonno.py` è idempotente anche quando `call_sonno` o
+`questionario_sonno` esistono già: aggiunge soltanto le colonne additive
+mancanti, conserva le righe presenti e non attribuisce retroattivamente il
+consenso privacy, che resta falso se non era stato registrato.
 
 Per PostgreSQL utilizzare Flask-Migrate/Alembic e revisionare manualmente la migrazione generata. `db.create_all()` può creare un database nuovo ma non sostituisce le migrazioni evolutive.
 
