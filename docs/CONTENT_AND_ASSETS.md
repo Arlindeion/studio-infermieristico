@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 16 luglio 2026.
+Ultimo aggiornamento: 17 luglio 2026.
 
 ## Scopo
 
@@ -9,6 +9,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 ## Messaggi approvati
 
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
+- Firma della hero: `Selene Campetta · infermiera e consulente del sonno`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.
 - Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
 - Introduzione ai pilastri della homepage: `Partite da ciò che serve oggi alla vostra famiglia.`
 - Percezione desiderata: Selene è una professionista sanitaria competente e vicina, non un brand impersonale.
@@ -85,6 +86,7 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/selene-chi-sono.jpg` | 1066×1600 | Pagina Chi sono; PDF pilota | In uso |
 | `static/img/selene-consulenze.jpg` | 1280×1920 | Homepage e landing sonno | In uso |
 | `static/img/selene-corsi.jpg` | 1280×1920 | Homepage, corsi e prima della nascita | In uso |
+| `static/img/corso-accompagnamento-nascita-professionisti.jpg` | 1536×2048 | Scheda del corso di accompagnamento alla nascita in homepage | In uso; conservare fuori dal repository le autorizzazioni dei soggetti ritratti |
 | `static/img/selene-dopo-nascita.jpg` | 1280×1920 | Dopo la nascita e disostruzione nell'elenco corsi | In uso; verificare se è la scelta più specifica per disostruzione |
 | `static/img/selene-blsd.jpg` | 1280×1920 | Elenco corsi BLSD | In uso |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |

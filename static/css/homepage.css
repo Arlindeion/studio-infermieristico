@@ -109,9 +109,10 @@
 
 .home-hero-signature span {
     color: var(--rosso-cuore);
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.045em;
+    line-height: 1.35;
     text-transform: uppercase;
 }
 
@@ -119,6 +120,7 @@
     color: var(--verde-scuro);
     font-family: var(--font-display);
     font-size: 1.2rem;
+    line-height: 1.15;
 }
 
 .home-trust {
@@ -429,15 +431,19 @@
     border: 1px solid var(--verde-scuro-a16);
     border-radius: 36px 12px 36px 12px;
     box-shadow: var(--ombra-soft);
+    column-gap: clamp(2.5rem, 6vw, 5rem);
     color: var(--testo);
     display: grid;
-    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-areas:
+        'copy media'
+        'professionals professionals';
     grid-template-columns: 1fr 0.86fr;
     margin: 0 auto;
     max-width: 1180px;
     overflow: hidden;
     padding: clamp(2.5rem, 5vw, 4.5rem);
     position: relative;
+    row-gap: clamp(2rem, 4vw, 3rem);
 }
 
 .home-birth-shell::before {
@@ -453,6 +459,10 @@
 .home-birth h2,
 .home-birth p {
     color: var(--testo);
+}
+
+.home-birth-copy {
+    grid-area: copy;
 }
 
 .home-birth-copy > p:not(.eyebrow) {
@@ -475,40 +485,86 @@
     max-width: 220px;
 }
 
+.home-birth-media {
+    align-self: start;
+    grid-area: media;
+    height: clamp(360px, 33vw, 440px);
+    isolation: isolate;
+    margin: 0;
+    min-height: 0;
+    position: relative;
+}
+
+.home-birth-media::before {
+    background: var(--verde-brand);
+    border-radius: 13% 25% 10% 20% / 18% 14% 22% 16%;
+    bottom: -10px;
+    content: '';
+    left: 12px;
+    position: absolute;
+    right: -10px;
+    top: 10px;
+    transform: rotate(1deg);
+    z-index: 0;
+}
+
+.home-birth-media img {
+    border-radius: 18% 8% 15% 6% / 22% 14% 28% 18%;
+    box-shadow: var(--ombra-card);
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 43%;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
 .home-professionals {
     align-self: start;
     background: var(--carta-luminosa-a92);
     border: 1px solid var(--verde-scuro-a14);
     border-radius: 24px 8px 24px 8px;
     box-shadow: var(--ombra-card);
-    padding: 0.8rem 1.5rem 0.4rem;
+    display: grid;
+    grid-area: professionals;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 0.8rem 0 0.4rem;
 }
 
 .home-professionals-label {
     color: var(--rosso-cuore) !important;
     font-size: 0.72rem;
     font-weight: 800;
+    grid-column: 1 / -1;
     letter-spacing: 0.09em;
+    margin: 0 1.5rem;
     padding: 0.55rem 0 0.9rem;
     text-transform: uppercase;
 }
 
 .home-professionals div {
+    border-right: 1px solid var(--verde-scuro-a20);
     border-top: 1px solid var(--verde-scuro-a20);
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 8rem 1fr;
-    padding: 1rem 0;
+    padding: 1rem 1.2rem 1.15rem;
+}
+
+.home-professionals div:last-child {
+    border-right: 0;
 }
 
 .home-professionals strong {
     color: var(--verde-scuro);
+    display: block;
     font-family: var(--font-display);
 }
 
 .home-professionals span {
     color: var(--verde-scuro);
+    display: block;
     font-size: 0.9rem;
+    line-height: 1.45;
+    margin-top: 0.45rem;
 }
 
 .home-method-proof {
@@ -750,6 +806,32 @@
     }
 .home-birth-shell {
         gap: 2.25rem;
+        grid-template-areas:
+            'copy'
+            'media'
+            'professionals';
+    }
+.home-birth-media {
+        height: clamp(250px, 54vw, 340px);
+        min-height: 0;
+    }
+.home-professionals {
+        grid-template-columns: 1fr;
+        padding: 0.55rem 1.5rem 0.25rem;
+    }
+.home-professionals-label {
+        grid-column: auto;
+        margin: 0;
+    }
+.home-professionals div {
+        border-right: 0;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 8rem 1fr;
+        padding: 1rem 0;
+    }
+.home-professionals span {
+        margin-top: 0;
     }
 }
 
@@ -834,6 +916,9 @@ body.page-homepage {
 .home-birth-shell::before {
         left: 1.2rem;
         width: 92px;
+    }
+.home-birth-media {
+        height: 245px;
     }
 .home-testimonials {
         border-radius: 7px 22px 7px 22px;
