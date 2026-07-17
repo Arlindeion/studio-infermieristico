@@ -95,13 +95,15 @@
 .home-hero-signature {
     background: var(--carta-a94);
     border-radius: 18px 8px 22px 8px;
-    bottom: 1.25rem;
+    bottom: 2.75rem;
     display: grid;
     gap: 0.2rem;
-    left: 1.25rem;
-    max-width: calc(100% - 2.5rem);
+    left: auto;
+    max-width: min(24.5rem, calc(100% - 4rem));
     padding: 1rem 1.1rem;
     position: absolute;
+    right: 1.5rem;
+    width: max-content;
     z-index: 3;
 }
 
@@ -799,6 +801,11 @@ body.page-homepage {
     }
 .home-hero-media {
         height: 360px;
+    }
+.home-hero-signature {
+        bottom: 2rem;
+        max-width: calc(100% - 4.5rem);
+        right: 1rem;
     }
 .home-pillar {
         border-radius: 24px 8px 24px 8px;
