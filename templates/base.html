@@ -34,7 +34,9 @@
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.2">
     {% elif page_endpoint == 'prima_della_nascita' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
+    {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/laboratori.css') }}?v=1.0">
     {% endif %}
     {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">

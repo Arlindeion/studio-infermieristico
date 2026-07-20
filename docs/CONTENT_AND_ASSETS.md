@@ -96,8 +96,12 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/corso-disostruzione-prova-pratica.jpg` | 1200×1600 | Prova pratica nella pagina del corso disostruzione | In uso; fotografia reale del corso |
 | `static/img/corso-disostruzione-esercitazione-partecipanti.jpg` | 1200×1600 | Esercitazione pratica nella pagina del corso disostruzione | In uso; fotografia reale del corso |
 | `static/img/corso-disostruzione-tagli-sicuri.jpg` | 1200×1600 | Laboratorio alimenti nella pagina del corso disostruzione | In uso; fotografia reale del corso |
+| `static/img/laboratori-hero-esplorazione-sensoriale.jpg` | 1200×1600 | Hero della pagina laboratori per bambini e famiglie | In uso; scena reale di gruppo ripresa dall’alto |
+| `static/img/laboratori-primi-assaggi.jpg` | 1200×1600 | Galleria della pagina laboratori, fascia 6–18 mesi | In uso; esplorazione autonoma di alimenti e consistenze |
+| `static/img/laboratori-autonomia-a-tavola.jpg` | 1200×1600 | Galleria della pagina laboratori, autonomia | In uso; attività condivisa tra adulto e bambina |
+| `static/img/laboratori-creativita-colori.jpg` | 1200×1600 | Galleria della pagina laboratori, fascia 3–5 anni | In uso; attività pittorica di gruppo |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |
-| `static/img/placeholder.png` | 600×600 | Laboratori per l'infanzia; guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
+| `static/img/placeholder.png` | 600×600 | Guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
 | `static/img/logo.png` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; nome normalizzato per i filesystem Linux case-sensitive |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
 
@@ -125,7 +129,6 @@ I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_op
 
 ## Materiali mancanti o da confermare
 
-- Fotografia definitiva per i laboratori dell'infanzia.
 - Selezione e rinomina delle cinque fotografie generiche.
 - Eventuali nuove fotografie professionali promesse prima del push grafico finale.
 - Testimonianze autorizzate e selezionate per il sito.

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block titolo %}{{ corso.titolo }} — S.C. Studio Infermieristico{% endblock %}
-{% block meta_description %}{% if corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
+{% block meta_description %}{% if corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% elif corso_tipo == 'laboratorio-infanzia' %}Laboratori in presenza per bambini dai 6 mesi ai 5 anni e famiglie: alimentazione, gioco sensoriale, creatività e autonomia a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna pagina-consulenza{% if corso_tipo == 'disostruzione-pediatrica' %} corso-disostruzione-page{% endif %}">
+<section class="pagina-interna pagina-consulenza{% if corso_tipo == 'disostruzione-pediatrica' %} corso-disostruzione-page{% elif corso_tipo == 'laboratorio-infanzia' %} laboratori-page{% endif %}">
     {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
     {% set page_eyebrow = 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else ('Iscrizione laboratorio' if corso_tipo == 'laboratorio-infanzia' else 'Iscrizione corso') %}
     {% if corso_tipo == 'disostruzione-pediatrica' %}
@@ -17,6 +17,25 @@
         </div>
         <figure class="corso-disostruzione-hero__media">
             <img src="{{ url_for('static', filename='img/corso-disostruzione-copertina-studio.jpg') }}" width="1200" height="1600" alt="Sala dello studio pronta per il corso di disostruzione pediatrica e tagli sicuri" fetchpriority="high">
+        </figure>
+    </div>
+    {% elif corso_tipo == 'laboratorio-infanzia' %}
+    <div class="laboratori-hero">
+        <div class="laboratori-hero__copy">
+            <p class="eyebrow">Laboratori in presenza</p>
+            <h1>Laboratori per bambini e famiglie</h1>
+            <p class="laboratori-hero__lead">Esperienze pensate per accompagnare bambini e genitori alla scoperta del cibo, delle consistenze, del gioco e dell’autonomia.</p>
+            <p>Ogni proposta segue l’età e le competenze del bambino, in un ambiente accogliente dove osservare, provare e conoscere senza pressioni.</p>
+            <div class="laboratori-hero__meta" aria-label="Informazioni essenziali sui laboratori">
+                <span>Dai 6 mesi ai 5 anni</span>
+                <span>Insieme a un adulto</span>
+                <span>In studio a Montesilvano</span>
+            </div>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="laboratorio_infanzia_modulo">Vedi date e iscrizione</a>
+        </div>
+        <figure class="laboratori-hero__media">
+            <img src="{{ url_for('static', filename='img/laboratori-hero-esplorazione-sensoriale.jpg') }}" width="1200" height="1600" alt="Bambini impegnati in diverse attività sensoriali nello spazio del laboratorio" fetchpriority="high">
+            <figcaption>Spazi preparati per esplorare con libertà, insieme.</figcaption>
         </figure>
     </div>
     {% else %}
@@ -143,28 +162,83 @@
         </div>
     </div>
     {% elif corso_tipo == 'laboratorio-infanzia' %}
-    <p class="sottotitolo">Laboratori in presenza per genitori e bambini su alimentazione, svezzamento, gioco e tappe di sviluppo. Se non trovi una data aperta, puoi lasciare i dati per essere ricontattato.</p>
-    <div class="course-value-panel">
-        <div class="section-heading section-heading-compact">
+    <section class="laboratori-value" aria-labelledby="laboratori-value-title">
+        <div class="laboratori-section-heading">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Indicazioni pratiche da usare nella quotidianità</h3>
-            <p>Ogni laboratorio parte dall'età del bambino e da situazioni reali: pasti, gioco, sviluppo, dubbi frequenti e piccoli passaggi da rendere più semplici.</p>
+            <h2 id="laboratori-value-title">Nuove esperienze da vivere anche a casa</h2>
+            <p>Nei laboratori i bambini possono osservare, toccare, sperimentare e conoscere attraverso il gioco. I genitori ricevono idee pratiche e strumenti semplici da riproporre nella quotidianità.</p>
         </div>
-        <div class="course-value-grid">
+        <div class="laboratori-value__grid">
             <article>
-                <span>Svezzamento</span>
-                <p>Idee pratiche su alimenti, consistenze, autonomia e gestione dei dubbi più comuni.</p>
+                <h3>Svezzamento e alimentazione</h3>
+                <p>Consistenze, tagli sicuri, autonomia e primi approcci al cibo, nel rispetto dei tempi e delle competenze del bambino.</p>
             </article>
             <article>
-                <span>Gioco</span>
-                <p>Proposte semplici per sostenere sviluppo, relazione e curiosità del bambino.</p>
+                <h3>Gioco ed esperienze sensoriali</h3>
+                <p>Attività per stimolare curiosità, esplorazione, relazione e scoperta attraverso materiali, colori e consistenze.</p>
             </article>
             <article>
-                <span>Età</span>
-                <p>Indicazioni più utili se lasci nome ed età del bambino nel modulo.</p>
+                <h3>Per ogni fascia d’età</h3>
+                <p>Proposte differenziate dai 6 mesi ai 5 anni, con attività adeguate alle diverse fasi di crescita.</p>
             </article>
         </div>
-    </div>
+    </section>
+
+    <section class="laboratori-gallery-section" aria-labelledby="laboratori-gallery-title">
+        <div class="laboratori-section-heading laboratori-section-heading--split">
+            <div>
+                <p class="eyebrow">Dentro un laboratorio</p>
+                <h2 id="laboratori-gallery-title">Si scopre facendo</h2>
+            </div>
+            <p>Ogni incontro alterna esplorazione libera e proposte guidate, con l’adulto vicino ma senza sostituirsi al bambino.</p>
+        </div>
+        <p class="laboratori-gallery-hint" id="laboratori-gallery-hint">Scorri le immagini per vedere alcune attività reali.</p>
+        <div class="laboratori-gallery" role="region" aria-label="Fotografie delle attività nei laboratori" aria-describedby="laboratori-gallery-hint" tabindex="0">
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-primi-assaggi.jpg') }}" width="1200" height="1600" alt="Bambino che esplora alimenti e consistenze durante un laboratorio" loading="lazy">
+                <figcaption><strong>Primi assaggi</strong><span>Conoscere il cibo con mani, sguardo e curiosità.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-autonomia-a-tavola.jpg') }}" width="1200" height="1600" alt="Adulto e bambina preparano insieme un piatto di frutta" loading="lazy">
+                <figcaption><strong>Fare insieme</strong><span>Lasciare spazio ai piccoli gesti di autonomia.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-creativita-colori.jpg') }}" width="1200" height="1600" alt="Bambini dipingono grandi sagome durante un laboratorio creativo" loading="lazy">
+                <figcaption><strong>Colori e creatività</strong><span>Sperimentare materiali e modi diversi di esprimersi.</span></figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="laboratori-ages" aria-labelledby="laboratori-ages-title">
+        <div class="laboratori-section-heading">
+            <p class="eyebrow">Le proposte per età</p>
+            <h2 id="laboratori-ages-title">Esperienze che crescono con il bambino</h2>
+            <p>La fascia d’età orienta materiali, tempi e livello di autonomia. Il tema specifico cambia in base alla data del laboratorio.</p>
+        </div>
+        <div class="laboratori-age-list">
+            <article>
+                <div class="laboratori-age" aria-label="Da 6 a 18 mesi"><strong>6–18</strong><span>mesi</span></div>
+                <div>
+                    <h3>Primi assaggi ed esplorazioni</h3>
+                    <p>Laboratori di svezzamento, alimentazione e scoperta sensoriale da vivere insieme a un adulto.</p>
+                </div>
+            </article>
+            <article>
+                <div class="laboratori-age" aria-label="Da 18 a 36 mesi"><strong>18–36</strong><span>mesi</span></div>
+                <div>
+                    <h3>Autonomia e mani in movimento</h3>
+                    <p>Esperienze pratiche con il cibo e il gioco per sperimentare, creare e fare sempre più “da soli”.</p>
+                </div>
+            </article>
+            <article>
+                <div class="laboratori-age" aria-label="Da 3 a 5 anni"><strong>3–5</strong><span>anni</span></div>
+                <div>
+                    <h3>Creatività e nuove scoperte</h3>
+                    <p>Laboratori dedicati a colori, natura, alimentazione, emozioni e piccole esperienze di autonomia.</p>
+                </div>
+            </article>
+        </div>
+    </section>
     {% endif %}
 
     {% with messages = get_flashed_messages() %}

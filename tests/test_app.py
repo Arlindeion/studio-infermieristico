@@ -621,6 +621,23 @@ def test_pagina_disostruzione_presenta_contenuti_e_foto_del_corso(client):
     assert resp.text.count('<h1>') == 1
 
 
+def test_pagina_laboratori_presenta_fasce_eta_e_foto_reali(client):
+    resp = client.get('/iscrizione-corsi/laboratorio-infanzia')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1>') == 1
+    assert 'Laboratori per bambini e famiglie' in resp.text
+    assert 'Nuove esperienze da vivere anche a casa' in resp.text
+    assert '6–18' in resp.text
+    assert '18–36' in resp.text
+    assert '3–5' in resp.text
+    assert 'laboratori-hero-esplorazione-sensoriale.jpg' in resp.text
+    assert 'laboratori-primi-assaggi.jpg' in resp.text
+    assert 'laboratori-autonomia-a-tavola.jpg' in resp.text
+    assert 'laboratori-creativita-colori.jpg' in resp.text
+    assert 'data-conversion="laboratorio_infanzia_modulo"' in resp.text
+
+
 def test_pagina_accompagnamento_presenta_percorso_ed_equipe(client):
     resp = client.get('/corso-accompagnamento-nascita')
 

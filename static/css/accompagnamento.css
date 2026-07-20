@@ -69,17 +69,30 @@
 }
 
 .birth-course__hero-media figcaption {
-    background: var(--carta);
-    border-left: 3px solid var(--rosso-cuore);
-    bottom: 0;
-    color: var(--verde-scuro);
+    background: var(--verde-scuro);
+    border-radius: 1.1rem 0.25rem 1.1rem 0.25rem;
+    bottom: 0.35rem;
+    color: var(--avorio);
     font-size: 0.9rem;
     font-weight: 700;
     line-height: 1.35;
-    max-width: 15rem;
-    padding: 0.8rem 1rem;
+    max-width: 16rem;
+    padding: 0.9rem 1.1rem 0.95rem 1.25rem;
     position: absolute;
-    right: 0;
+    right: 0.15rem;
+    transform: rotate(-1.5deg);
+    z-index: 1;
+}
+
+.birth-course__hero-media figcaption::before {
+    background: var(--rosso-cuore);
+    border-radius: 999px;
+    content: "";
+    height: 3px;
+    left: 1.25rem;
+    position: absolute;
+    top: 0;
+    width: 3.5rem;
 }
 
 .birth-course__facts {
@@ -257,11 +270,11 @@
 .birth-course__partner-link {
     align-items: center;
     background: var(--avorio);
-    border: 1px solid var(--verde-scuro-a12);
+    border: 1px solid var(--verde-supporto-a24);
     display: flex;
     justify-content: center;
-    min-height: 132px;
-    padding: 1.25rem;
+    min-height: 144px;
+    padding: 1.5rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
@@ -279,7 +292,8 @@
 .birth-course__partner-link img {
     display: block;
     height: auto;
-    max-width: 280px;
+    max-width: 320px;
+    object-fit: contain;
     width: 100%;
 }
 
@@ -328,7 +342,14 @@
 
     .birth-course__hero-media figcaption {
         font-size: 0.82rem;
-        max-width: 12.5rem;
+        max-width: 13.5rem;
+        padding: 0.75rem 0.9rem 0.8rem 1rem;
+        right: 0;
+    }
+
+    .birth-course__hero-media figcaption::before {
+        left: 1rem;
+        width: 3rem;
     }
 
     .birth-course__facts article {
@@ -375,6 +396,7 @@
 
     .birth-course__partner-link {
         min-height: 112px;
+        padding: 1.25rem;
     }
 }
 
