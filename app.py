@@ -1,4 +1,5 @@
 import logging
+import click
 import json
 import re
 import urllib.request
@@ -30,26 +31,31 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_mail import Mail, Message
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from sqlalchemy import text as sql_text
 
-# Configurazione del logging
+# Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
+# locale resta disponibile in sviluppo e non viene mai usato come archivio.
+config_name = os.environ.get('FLASK_ENV', 'development')
+log_handlers = [logging.StreamHandler()]
+if config_name == 'development':
+    log_handlers.insert(0, logging.FileHandler('app.log'))
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
+    handlers=log_handlers,
 )
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 # Caricamento della configurazione
-config_name = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[config_name])
+if config_name == 'production':
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Limitazione del traffico
 limiter = Limiter(
@@ -105,7 +111,7 @@ talisman = Talisman(
         'font-src': ["'self'", "https://fonts.gstatic.com"],
         'frame-src': ["'self'", "https://www.google.com"],
     },
-    force_https=False,
+    force_https=config_name == 'production',
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
     session_cookie_http_only=True,
     session_cookie_samesite='Lax',
@@ -205,7 +211,7 @@ CORSI_ADMIN_TIPI = {
     'disostruzione-pediatrica': {
         'label': 'Disostruzione pediatrica e tagli sicuri',
         'titolo': 'Disostruzione pediatrica e tagli sicuri',
-        'durata_ore': 2,
+        'durata_ore': 2.5,
     },
     'accompagnamento-nascita': {
         'label': 'Corso di accompagnamento alla nascita',
@@ -287,7 +293,7 @@ FAQ_ITEMS = [
     {
         'id': 'durata-corsi',
         'question': 'Quanto durano i corsi?',
-        'answer': "La durata dipende dal tipo di corso: il BLSD dura circa 4 ore, disostruzione pediatrica e laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
+        'answer': "La durata dipende dal tipo di corso: il BLSD dura circa 4 ore, disostruzione pediatrica e tagli sicuri dura circa 2 ore e 30 minuti, i laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Vedi i corsi',
     },
@@ -1363,18 +1369,224 @@ def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_a
 # ─── INIZIALIZZAZIONE DATABASE ───
 # Questo blocco viene eseguito sia con flask run che con python3 app.py
 
-with app.app_context():
-    db.create_all()
-    if not Admin.query.first():
-        admin_utente = Admin(
-            username='admin',
-            password=generate_password_hash('cambiami123')
+def crea_amministratore_iniziale(username, password):
+    """Crea il primo amministratore senza incorporare credenziali nel codice."""
+    username = (username or '').strip()
+    password = password or ''
+
+    if Admin.query.first():
+        raise ValueError('Esiste già un amministratore.')
+    if not 3 <= len(username) <= 100:
+        raise ValueError('Il nome utente deve contenere da 3 a 100 caratteri.')
+    if len(password) < 16:
+        raise ValueError('La password deve contenere almeno 16 caratteri.')
+
+    admin_utente = Admin(
+        username=username,
+        password=generate_password_hash(password),
+    )
+    db.session.add(admin_utente)
+    db.session.commit()
+    logger.info('>>> Amministratore iniziale creato in modo sicuro.')
+    return admin_utente
+
+
+def valida_configurazione_staging():
+    """Blocca uno staging privo della protezione HTTP obbligatoria."""
+    if app.config.get('APP_ENV') == 'staging':
+        staging_username = app.config.get('STAGING_AUTH_USERNAME')
+        staging_password = app.config.get('STAGING_AUTH_PASSWORD')
+        if not staging_username or not staging_password:
+            raise RuntimeError(
+                'Lo staging richiede STAGING_AUTH_USERNAME e STAGING_AUTH_PASSWORD.'
+            )
+        if len(staging_password) < 16:
+            raise RuntimeError('La password dello staging deve contenere almeno 16 caratteri.')
+
+
+def valida_configurazione_runtime():
+    """Rifiuta configurazioni insicure prima di staging o produzione."""
+    ambiente = app.config.get('APP_ENV')
+    if ambiente not in {'staging', 'production'}:
+        return
+
+    valida_configurazione_staging()
+    if config_name != 'production':
+        raise RuntimeError('Staging e produzione richiedono FLASK_ENV=production.')
+    if app.config.get('SECRET_KEY_IS_EPHEMERAL') or len(app.config.get('SECRET_KEY', '')) < 32:
+        raise RuntimeError('Configurare una SECRET_KEY stabile di almeno 32 caratteri.')
+    database_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if not app.config.get('DATABASE_URL_IS_EXPLICIT') or not database_url.startswith('postgresql+psycopg://'):
+        raise RuntimeError('Staging e produzione richiedono DATABASE_URL PostgreSQL esplicita.')
+    if app.config.get('MAIL_USE_TLS') and app.config.get('MAIL_USE_SSL'):
+        raise RuntimeError('MAIL_USE_TLS e MAIL_USE_SSL non possono essere entrambe attive.')
+
+    valori_segreti = [
+        app.config.get('SECRET_KEY'),
+        app.config.get('ADMIN_BOOTSTRAP_PASSWORD'),
+        app.config.get('STAGING_AUTH_PASSWORD'),
+    ]
+    valori_presenti = [valore for valore in valori_segreti if valore]
+    if len(valori_presenti) != len(set(valori_presenti)):
+        raise RuntimeError('Usare segreti distinti per sessione, amministratore e staging.')
+
+    if ambiente == 'staging':
+        if not app.config.get('MAIL_SUPPRESS_SEND'):
+            raise RuntimeError('Lo staging gratuito richiede MAIL_SUPPRESS_SEND=true.')
+        return
+
+    campi_obbligatori = {
+        'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+        'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD'),
+        'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
+        'MAIL_ADMIN_RECIPIENT': app.config.get('MAIL_ADMIN_RECIPIENT'),
+        'GOOGLE_CALENDAR_ICS_URL': app.config.get('GOOGLE_CALENDAR_ICS_URL'),
+        'GOOGLE_SERVICE_ACCOUNT_FILE': app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+        'GOOGLE_CALENDAR_ID': app.config.get('GOOGLE_CALENDAR_ID'),
+    }
+    mancanti = [nome for nome, valore in campi_obbligatori.items() if not valore]
+    if mancanti:
+        raise RuntimeError(f'Configurazione produzione incompleta: {", ".join(mancanti)}.')
+    if app.config.get('MAIL_SUPPRESS_SEND'):
+        raise RuntimeError('La produzione richiede MAIL_SUPPRESS_SEND=false.')
+    if not os.path.isfile(app.config['GOOGLE_SERVICE_ACCOUNT_FILE']):
+        raise RuntimeError('File segreto Google Calendar non disponibile.')
+
+
+def inizializza_amministratore():
+    """Verifica o crea il primo admin dopo l'applicazione delle migrazioni."""
+    admin_esistente = Admin.query.first()
+    ambiente_produzione = app.config.get('ENV') == 'production' or config_name == 'production'
+    if admin_esistente:
+        credenziale_legacy = (
+            admin_esistente.username == 'admin'
+            and check_password_hash(admin_esistente.password, 'cambiami123')
         )
-        db.session.add(admin_utente)
-        db.session.commit()
-        logger.info('>>> Admin creato con credenziali di default. Cambiare la password al primo accesso.')
-    else:
+        if credenziale_legacy and ambiente_produzione:
+            raise RuntimeError(
+                'Credenziale amministratore legacy rilevata: cambiarla prima della produzione.'
+            )
+        if credenziale_legacy:
+            logger.warning(
+                '>>> Credenziale amministratore legacy rilevata. Sostituirla prima del deploy.'
+            )
         logger.info('>>> Database OK — Admin esistente')
+        return
+
+    username = app.config.get('ADMIN_BOOTSTRAP_USERNAME')
+    password = app.config.get('ADMIN_BOOTSTRAP_PASSWORD')
+    if bool(username) != bool(password):
+        raise RuntimeError(
+            'Configurare insieme ADMIN_BOOTSTRAP_USERNAME e ADMIN_BOOTSTRAP_PASSWORD.'
+        )
+    if username and password:
+        crea_amministratore_iniziale(username, password)
+        return
+    if ambiente_produzione:
+        raise RuntimeError(
+            'Database senza amministratore: configurare le credenziali di bootstrap sicure.'
+        )
+
+    logger.warning(
+        '>>> Database senza amministratore. Eseguire `flask --app app create-admin` '
+        'oppure configurare credenziali di bootstrap esplicite.'
+    )
+
+
+def inizializza_database():
+    """Helper per test e database locali nuovi; la produzione usa Alembic."""
+    db.create_all()
+    valida_configurazione_runtime()
+    inizializza_amministratore()
+
+
+@app.cli.command('create-admin')
+@click.option('--username', prompt='Nome utente amministratore')
+@click.password_option(
+    '--password',
+    prompt='Password amministratore',
+    confirmation_prompt=True,
+)
+def create_admin_command(username, password):
+    """Crea in modo interattivo il primo amministratore locale."""
+    try:
+        crea_amministratore_iniziale(username, password)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo('Amministratore creato.')
+
+
+@app.cli.command('bootstrap-admin')
+def bootstrap_admin_command():
+    """Verifica o crea il primo amministratore da segreti d'ambiente."""
+    try:
+        valida_configurazione_runtime()
+        inizializza_amministratore()
+    except (RuntimeError, ValueError) as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo('Bootstrap amministratore verificato.')
+
+
+@app.cli.command('validate-config')
+def validate_config_command():
+    """Verifica la configurazione senza mostrare i valori sensibili."""
+    try:
+        valida_configurazione_runtime()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f'Configurazione {app.config.get("APP_ENV")} valida.')
+
+
+valida_configurazione_runtime()
+
+
+@app.before_request
+def proteggi_staging():
+    """Limita l'accesso allo staging e impedisce l'indicizzazione accidentale."""
+    if app.config.get('APP_ENV') != 'staging':
+        return None
+    if request.path == '/healthz':
+        return None
+    if request.path == '/robots.txt':
+        return Response(
+            'User-agent: *\nDisallow: /\n',
+            mimetype='text/plain',
+            headers={'X-Robots-Tag': 'noindex, nofollow, noarchive'},
+        )
+
+    auth = request.authorization
+    username = app.config['STAGING_AUTH_USERNAME']
+    password = app.config['STAGING_AUTH_PASSWORD']
+    credenziali_valide = (
+        auth is not None
+        and secrets.compare_digest(auth.username or '', username)
+        and secrets.compare_digest(auth.password or '', password)
+    )
+    if credenziali_valide:
+        return None
+    return Response(
+        'Staging riservato.',
+        401,
+        {'WWW-Authenticate': 'Basic realm="Staging S.C. Studio Infermieristico"'},
+    )
+
+
+@app.after_request
+def impedisci_indicizzazione_staging(response):
+    if app.config.get('APP_ENV') == 'staging':
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+    return response
+
+
+@app.route('/healthz')
+def healthz():
+    try:
+        db.session.execute(sql_text('SELECT 1'))
+    except Exception:
+        logger.exception('>>> Health check database fallito.')
+        return jsonify({'status': 'unhealthy'}), 503
+    return jsonify({'status': 'ok'})
 
 
 # ─── EMAIL ───
@@ -1408,7 +1620,7 @@ def invia_email_alert_call_sonno(call):
     try:
         msg = Message(
             subject=f'Nuova call sonno da confermare - {call.nome}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Nuova richiesta di call sonno.\n\n'
                 f'Nome: {call.nome}\nTelefono: {call.telefono}\nEmail: {call.email}\n'
@@ -1494,7 +1706,7 @@ def invia_email_questionario_sonno(call):
 def invia_email_conferma(appuntamento):
     """Invia email di conferma al paziente dopo la conferma dell'appuntamento."""
     try:
-        logger.info(f'>>> Invio email conferma a {appuntamento.email}...')
+        logger.info('>>> Invio email conferma appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento confermato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -1513,7 +1725,7 @@ def invia_email_conferma(appuntamento):
         logger.info('>>> Email conferma inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email conferma: {e}', exc_info=True)
+        logger.error('>>> Errore invio email conferma (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di conferma appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1521,7 +1733,7 @@ def invia_email_conferma(appuntamento):
 def invia_email_spostamento(appuntamento):
     """Invia email di notifica quando un appuntamento viene riprogrammato."""
     try:
-        logger.info(f'>>> Invio email spostamento a {appuntamento.email}...')
+        logger.info('>>> Invio email spostamento appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento spostato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -1542,7 +1754,7 @@ def invia_email_spostamento(appuntamento):
         logger.info('>>> Email spostamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email spostamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email spostamento (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di spostamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1550,7 +1762,7 @@ def invia_email_spostamento(appuntamento):
 def invia_email_annullamento(appuntamento):
     """Invia email di cancellazione al paziente."""
     try:
-        logger.info(f'>>> Invio email annullamento a {appuntamento.email}...')
+        logger.info('>>> Invio email annullamento appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento cancellato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -1571,7 +1783,7 @@ def invia_email_annullamento(appuntamento):
         logger.info('>>> Email annullamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email annullamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email annullamento (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di annullamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1582,7 +1794,7 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.info('>>> Invio email alert nuova prenotazione...')
         msg = Message(
             subject=f'Nuova prenotazione - {appuntamento.nome}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Hai ricevuto una nuova richiesta di appuntamento.\n\n'
                 f'Nome:     {appuntamento.nome}\n'
@@ -1599,7 +1811,7 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.info('>>> Email alert inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert nuova prenotazione non inviata allo studio.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1616,7 +1828,7 @@ def invia_email_nuova_iscrizione(iscrizione):
             dettagli_extra += f'Partecipanti: {extra["numero_partecipanti"]}\n'
         msg = Message(
             subject=f'Nuova iscrizione corso - {iscrizione.corso_titolo}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Hai ricevuto una nuova richiesta di iscrizione corso.\n\n'
                 f'Corso:    {iscrizione.corso_titolo}\n'
@@ -1633,7 +1845,7 @@ def invia_email_nuova_iscrizione(iscrizione):
         logger.info('>>> Email alert iscrizione corso inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert iscrizione corso: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert corso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert iscrizione corso non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1643,7 +1855,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
     if not iscrizione.email:
         return
     try:
-        logger.info(f'>>> Invio email conferma percorso accompagnamento a {iscrizione.email}...')
+        logger.info('>>> Invio email conferma iscrizione corso %s...', iscrizione.id)
         date_percorso = '\n'.join(_riepilogo_date_percorso(percorso)) or 'Le date verranno comunicate dallo studio.'
         contatti = percorso.contatti or '3806317175'
         msg = Message(
@@ -1664,7 +1876,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Email conferma percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email conferma percorso accompagnamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email conferma percorso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email conferma percorso accompagnamento non inviata.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1675,7 +1887,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Invio email alert iscrizione percorso accompagnamento...')
         msg = Message(
             subject=f'Nuova iscrizione confermata - {percorso.titolo}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Nuova iscrizione confermata al corso di accompagnamento alla nascita.\n\n'
                 f'Percorso: {percorso.titolo}\n'
@@ -1689,7 +1901,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Email alert percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert percorso accompagnamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert percorso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert percorso accompagnamento non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1697,7 +1909,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
 def invia_email_ricordo_24h(appuntamento):
     """Invia email di promemoria 24 ore prima dell'appuntamento."""
     try:
-        logger.info(f'>>> Invio email ricordo 24h a {appuntamento.email}...')
+        logger.info('>>> Invio email ricordo appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Ricordo: Appuntamento domani - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -1717,7 +1929,7 @@ def invia_email_ricordo_24h(appuntamento):
         logger.info('>>> Email ricordo 24h inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email ricordo 24h: {e}', exc_info=True)
+        logger.error('>>> Errore invio email ricordo 24h (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email promemoria 24h non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1755,7 +1967,7 @@ def controlla_e_invia_ricordi_24h():
 
         logger.info(f'> Inviati {ricordi_inviati} ricordi 24h')
     except Exception as e:
-        logger.error(f'> Errore in controlla_e_invia_ricordi_24h: {e}', exc_info=True)
+        logger.error('> Errore controllo ricordi 24h (%s).', type(e).__name__)
 
 # Pianifica il controllo dei promemoria per eseguirlo ogni ora.
 #
@@ -1768,7 +1980,11 @@ def controlla_e_invia_ricordi_24h():
 #   registrano e avviano il proprio scheduler, con il risultato di due
 #   promemoria 24h duplicati per ogni appuntamento (visibile in app.log
 #   come doppio "Scheduler started").
-if not app.config.get('TESTING') and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true'):
+if (
+    not app.config.get('TESTING')
+    and os.environ.get('DISABLE_SCHEDULER', '').lower() not in {'1', 'true', 'yes'}
+    and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true')
+):
     scheduler.add_job(
         func=controlla_e_invia_ricordi_24h,
         trigger="interval",
@@ -1807,9 +2023,14 @@ def prestazioni():
     )
 
 
-@app.route('/prima-della-nascita')
+@app.route('/corso-accompagnamento-nascita')
 def prima_della_nascita():
     return render_template('prima_della_nascita.html')
+
+
+@app.route('/prima-della-nascita')
+def prima_della_nascita_legacy():
+    return redirect(url_for('prima_della_nascita'), code=301)
 
 
 @app.route('/dopo-la-nascita')

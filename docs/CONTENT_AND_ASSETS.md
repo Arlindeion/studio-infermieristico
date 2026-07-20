@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 17 luglio 2026.
+Ultimo aggiornamento: 20 luglio 2026.
 
 ## Scopo
 
@@ -15,6 +15,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Percezione desiderata: Selene è una professionista sanitaria competente e vicina, non un brand impersonale.
 - Voce: usare la prima persona singolare quando Selene parla alle famiglie, descrive il proprio metodo o anticipa un contatto; mantenere `Selene Campetta` e la terza persona per biografia, credenziali, metadati, testi legali e informazioni istituzionali.
 - Corsi: apprendimento pratico, segnali da osservare, gesti da allenare e date disponibili.
+- Disostruzione pediatrica e tagli sicuri: corso teorico-pratico di circa 2 ore e 30 minuti per genitori, nonni, babysitter e caregiver, con prove su manichini e laboratorio di tagli sicuri presso lo studio di Montesilvano.
 - Sonno: comprensione della situazione familiare e percorso non rigido, senza risultati garantiti.
 - Metodo sonno: lettura scientifica, relazionale e centrata sulla famiglia; osservare fisiologia, maturazione, ritmi, ambiente e bisogni prima di scegliere cambiamenti graduali e sostenibili.
 - Sintesi campagna sonno: `Capire prima di cambiare.`
@@ -86,9 +87,15 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/selene-chi-sono.jpg` | 1066×1600 | Pagina Chi sono; PDF pilota | In uso |
 | `static/img/selene-consulenze.jpg` | 1280×1920 | Homepage e landing sonno | In uso |
 | `static/img/selene-corsi.jpg` | 1280×1920 | Homepage, corsi e prima della nascita | In uso |
-| `static/img/corso-accompagnamento-nascita-professionisti.jpg` | 1536×2048 | Scheda del corso di accompagnamento alla nascita in homepage | In uso; conservare fuori dal repository le autorizzazioni dei soggetti ritratti |
+| `static/img/corso-accompagnamento-nascita-professionisti.jpg` | 1536×2048 | Homepage e pagina del corso di accompagnamento alla nascita | In uso; conservare fuori dal repository le autorizzazioni dei soggetti ritratti |
+| `static/img/logo-farmacia-russo.png` | 360×100 | Banner della collaborazione nella pagina del corso di accompagnamento alla nascita | In uso; PNG originale con sfondo trasparente e collegamento al sito della farmacia |
 | `static/img/selene-dopo-nascita.jpg` | 1280×1920 | Dopo la nascita e disostruzione nell'elenco corsi | In uso; verificare se è la scelta più specifica per disostruzione |
 | `static/img/selene-blsd.jpg` | 1280×1920 | Elenco corsi BLSD | In uso |
+| `static/img/corso-disostruzione-copertina-studio.jpg` | 1200×1600 | Copertina della pagina disostruzione pediatrica e tagli sicuri | In uso; presenta Selene e la sala preparata per il corso |
+| `static/img/corso-disostruzione-dimostrazione.jpg` | 1350×1350 | Galleria della pagina disostruzione pediatrica | In uso; fotografia reale del corso con crop sull’attività |
+| `static/img/corso-disostruzione-prova-pratica.jpg` | 1200×1600 | Prova pratica nella pagina del corso disostruzione | In uso; fotografia reale del corso |
+| `static/img/corso-disostruzione-esercitazione-partecipanti.jpg` | 1200×1600 | Esercitazione pratica nella pagina del corso disostruzione | In uso; fotografia reale del corso |
+| `static/img/corso-disostruzione-tagli-sicuri.jpg` | 1200×1600 | Laboratorio alimenti nella pagina del corso disostruzione | In uso; fotografia reale del corso |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |
 | `static/img/placeholder.png` | 600×600 | Laboratori per l'infanzia; guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
 | `static/img/logo.PNG` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; normalizzare il nome con i riferimenti `logo.png` prima del deploy Linux |

@@ -28,11 +28,13 @@
     {% set page_endpoint = request.endpoint or '' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=4.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.1">
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.2">
+    {% elif page_endpoint == 'prima_della_nascita' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.0">
     {% endif %}
     {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">
@@ -126,7 +128,7 @@
                             <strong>Disostruzione e tagli sicuri</strong>
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
                         </a>
-                        <a href="/prima-della-nascita">
+                        <a href="{{ url_for('prima_della_nascita') }}">
                             <span>Prima della nascita</span>
                             <strong>Accompagnamento alla nascita</strong>
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
@@ -199,7 +201,7 @@
             </button>
             <div class="mobile-courses__links" id="mobile-course-links" data-mobile-courses-list aria-hidden="true" inert>
                 <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione e tagli sicuri</a>
-                <a href="/prima-della-nascita">Accompagnamento alla nascita</a>
+                <a href="{{ url_for('prima_della_nascita') }}">Accompagnamento alla nascita</a>
                 <a href="/iscrizione-corsi/bls-d">BLSD</a>
                 <a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori alimentari, gioco e sviluppo</a>
             </div>
@@ -274,13 +276,19 @@
 <!-- BARRA STICKY MOBILE -->
 {% set sticky_href = '/prenota' %}
 {% set sticky_label = 'Prenota' %}
-{% if endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
+{% if endpoint == 'iscrizione_corso' %}
+    {% set sticky_href = '#richiesta-ricontatto' if not corso.has_open_dates else ('#iscrizione-individuale' if corso_tipo == 'bls-d' else '#modulo-iscrizione-corso') %}
+    {% set sticky_label = 'Vai al modulo' %}
+{% elif endpoint == 'iscrizione_corsi' %}
     {% set sticky_href = '/iscrizione-corsi' %}
     {% set sticky_label = 'Vai ai corsi' %}
 {% elif endpoint == 'consulenze_online' %}
     {% set sticky_href = '/prenota-call-sonno' %}
     {% set sticky_label = 'Scegli l’orario della call' %}
-{% elif endpoint in ['prima_della_nascita', 'dopo_la_nascita'] %}
+{% elif endpoint == 'prima_della_nascita' %}
+    {% set sticky_href = '/iscrizione-corsi/accompagnamento-nascita' %}
+    {% set sticky_label = 'Scopri l’open day' %}
+{% elif endpoint == 'dopo_la_nascita' %}
     {% set sticky_href = 'https://wa.me/393806317175' %}
     {% set sticky_label = 'Scrivimi' %}
 {% endif %}

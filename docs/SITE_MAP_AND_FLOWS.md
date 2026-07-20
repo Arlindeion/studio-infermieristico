@@ -20,7 +20,7 @@ Le priorità commerciali sono:
 | `/chi-sono` | Credenziali, metodo e volto umano | Approfondire il servizio pertinente |
 | `/iscrizione-corsi` | Elenco delle tipologie di corso | Scegliere un corso |
 | `/iscrizione-corsi/<corso_tipo>` | Data disponibile o raccolta interesse | Inviare la richiesta di iscrizione |
-| `/prima-della-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
+| `/corso-accompagnamento-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
 | `/dopo-la-nascita` | Orientare verso attività e supporto dopo la nascita | Scegliere corso, laboratorio o consulenza pertinente |
 | `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere l'orario della call gratuita |

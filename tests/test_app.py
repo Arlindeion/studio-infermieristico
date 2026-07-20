@@ -1,4 +1,5 @@
 import os
+import base64
 import re
 import secrets
 import subprocess
@@ -8,6 +9,7 @@ import pytest
 import icalendar
 from unittest.mock import MagicMock, patch
 from datetime import date, datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # Assicurarsi che l'applicazione possa essere importata
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -28,6 +30,9 @@ from app import (
     RegistroEvento,
     CallSonno,
     QuestionarioSonno,
+    crea_amministratore_iniziale,
+    inizializza_database,
+    valida_configurazione_runtime,
 )
 
 @pytest.fixture
@@ -59,6 +64,107 @@ def test_app_exists(app):
 def test_app_is_testing(app):
     """Assicurarsi che l'app sia in modalità di test."""
     assert app.config['TESTING'] == True
+
+
+def _basic_auth_header(username, password):
+    token = base64.b64encode(f'{username}:{password}'.encode()).decode()
+    return {'Authorization': f'Basic {token}'}
+
+
+def test_staging_richiede_autenticazione_e_invia_noindex(app, client, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+
+    negato = client.get('/')
+    autorizzato = client.get(
+        '/',
+        headers=_basic_auth_header('tester', 'password-staging-lunga-2026'),
+    )
+
+    assert negato.status_code == 401
+    assert negato.headers['WWW-Authenticate'].startswith('Basic ')
+    assert negato.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+    assert autorizzato.status_code == 200
+    assert autorizzato.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+
+
+def test_staging_espone_health_check_e_robots_senza_credenziali(app, client, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+
+    health = client.get('/healthz')
+    robots = client.get('/robots.txt')
+
+    assert health.status_code == 200
+    assert health.get_json() == {'status': 'ok'}
+    assert robots.status_code == 200
+    assert 'Disallow: /' in robots.text
+    assert robots.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+
+
+def test_staging_non_si_avvia_senza_protezione(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', None)
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Lo staging richiede'):
+        inizializza_database()
+
+
+def _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='staging'):
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    monkeypatch.setitem(app.config, 'APP_ENV', ambiente)
+    monkeypatch.setitem(app.config, 'SECRET_KEY', 's' * 32)
+    monkeypatch.setitem(app.config, 'SECRET_KEY_IS_EPHEMERAL', False)
+    monkeypatch.setitem(app.config, 'SQLALCHEMY_DATABASE_URI', 'postgresql+psycopg://db/test')
+    monkeypatch.setitem(app.config, 'DATABASE_URL_IS_EXPLICIT', True)
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', 'password-admin-lunga-2026')
+    monkeypatch.setitem(app.config, 'MAIL_USE_TLS', True)
+    monkeypatch.setitem(app.config, 'MAIL_USE_SSL', False)
+    monkeypatch.setitem(app.config, 'MAIL_SUPPRESS_SEND', ambiente == 'staging')
+
+
+def test_validazione_staging_accetta_solo_configurazione_sicura(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+
+    valida_configurazione_runtime()
+
+
+def test_validazione_staging_rifiuta_secret_key_effimera(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+    monkeypatch.setitem(app.config, 'SECRET_KEY_IS_EPHEMERAL', True)
+
+    with pytest.raises(RuntimeError, match='SECRET_KEY stabile'):
+        valida_configurazione_runtime()
+
+
+def test_validazione_produzione_richiede_email_e_calendar(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', None)
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', None)
+
+    with pytest.raises(RuntimeError, match='MAIL_USERNAME.*GOOGLE_CALENDAR_ID'):
+        valida_configurazione_runtime()
+
+
+def test_validazione_produzione_completa(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@example.invalid')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(app.config, 'MAIL_DEFAULT_SENDER', 'Studio <info@example.invalid>')
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+
+    valida_configurazione_runtime()
 
 
 def test_database_url_postgres_compatibile_con_psycopg():
@@ -205,6 +311,74 @@ def test_create_admin(app):
         db.session.add(admin)
         db.session.commit()
         assert Admin.query.filter_by(username='testadmin').first() is not None
+
+
+def test_database_vuoto_non_crea_admin_predefinito(app):
+    with app.app_context():
+        inizializza_database()
+
+        assert Admin.query.count() == 0
+
+
+def test_bootstrap_admin_richiede_credenziali_esplicite_e_salva_hash(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', 'selene-admin')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', 'frase-segreta-lunga-2026')
+
+    with app.app_context():
+        inizializza_database()
+        admin = Admin.query.one()
+
+        assert admin.username == 'selene-admin'
+        assert admin.password != 'frase-segreta-lunga-2026'
+        assert check_password_hash(admin.password, 'frase-segreta-lunga-2026')
+
+
+def test_bootstrap_admin_rifiuta_password_corta(app):
+    with app.app_context(), pytest.raises(ValueError, match='almeno 16 caratteri'):
+        crea_amministratore_iniziale('selene-admin', 'troppo-corta')
+
+
+def test_bootstrap_admin_richiede_entrambe_le_variabili(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', 'selene-admin')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Configurare insieme'):
+        inizializza_database()
+
+
+def test_produzione_rifiuta_database_senza_admin(app, monkeypatch):
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', None)
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Database senza amministratore'):
+        inizializza_database()
+
+
+def test_produzione_rifiuta_credenziale_legacy(app, monkeypatch):
+    with app.app_context():
+        db.session.add(Admin(
+            username='admin',
+            password=generate_password_hash('cambiami123'),
+        ))
+        db.session.commit()
+
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    with app.app_context(), pytest.raises(RuntimeError, match='legacy'):
+        inizializza_database()
+
+
+def test_comando_create_admin_crea_un_account_sicuro(app, runner):
+    result = runner.invoke(
+        args=['create-admin'],
+        input='selene-admin\nfrase-segreta-lunga-2026\nfrase-segreta-lunga-2026\n',
+    )
+
+    assert result.exit_code == 0
+    with app.app_context():
+        admin = Admin.query.one()
+        assert admin.username == 'selene-admin'
+        assert check_password_hash(admin.password, 'frase-segreta-lunga-2026')
 
 def test_create_appointment(app):
     """Testare la creazione di un appuntamento."""
@@ -422,6 +596,58 @@ def _csrf_iscrizione(client, corso_tipo):
     import re
     resp = client.get(f'/iscrizione-corsi/{corso_tipo}')
     return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def test_pagina_disostruzione_presenta_contenuti_e_foto_del_corso(client):
+    resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert resp.status_code == 200
+    assert 'Un corso teorico-pratico dedicato a genitori, nonni e caregiver' in resp.text
+    assert 'Circa 2 ore e 30 minuti' in resp.text
+    assert 'Manovre di disostruzione' in resp.text
+    assert 'corso-disostruzione-copertina-studio.jpg' in resp.text
+    assert 'corso-disostruzione-dimostrazione.jpg' in resp.text
+    assert 'corso-disostruzione-prova-pratica.jpg' in resp.text
+    assert 'corso-disostruzione-esercitazione-partecipanti.jpg' in resp.text
+    assert 'corso-disostruzione-tagli-sicuri.jpg' in resp.text
+    assert '<strong>Teoria</strong>' in resp.text
+    assert '<strong>Prima prova pratica</strong>' in resp.text
+    assert '<strong>Seconda prova pratica</strong>' in resp.text
+    assert '<strong>Laboratorio tagli sicuri</strong>' in resp.text
+    assert 'Selene nello studio' not in resp.text
+    assert 'Per approfondire:' not in resp.text
+    assert 'href="#richiesta-ricontatto"' in resp.text
+    assert 'Vai al modulo' in resp.text
+    assert resp.text.count('<h1>') == 1
+
+
+def test_pagina_accompagnamento_presenta_percorso_ed_equipe(client):
+    resp = client.get('/corso-accompagnamento-nascita')
+
+    assert resp.status_code == 200
+    assert '8 incontri durante la gravidanza e 1 incontro dopo il parto' in resp.text
+    assert 'Con l’ostetrica' in resp.text
+    assert 'Con la psicologa' in resp.text
+    assert 'Con l’osteopata' in resp.text
+    assert 'Con la nutrizionista' in resp.text
+    assert 'Con l’infermiera' in resp.text
+    assert 'corso-accompagnamento-nascita-professionisti.jpg' in resp.text
+    assert 'data-conversion="accompagnamento_open_day_hero"' in resp.text
+    assert 'Scopri l’open day' in resp.text
+    assert 'data-conversion="sticky_prima_della_nascita"' in resp.text
+    assert 'Farmacia Russo al fianco del percorso' in resp.text
+    assert 'realizzato con la collaborazione della Farmacia Russo' in resp.text
+    assert 'logo-farmacia-russo.png' in resp.text
+    assert 'href="https://farmaciarussodomenico.it/"' in resp.text
+    assert 'aria-label="Visita il sito della Farmacia Russo"' in resp.text
+    assert resp.text.count('<h1>') == 1
+
+
+def test_vecchio_url_prima_della_nascita_reindirizza_al_corso(client):
+    resp = client.get('/prima-della-nascita')
+
+    assert resp.status_code == 301
+    assert resp.headers['Location'].endswith('/corso-accompagnamento-nascita')
 
 
 def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18:00', luogo='Studio'):

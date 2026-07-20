@@ -196,6 +196,42 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: l'obiettivo interno è arrivare ad almeno tre testimonianze reali, autorizzate e pubblicabili al mese sulla consulenza del sonno; non si promettono risultati e non si usano testimonianze di altri servizi. Il funnel misura almeno slot prenotato, call confermata, call svolta, formula scelta e consenso alla testimonianza. Budget, costo massimo per contatto e tono creativo/video restano da definire sui dati del test.
 - Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `locandine.md`.
 
+## D-027 — Dominio operativo indipendente dalla trattativa
+
+- Data: 2026-07-20.
+- Stato: approvata.
+- Decisione: registrare `scstudioinfermieristico.it` come dominio controllato direttamente dall'attività e procedere con staging e lancio senza dipendere dalla trattativa per `studioinfermieristico.it`. La trattativa termina entro il 15 agosto 2026 e l'offerta non supera 50 euro. Se il dominio generico viene acquisito con trasferimento completo, potrà diventare il dominio principale e `scstudioinfermieristico.it` reindirizzerà ad esso; altrimenti `scstudioinfermieristico.it` resta il dominio definitivo.
+- Motivo: proteggere il naming approvato `S.C. Studio Infermieristico`, evitare che un dominio in vendita condizioni il calendario del progetto e mantenere contenuto il costo di un vantaggio soprattutto mnemonico, non determinante per la SEO.
+- Conseguenze: `scstudioinfermieristico.it` è stato registrato il 20 luglio 2026 ed è sotto il controllo diretto dell'attività, con rinnovo automatico, autenticazione a due fattori, blocco trasferimento, protezione dei dati e DNSSEC attivi. La casella `info@scstudioinfermieristico.it` è operativa su Zimbra Starter; invio e ricezione sono stati provati e SPF, DKIM e DMARC risultano validi. Lo staging iniziale usa l'indirizzo Render; canonical, Analytics e materiali di lancio vengono configurati sul dominio definitivo dopo l'esito della trattativa, senza posticipare le attività tecniche.
+- Collegamenti: `BRAND_SYSTEM.md`, `ROADMAP.md`, `OPERATIONS.md`.
+
+## D-028 — URL pubblico del corso di accompagnamento
+
+- Data: 2026-07-20.
+- Stato: approvata.
+- Decisione: usare `/corso-accompagnamento-nascita` come URL pubblico della pagina editoriale del corso e mantenere `/prima-della-nascita` soltanto come redirect permanente.
+- Motivo: allineare l'indirizzo al naming approvato del servizio e distinguerlo dal modulo privato di iscrizione al percorso completo.
+- Conseguenze: navigazione e mappa del sito puntano al nuovo URL; i collegamenti già condivisi continuano a funzionare tramite redirect `301`.
+- Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `app.py`, `templates/base.html`.
+
+## D-029 — Infrastruttura Render per staging e produzione
+
+- Data: 2026-07-20.
+- Stato: approvata.
+- Decisione: usare Render nella regione di Francoforte con un Web Service Flask e PostgreSQL nella stessa regione. Lo staging iniziale usa istanze gratuite, URL `onrender.com`, HTTPS gestito, autenticazione HTTP applicativa e blocco globale dell'indicizzazione; il dominio pubblico non viene collegato durante lo staging. Prima della scadenza del database gratuito, l'ambiente destinato alla produzione passa almeno a Web Service Starter e PostgreSQL Basic-256mb con storage adeguato.
+- Motivo: ottenere rapidamente un ambiente PostgreSQL realistico e accessibile ai soli tester, conservando un percorso di upgrade diretto e senza acquistare hosting duplicato presso il registrar.
+- Conseguenze: il database gratuito scade 30 giorni dopo la creazione e non contiene dati reali; il servizio gratuito non viene usato per collaudare SMTP sulle porte bloccate. I segreti restano nelle variabili Render, l'auto-deploy è disattivato e ogni pubblicazione è intenzionale. L'HTTPS dei domini Render e personalizzati è gestito dalla piattaforma. Il dominio principale e i redirect restano disciplinati da D-027.
+- Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, `render.yaml`.
+
+## D-030 — Backup PostgreSQL gestito ed esterno
+
+- Data: 2026-07-20.
+- Stato: approvata.
+- Decisione: prima di accettare dati reali, usare un database Render a pagamento con point-in-time recovery e affiancargli un backup logico giornaliero cifrato sul PC controllato direttamente dall'attività. Conservare 14 giorni di copie giornaliere, 8 settimane di copie settimanali e 12 mesi di copie mensili; eseguire un restore test almeno ogni mese e prima di modifiche rischiose.
+- Motivo: il database gratuito non offre backup; il solo PC locale non protegge da indisponibilità, guasti o errore umano su Render, mentre il solo PITR conserva una finestra breve e resta presso lo stesso fornitore.
+- Conseguenze: il PC deve avere FileVault, account protetto, spazio monitorato e disponibilità durante l'esecuzione. URL del database e password di cifratura restano nel Portachiavi macOS; la password di recupero ha una copia offline separata. I dump sono cifrati prima della conservazione, accompagnati da checksum e ripristinabili soltanto in un database vuoto. RPO esterno massimo 24 ore e obiettivo RTO entro 8 ore lavorative.
+- Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, `scripts/backup_postgres.sh`, `scripts/restore_postgres.sh`.
+
 ## Modello per nuove decisioni
 
 ```markdown
