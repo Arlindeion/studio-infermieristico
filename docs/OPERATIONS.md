@@ -379,7 +379,7 @@ Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e cont
 - GA4 caricato solo dopo consenso.
 - Privacy, cookie e policy operative validate.
 - Log controllati e privi di dati personali superflui.
-- Nome del logo normalizzato: Git registra attualmente `static/img/logo.PNG`, mentre i template richiamano `static/img/logo.png`; uniformare prima di un deploy su filesystem case-sensitive.
+- Nome del logo normalizzato in `static/img/logo.png` e coerente con i riferimenti applicativi sui filesystem Linux case-sensitive.
 - Controllo visivo desktop/mobile completato.
 
 ## Dati esclusi dalla documentazione

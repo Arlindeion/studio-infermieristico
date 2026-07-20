@@ -98,7 +98,7 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/corso-disostruzione-tagli-sicuri.jpg` | 1200×1600 | Laboratorio alimenti nella pagina del corso disostruzione | In uso; fotografia reale del corso |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |
 | `static/img/placeholder.png` | 600×600 | Laboratori per l'infanzia; guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
-| `static/img/logo.PNG` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; normalizzare il nome con i riferimenti `logo.png` prima del deploy Linux |
+| `static/img/logo.png` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; nome normalizzato per i filesystem Linux case-sensitive |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
 
 ## Immagini presenti ma non assegnate
