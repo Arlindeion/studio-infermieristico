@@ -153,6 +153,7 @@ Pagina prestazioni
 ```
 
 - Le prestazioni sanitarie non condividono il form con corsi o consulenze.
+- Ogni prestazione selezionabile blocca uno slot uniforme di 30 minuti nel database, nella disponibilità pubblica e su Google Calendar.
 - Gli appuntamenti a domicilio non sono prenotabili direttamente: richiedono contatto e valutazione di zona e fattibilità.
 - La modifica di un appuntamento deve riportarlo a `In attesa` e notificare lo studio.
 - Regola desiderata per modifica/annullamento: fino a 24 ore prima da martedì a sabato; per il lunedì entro il sabato precedente alle 12:00.

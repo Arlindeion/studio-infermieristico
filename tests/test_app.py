@@ -1438,6 +1438,25 @@ def google_calendar_scrittura_finto(app):
     app_module._servizio_calendario_cache = None
 
 
+def test_tutte_le_prestazioni_bloccano_trenta_minuti():
+    assert app_module.DURATA_SLOT_MINUTI == 30
+
+    for servizio in app_module.SERVIZI_PRENOTABILI:
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio=servizio,
+            data='2026-09-01',
+            ora='10:00',
+        )
+        corpo = app_module._corpo_evento_da_appuntamento(appuntamento)
+        inizio = datetime.fromisoformat(corpo['start']['dateTime'])
+        fine = datetime.fromisoformat(corpo['end']['dateTime'])
+
+        assert fine - inizio == app_module.timedelta(minutes=30), servizio
+
+
 def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_finto):
     """Confermare un appuntamento deve creare un evento su Google Calendar e
     salvarne l'ID sull'appuntamento."""
@@ -1831,7 +1850,9 @@ def test_pagina_prestazioni_usa_h1(client):
     assert 'data-prestazioni-search' in resp.text
     assert 'data-prestazioni-catalog' in resp.text
     assert resp.text.count('data-service-group') == 4
-    assert resp.text.count('data-service-row') == 32
+    assert resp.text.count('data-service-row') == 31
+    assert 'Lavaggio auricolare bilaterale' not in resp.text
+    assert '20 € un orecchio' not in resp.text
     assert 'Terapie e somministrazioni' in resp.text
     assert 'Medicazioni' in resp.text
     assert 'Controlli e diagnostica' in resp.text

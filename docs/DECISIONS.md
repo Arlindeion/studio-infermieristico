@@ -238,7 +238,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Stato: approvata.
 - Decisione: organizzare `/prestazioni-infermieristiche` nelle quattro tipologie del listino approvato, usando sezioni espandibili e una ricerca client-side progressiva. La prima tipologia resta aperta all’arrivo e l’intero contenuto rimane consultabile senza JavaScript.
 - Motivo: rendere leggibile un catalogo di oltre trenta prestazioni anche su mobile, senza trasformare la pagina in una griglia di card equivalenti o nascondere le informazioni ai dispositivi assistivi.
-- Conseguenze: il form `/prenota` usa lo stesso elenco aggiornato; le prestazioni a domicilio restano fuori dalla prenotazione diretta e richiedono valutazione manuale; tariffe variabili, materiali, distanza e prescrizione sono chiariti prima dell’azione. Il filtro apre soltanto le tipologie con risultati e comunica il numero di corrispondenze.
+- Conseguenze: il form `/prenota` usa lo stesso elenco aggiornato e ogni prestazione selezionabile blocca uno slot uniforme di 30 minuti; le prestazioni a domicilio restano fuori dalla prenotazione diretta e richiedono valutazione manuale; tariffe variabili, materiali, distanza e prescrizione sono chiariti prima dell’azione. Il filtro apre soltanto le tipologie con risultati e comunica il numero di corrispondenze.
 - Collegamenti: `CONTENT_AND_ASSETS.md`, `SITE_MAP_AND_FLOWS.md`, `templates/prestazioni_infermieristiche.html`, `static/css/prestazioni.css`, `static/js/prestazioni-filter.js`.
 
 ## Modello per nuove decisioni

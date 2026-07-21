@@ -175,8 +175,7 @@ PRESTAZIONI_CATEGORIE = [
         'nome': 'Altre prestazioni',
         'slug': 'altre-prestazioni',
         'prestazioni': [
-            {'nome': 'Lavaggio auricolare', 'prezzo': '20 € un orecchio'},
-            {'nome': 'Lavaggio auricolare bilaterale', 'prezzo': '30 €'},
+            {'nome': 'Lavaggio auricolare', 'prezzo': '30 €'},
             {'nome': 'Clistere evacuativo', 'prezzo': '30 €'},
             {'nome': 'Gestione stomia', 'prezzo': 'da 20 €'},
             {'nome': 'Gestione PEG', 'prezzo': 'da 20 €'},
