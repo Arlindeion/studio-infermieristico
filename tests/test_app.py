@@ -542,6 +542,14 @@ def test_css_consulenza_caricato_nel_percorso_sonno(client):
     assert 'css/admin.css' not in courses.text
 
 
+def test_elenco_corsi_usa_foto_reale_per_laboratori(client):
+    resp = client.get('/iscrizione-corsi')
+
+    assert resp.status_code == 200
+    assert 'img/laboratori-hero-esplorazione-sensoriale.jpg' in resp.text
+    assert 'alt="Bambini impegnati in attività sensoriali durante un laboratorio"' in resp.text
+
+
 def test_css_admin_caricato_nel_login(client):
     resp = client.get('/admin/login')
 
