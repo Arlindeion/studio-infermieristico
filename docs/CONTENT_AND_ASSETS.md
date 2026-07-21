@@ -74,7 +74,7 @@ Il primo test pubblicitario dura tre mesi e deve usare la nuova identità senza 
 - Angoli creativi: una difficoltà riconoscibile per contenuto, per esempio addormentamento serale, risvegli frequenti, pisolini brevi o necessità di forte supporto.
 - Percorso: ogni contenuto rimanda alla landing nazionale e al calendario della call; WhatsApp resta un'alternativa discreta per chi è indeciso.
 - Prova: usare competenze, metodo e presenza reale di Selene. Non simulare testimonianze, risultati o casi clinici.
-- Fotografia: preferire Selene, studio e attività reali; `placeholder.png` è ammesso solo come guida interna e va sostituito prima della pubblicazione.
+- Fotografia: preferire Selene, studio e attività reali. La landing usa `consulenza-sonno-neonato.jpg`; `placeholder.png` resta soltanto una guida interna non richiamata dalle pagine pubbliche.
 - Geografia: un targeting iniziale in Abruzzo e regioni confinanti non deve cambiare i testi nazionali della landing.
 
 Budget, costo massimo per contatto, frequenza editoriale e tono dei video restano da definire prima dell'attivazione. I KPI e l'obiettivo di raccolta delle testimonianze sono documentati in `PROJECT_BRIEF.md`.

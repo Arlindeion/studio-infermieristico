@@ -75,7 +75,8 @@
             <span>Via C. D’Agnese 43, 65015 Montesilvano (PE)</span>
         </article>
     </div>
-    <div class="blsd-choice-panel" aria-label="Scegli come richiedere il corso BLSD">
+    <h2 class="visually-hidden" id="modalita-blsd">Scegli come richiedere il corso BLSD</h2>
+    <div class="blsd-choice-panel" aria-labelledby="modalita-blsd">
         <article class="blsd-choice-card">
             <span>Privati</span>
             <h3>Iscrizione individuale</h3>
@@ -86,13 +87,13 @@
             <span>Aziende e gruppi</span>
             <h3>Corso BLSD personalizzato</h3>
             <p>Per organizzare la formazione in studio o nella tua realtà, con data, sede e numero partecipanti definiti insieme.</p>
-            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="link-azione" target="_blank" rel="noopener noreferrer">Richiedi il corso</a>
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="course_blsd_company">Richiedi il corso</a>
         </article>
     </div>
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Una sequenza chiara da seguire nei primi minuti</h3>
+            <h2>Una sequenza chiara da seguire nei primi minuti</h2>
             <p>Il valore del corso non è ricordare tutto a memoria, ma allenare ordine, priorità e gesti essenziali quando l'emergenza richiede lucidità.</p>
         </div>
         <div class="course-value-grid">
@@ -132,7 +133,7 @@
     <div class="course-value-panel corso-disostruzione-value">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Più sicurezza a tavola e nei piccoli imprevisti</h3>
+            <h2>Più sicurezza a tavola e nei piccoli imprevisti</h2>
             <p>Attraverso spiegazioni semplici e prove pratiche imparerai a riconoscere un’ostruzione delle vie aeree, eseguire correttamente le manovre di disostruzione e proporre gli alimenti in modo più sicuro.</p>
         </div>
         <div class="course-value-grid corso-disostruzione-value__grid">
@@ -173,7 +174,7 @@
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa chiarisci all'open day</p>
-            <h3>Capire il percorso prima di iscriverti davvero</h3>
+            <h2>Capire il percorso prima di iscriverti davvero</h2>
             <p>L'incontro serve a conoscere contenuti, professionisti, organizzazione e obiettivi del corso completo, senza confondere la richiesta open day con l'iscrizione definitiva.</p>
         </div>
         <div class="course-value-grid">
@@ -293,7 +294,7 @@
                 <strong>Lascia i dati nel modulo</strong>
                 <small>Resta tutto tracciato per il ricontatto.</small>
             </a>
-            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="date-action-card" target="_blank" rel="noopener noreferrer">
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="date-action-card" target="_blank" rel="noopener noreferrer" data-conversion="course_no_dates_whatsapp">
                 <span>Domanda veloce</span>
                 <strong>Scrivimi su WhatsApp</strong>
                 <small>Per chiarire un dubbio prima di inviare.</small>
@@ -613,7 +614,7 @@
             <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
         </div>
 
-        <button type="submit" class="btn">
+        <button type="submit" class="btn" data-conversion="course_registration_submit">
             {% if not corso.has_open_dates %}
                 Lascia i dati per essere ricontattato
             {% elif corso_tipo == 'accompagnamento-nascita' %}

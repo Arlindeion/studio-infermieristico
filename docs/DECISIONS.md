@@ -148,7 +148,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Stato: approvata.
 - Decisione: organizzare `/consulenze-online` come landing `call-first`: difficoltà riconoscibili, accesso immediato al calendario, metodo essenziale, domande e CTA finale. Le due formule vengono soltanto nominate dopo la CTA, perché la persona non deve sceglierle prima del contatto. Mantenere la fotografia reale di Selene nella hero e riservare un secondo spazio fotografico dentro la sezione sul metodo.
 - Motivo: rendere la pagina più fresca, leggibile e mirata, riducendo ripetizioni e carico cognitivo senza adottare codici visivi estranei all'identità sanitaria.
-- Conseguenze: la CTA `Scegli l’orario della call` compare nella hero, subito dopo il riconoscimento del problema e alla fine. Nel blocco centrale l'azione occupa più spazio della rassicurazione sulle formule e non compete con un secondo collegamento WhatsApp. Le FAQ usano una composizione editoriale compatta a due colonne su desktop e controlli `details` chiaramente interattivi; su mobile pannello 0–12, fotografie e spaziature vengono ridotti per anticipare la call. I dettagli delle due formule e la sezione separata sui risultati attesi non precedono più la conversione. `placeholder.png` definisce temporaneamente posizione, proporzioni e ritaglio della seconda immagine, con testo alternativo vuoto finché non esiste un soggetto reale da descrivere; va sostituito prima del lancio. Bricolage Grotesque, Atkinson Hyperlegible, palette salvia e linea rossa restano gli elementi distintivi.
+- Conseguenze: la CTA `Scegli l’orario della call` compare nella hero, subito dopo il riconoscimento del problema e alla fine. Nel blocco centrale l'azione occupa più spazio della rassicurazione sulle formule e non compete con un secondo collegamento WhatsApp. Le FAQ usano una composizione editoriale compatta a due colonne su desktop e controlli `details` chiaramente interattivi; su mobile pannello 0–12, fotografie e spaziature vengono ridotti per anticipare la call. I dettagli delle due formule e la sezione separata sui risultati attesi non precedono più la conversione. La seconda immagine usa `consulenza-sonno-neonato.jpg`, con proporzioni e testo alternativo definitivi per il layout; autorizzazione e provenienza restano da verificare prima del lancio. Bricolage Grotesque, Atkinson Hyperlegible, palette salvia e linea rossa restano gli elementi distintivi.
 - Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/consulenze_online.html`, `static/css/consulenza.css`.
 
 ## D-022 — Ritagli morbidi per le fotografie della homepage
@@ -240,6 +240,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: rendere leggibile un catalogo di oltre trenta prestazioni anche su mobile, senza trasformare la pagina in una griglia di card equivalenti o nascondere le informazioni ai dispositivi assistivi.
 - Conseguenze: il form `/prenota` usa lo stesso elenco aggiornato e ogni prestazione selezionabile blocca uno slot uniforme di 30 minuti; le prestazioni a domicilio restano fuori dalla prenotazione diretta e richiedono valutazione manuale; tariffe variabili, materiali, distanza e prescrizione sono chiariti prima dell’azione. Il filtro apre soltanto le tipologie con risultati e comunica il numero di corrispondenze.
 - Collegamenti: `CONTENT_AND_ASSETS.md`, `SITE_MAP_AND_FLOWS.md`, `templates/prestazioni_infermieristiche.html`, `static/css/prestazioni.css`, `static/js/prestazioni-filter.js`.
+
+## D-032 — WhatsApp solo come contatto contestuale
+
+- Data: 2026-07-21.
+- Stato: approvata.
+- Decisione: non mostrare un widget WhatsApp globale. Il contatto resta disponibile soltanto nei punti in cui il flusso lo prevede: persone indecise sulla consulenza del sonno, aziende o gruppi, assenza di date e richieste informative dopo la nascita.
+- Motivo: evitare una CTA concorrente e indistinta accanto ai moduli dedicati per prestazioni, corsi e call sul sonno.
+- Conseguenze: le CTA WhatsApp contestuali sono tracciate singolarmente; la barra mobile compare soltanto nelle pagine con una prossima azione specifica e non rinvia alla pagina corrente.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `templates/base.html`, `static/js/conversion-tracking.js`.
 
 ## Modello per nuove decisioni
 

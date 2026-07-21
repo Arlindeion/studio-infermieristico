@@ -26,13 +26,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
     {% set page_endpoint = request.endpoint or '' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.3">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.3">
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.3">
     {% elif page_endpoint == 'prima_della_nascita' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
     {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
@@ -41,7 +41,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.0">
     {% endif %}
     {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.2">
     {% endif %}
     <script type="application/ld+json">
     {
@@ -84,7 +84,7 @@
     <div class="site-header__inner">
         <a href="/" class="site-brand" aria-label="S.C. Studio Infermieristico, homepage">
             <span class="site-brand__mark" aria-hidden="true">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" width="1024" height="1024">
             </span>
             <span class="site-brand__name">
                 <strong>S.C.</strong>
@@ -260,48 +260,27 @@
         <p class="site-footer-legal">© 2026 S.C. Studio Infermieristico · Selene Campetta, infermiera iscritta all'Albo OPI di Pescara</p>
     </footer>
 
-    <!-- WIDGET WHATSAPP -->
 {% set endpoint = request.endpoint or '' %}
-{% set whatsapp_widget_endpoints = ['homepage', 'chi_siamo', 'faq', 'iscrizione_corsi', 'consulenze_online', 'prenota_call_sonno'] %}
-{% if endpoint in whatsapp_widget_endpoints %}
-<a href="https://wa.me/393806317175" 
-   class="whatsapp-widget" 
-   target="_blank" 
-   rel="noopener noreferrer"
-   aria-label="Contattami su WhatsApp"
-   data-conversion="whatsapp_floating_{{ endpoint }}">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32px" height="32px">
-        <path fill="#fff" d="M4.868,43.303l2.694-9.835C5.9,30.59,5.026,27.324,5.027,23.979C5.032,13.514,13.548,5,24.014,5c5.079,0.002,9.845,1.979,13.43,5.566c3.584,3.588,5.558,8.356,5.556,13.428c-0.004,10.465-8.522,18.98-18.986,18.98c-0.001,0,0,0,0,0h-0.008c-3.177-0.001-6.3-0.798-9.073-2.311L4.868,43.303z"/>
-        <path fill="#fff" d="M4.868,43.803c-0.132,0-0.26-0.052-0.355-0.148c-0.125-0.127-0.174-0.312-0.127-0.483l2.639-9.636c-1.636-2.906-2.499-6.206-2.497-9.556C4.532,13.238,13.273,4.5,24.014,4.5c5.21,0.002,10.105,2.031,13.784,5.713c3.679,3.683,5.704,8.577,5.702,13.781c-0.004,10.741-8.746,19.48-19.486,19.48c-3.189-0.001-6.344-0.788-9.144-2.277l-9.875,2.589C4.953,43.798,4.911,43.803,4.868,43.803z"/>
-        <path fill="#ffffff" d="M24.014,5c5.079,0.002,9.845,1.979,13.43,5.566c3.584,3.588,5.558,8.356,5.556,13.428c-0.004,10.465-8.522,18.98-18.986,18.98h-0.008c-3.177-0.001-6.3-0.798-9.073-2.311L4.868,43.303l2.694-9.835C5.9,30.59,5.026,27.324,5.027,23.979C5.032,13.514,13.548,5,24.014,5 M24.014,42.974"/>
-        <path fill="#25D366" d="M35.176,12.832c-2.98-2.982-6.941-4.625-11.157-4.626c-8.704,0-15.783,7.076-15.787,15.774c-0.001,2.981,0.833,5.883,2.413,8.396l0.376,0.597l-1.595,5.821l5.973-1.566l0.577,0.342c2.422,1.438,5.2,2.198,8.032,2.199h0.006c8.698,0,15.777-7.077,15.78-15.776C39.795,19.778,38.156,15.814,35.176,12.832z"/>
-        <path fill="#fff" fill-rule="evenodd" d="M19.268,16.045c-0.355-0.79-0.729-0.806-1.068-0.82c-0.277-0.012-0.593-0.011-0.909-0.011c-0.316,0-0.83,0.119-1.265,0.594c-0.435,0.475-1.661,1.622-1.661,3.956c0,2.334,1.7,4.59,1.937,4.906c0.237,0.316,3.282,5.259,8.104,7.161c4.007,1.58,4.823,1.266,5.693,1.187c0.87-0.079,2.807-1.147,3.202-2.255c0.395-1.108,0.395-2.057,0.277-2.255c-0.119-0.198-0.435-0.316-0.909-0.554s-2.807-1.385-3.242-1.543c-0.435-0.158-0.751-0.237-1.068,0.238c-0.316,0.474-1.225,1.543-1.502,1.859c-0.277,0.317-0.554,0.357-1.028,0.119c-0.474-0.238-2.002-0.738-3.815-2.354c-1.41-1.257-2.362-2.81-2.639-3.285c-0.277-0.474-0.03-0.731,0.208-0.968c0.213-0.213,0.474-0.554,0.712-0.831c0.237-0.277,0.316-0.475,0.474-0.791c0.158-0.317,0.079-0.594-0.04-0.831C20.612,19.329,19.69,16.983,19.268,16.045z" clip-rule="evenodd"/>
-    </svg>
-    <span class="whatsapp-tooltip">Contattami per saperne di più</span>
-</a>
-{% endif %}
 <!-- BARRA STICKY MOBILE -->
+{% set sticky_enabled = endpoint in ['prestazioni', 'iscrizione_corso', 'iscrizione_corsi', 'consulenze_online', 'prima_della_nascita'] %}
 {% set sticky_href = '/prenota' %}
-{% set sticky_label = 'Prenota' %}
+{% set sticky_label = 'Prenota una prestazione' %}
 {% if endpoint == 'iscrizione_corso' %}
     {% set sticky_href = '#richiesta-ricontatto' if not corso.has_open_dates else ('#iscrizione-individuale' if corso_tipo == 'bls-d' else '#modulo-iscrizione-corso') %}
     {% set sticky_label = 'Vai al modulo' %}
 {% elif endpoint == 'iscrizione_corsi' %}
-    {% set sticky_href = '/iscrizione-corsi' %}
-    {% set sticky_label = 'Vai ai corsi' %}
+    {% set sticky_href = '#elenco-corsi' %}
+    {% set sticky_label = 'Scegli il corso' %}
 {% elif endpoint == 'consulenze_online' %}
     {% set sticky_href = '/prenota-call-sonno' %}
     {% set sticky_label = 'Scegli l’orario della call' %}
 {% elif endpoint == 'prima_della_nascita' %}
     {% set sticky_href = '/iscrizione-corsi/accompagnamento-nascita' %}
     {% set sticky_label = 'Scopri l’open day' %}
-{% elif endpoint == 'dopo_la_nascita' %}
-    {% set sticky_href = 'https://wa.me/393806317175' %}
-    {% set sticky_label = 'Scrivimi' %}
 {% endif %}
-{% if endpoint not in ['homepage', 'prenota', 'modifica_appuntamento', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'conferma_iscrizione_accompagnamento', 'login'] and not endpoint.startswith('admin') %}
+{% if sticky_enabled %}
 <div class="sticky-prenota">
-    <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
+    <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}">
         {{ sticky_label }}
     </a>
 </div>

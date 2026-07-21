@@ -462,12 +462,12 @@ def test_comportamento_javascript_header():
 
 
 @pytest.mark.parametrize('route', ['/', '/chi-sono', '/faq', '/iscrizione-corsi', '/consulenze-online', '/prenota-call-sonno'])
-def test_widget_whatsapp_presente_solo_nelle_pagine_di_orientamento(client, route):
+def test_widget_whatsapp_globale_assente(client, route):
     resp = client.get(route)
 
     assert resp.status_code == 200
-    assert 'class="whatsapp-widget"' in resp.text
-    assert 'data-conversion="whatsapp_floating_' in resp.text
+    assert 'class="whatsapp-widget"' not in resp.text
+    assert 'data-conversion="whatsapp_floating_' not in resp.text
 
 
 @pytest.mark.parametrize(
@@ -484,6 +484,26 @@ def test_widget_whatsapp_assente_dai_flussi_specifici(client, route):
 
     assert resp.status_code == 200
     assert 'class="whatsapp-widget"' not in resp.text
+
+
+def test_whatsapp_resta_disponibile_solo_nelle_cta_contestuali(client):
+    faq = client.get('/faq')
+    sonno = client.get('/consulenze-online')
+
+    assert 'data-conversion="faq_whatsapp"' in faq.text
+    assert 'data-conversion="sleep_hero_whatsapp"' in sonno.text
+
+
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/admin/aggiorna/1/Confermato',
+        '/admin/corso/elimina/1',
+        '/admin/iscrizione-corso/1/Confermato',
+    ],
+)
+def test_azioni_admin_mutative_rifiutano_get(client, route):
+    assert client.get(route).status_code == 405
 
 
 def test_css_core_e_modulo_homepage(client):
@@ -555,7 +575,7 @@ def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
 
     assert resp.status_code == 200
     directory_html = re.search(
-        r'<div class="course-directory">(.*?)</div>\s*<div class="course-flow">',
+        r'<div class="course-directory" id="elenco-corsi">(.*?)</div>\s*<div class="course-flow">',
         resp.text,
         re.DOTALL,
     ).group(1)

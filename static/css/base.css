@@ -834,7 +834,6 @@ button.site-nav__pillar {
         overflow: hidden;
     }
 
-    body.menu-open .whatsapp-widget,
     body.menu-open .sticky-prenota {
         opacity: 0;
         pointer-events: none;
@@ -1304,6 +1303,7 @@ button.site-nav__pillar {
     max-width: 760px;
 }
 
+.section-heading-compact h2,
 .section-heading-compact h3 {
     color: var(--verde-scuro);
     font-family: var(--font-display);
@@ -1373,7 +1373,7 @@ button.site-nav__pillar {
     margin-top: 1.5rem;
 }
 
-.nota-sicurezza h3 {
+.nota-sicurezza h2 {
     color: var(--verde-scuro);
     margin-bottom: 0.5rem;
 }

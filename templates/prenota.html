@@ -5,7 +5,7 @@
 
 <section class="pagina-interna">
     <h1>Prenota una prestazione sanitaria</h1>
-    <p class="sottotitolo">Compila il modulo per le prestazioni infermieristiche. Per corsi e consulenze, scrivimi su WhatsApp.</p>
+    <p class="sottotitolo">Questo modulo è riservato alle prestazioni infermieristiche. Per partecipare a un corso vai alle <a href="{{ url_for('iscrizione_corsi') }}">iscrizioni</a>; per il sonno <a href="{{ url_for('prenota_call_sonno') }}">scegli l’orario della call gratuita</a>.</p>
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -93,7 +93,7 @@
             </label>
         </div>
 
-        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia">Invia prenotazione</button>
+        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia" data-conversion="prestazioni_booking_submit">Invia prenotazione</button>
 
     </form>
 </section>

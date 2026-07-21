@@ -2,8 +2,16 @@
 {% block titolo %}Admin — Gestione{% endblock %}
 
 {% block contenuto %}
+{% macro admin_post_action(action, label, variant, confirmation='', current_filter='') -%}
+<form method="post" action="{{ action }}" class="admin-inline-action"{% if confirmation %} data-confirm="{{ confirmation }}"{% endif %}>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% if current_filter %}<input type="hidden" name="filtro" value="{{ current_filter }}">{% endif %}
+    <button type="submit" class="btn-azione {{ variant }}">{{ label }}</button>
+</form>
+{%- endmacro %}
 
 <section class="pagina-interna admin-page">
+    <h1 class="visually-hidden">Area amministrativa</h1>
 
     <div class="admin-topbar">
         <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
@@ -63,22 +71,22 @@
     <div class="admin-filtri">
     <a href="/admin?filtro=in_attesa"
        class="filtro-btn {% if filtro == 'in_attesa' %}attivo{% endif %}">
-        🔔 In attesa
+        In attesa
         {% if in_attesa_count > 0 %}
         <span class="badge-count">{{ in_attesa_count }}</span>
         {% endif %}
     </a>
     <a href="/admin?filtro=confermati"
        class="filtro-btn {% if filtro == 'confermati' %}attivo{% endif %}">
-        ✅ Confermati
+        Confermati
     </a>
     <a href="/admin?filtro=annullati"
        class="filtro-btn {% if filtro == 'annullati' %}attivo{% endif %}">
-        ❌ Annullati
+        Annullati
     </a>
     <a href="/admin?filtro=passati"
        class="filtro-btn {% if filtro == 'passati' %}attivo{% endif %}">
-        🕐 Passati
+        Passati
     </a>
 </div>
 
@@ -128,30 +136,14 @@
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Confermare l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.">
-                           Conferma
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di conferma.', filtro) }}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'confermati' %}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'annullati' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Ripristinare l'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.">
-                           Ripristina
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '? Tornerà in stato In attesa.', filtro) }}
                     {% elif filtro == 'passati' %}
                         <span class="text-muted">Archiviato</span>
                     {% endif %}
@@ -180,30 +172,14 @@
             </div>
             <div class="card-admin-azioni">
                 {% if filtro == 'in_attesa' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Confermare l'appuntamento di {{ a.nome }}?">
-                       Conferma
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'confermati' %}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'annullati' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Ripristinare l'appuntamento di {{ a.nome }}?">
-                       Ripristina
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'passati' %}
                     <span class="text-muted">Archiviato</span>
                 {% endif %}
@@ -874,9 +850,9 @@
                 </td>
                 <td><span class="badge">{{ i.stato }}</span></td>
                 <td class="azioni">
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
                 </td>
             </tr>
             {% endfor %}
@@ -910,9 +886,9 @@
                 {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
             </div>
             <div class="card-admin-azioni">
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
             </div>
         </div>
         {% endfor %}
@@ -1030,8 +1006,7 @@
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
-                    <a href="/admin/corso/elimina/{{ c.id }}?token={{ csrf_token() }}" class="btn-azione rosso"
-                       data-confirm="Eliminare questo corso?">Elimina</a>
+                    {{ admin_post_action(url_for('elimina_corso', id=c.id), 'Elimina', 'rosso', 'Eliminare questo corso?') }}
                 </td>
             </tr>
             {% endfor %}
