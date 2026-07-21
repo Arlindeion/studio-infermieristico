@@ -925,7 +925,7 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
     admin_resp = client.get('/admin')
     assert 'Luisa Verdi' in admin_resp.text
     assert 'Corso di accompagnamento alla nascita' in admin_resp.text
-    stato_resp = client.get(f'/admin/iscrizione-corso/1/Contattato?token={csrf}')
+    stato_resp = client.post('/admin/iscrizione-corso/1/Contattato', data={'_csrf_token': csrf})
     assert stato_resp.status_code == 302
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.first()
@@ -1471,7 +1471,7 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
 
     mock_servizio.events().insert.assert_called()
     corpo_inviato = mock_servizio.events().insert.call_args.kwargs['body']
@@ -1494,7 +1494,7 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, g
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
 
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
@@ -1527,7 +1527,7 @@ def test_annullamento_elimina_evento_da_calendario(client, google_calendar_scrit
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Annullato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Annullato', data={'_csrf_token': csrf})
 
     mock_servizio.events().delete.assert_called_with(
         calendarId='finto@group.calendar.google.com', eventId='evento-da-eliminare'
@@ -1640,7 +1640,7 @@ def test_eliminazione_corso_elimina_evento_su_calendario(client, google_calendar
         corso_id = corso.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/corso/elimina/{corso_id}?token={csrf}')
+    client.post(f'/admin/corso/elimina/{corso_id}', data={'_csrf_token': csrf})
 
     mock_servizio.events().delete.assert_called_once_with(
         calendarId='finto@group.calendar.google.com',
@@ -1717,7 +1717,11 @@ def test_nessuna_chiamata_google_se_non_configurato(client):
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    resp = client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}', follow_redirects=True)
+    resp = client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf},
+        follow_redirects=True,
+    )
     assert resp.status_code == 200
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)

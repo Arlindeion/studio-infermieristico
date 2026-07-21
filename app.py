@@ -3323,20 +3323,17 @@ def invia_questionario_sonno_admin(id):
     return redirect(url_for('admin') + '#admin-call-sonno')
 
 
-@app.route('/admin/aggiorna/<int:id>/<stato>')
+@app.route('/admin/aggiorna/<int:id>/<stato>', methods=['POST'])
 @login_required
 def aggiorna_stato(id, stato):
     if stato not in STATI_VALIDI:
         abort(400)
-    # Protezione CSRF: questi link puntano a un'azione che modifica dati,
-    # quindi vanno protetti come un form. Non usiamo session.pop() perché
-    # più link nella stessa pagina admin condividono lo stesso token: se lo
-    # consumassimo al primo click, i click successivi (senza ricaricare la
-    # pagina) fallirebbero.
-    token = request.args.get('token')
+    # Il token resta riutilizzabile nella stessa pagina admin, dove sono
+    # disponibili più azioni POST prima del successivo caricamento.
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
-        return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
+        return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
     appuntamento = db.get_or_404(Appuntamento, id)
     appuntamento.stato = stato
     db.session.commit()
@@ -3348,7 +3345,7 @@ def aggiorna_stato(id, stato):
         invia_email_annullamento(appuntamento)
         if not elimina_evento_calendario(appuntamento):
             flash('Appuntamento annullato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
-    return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
+    return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
 
 
 @app.route('/admin/modifica/<int:id>', methods=['GET', 'POST'])
@@ -3714,11 +3711,10 @@ def aggiungi_iscrizione_corso_manuale():
     return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
 
-@app.route('/admin/corso/elimina/<int:id>')
+@app.route('/admin/corso/elimina/<int:id>', methods=['POST'])
 @login_required
 def elimina_corso(id):
-    # Protezione CSRF (stesso ragionamento di aggiorna_stato)
-    token = request.args.get('token')
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
@@ -3738,12 +3734,12 @@ def elimina_corso(id):
     return redirect(url_for('admin'))
 
 
-@app.route('/admin/iscrizione-corso/<int:id>/<stato>')
+@app.route('/admin/iscrizione-corso/<int:id>/<stato>', methods=['POST'])
 @login_required
 def aggiorna_stato_iscrizione_corso(id, stato):
     if stato not in STATI_ISCRIZIONE_VALIDI:
         abort(400)
-    token = request.args.get('token')
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))

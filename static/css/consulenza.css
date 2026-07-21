@@ -244,6 +244,7 @@
 
 .sleep-together-media img {
     border-radius: 11% 27% 9% 22% / 17% 34% 14% 29%;
+    box-shadow: var(--ombra-soft);
     display: block;
     height: 100%;
     object-fit: cover;

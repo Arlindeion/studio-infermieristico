@@ -39,24 +39,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Gestisce i link di azione per gli appuntamenti (conferma, modifica, elimina, ecc.)
-    document.querySelectorAll('.btn-azione').forEach(pulsante => {
-        // Elabora solo i tag <a> (collegamenti)
-        if (tagNameCheck(pulsante, 'a')) {
-            pulsante.addEventListener('click', function(e) {
-                const messaggio = this.getAttribute('data-confirm');
-                if (messaggio && !confirm(messaggio)) {
-                    e.preventDefault();
-                }
-                // Se confermato, il browser seguirà naturalmente il collegamento.
-            });
-        }
+    document.querySelectorAll('[data-confirm]').forEach(controllo => {
+        const evento = controllo.tagName.toLowerCase() === 'form' ? 'submit' : 'click';
+        controllo.addEventListener(evento, function(e) {
+            if (!confirm(this.getAttribute('data-confirm'))) {
+                e.preventDefault();
+            }
+        });
     });
-
-    // Funzione ausiliaria per controllare il nome del tag (case-insensitive)
-    function tagNameCheck(elemento, nomeTag) {
-        return elemento.tagName.toLowerCase() === nomeTag.toLowerCase();
-    }
 
     const tipoCorso = document.getElementById('tipo-corso-admin');
     const titoloCorso = document.getElementById('titolo-corso-admin');

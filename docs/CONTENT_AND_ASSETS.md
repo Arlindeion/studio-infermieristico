@@ -102,7 +102,7 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/laboratori-autonomia-a-tavola.jpg` | 1200×1600 | Galleria della pagina laboratori, autonomia | In uso; attività condivisa tra adulto e bambina |
 | `static/img/laboratori-creativita-colori.jpg` | 360×480 | Galleria della pagina laboratori, colori e creatività | In uso; esplorazione di materiali colorati in una vaschetta sensoriale |
 | `static/img/selene-prestazioni.jpg` | 1920×1280 | Prestazioni infermieristiche | In uso |
-| `static/img/placeholder.png` | 600×600 | Guida temporanea per la seconda immagine della landing sonno | Da sostituire prima del lancio |
+| `static/img/consulenza-sonno-neonato.jpg` | 1536×1024 | Sezione metodo della landing sonno | In uso; ritaglio panoramico centrato su neonato e contatto con l'adulto |
 | `static/img/logo.png` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; nome normalizzato per i filesystem Linux case-sensitive |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
 
