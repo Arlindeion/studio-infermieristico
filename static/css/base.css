@@ -1199,9 +1199,21 @@ button.site-nav__pillar {
     border-bottom: 0;
 }
 
+.course-directory-media {
+    border-radius: 8px;
+    display: block;
+    overflow: hidden;
+}
+
+.course-directory-media:focus-visible {
+    outline: 3px solid var(--rosso-cuore);
+    outline-offset: 3px;
+}
+
 .course-directory-row img {
     aspect-ratio: 1.25;
     border-radius: 8px;
+    display: block;
     height: 120px;
     object-fit: cover;
     width: 150px;
@@ -1212,6 +1224,25 @@ button.site-nav__pillar {
     font-size: 1.22rem;
     line-height: 1.25;
     margin-bottom: 0.45rem;
+}
+
+.course-directory-copy h3 a {
+    color: inherit;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.16em;
+    transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.course-directory-copy h3 a:hover,
+.course-directory-copy h3 a:focus-visible {
+    color: var(--rosso-cuore);
+    text-decoration-color: currentColor;
+}
+
+.course-directory-copy h3 a:focus-visible {
+    outline: 3px solid var(--rosso-cuore);
+    outline-offset: 3px;
 }
 
 .course-directory-copy p {

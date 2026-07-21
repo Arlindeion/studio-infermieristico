@@ -550,6 +550,26 @@ def test_elenco_corsi_usa_foto_reale_per_laboratori(client):
     assert 'alt="Bambini impegnati in attività sensoriali durante un laboratorio"' in resp.text
 
 
+def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
+    resp = client.get('/iscrizione-corsi')
+
+    assert resp.status_code == 200
+    directory_html = re.search(
+        r'<div class="course-directory">(.*?)</div>\s*<div class="course-flow">',
+        resp.text,
+        re.DOTALL,
+    ).group(1)
+    course_paths = [
+        '/iscrizione-corsi/bls-d',
+        '/iscrizione-corsi/disostruzione-pediatrica',
+        '/iscrizione-corsi/accompagnamento-nascita',
+        '/iscrizione-corsi/laboratorio-infanzia',
+    ]
+    for path in course_paths:
+        assert directory_html.count(f'href="{path}"') == 3
+    assert directory_html.count('class="course-directory-media"') == 4
+
+
 def test_css_admin_caricato_nel_login(client):
     resp = client.get('/admin/login')
 
