@@ -858,7 +858,7 @@ def test_pagina_blsd_usa_nuovo_slug_e_reindirizza_quello_precedente(client):
     assert '5 ore' in resp.text
     assert 'Teoria ed esercitazioni pratiche su manichino' in resp.text
     assert 'Cittadini, associazioni, aziende e gruppi' in resp.text
-    assert 'S.C. Studio Infermieristico, Via C. D’Agnese 43, Montesilvano' in resp.text
+    assert 'Via C. D’Agnese 43, 65015 Montesilvano (PE)' in resp.text
 
     redirect_resp = client.get('/iscrizione-corsi/bls-d')
 
