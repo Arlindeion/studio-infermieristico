@@ -560,7 +560,7 @@ def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
         re.DOTALL,
     ).group(1)
     course_paths = [
-        '/iscrizione-corsi/bls-d',
+        '/iscrizione-corsi/blsd',
         '/iscrizione-corsi/disostruzione-pediatrica',
         '/iscrizione-corsi/accompagnamento-nascita',
         '/iscrizione-corsi/laboratorio-infanzia',
@@ -814,9 +814,9 @@ def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
 
 def test_iscrizione_blsd_salva_richiesta_individuale(client):
     data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
-    token = _csrf_iscrizione(client, 'bls-d')
+    token = _csrf_iscrizione(client, 'blsd')
 
-    resp = client.post('/iscrizione-corsi/bls-d', data={
+    resp = client.post('/iscrizione-corsi/blsd', data={
         'nome': 'Giulia Bianchi',
         'codice_fiscale': 'BNCGLI85A41G482Z',
         'telefono': '3331234567',
@@ -848,11 +848,29 @@ def test_iscrizione_blsd_salva_richiesta_individuale(client):
         assert 'numero_partecipanti' not in extra
 
 
+def test_pagina_blsd_usa_nuovo_slug_e_reindirizza_quello_precedente(client):
+    resp = client.get('/iscrizione-corsi/blsd')
+
+    assert resp.status_code == 200
+    assert 'action="/iscrizione-corsi/blsd"' in resp.text
+    assert '<link rel="canonical" href="http://localhost/iscrizione-corsi/blsd">' in resp.text
+    assert 'img/corso-blsd-esercitazione.jpg' in resp.text
+    assert '5 ore' in resp.text
+    assert 'Teoria ed esercitazioni pratiche su manichino' in resp.text
+    assert 'Cittadini, associazioni, aziende e gruppi' in resp.text
+    assert 'S.C. Studio Infermieristico, Via C. D’Agnese 43, Montesilvano' in resp.text
+
+    redirect_resp = client.get('/iscrizione-corsi/bls-d')
+
+    assert redirect_resp.status_code == 301
+    assert redirect_resp.headers['Location'] == '/iscrizione-corsi/blsd'
+
+
 def test_iscrizione_blsd_non_accetta_azienda_da_form(client):
     data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
-    token = _csrf_iscrizione(client, 'bls-d')
+    token = _csrf_iscrizione(client, 'blsd')
 
-    resp = client.post('/iscrizione-corsi/bls-d', data={
+    resp = client.post('/iscrizione-corsi/blsd', data={
         'nome': 'Giulia Bianchi',
         'codice_fiscale': 'BNCGLI85A41G482Z',
         'telefono': '3331234567',

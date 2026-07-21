@@ -28,7 +28,7 @@
     {% set page_endpoint = request.endpoint or '' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.2">
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
@@ -135,7 +135,7 @@
                             <strong>Accompagnamento alla nascita</strong>
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
                         </a>
-                        <a href="/iscrizione-corsi/bls-d">
+                        <a href="/iscrizione-corsi/blsd">
                             <span>Per persone e aziende</span>
                             <strong>BLSD</strong>
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
@@ -204,7 +204,7 @@
             <div class="mobile-courses__links" id="mobile-course-links" data-mobile-courses-list aria-hidden="true" inert>
                 <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione e tagli sicuri</a>
                 <a href="{{ url_for('prima_della_nascita') }}">Accompagnamento alla nascita</a>
-                <a href="/iscrizione-corsi/bls-d">BLSD</a>
+                <a href="/iscrizione-corsi/blsd">BLSD</a>
                 <a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori alimentari, gioco e sviluppo</a>
             </div>
         </div>

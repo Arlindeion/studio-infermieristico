@@ -102,10 +102,12 @@ section[id] {
 .pagina-interna h2 { font-size: 2.1rem; color: var(--verde-scuro); margin-bottom: 0.5rem; }
 .sottotitolo { color: var(--grigio); margin-bottom: 2.5rem; font-size: 1rem; }
 
+.blsd-page,
 .corso-disostruzione-page {
     max-width: 1080px;
 }
 
+.blsd-hero,
 .corso-disostruzione-hero {
     align-items: center;
     display: grid;
@@ -114,6 +116,7 @@ section[id] {
     margin-bottom: 2.5rem;
 }
 
+.blsd-hero__copy h1,
 .corso-disostruzione-hero__copy h1 {
     font-size: clamp(2.75rem, 4.5vw, 3.75rem);
     letter-spacing: -0.035em;
@@ -122,6 +125,7 @@ section[id] {
     max-width: 13ch;
 }
 
+.blsd-hero__copy > p:not(.eyebrow),
 .corso-disostruzione-hero__copy > p:not(.eyebrow) {
     color: var(--grigio);
     font-size: 1.1rem;
@@ -129,16 +133,19 @@ section[id] {
     max-width: 37rem;
 }
 
+.blsd-hero__copy .blsd-lead,
 .corso-disostruzione-hero__copy .corso-disostruzione-lead {
     color: var(--verde-scuro);
     font-size: 1.25rem;
     line-height: 1.55;
 }
 
+.blsd-hero__copy .btn,
 .corso-disostruzione-hero__copy .btn {
     margin-top: 0.55rem;
 }
 
+.blsd-hero__media,
 .corso-disostruzione-hero__media {
     height: 440px;
     isolation: isolate;
@@ -146,6 +153,7 @@ section[id] {
     position: relative;
 }
 
+.blsd-hero__media::before,
 .corso-disostruzione-hero__media::before {
     background: var(--verde-brand);
     border-radius: 17% 30% 15% 24% / 13% 17% 16% 21%;
@@ -159,6 +167,7 @@ section[id] {
     z-index: 0;
 }
 
+.blsd-hero__media img,
 .corso-disostruzione-hero__media img {
     border-radius: 14% 34% 12% 26% / 11% 19% 13% 23%;
     box-shadow: var(--ombra-card);
@@ -171,7 +180,7 @@ section[id] {
     z-index: 1;
 }
 
-.corso-disostruzione-facts {
+.course-facts {
     background: var(--carta-luminosa-a82);
     border: 1px solid var(--salvia-bordo-a22);
     border-radius: 8px;
@@ -181,7 +190,11 @@ section[id] {
     overflow: hidden;
 }
 
-.corso-disostruzione-facts article {
+.blsd-facts {
+    grid-template-columns: 0.6fr 1.25fr 1.25fr 1.55fr;
+}
+
+.course-facts article {
     border-right: 1px solid var(--salvia-bordo-a22);
     display: flex;
     flex-direction: column;
@@ -190,18 +203,18 @@ section[id] {
     padding: 1.1rem;
 }
 
-.corso-disostruzione-facts article:last-child {
+.course-facts article:last-child {
     border-right: 0;
 }
 
-.corso-disostruzione-facts strong {
+.course-facts strong {
     color: var(--rosso-cuore);
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
-.corso-disostruzione-facts span {
+.course-facts span {
     color: var(--verde-scuro);
     font-size: 1.03rem;
     line-height: 1.5;
@@ -1215,16 +1228,17 @@ footer p {
 
 @media (max-width: 900px) {
 .chi-siamo-contenuto { flex-direction: column; align-items: center; }
+.blsd-hero,
 .corso-disostruzione-hero {
         grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.92fr);
     }
-.corso-disostruzione-facts {
+.course-facts {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-.corso-disostruzione-facts article:nth-child(2) {
+.course-facts article:nth-child(2) {
         border-right: 0;
     }
-.corso-disostruzione-facts article:nth-child(-n + 2) {
+.course-facts article:nth-child(-n + 2) {
         border-bottom: 1px solid var(--salvia-bordo-a22);
     }
 .proof-grid,
@@ -1255,34 +1269,40 @@ footer p {
 @media (max-width: 640px) {
 .pagina-interna h2 { font-size: 1.5rem; }
 .pagina-interna h1 { font-size: 1.85rem; }
+.blsd-hero,
 .corso-disostruzione-hero {
         gap: 1.35rem;
         grid-template-columns: 1fr;
     }
+.blsd-hero__copy h1,
 .corso-disostruzione-hero__copy h1 {
         font-size: clamp(2.1rem, 9vw, 2.5rem);
     }
+.blsd-hero__copy .blsd-lead,
 .corso-disostruzione-hero__copy .corso-disostruzione-lead {
         font-size: 1.12rem;
     }
+.blsd-hero__copy .btn,
 .corso-disostruzione-hero__copy .btn {
         display: none;
     }
+.blsd-hero__media img,
 .corso-disostruzione-hero__media img {
         object-position: center 58%;
     }
+.blsd-hero__media,
 .corso-disostruzione-hero__media {
         height: 320px;
     }
-.corso-disostruzione-facts {
+.course-facts {
         grid-template-columns: 1fr;
     }
-.corso-disostruzione-facts article,
-.corso-disostruzione-facts article:nth-child(2) {
+.course-facts article,
+.course-facts article:nth-child(2) {
         border-bottom: 1px solid var(--salvia-bordo-a22);
         border-right: 0;
     }
-.corso-disostruzione-facts article:last-child {
+.course-facts article:last-child {
         border-bottom: 0;
     }
 .corso-disostruzione-gallery {

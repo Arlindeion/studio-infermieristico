@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 20 luglio 2026.
+Ultimo aggiornamento: 21 luglio 2026.
 
 ## Scopo
 
@@ -20,7 +20,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Metodo sonno: lettura scientifica, relazionale e centrata sulla famiglia; osservare fisiologia, maturazione, ritmi, ambiente e bisogni prima di scegliere cambiamenti graduali e sostenibili.
 - Sintesi campagna sonno: `Capire prima di cambiare.`
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
-- BLSD: investimento concreto nella sicurezza degli ambienti.
+- BLSD: investimento concreto nella sicurezza degli ambienti; corso di 5 ore con teoria ed esercitazioni pratiche su manichino, rivolto a cittadini, associazioni, aziende e gruppi.
 - Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
 - Prestazioni infermieristiche: la sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
 
@@ -91,6 +91,7 @@ Budget, costo massimo per contatto, frequenza editoriale e tono dei video restan
 | `static/img/logo-farmacia-russo.png` | 360×100 | Banner della collaborazione nella pagina del corso di accompagnamento alla nascita | In uso; PNG originale con sfondo trasparente e collegamento al sito della farmacia |
 | `static/img/selene-dopo-nascita.jpg` | 1280×1920 | Dopo la nascita e disostruzione nell'elenco corsi | In uso; verificare se è la scelta più specifica per disostruzione |
 | `static/img/selene-blsd.jpg` | 1280×1920 | Elenco corsi BLSD | In uso |
+| `static/img/corso-blsd-esercitazione.jpg` | 1200×1600 | Copertina della pagina BLSD | In uso; fotografia reale di un’esercitazione con manichino, ventilazione e DAE |
 | `static/img/corso-disostruzione-copertina-studio.jpg` | 1200×1600 | Copertina della pagina disostruzione pediatrica e tagli sicuri | In uso; presenta Selene e la sala preparata per il corso |
 | `static/img/corso-disostruzione-dimostrazione.jpg` | 1350×1350 | Galleria della pagina disostruzione pediatrica | In uso; fotografia reale del corso con crop sull’attività |
 | `static/img/corso-disostruzione-prova-pratica.jpg` | 1200×1600 | Prova pratica nella pagina del corso disostruzione | In uso; fotografia reale del corso |

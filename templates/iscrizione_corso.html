@@ -1,12 +1,25 @@
 {% extends "base.html" %}
 {% block titolo %}{{ corso.titolo }} — S.C. Studio Infermieristico{% endblock %}
-{% block meta_description %}{% if corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% elif corso_tipo == 'laboratorio-infanzia' %}Laboratori in presenza per bambini dai 6 mesi ai 5 anni e famiglie: alimentazione, gioco sensoriale, creatività e autonomia a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
+{% block meta_description %}{% if corso_tipo == 'bls-d' %}Corso BLSD di 5 ore con teoria ed esercitazioni su manichino per cittadini, associazioni, aziende e gruppi a Montesilvano.{% elif corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% elif corso_tipo == 'laboratorio-infanzia' %}Laboratori in presenza per bambini dai 6 mesi ai 5 anni e famiglie: alimentazione, gioco sensoriale, creatività e autonomia a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna pagina-consulenza{% if corso_tipo == 'disostruzione-pediatrica' %} corso-disostruzione-page{% elif corso_tipo == 'laboratorio-infanzia' %} laboratori-page{% endif %}">
+<section class="pagina-interna pagina-consulenza{% if corso_tipo == 'bls-d' %} blsd-page{% elif corso_tipo == 'disostruzione-pediatrica' %} corso-disostruzione-page{% elif corso_tipo == 'laboratorio-infanzia' %} laboratori-page{% endif %}">
     {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
     {% set page_eyebrow = 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else ('Iscrizione laboratorio' if corso_tipo == 'laboratorio-infanzia' else 'Iscrizione corso') %}
-    {% if corso_tipo == 'disostruzione-pediatrica' %}
+    {% if corso_tipo == 'bls-d' %}
+    <div class="blsd-hero">
+        <div class="blsd-hero__copy">
+            <p class="eyebrow">Corso in presenza</p>
+            <h1>{{ corso.titolo }}</h1>
+            <p class="blsd-lead">Cinque ore di teoria e pratica per riconoscere un’emergenza, intervenire con ordine e imparare a usare il defibrillatore.</p>
+            <p>Le esercitazioni su manichino trasformano i passaggi spiegati in gesti da provare, correggere e ripetere con la guida dell’istruttore.</p>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="corso_blsd_modulo">Vai al modulo</a>
+        </div>
+        <figure class="blsd-hero__media">
+            <img src="{{ url_for('static', filename='img/corso-blsd-esercitazione.jpg') }}" width="1200" height="1600" alt="Esercitazione BLSD con ventilazione su manichino e defibrillatore" fetchpriority="high">
+        </figure>
+    </div>
+    {% elif corso_tipo == 'disostruzione-pediatrica' %}
     <div class="corso-disostruzione-hero">
         <div class="corso-disostruzione-hero__copy">
             <p class="eyebrow">Corso in presenza</p>
@@ -44,7 +57,24 @@
     {% endif %}
 
     {% if corso_tipo == 'bls-d' %}
-    <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Questo modulo è dedicato alle iscrizioni individuali.</p>
+    <div class="course-facts blsd-facts" aria-label="Informazioni essenziali sul corso BLSD">
+        <article>
+            <strong>Durata</strong>
+            <span>5 ore</span>
+        </article>
+        <article>
+            <strong>Modalità</strong>
+            <span>Teoria ed esercitazioni pratiche su manichino</span>
+        </article>
+        <article>
+            <strong>Destinatari</strong>
+            <span>Cittadini, associazioni, aziende e gruppi</span>
+        </article>
+        <article>
+            <strong>Sede</strong>
+            <span>S.C. Studio Infermieristico, Via C. D’Agnese 43, Montesilvano</span>
+        </article>
+    </div>
     <div class="blsd-choice-panel" aria-label="Scegli come richiedere il corso BLSD">
         <article class="blsd-choice-card">
             <span>Privati</span>
@@ -81,7 +111,7 @@
         </div>
     </div>
     {% elif corso_tipo == 'disostruzione-pediatrica' %}
-    <div class="corso-disostruzione-facts" aria-label="Informazioni essenziali sul corso">
+    <div class="course-facts corso-disostruzione-facts" aria-label="Informazioni essenziali sul corso">
         <article>
             <strong>A chi è rivolto</strong>
             <span>Genitori, nonni, babysitter e caregiver</span>
@@ -269,7 +299,7 @@
     </div>
     {% endif %}
 
-    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}" id="{{ form_anchor_id }}">
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         {% if not corso.has_open_dates %}

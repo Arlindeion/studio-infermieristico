@@ -206,7 +206,7 @@ CORSI_ADMIN_TIPI = {
     'bls-d': {
         'label': 'BLSD',
         'titolo': 'BLSD',
-        'durata_ore': 4,
+        'durata_ore': 5,
     },
     'disostruzione-pediatrica': {
         'label': 'Disostruzione pediatrica e tagli sicuri',
@@ -243,6 +243,10 @@ CORSI_ISCRIVIBILI = {
     },
 }
 
+CORSI_SLUG_PUBBLICI = {
+    'bls-d': 'blsd',
+}
+
 STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
 STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
 
@@ -266,7 +270,7 @@ FAQ_ITEMS = [
         'id': 'blsd-privati-aziende',
         'question': 'Come posso iscrivermi a un corso BLSD o richiederlo per un\'azienda?',
         'answer': "Il BLSD ha due percorsi separati: i privati possono usare il modulo di iscrizione individuale per le date aperte, mentre aziende e gruppi devono contattare direttamente lo studio per organizzare un corso personalizzato in studio o in azienda.",
-        'link_href': '/iscrizione-corsi/bls-d',
+        'link_href': '/iscrizione-corsi/blsd',
         'link_text': 'Vedi BLSD',
     },
     {
@@ -293,7 +297,7 @@ FAQ_ITEMS = [
     {
         'id': 'durata-corsi',
         'question': 'Quanto durano i corsi?',
-        'answer': "La durata dipende dal tipo di corso: il BLSD dura circa 4 ore, disostruzione pediatrica e tagli sicuri dura circa 2 ore e 30 minuti, i laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
+        'answer': "La durata dipende dal tipo di corso: il BLSD dura 5 ore, disostruzione pediatrica e tagli sicuri dura circa 2 ore e 30 minuti, i laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Vedi i corsi',
     },
@@ -2321,11 +2325,16 @@ def _corso_iscrivibile_con_date(corso_tipo):
     return corso
 
 
+def _slug_pubblico_corso(corso_tipo):
+    return CORSI_SLUG_PUBBLICI.get(corso_tipo, corso_tipo)
+
+
 def _render_iscrizione_con_errore(corso_tipo, messaggio):
     flash(messaggio, 'error')
     return render_template(
         'iscrizione_corso.html',
         corso_tipo=corso_tipo,
+        corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=_corso_iscrivibile_con_date(corso_tipo),
         form_data=request.form
     )
@@ -2334,6 +2343,16 @@ def _render_iscrizione_con_errore(corso_tipo, messaggio):
 @app.route('/iscrizione-corsi/<corso_tipo>', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def iscrizione_corso(corso_tipo):
+    if corso_tipo == 'bls-d':
+        return redirect(
+            url_for('iscrizione_corso', corso_tipo='blsd'),
+            code=308 if request.method == 'POST' else 301,
+        )
+
+    corso_tipo = next(
+        (tipo for tipo, slug in CORSI_SLUG_PUBBLICI.items() if slug == corso_tipo),
+        corso_tipo,
+    )
     if corso_tipo not in CORSI_ISCRIVIBILI:
         abort(404)
 
@@ -2507,7 +2526,13 @@ def iscrizione_corso(corso_tipo):
         invia_email_nuova_iscrizione(iscrizione)
         return redirect(url_for('conferma_iscrizione_corso'))
 
-    return render_template('iscrizione_corso.html', corso_tipo=corso_tipo, corso=corso, form_data={})
+    return render_template(
+        'iscrizione_corso.html',
+        corso_tipo=corso_tipo,
+        corso_slug=_slug_pubblico_corso(corso_tipo),
+        corso=corso,
+        form_data={},
+    )
 
 
 @app.route('/iscrizione-corsi')
