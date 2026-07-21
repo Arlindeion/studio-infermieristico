@@ -121,22 +121,86 @@ talisman = Talisman(
 @app.context_processor
 def inject_tracking_config():
     return {
-        'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID')
+        'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
+        'servizi_prenotabili': SERVIZI_PRENOTABILI,
     }
 
 
 # ─── COSTANTI ───
 
-SERVIZI_VALIDI = [
-    'Iniezione intramuscolare',
-    'Iniezione sottocutanea',
+PRESTAZIONI_CATEGORIE = [
+    {
+        'nome': 'Terapie e somministrazioni',
+        'slug': 'terapie-somministrazioni',
+        'prestazioni': [
+            {'nome': 'Iniezione intramuscolare', 'prezzo': '12 €'},
+            {'nome': 'Iniezione sottocutanea', 'prezzo': '10 €'},
+            {'nome': 'Terapia infusionale / flebo', 'prezzo': 'da 20 €'},
+            {'nome': 'Posizionamento accesso venoso', 'prezzo': '15 €'},
+            {'nome': 'Gestione e medicazione PICC/CVC', 'prezzo': 'da 25 €'},
+            {'nome': 'Lavaggio e mantenimento PICC/CVC', 'prezzo': 'da 20 €'},
+            {'nome': 'Gestione della terapia farmacologica', 'prezzo': 'su valutazione'},
+        ],
+    },
+    {
+        'nome': 'Medicazioni',
+        'slug': 'medicazioni',
+        'nota': 'Il prezzo può variare in base alle condizioni della lesione, al tempo necessario e ai materiali utilizzati.',
+        'prestazioni': [
+            {'nome': 'Medicazione semplice', 'prezzo': '15 €'},
+            {'nome': 'Medicazione chirurgica', 'prezzo': 'da 20 €'},
+            {'nome': 'Rimozione punti di sutura o graffette', 'prezzo': '20 €'},
+            {'nome': 'Medicazione avanzata di lesioni complesse', 'prezzo': 'da 30 €'},
+            {'nome': 'Valutazione infermieristica della lesione', 'prezzo': '20 €'},
+            {'nome': 'Cambio o gestione cannula tracheostomica', 'prezzo': 'da 25 €'},
+        ],
+    },
+    {
+        'nome': 'Controlli e diagnostica',
+        'slug': 'controlli-diagnostica',
+        'prestazioni': [
+            {'nome': 'Controllo parametri vitali', 'prezzo': '10 €'},
+            {'nome': 'Glicemia capillare', 'prezzo': '5 €'},
+            {'nome': 'Elettrocardiogramma con referto', 'prezzo': '20 €'},
+            {'nome': 'Holter pressorio 24 ore', 'prezzo': '55 €'},
+            {'nome': 'Holter ECG 24 ore', 'prezzo': '80 €'},
+            {'nome': 'Profilo lipidico capillare', 'prezzo': '20 €'},
+            {'nome': 'Emoglobina glicata - HbA1c', 'prezzo': '15 €'},
+            {'nome': 'Vitamina D', 'prezzo': '20 €'},
+            {'nome': 'PSA', 'prezzo': '15 €'},
+            {'nome': 'Profilo tiroideo TSH, FT3 e FT4', 'prezzo': '30 €'},
+        ],
+    },
+    {
+        'nome': 'Altre prestazioni',
+        'slug': 'altre-prestazioni',
+        'prestazioni': [
+            {'nome': 'Lavaggio auricolare', 'prezzo': '20 € un orecchio'},
+            {'nome': 'Lavaggio auricolare bilaterale', 'prezzo': '30 €'},
+            {'nome': 'Clistere evacuativo', 'prezzo': '30 €'},
+            {'nome': 'Gestione stomia', 'prezzo': 'da 20 €'},
+            {'nome': 'Gestione PEG', 'prezzo': 'da 20 €'},
+            {'nome': 'Cateterismo vescicale', 'prezzo': 'da 25 €'},
+            {'nome': 'Sostituzione catetere vescicale', 'prezzo': 'da 30 €'},
+            {'nome': 'Educazione del caregiver', 'prezzo': 'da 30 €'},
+            {'nome': 'Consulenza infermieristica', 'prezzo': '30 € all’ora'},
+        ],
+    },
+]
+
+SERVIZI_PRENOTABILI = [
+    prestazione['nome']
+    for categoria in PRESTAZIONI_CATEGORIE
+    for prestazione in categoria['prestazioni']
+]
+
+# Mantiene validi i nomi usati dalle richieste create prima del nuovo listino.
+SERVIZI_VALIDI = list(dict.fromkeys(SERVIZI_PRENOTABILI + [
     'Flebo e terapia infusionale',
-    'Medicazione semplice',
     'Medicazione complessa',
-    'Controllo parametri vitali',
     'Assistenza domiciliare',
     'Gestione terapia farmacologica',
-]
+]))
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
 STATI_CALL_SONNO_VALIDI = ['In attesa', 'Confermata', 'Annullata', 'Conclusa']
@@ -2022,6 +2086,8 @@ def faq():
 def prestazioni():
     return render_template(
         'prestazioni_infermieristiche.html',
+        prestazioni_categorie=PRESTAZIONI_CATEGORIE,
+        prestazioni_totale=len(SERVIZI_PRENOTABILI),
         studio_map_embed_src=STUDIO_MAP_EMBED_SRC,
         studio_map_link=STUDIO_MAP_LINK,
     )

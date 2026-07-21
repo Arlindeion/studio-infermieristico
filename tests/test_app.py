@@ -1828,6 +1828,18 @@ def test_pagina_prestazioni_usa_h1(client):
     assert 'href="/prenota"' in resp.text
     assert 'Prenota una prestazione' in resp.text
     assert 'data-conversion="prestazioni_prenota"' in resp.text
+    assert 'data-prestazioni-search' in resp.text
+    assert 'data-prestazioni-catalog' in resp.text
+    assert resp.text.count('data-service-group') == 4
+    assert resp.text.count('data-service-row') == 32
+    assert 'Terapie e somministrazioni' in resp.text
+    assert 'Medicazioni' in resp.text
+    assert 'Controlli e diagnostica' in resp.text
+    assert 'Altre prestazioni' in resp.text
+    assert 'Holter ECG 24 ore' in resp.text
+    assert '80 €' in resp.text
+    assert 'Le tariffe possono variare in base alla complessità della prestazione' in resp.text
+    assert 'Gli interventi a domicilio non si prenotano direttamente online' in resp.text
     assert 'Per ulteriori informazioni, durante gli orari dello studio' in resp.text
     assert 'urgenze fuori orario' not in resp.text
     assert '<h2 id="studio-location-title">Dove ci troviamo</h2>' in resp.text
@@ -1836,6 +1848,16 @@ def test_pagina_prestazioni_usa_h1(client):
     assert 'data-conversion="prestazioni_mappa"' in resp.text
     assert 'https://www.google.com/maps?q=' in resp.text
     assert 'loading="lazy"' in resp.text
+
+
+def test_form_prenotazione_include_il_listino_aggiornato(client):
+    resp = client.get('/prenota')
+
+    assert resp.status_code == 200
+    assert '<option value="Holter pressorio 24 ore"' in resp.text
+    assert '<option value="Medicazione chirurgica"' in resp.text
+    assert '<option value="Consulenza infermieristica"' in resp.text
+    assert '<option value="Assistenza domiciliare"' not in resp.text
 
 
 if __name__ == '__main__':

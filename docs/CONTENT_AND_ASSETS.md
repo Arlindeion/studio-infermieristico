@@ -22,7 +22,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti; corso di 5 ore con teoria ed esercitazioni pratiche su manichino, rivolto a cittadini, associazioni, aziende e gruppi.
 - Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
-- Prestazioni infermieristiche: la sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
+- Prestazioni infermieristiche: il listino pubblico è diviso in `Terapie e somministrazioni`, `Medicazioni`, `Controlli e diagnostica` e `Altre prestazioni`, con tariffe riferite allo studio e variazioni comunicate prima della conferma. La sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
 
 ## Naming approvato
 

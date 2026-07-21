@@ -181,6 +181,10 @@
     margin: 1.5rem 0 0.75rem;
 }
 
+.laboratori-gallery-hint__mobile {
+    display: none;
+}
+
 .laboratori-gallery {
     display: grid;
     gap: 1rem;
@@ -200,8 +204,16 @@
     overflow: hidden;
 }
 
+.laboratori-gallery figure:nth-child(1) {
+    transform: translateY(0.65rem);
+}
+
 .laboratori-gallery figure:nth-child(2) {
-    transform: translateY(1.5rem);
+    transform: translateY(2.25rem);
+}
+
+.laboratori-gallery figure:nth-child(3) {
+    transform: translateY(-0.65rem);
 }
 
 .laboratori-gallery img {
@@ -388,6 +400,14 @@
         margin-top: 1rem;
     }
 
+    .laboratori-gallery-hint__desktop {
+        display: none;
+    }
+
+    .laboratori-gallery-hint__mobile {
+        display: inline;
+    }
+
     .laboratori-gallery {
         display: flex;
         margin-left: -1rem;
@@ -398,12 +418,12 @@
         scroll-snap-type: x mandatory;
     }
 
-    .laboratori-gallery figure {
+    .laboratori-gallery figure,
+    .laboratori-gallery figure:nth-child(1),
+    .laboratori-gallery figure:nth-child(2),
+    .laboratori-gallery figure:nth-child(3) {
         flex: 0 0 min(82vw, 320px);
         scroll-snap-align: start;
-    }
-
-    .laboratori-gallery figure:nth-child(2) {
         transform: none;
     }
 

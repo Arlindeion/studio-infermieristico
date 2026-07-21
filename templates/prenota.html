@@ -40,14 +40,9 @@
             <label for="servizio">Servizio richiesto *</label>
             <select id="servizio" name="servizio" required>
                 <option value="">-- Seleziona un servizio --</option>
-                <option value="Iniezione intramuscolare"     {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione intramuscolare' }}>Iniezione intramuscolare</option>
-                <option value="Iniezione sottocutanea"       {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione sottocutanea' }}>Iniezione sottocutanea</option>
-                <option value="Flebo e terapia infusionale"  {{ 'selected' if form_data and form_data.get('servizio') == 'Flebo e terapia infusionale' }}>Flebo e terapia infusionale</option>
-                <option value="Medicazione semplice"         {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione semplice' }}>Medicazione semplice</option>
-                <option value="Medicazione complessa"        {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione complessa' }}>Medicazione complessa</option>
-                <option value="Controllo parametri vitali"   {{ 'selected' if form_data and form_data.get('servizio') == 'Controllo parametri vitali' }}>Controllo parametri vitali</option>
-                <option value="Assistenza domiciliare"       {{ 'selected' if form_data and form_data.get('servizio') == 'Assistenza domiciliare' }}>Assistenza domiciliare</option>
-                <option value="Gestione terapia farmacologica" {{ 'selected' if form_data and form_data.get('servizio') == 'Gestione terapia farmacologica' }}>Gestione terapia farmacologica</option>
+                {% for servizio in servizi_prenotabili %}
+                <option value="{{ servizio }}" {{ 'selected' if form_data and form_data.get('servizio') == servizio }}>{{ servizio }}</option>
+                {% endfor %}
             </select>
         </div>
 

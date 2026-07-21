@@ -1,81 +1,122 @@
 {% extends "base.html" %}
-{% block titolo %}Prestazioni infermieristiche — Studio Infermieristico{% endblock %}
+{% block titolo %}Prestazioni infermieristiche a Montesilvano — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Prestazioni infermieristiche in studio a Montesilvano: terapie, medicazioni, controlli diagnostici e assistenza professionale. Consulta tariffe e richiedi un appuntamento.{% endblock %}
 
 {% block contenuto %}
 
-<section class="pagina-interna">
-    <h1>Prestazioni infermieristiche</h1>
-    <p class="sottotitolo">Tutti i servizi sono eseguiti da personale infermieristico qualificato e abilitato.</p>
+<section class="nursing-page">
+    <div class="nursing-hero">
+        <div class="nursing-hero__copy">
+            <p class="eyebrow">In studio · Montesilvano</p>
+            <h1>Prestazioni infermieristiche</h1>
+            <p class="nursing-hero__lead">Prestazioni eseguite da personale infermieristico qualificato, con indicazioni chiare e il tempo necessario per ogni intervento.</p>
 
-    <div class="prestazioni-actions" aria-label="Prenotazione prestazioni infermieristiche">
-        <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota">Prenota una prestazione</a>
-        <p>Scegli servizio, data e orario: lo studio verificherà la richiesta e ti invierà la conferma.</p>
+            <div class="prestazioni-actions" aria-label="Prenotazione prestazioni infermieristiche">
+                <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota">Prenota una prestazione</a>
+                <p>Scegli servizio, data e orario. La richiesta sarà confermata dallo studio.</p>
+            </div>
+        </div>
+
+        <figure class="nursing-hero__media">
+            <img src="{{ url_for('static', filename='img/selene-prestazioni.jpg') }}" alt="Selene Campetta durante una prestazione infermieristica in studio">
+        </figure>
     </div>
 
-    <div class="pagina-hero-img">
-        <img src="{{ url_for('static', filename='img/selene-prestazioni.jpg') }}" alt="Prestazioni infermieristiche in studio">
+    <div class="nursing-facts" aria-label="Informazioni sulle prestazioni">
+        <p><strong>In studio</strong><span>Le tariffe indicate si riferiscono alle prestazioni svolte in sede.</span></p>
+        <p><strong>Prescrizione</strong><span>È richiesta per le prestazioni che la prevedono.</span></p>
+        <p><strong>Domicilio</strong><span>Disponibilità e supplemento vengono valutati prima della conferma.</span></p>
     </div>
 
-    <div class="servizio-lista">
-
-        <div class="servizio-item">
-            <span>💉</span>
+    <div class="nursing-catalog" data-prestazioni-catalog>
+        <div class="nursing-catalog__heading">
             <div>
-                <h3>Iniezioni intramuscolari e sottocutanee</h3>
-                <p>Somministrazione di farmaci su prescrizione medica, in totale sicurezza e nel rispetto dei protocolli sanitari.</p>
+                <p class="eyebrow">Listino in studio</p>
+                <h2>Trova la prestazione che cerchi</h2>
+                <p>Le prestazioni sono divise per tipologia. Apri una sezione oppure usa la ricerca.</p>
+            </div>
+
+            <div class="service-search" role="search">
+                <label for="prestazioni-search">Cerca una prestazione</label>
+                <div class="service-search__control">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="6.5"></circle>
+                        <path d="m16 16 4 4"></path>
+                    </svg>
+                    <input id="prestazioni-search" type="search" placeholder="Es. Holter o medicazione" autocomplete="off" data-prestazioni-search>
+                    <button type="button" data-prestazioni-clear hidden>Rimuovi</button>
+                </div>
+                <p class="service-search__status" aria-live="polite" data-prestazioni-status>{{ prestazioni_totale }} prestazioni disponibili</p>
             </div>
         </div>
 
-        <div class="servizio-item">
-            <span>🩸</span>
-            <div>
-                <h3>Flebo e terapie infusionali</h3>
-                <p>Posizionamento di accessi venosi e somministrazione di terapie infusionali prescritte dal medico.</p>
-            </div>
+        <div class="service-groups">
+            {% for categoria in prestazioni_categorie %}
+            <details class="service-group" data-service-group{% if loop.first %} open{% endif %}>
+                <summary>
+                    <h3 class="service-group__title" id="{{ categoria.slug }}-title">{{ categoria.nome }}</h3>
+                    <span class="service-group__count" data-service-count>{{ categoria.prestazioni | length }} prestazioni</span>
+                    <span class="service-group__toggle" aria-hidden="true"></span>
+                </summary>
+
+                <div class="service-group__content">
+                    <table aria-labelledby="{{ categoria.slug }}-title">
+                        <thead>
+                            <tr>
+                                <th scope="col">Prestazione</th>
+                                <th scope="col">Tariffa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestazione in categoria.prestazioni %}
+                            <tr data-service-row>
+                                <td>{{ prestazione.nome }}</td>
+                                <td>{{ prestazione.prezzo }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if categoria.nota %}
+                    <p class="service-group__note">{{ categoria.nota }}</p>
+                    {% endif %}
+                </div>
+            </details>
+            {% endfor %}
         </div>
 
-        <div class="servizio-item">
-            <span>🩹</span>
-            <div>
-                <h3>Medicazioni semplici e complesse</h3>
-                <p>Trattamento di ferite chirurgiche, ulcere da pressione, lesioni cutanee e cambio di cannule.</p>
-            </div>
-        </div>
-
-        <div class="servizio-item">
-            <span>❤️</span>
-            <div>
-                <h3>Controllo parametri vitali</h3>
-                <p>Misurazione di pressione arteriosa, glicemia, saturazione dell'ossigeno, frequenza cardiaca e temperatura.</p>
-            </div>
-        </div>
-
-        <div class="servizio-item">
-            <span>🏠</span>
-            <div>
-                <h3>Assistenza domiciliare</h3>
-                <p>Interventi infermieristici direttamente a casa tua, ideali per anziani, persone con mobilità ridotta o in fase di recupero post-operatorio.</p>
-            </div>
-        </div>
-
-        <div class="servizio-item">
-            <span>📋</span>
-            <div>
-                <h3>Gestione terapia farmacologica</h3>
-                <p>Supporto nella preparazione e somministrazione della terapia quotidiana, con monitoraggio degli effetti.</p>
-            </div>
-        </div>
-
+        <p class="service-empty" data-prestazioni-empty hidden>Nessuna prestazione corrisponde alla ricerca. Prova con un termine più breve oppure contatta lo studio.</p>
     </div>
 
-    <div class="orari">
-        <h3>Orari dello studio</h3>
-        <table>
-            <tr><td>Lunedì — Venerdì</td><td>08:00 — 13:00 / 15:00 — 19:00</td></tr>
-            <tr><td>Sabato</td><td>08:00 — 12:00</td></tr>
-            <tr><td>Domenica</td><td>Chiuso</td></tr>
-        </table>
-        <p class="nota">Per ulteriori informazioni, durante gli orari dello studio puoi contattare il numero: <strong>3806317175</strong></p>
+    <aside class="nursing-pricing-note" aria-labelledby="pricing-note-title">
+        <p class="eyebrow">Prima della conferma</p>
+        <h2 id="pricing-note-title">Una tariffa chiara per la situazione reale</h2>
+        <p>Le tariffe possono variare in base alla complessità della prestazione, ai materiali necessari e alla distanza per gli interventi domiciliari. Ogni variazione viene comunicata prima della conferma dell’appuntamento.</p>
+        <p>Gli interventi a domicilio non si prenotano direttamente online: contatta lo studio per valutare zona e fattibilità.</p>
+        <a href="tel:+393806317175" class="link-azione" data-conversion="prestazioni_domicilio">Chiama il 380 631 7175</a>
+    </aside>
+
+    <div class="nursing-visit-grid">
+        <div class="orari">
+            <p class="eyebrow">Quando</p>
+            <h2>Orari dello studio</h2>
+            <table>
+                <tr><td>Lunedì — Venerdì</td><td>08:00 — 13:00<br>15:00 — 19:00</td></tr>
+                <tr><td>Sabato</td><td>08:00 — 12:00</td></tr>
+                <tr><td>Domenica</td><td>Chiuso</td></tr>
+            </table>
+            <p class="nota">Per ulteriori informazioni, durante gli orari dello studio puoi chiamare il <strong>380 631 7175</strong>.</p>
+        </div>
+
+        <div class="nursing-booking-card">
+            <p class="eyebrow">Come funziona</p>
+            <h2>Richiedi il tuo appuntamento</h2>
+            <ol>
+                <li>Scegli la prestazione, la data e l’orario.</li>
+                <li>Lo studio verifica la disponibilità e le indicazioni necessarie.</li>
+                <li>Ricevi la conferma dell’appuntamento.</li>
+            </ol>
+            <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota_finale">Prenota una prestazione</a>
+        </div>
     </div>
 
     <div class="studio-location" aria-labelledby="studio-location-title">
@@ -97,7 +138,6 @@
             </iframe>
         </div>
     </div>
-
 </section>
 
 {% endblock %}

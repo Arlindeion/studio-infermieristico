@@ -222,7 +222,10 @@
             </div>
             <p>Ogni incontro alterna esplorazione libera e proposte guidate, con l’adulto vicino ma senza sostituirsi al bambino.</p>
         </div>
-        <p class="laboratori-gallery-hint" id="laboratori-gallery-hint">Scorri le immagini per vedere alcune attività reali.</p>
+        <p class="laboratori-gallery-hint" id="laboratori-gallery-hint">
+            <span class="laboratori-gallery-hint__desktop">Alcune attività reali vissute durante i laboratori.</span>
+            <span class="laboratori-gallery-hint__mobile">Scorri le immagini per vedere alcune attività reali.</span>
+        </p>
         <div class="laboratori-gallery" role="region" aria-label="Fotografie delle attività nei laboratori" aria-describedby="laboratori-gallery-hint" tabindex="0">
             <figure>
                 <img src="{{ url_for('static', filename='img/laboratori-primi-assaggi.jpg') }}" width="1200" height="1600" alt="Bambino che esplora alimenti e consistenze durante un laboratorio" loading="lazy">
