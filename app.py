@@ -206,6 +206,7 @@ STATI_CALL_SONNO_VALIDI = ['In attesa', 'Confermata', 'Annullata', 'Conclusa']
 FORMULE_SONNO = {
     'mirata': 'Consulenza mirata',
     'percorso': 'Percorso sonno personalizzato',
+    'affiancamento': 'Percorso sonno con affiancamento',
 }
 DIFFICOLTA_SONNO = [
     'Addormentamento difficile la sera',
@@ -214,6 +215,17 @@ DIFFICOLTA_SONNO = [
     'Addormentamento solo con forte supporto (braccio/seno)',
     'Cambiamenti / regressioni / distacchi',
     'Altro',
+]
+RUOLI_RICHIEDENTE_SONNO = [
+    'Genitore con responsabilità genitoriale',
+    'Tutore legale',
+]
+DURATE_DIFFICOLTA_SONNO = [
+    'Da meno di 2 settimane',
+    'Da 2 a 4 settimane',
+    'Da 1 a 3 mesi',
+    'Da più di 3 mesi',
+    'Da sempre o quasi',
 ]
 QUESTIONARIO_SONNO_LABELS = {
     'nome_bambino': 'Nome del bambino',
@@ -1173,7 +1185,13 @@ class CallSonno(db.Model):
     eta_bambino_mesi = db.Column(db.Integer, nullable=False)
     difficolta_principale = db.Column(db.String(120), nullable=False)
     difficolta_altro = db.Column(db.String(300), nullable=True)
+    ruolo_richiedente = db.Column(db.String(60), nullable=True)
+    durata_difficolta = db.Column(db.String(60), nullable=True)
+    obiettivo_call = db.Column(db.String(300), nullable=True)
+    presa_visione_offerta = db.Column(db.Boolean, default=False, nullable=False)
+    conferma_ambito = db.Column(db.Boolean, default=False, nullable=False)
     consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_whatsapp = db.Column(db.Boolean, default=False, nullable=False)
     data = db.Column(db.String(20), nullable=False, index=True)
     ora = db.Column(db.String(10), nullable=False)
     stato = db.Column(db.String(20), default='In attesa', nullable=False, index=True)
@@ -1181,6 +1199,14 @@ class CallSonno(db.Model):
     formula_scelta = db.Column(db.String(30), nullable=True)
     token_questionario = db.Column(db.String(96), unique=True, nullable=True, index=True)
     questionario_inviato_il = db.Column(db.DateTime, nullable=True)
+    promemoria_email_24h_il = db.Column(db.DateTime, nullable=True)
+    promemoria_email_2h_il = db.Column(db.DateTime, nullable=True)
+    promemoria_whatsapp_24h_il = db.Column(db.DateTime, nullable=True)
+    promemoria_whatsapp_2h_il = db.Column(db.DateTime, nullable=True)
+    utm_source = db.Column(db.String(100), nullable=True)
+    utm_medium = db.Column(db.String(100), nullable=True)
+    utm_campaign = db.Column(db.String(100), nullable=True)
+    utm_content = db.Column(db.String(100), nullable=True)
     creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
     aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
@@ -1365,7 +1391,7 @@ def _intervalli_si_sovrappongono(primo, secondo):
 
 
 def _giorno_lavorativo_call(giorno):
-    return giorno.weekday() < 5 and not is_festivo(giorno)
+    return giorno.weekday() < 6 and not is_festivo(giorno)
 
 
 def prima_data_call_disponibile(da_giorno=None):
@@ -1487,6 +1513,23 @@ def valida_configurazione_runtime():
         raise RuntimeError('Staging e produzione richiedono DATABASE_URL PostgreSQL esplicita.')
     if app.config.get('MAIL_USE_TLS') and app.config.get('MAIL_USE_SSL'):
         raise RuntimeError('MAIL_USE_TLS e MAIL_USE_SSL non possono essere entrambe attive.')
+
+    if app.config.get('WHATSAPP_REMINDERS_ENABLED'):
+        whatsapp_obbligatori = {
+            'WHATSAPP_GRAPH_API_VERSION': app.config.get('WHATSAPP_GRAPH_API_VERSION'),
+            'WHATSAPP_PHONE_NUMBER_ID': app.config.get('WHATSAPP_PHONE_NUMBER_ID'),
+            'WHATSAPP_ACCESS_TOKEN': app.config.get('WHATSAPP_ACCESS_TOKEN'),
+            'WHATSAPP_TEMPLATE_24H': app.config.get('WHATSAPP_TEMPLATE_24H'),
+            'WHATSAPP_TEMPLATE_2H': app.config.get('WHATSAPP_TEMPLATE_2H'),
+        }
+        whatsapp_mancanti = [
+            nome for nome, valore in whatsapp_obbligatori.items() if not valore
+        ]
+        if whatsapp_mancanti:
+            raise RuntimeError(
+                'Promemoria WhatsApp abilitati ma configurazione incompleta: '
+                f'{", ".join(whatsapp_mancanti)}.'
+            )
 
     valori_segreti = [
         app.config.get('SECRET_KEY'),
@@ -1691,8 +1734,12 @@ def invia_email_alert_call_sonno(call):
             body=(
                 f'Nuova richiesta di call sonno.\n\n'
                 f'Nome: {call.nome}\nTelefono: {call.telefono}\nEmail: {call.email}\n'
+                f'Ruolo: {call.ruolo_richiedente}\n'
                 f'Età bambino: {call.eta_bambino_mesi} mesi\n'
                 f'Difficoltà: {call.difficolta_altro or call.difficolta_principale}\n'
+                f'Durata: {call.durata_difficolta}\n'
+                f'Obiettivo della call: {call.obiettivo_call}\n'
+                f'Promemoria WhatsApp: {"sì" if call.consenso_whatsapp else "no"}\n'
                 f'Quando: {call.data} alle {call.ora}\n\n'
                 f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
             ),
@@ -1724,6 +1771,22 @@ def invia_email_conferma_call_sonno(call, modificata=False):
                 f'Per necessità puoi contattarmi al 3806317175.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
+        )
+        calendario = icalendar.Calendar()
+        calendario.add('prodid', '-//S.C. Studio Infermieristico//Call sonno//IT')
+        calendario.add('version', '2.0')
+        evento = icalendar.Event()
+        inizio, _ = _intervallo_locale(call.data, call.ora, DURATA_CALL_SONNO_MINUTI)
+        evento.add('summary', 'Appuntamento con S.C. Studio Infermieristico')
+        evento.add('dtstart', inizio)
+        evento.add('dtend', inizio + timedelta(minutes=DURATA_CALL_SONNO_MINUTI))
+        evento.add('description', istruzioni.strip())
+        calendario.add_component(evento)
+        msg.attach(
+            'appuntamento-sc-studio.ics',
+            'text/calendar',
+            calendario.to_ical(),
+            disposition='attachment',
         )
         mail.send(msg)
         return True
@@ -1767,6 +1830,104 @@ def invia_email_questionario_sonno(call):
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email questionario sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_promemoria_call_sonno(call, ore_prima):
+    """Invia un promemoria neutro per una call sonno già confermata."""
+    try:
+        call_url = app.config.get('SONNO_CALL_URL')
+        collegamento = (
+            f'Collegamento: {call_url}\n\n'
+            if call_url
+            else 'Trovi le modalità di collegamento nell’email di conferma.\n\n'
+        )
+        mail.send(Message(
+            subject='Promemoria appuntamento - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'ti ricordiamo l’appuntamento del {call.data} alle {call.ora}.\n'
+                f'Durata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti.\n\n'
+                f'{collegamento}'
+                f'Se non puoi partecipare, avvisaci appena possibile.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            f'Email promemoria call sonno {ore_prima}h non inviata.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
+def _numero_whatsapp_internazionale(numero):
+    cifre = re.sub(r'\D', '', numero or '')
+    if cifre.startswith('00'):
+        cifre = cifre[2:]
+    if len(cifre) == 10 and cifre.startswith('3'):
+        cifre = f'39{cifre}'
+    return cifre
+
+
+def invia_whatsapp_promemoria_call_sonno(call, ore_prima):
+    """Invia un template organizzativo tramite WhatsApp Cloud API."""
+    template_name = app.config.get(
+        'WHATSAPP_TEMPLATE_24H' if ore_prima == 24 else 'WHATSAPP_TEMPLATE_2H'
+    )
+    numero = _numero_whatsapp_internazionale(call.telefono)
+    if not numero or not template_name:
+        return False
+
+    endpoint = (
+        'https://graph.facebook.com/'
+        f'{app.config["WHATSAPP_GRAPH_API_VERSION"]}/'
+        f'{app.config["WHATSAPP_PHONE_NUMBER_ID"]}/messages'
+    )
+    payload = {
+        'messaging_product': 'whatsapp',
+        'to': numero,
+        'type': 'template',
+        'template': {
+            'name': template_name,
+            'language': {'code': app.config.get('WHATSAPP_TEMPLATE_LANGUAGE', 'it')},
+            'components': [{
+                'type': 'body',
+                'parameters': [
+                    {'type': 'text', 'text': call.data},
+                    {'type': 'text', 'text': call.ora},
+                ],
+            }],
+        },
+    }
+    richiesta = urllib.request.Request(
+        endpoint,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {app.config["WHATSAPP_ACCESS_TOKEN"]}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+    try:
+        contesto_ssl = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen(richiesta, timeout=10, context=contesto_ssl) as risposta:
+            return 200 <= risposta.status < 300
+    except (urllib.error.URLError, TimeoutError, ValueError) as errore:
+        registra_evento(
+            'whatsapp',
+            'errore',
+            f'Promemoria WhatsApp call sonno {ore_prima}h non inviato.',
+            'CallSonno',
+            call.id,
+            {'errore': type(errore).__name__},
+        )
         return False
 
 
@@ -2036,6 +2197,77 @@ def controlla_e_invia_ricordi_24h():
     except Exception as e:
         logger.error('> Errore controllo ricordi 24h (%s).', type(e).__name__)
 
+
+def controlla_e_invia_promemoria_call_sonno(adesso=None):
+    """Invia una sola volta i promemoria 24h e 2h delle call confermate."""
+    adesso = adesso or datetime.now(FUSO_ORARIO)
+    oggi = adesso.date().isoformat()
+    limite = (adesso.date() + timedelta(days=1)).isoformat()
+    calls = CallSonno.query.filter(
+        CallSonno.stato == 'Confermata',
+        CallSonno.data >= oggi,
+        CallSonno.data <= limite,
+    ).all()
+
+    for call in calls:
+        try:
+            inizio, _ = _intervallo_locale(
+                call.data, call.ora, DURATA_CALL_SONNO_MINUTI
+            )
+        except (TypeError, ValueError):
+            continue
+        secondi_mancanti = (inizio - adesso).total_seconds()
+        if secondi_mancanti <= 0:
+            continue
+
+        ore_promemoria = None
+        if secondi_mancanti <= 2 * 3600 and call.promemoria_email_2h_il is None:
+            ore_promemoria = 2
+        elif (
+            secondi_mancanti <= 24 * 3600
+            and secondi_mancanti > 2 * 3600
+            and call.promemoria_email_24h_il is None
+        ):
+            ore_promemoria = 24
+
+        if ore_promemoria is None:
+            continue
+
+        invia_email_promemoria_call_sonno(call, ore_promemoria)
+        timestamp = datetime.now()
+        if ore_promemoria == 24:
+            call.promemoria_email_24h_il = timestamp
+        else:
+            call.promemoria_email_2h_il = timestamp
+
+        whatsapp_timestamp = (
+            call.promemoria_whatsapp_24h_il
+            if ore_promemoria == 24
+            else call.promemoria_whatsapp_2h_il
+        )
+        if (
+            call.consenso_whatsapp
+            and app.config.get('WHATSAPP_REMINDERS_ENABLED')
+            and whatsapp_timestamp is None
+        ):
+            invia_whatsapp_promemoria_call_sonno(call, ore_promemoria)
+            if ore_promemoria == 24:
+                call.promemoria_whatsapp_24h_il = timestamp
+            else:
+                call.promemoria_whatsapp_2h_il = timestamp
+
+        db.session.commit()
+
+
+def esegui_ricordi_24h_con_contesto():
+    with app.app_context():
+        controlla_e_invia_ricordi_24h()
+
+
+def esegui_promemoria_call_sonno_con_contesto():
+    with app.app_context():
+        controlla_e_invia_promemoria_call_sonno()
+
 # Pianifica il controllo dei promemoria per eseguirlo ogni ora.
 #
 # Protezioni:
@@ -2053,12 +2285,20 @@ if (
     and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true')
 ):
     scheduler.add_job(
-        func=controlla_e_invia_ricordi_24h,
+        func=esegui_ricordi_24h_con_contesto,
         trigger="interval",
         hours=1,
         id='ricordi_24h_job',
         name='Controllo e invio ricordi 24h',
         replace_existing=True
+    )
+    scheduler.add_job(
+        func=esegui_promemoria_call_sonno_con_contesto,
+        trigger="interval",
+        minutes=15,
+        id='promemoria_call_sonno_job',
+        name='Controllo promemoria call sonno 24h e 2h',
+        replace_existing=True,
     )
     scheduler.start()
 
@@ -2729,18 +2969,29 @@ def _orari_call_occupati(data_str, ignore_call_id=None, ignore_google_event_id=N
 @limiter.limit('5 per hour')
 def prenota_call_sonno():
     prima_data = prima_data_call_disponibile().isoformat()
+    template_context = {
+        'prima_data': prima_data,
+        'difficolta_sonno': DIFFICOLTA_SONNO,
+        'durate_difficolta_sonno': DURATE_DIFFICOLTA_SONNO,
+        'ruoli_richiedente_sonno': RUOLI_RICHIEDENTE_SONNO,
+        'orari_call': ORARI_CALL_SONNO,
+    }
     if request.method == 'POST':
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             flash('Richiesta non valida. Riprova.', 'error')
-            return render_template('prenota_call_sonno.html', form_data=request.form, prima_data=prima_data,
-                                   difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+            return render_template(
+                'prenota_call_sonno.html', form_data=request.form, **template_context
+            )
 
         nome = request.form.get('nome', '').strip()
         telefono = request.form.get('telefono', '').strip()
         email = request.form.get('email', '').strip()
         difficolta = request.form.get('difficolta_principale', '').strip()
         difficolta_altro = request.form.get('difficolta_altro', '').strip()
+        ruolo_richiedente = request.form.get('ruolo_richiedente', '').strip()
+        durata_difficolta = request.form.get('durata_difficolta', '').strip()
+        obiettivo_call = request.form.get('obiettivo_call', '').strip()
         data_scelta = request.form.get('data', '').strip()
         ora = request.form.get('ora', '').strip()
         eta_raw = request.form.get('eta_bambino_mesi', '').strip()
@@ -2758,12 +3009,22 @@ def prenota_call_sonno():
             errori.append('Inserisci un indirizzo email valido.')
         if eta_mesi < 0 or eta_mesi > 12:
             errori.append('L’età del bambino deve essere compresa tra 0 e 12 mesi.')
+        if ruolo_richiedente not in RUOLI_RICHIEDENTE_SONNO:
+            errori.append('Indica se sei genitore o tutore legale del bambino.')
         if difficolta not in DIFFICOLTA_SONNO:
             errori.append('Seleziona la difficoltà principale.')
         if difficolta == 'Altro' and not difficolta_altro:
             errori.append('Descrivi brevemente la difficoltà principale.')
         if len(difficolta_altro) > 300:
             errori.append('La descrizione può contenere al massimo 300 caratteri.')
+        if durata_difficolta not in DURATE_DIFFICOLTA_SONNO:
+            errori.append('Indica da quanto tempo osservi la difficoltà.')
+        if not obiettivo_call or len(obiettivo_call) > 300:
+            errori.append('Indica cosa vorresti capire durante la call (massimo 300 caratteri).')
+        if not request.form.get('presa_visione_offerta'):
+            errori.append('Conferma di aver visto modalità e prezzi delle consulenze.')
+        if not request.form.get('conferma_ambito'):
+            errori.append('Conferma che la richiesta non riguarda un’urgenza o una diagnosi.')
         if not request.form.get('consenso_privacy'):
             errori.append('Devi accettare l’informativa privacy per procedere.')
         if not orario_call_prenotabile(data_scelta, ora):
@@ -2777,8 +3038,14 @@ def prenota_call_sonno():
         if errori:
             for errore in errori:
                 flash(errore, 'error')
-            return render_template('prenota_call_sonno.html', form_data=request.form, prima_data=prima_data,
-                                   difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+            return render_template(
+                'prenota_call_sonno.html', form_data=request.form, **template_context
+            )
+
+        utm = {
+            campo: request.form.get(campo, '').strip()[:100] or None
+            for campo in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']
+        }
 
         nuova_call = CallSonno(
             nome=nome,
@@ -2787,9 +3054,16 @@ def prenota_call_sonno():
             eta_bambino_mesi=eta_mesi,
             difficolta_principale=difficolta,
             difficolta_altro=difficolta_altro if difficolta == 'Altro' else None,
+            ruolo_richiedente=ruolo_richiedente,
+            durata_difficolta=durata_difficolta,
+            obiettivo_call=obiettivo_call,
+            presa_visione_offerta=True,
+            conferma_ambito=True,
             consenso_privacy=True,
+            consenso_whatsapp=bool(request.form.get('consenso_whatsapp')),
             data=data_scelta,
             ora=ora,
+            **utm,
         )
         db.session.add(nuova_call)
         db.session.commit()
@@ -2799,8 +3073,13 @@ def prenota_call_sonno():
         session['ultima_call_sonno'] = nuova_call.id
         return redirect(url_for('conferma_call_sonno'))
 
-    return render_template('prenota_call_sonno.html', form_data={}, prima_data=prima_data,
-                           difficolta_sonno=DIFFICOLTA_SONNO, orari_call=ORARI_CALL_SONNO)
+    form_data = {
+        campo: request.args.get(campo, '').strip()[:100]
+        for campo in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']
+    }
+    return render_template(
+        'prenota_call_sonno.html', form_data=form_data, **template_context
+    )
 
 
 @app.route('/prenota-call-sonno/conferma')

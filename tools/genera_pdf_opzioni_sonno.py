@@ -70,7 +70,7 @@ def page_one(c):
 
     header(c, "ANTEPRIMA RISERVATA · SONNO 0-12 MESI", "Informazioni e prezzi")
 
-    pill(c, "In studio · Montesilvano", 18, H - 91, 118, DEEP_GREEN, white)
+    pill(c, "Online · tutta Italia", 18, H - 91, 118, DEEP_GREEN, white)
 
     c.setFillColor(INK)
     c.setFont("NewYork", 20.5)
@@ -79,7 +79,7 @@ def page_one(c):
     draw_wrapped(
         c,
         "La scelta dipende da quanto c'è da osservare. Prima di fissare l'incontro, "
-        "una chiamata gratuita di 15 minuti ci aiuta a orientarci.",
+        "una chiamata gratuita di circa 20 minuti ci aiuta a orientarci.",
         18,
         H - 166,
         W - 36,
@@ -88,7 +88,7 @@ def page_one(c):
         color=MUTED,
     )
 
-    main_y, main_h = 204, 136
+    main_y, main_h = 225, 115
     c.setFillColor(DEEP_GREEN)
     c.roundRect(18, main_y, W - 36, main_h, 14, fill=1, stroke=0)
     c.setFillColor(HEART_RED)
@@ -96,20 +96,20 @@ def page_one(c):
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 7.1)
     c.drawCentredString(83.5, main_y + main_h - 23, "PERCORSO PRINCIPALE")
-    c.setFont("NewYork", 29)
-    c.drawString(31, main_y + 72, "180 €")
+    c.setFont("NewYork", 27)
+    c.drawString(31, main_y + 63, "180 €")
     c.setFont("Helvetica-Bold", 10.5)
-    c.drawString(137, main_y + 89, "Percorso personalizzato")
+    c.drawString(128, main_y + 75, "Percorso personalizzato")
     c.setFillColor(HexColor("#D9E6DE"))
     c.setFont("Helvetica", 7.9)
-    c.drawString(137, main_y + 74, "Per leggere il sonno nel suo insieme")
-    y = main_y + 50
-    y = draw_check(c, 31, y, "Diario di 5 giorni e incontro di 75 minuti", W - 62,
+    c.drawString(128, main_y + 60, "Tre call, diario e analisi in circa 60 giorni")
+    y = main_y + 39
+    y = draw_check(c, 31, y, "Tre call da 60-75 minuti", W - 62,
                    color=white, marker_color=HEART_RED)
-    y = draw_check(c, 31, y, "Indicazioni scritte, verifica di 30 minuti e 7 giorni di supporto",
+    y = draw_check(c, 31, y, "Percorso completabile entro 75 giorni",
                    W - 62, color=white, marker_color=HEART_RED)
 
-    small_y, small_h = 94, 94
+    small_y, small_h = 148, 65
     c.setFillColor(white)
     c.roundRect(18, small_y, W - 36, small_h, 14, fill=1, stroke=0)
     c.setStrokeColor(SAGE)
@@ -117,19 +117,32 @@ def page_one(c):
     c.roundRect(18, small_y, W - 36, small_h, 14, fill=0, stroke=1)
     c.setFillColor(HEART_RED)
     c.setFont("NewYork", 24)
-    c.drawString(31, small_y + 42, "75 €")
+    c.drawString(31, small_y + 28, "75 €")
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 10.2)
-    c.drawString(111, small_y + 54, "Consulenza mirata")
+    c.drawString(111, small_y + 40, "Consulenza mirata")
     c.setFillColor(MUTED)
     c.setFont("Helvetica", 7.9)
-    c.drawString(111, small_y + 39, "Per una sola difficoltà ben definita")
-    c.drawString(111, small_y + 25, "Questionario breve · incontro di 50 minuti")
+    c.drawString(111, small_y + 25, "Una difficoltà circoscritta · call da 60-75 minuti")
     c.setFillColor(DEEP_GREEN)
     c.setFont("Helvetica-Bold", 7.1)
-    c.drawString(31, small_y + 14, "UNA RISPOSTA MIRATA, SENZA ACCOMPAGNAMENTO CONTINUATIVO")
+    c.drawString(31, small_y + 11, "SENZA ASSISTENZA CONTINUATIVA")
 
-    draw_button(c, 18, 38, W - 36, "Chiedi a Selene quale scegliere", WHATSAPP_URL)
+    premium_y, premium_h = 69, 67
+    c.setFillColor(MIST)
+    c.roundRect(18, premium_y, W - 36, premium_h, 14, fill=1, stroke=0)
+    c.setFillColor(HEART_RED)
+    c.setFont("NewYork", 24)
+    c.drawString(31, premium_y + 29, "320 €")
+    c.setFillColor(INK)
+    c.setFont("Helvetica-Bold", 9.5)
+    c.drawString(119, premium_y + 42, "Percorso con affiancamento")
+    c.setFillColor(MUTED)
+    c.setFont("Helvetica", 7.5)
+    c.drawString(119, premium_y + 27, "Percorso completo + WhatsApp per 60 giorni")
+    c.drawString(119, premium_y + 14, "Lun-ven · fino a 3 confronti raggruppati a settimana")
+
+    draw_button(c, 18, 26, W - 36, "Chiedi a Selene quale scegliere", WHATSAPP_URL)
 
 
 def page_two(c):
@@ -138,7 +151,7 @@ def page_two(c):
     header(c, "NON DEVI SCEGLIERE DA SOLA", "Quale proposta è adatta?")
 
     c.setFillColor(white)
-    c.roundRect(18, 348, W - 36, 117, 13, fill=1, stroke=0)
+    c.roundRect(18, 359, W - 36, 106, 13, fill=1, stroke=0)
     c.setFillColor(HEART_RED)
     c.setFont("NewYork", 20)
     c.drawString(31, 438, "Consulenza mirata · 75 €")
@@ -149,12 +162,8 @@ def page_two(c):
     y = draw_check(c, 31, y, "un passaggio specifico nella routine serale", W - 62)
     y = draw_check(c, 31, y, "un dubbio preciso su sonnellini o addormentamento", W - 62)
     draw_check(c, 31, y, "una situazione recente che vuoi leggere meglio", W - 62)
-    c.setFillColor(MUTED)
-    c.setFont("Helvetica", 7.3)
-    c.drawString(31, 359, "Ricevi una sintesi essenziale, non un piano completo o assistenza successiva.")
-
     c.setFillColor(MIST)
-    c.roundRect(18, 210, W - 36, 126, 13, fill=1, stroke=0)
+    c.roundRect(18, 225, W - 36, 122, 13, fill=1, stroke=0)
     c.setFillColor(DEEP_GREEN)
     c.setFont("NewYork", 20)
     c.drawString(31, 308, "Percorso personalizzato · 180 €")
@@ -167,36 +176,41 @@ def page_two(c):
     y = draw_check(c, 31, y, "hai bisogno di provare i cambiamenti e verificarli insieme", W - 62)
     c.setFillColor(DEEP_GREEN)
     c.setFont("Helvetica-Bold", 7.4)
-    c.drawString(31, 221, "OSSERVAZIONE COMPLETA · PIANO SCRITTO · ACCOMPAGNAMENTO")
-
-    c.setFillColor(SOFT_RED)
-    c.roundRect(18, 153, W - 36, 45, 12, fill=1, stroke=0)
-    c.setFillColor(INK)
-    c.setFont("Helvetica-Bold", 8.2)
-    c.drawString(31, 181, "Se il problema coinvolge più aspetti, te lo dirò prima di fissare.")
-    c.setFont("Helvetica", 7.5)
-    c.drawString(31, 166, "La chiamata conoscitiva serve anche a evitare una consulenza non adatta.")
-
-    c.setFillColor(white)
-    c.roundRect(18, 62, W - 36, 79, 12, fill=1, stroke=0)
-    c.setFillColor(HEART_RED)
-    c.roundRect(30, 74, 4, 55, 2, fill=1, stroke=0)
-    c.setFillColor(INK)
-    c.setFont("NewYork", 14.5)
-    c.drawString(46, 113, "Selene Campetta")
-    c.setFillColor(HEART_RED)
-    c.setFont("Helvetica-Bold", 7.1)
-    c.drawString(46, 97, "INFERMIERA · ALBO OPI PESCARA")
-    c.setFillColor(MUTED)
-    c.setFont("Helvetica", 7.7)
-    c.drawString(46, 81, "380 631 7175 · Via C. D'Agnese 43, Montesilvano")
+    c.drawString(31, 236, "TRE CALL · DIARIO E ANALISI · CIRCA 60 GIORNI")
 
     c.setFillColor(DEEP_GREEN)
-    c.roundRect(18, 20, W - 36, 31, 15.5, fill=1, stroke=0)
+    c.roundRect(18, 112, W - 36, 101, 13, fill=1, stroke=0)
+    c.setFillColor(white)
+    c.setFont("NewYork", 18)
+    c.drawString(31, 187, "Affiancamento · 320 €")
+    c.setFont("Helvetica-Bold", 8.2)
+    c.drawString(31, 169, "Include tutto il percorso personalizzato e in più:")
+    y = 150
+    y = draw_check(c, 31, y, "supporto WhatsApp per 60 giorni, dal lunedì al venerdì", W - 62,
+                   color=white)
+    draw_check(c, 31, y, "fino a tre confronti raggruppati a settimana", W - 62,
+               color=white)
+
+    c.setFillColor(white)
+    c.roundRect(18, 58, W - 36, 43, 12, fill=1, stroke=0)
+    c.setFillColor(HEART_RED)
+    c.roundRect(30, 68, 4, 23, 2, fill=1, stroke=0)
+    c.setFillColor(INK)
+    c.setFont("NewYork", 14.5)
+    c.drawString(46, 81, "Selene Campetta")
+    c.setFillColor(HEART_RED)
+    c.setFont("Helvetica-Bold", 7.1)
+    c.drawString(46, 67, "INFERMIERA · MASTER IN COORDINAMENTO SANITARIO")
+    c.setFillColor(MUTED)
+    c.setFont("Helvetica", 7.7)
+    c.drawRightString(W - 30, 81, "380 631 7175")
+
+    c.setFillColor(DEEP_GREEN)
+    c.roundRect(18, 18, W - 36, 31, 15.5, fill=1, stroke=0)
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(W / 2, 30.5, "Scrivimi: scegliamo insieme da dove iniziare")
-    c.linkURL(WHATSAPP_URL, (18, 20, W - 18, 51), relative=0, thickness=0)
+    c.drawCentredString(W / 2, 28.5, "Scrivimi: scegliamo insieme da dove iniziare")
+    c.linkURL(WHATSAPP_URL, (18, 18, W - 18, 49), relative=0, thickness=0)
 
     disclaimer = (
         "Il servizio offre educazione e accompagnamento. Non sostituisce il pediatra, "
@@ -205,7 +219,7 @@ def page_two(c):
     lines = wrap_text(disclaimer, "Helvetica", 5.8, W - 36)
     c.setFillColor(MUTED)
     c.setFont("Helvetica", 5.8)
-    y = 10
+    y = 8
     for line in lines:
         c.drawCentredString(W / 2, y, line)
         y -= 6.5
@@ -217,7 +231,7 @@ def build():
     c = canvas.Canvas(str(OUTPUT), pagesize=PAGE, pageCompression=1)
     c.setTitle("Consulenza sonno - opzioni e prezzi")
     c.setAuthor("S.C. Studio Infermieristico - Selene Campetta")
-    c.setSubject("Consulenza mirata e percorso sonno personalizzato 0-12 mesi")
+    c.setSubject("Consulenza mirata e percorsi sonno 0-12 mesi")
     page_one(c)
     c.showPage()
     page_two(c)

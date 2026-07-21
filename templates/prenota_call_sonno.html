@@ -9,6 +9,7 @@
         <p class="eyebrow">Primo passo · gratuito</p>
         <h1>Scegli la call sul sonno</h1>
         <p>Circa 20 minuti per capire cosa sta succedendo e verificare se la consulenza è adatta alla vostra situazione. Prima della call non ti chiederemo un questionario lungo.</p>
+        <p class="sleep-booking-prices">Le formule successive partono da <strong>75 €</strong>: consulenza mirata 75 €, percorso personalizzato 180 €, percorso con affiancamento WhatsApp 320 €. <a href="{{ url_for('consulenze_online') }}#formule">Confronta cosa comprendono</a>.</p>
     </header>
 
     <aside class="sleep-pending-alert" role="alert">
@@ -26,6 +27,9 @@
 
     <form class="form-prenotazione sleep-booking-form" method="post" action="{{ url_for('prenota_call_sonno') }}" data-call-sonno-form>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        {% for utm_field in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'] %}
+        <input type="hidden" name="{{ utm_field }}" value="{{ form_data.get(utm_field, '') }}">
+        {% endfor %}
         <div class="sleep-form-grid">
             <div class="form-gruppo">
                 <label for="nome">Nome e cognome *</label>
@@ -42,6 +46,24 @@
             <div class="form-gruppo">
                 <label for="eta_bambino_mesi">Età del bambino in mesi *</label>
                 <input id="eta_bambino_mesi" name="eta_bambino_mesi" type="number" min="0" max="12" inputmode="numeric" value="{{ form_data.get('eta_bambino_mesi', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="ruolo_richiedente">Il tuo ruolo *</label>
+                <select id="ruolo_richiedente" name="ruolo_richiedente" required>
+                    <option value="">Seleziona</option>
+                    {% for ruolo in ruoli_richiedente_sonno %}
+                    <option value="{{ ruolo }}" {% if form_data.get('ruolo_richiedente') == ruolo %}selected{% endif %}>{{ ruolo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-gruppo">
+                <label for="durata_difficolta">Da quanto tempo succede? *</label>
+                <select id="durata_difficolta" name="durata_difficolta" required>
+                    <option value="">Seleziona</option>
+                    {% for durata in durate_difficolta_sonno %}
+                    <option value="{{ durata }}" {% if form_data.get('durata_difficolta') == durata %}selected{% endif %}>{{ durata }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 
@@ -60,6 +82,12 @@
                 <textarea id="difficolta_altro" name="difficolta_altro" maxlength="300" rows="3">{{ form_data.get('difficolta_altro', '') }}</textarea>
             </div>
         </fieldset>
+
+        <div class="form-gruppo">
+            <label for="obiettivo_call">Che cosa vorresti capire durante questi 20 minuti? *</label>
+            <textarea id="obiettivo_call" name="obiettivo_call" maxlength="300" rows="3" required>{{ form_data.get('obiettivo_call', '') }}</textarea>
+            <small>La call serve a verificare appropriatezza e formula; non sostituisce la consulenza.</small>
+        </div>
 
         <div class="sleep-slot-grid">
             <div class="form-gruppo">
@@ -81,8 +109,20 @@
 
         <div class="form-gruppo">
             <label class="privacy-label">
+                <input type="checkbox" name="presa_visione_offerta" required {% if form_data.get('presa_visione_offerta') %}checked{% endif %}>
+                <span class="privacy-text">Ho visto modalità e prezzi delle consulenze e so che la call gratuita serve a scegliere il passo appropriato. *</span>
+            </label>
+            <label class="privacy-label">
+                <input type="checkbox" name="conferma_ambito" required {% if form_data.get('conferma_ambito') %}checked{% endif %}>
+                <span class="privacy-text">La richiesta non riguarda un’urgenza e non sto richiedendo diagnosi o terapia. *</span>
+            </label>
+            <label class="privacy-label">
                 <input type="checkbox" name="consenso_privacy" required class="privacy-checkbox" {% if form_data.get('consenso_privacy') %}checked{% endif %}>
                 <span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link">informativa privacy</a> e acconsento al trattamento dei dati inviati per gestire la richiesta. *</span>
+            </label>
+            <label class="privacy-label">
+                <input type="checkbox" name="consenso_whatsapp" {% if form_data.get('consenso_whatsapp') %}checked{% endif %}>
+                <span class="privacy-text">Acconsento a ricevere tramite WhatsApp conferme e promemoria organizzativi relativi alla prenotazione. Facoltativo.</span>
             </label>
         </div>
 

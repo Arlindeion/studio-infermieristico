@@ -62,6 +62,18 @@ class Config:
     # Collegamento della videochiamata, incluso nelle conferme delle call sonno
     # solo quando configurato. In alternativa Selene comunica la modalità.
     SONNO_CALL_URL = os.environ.get('SONNO_CALL_URL')
+    # Promemoria WhatsApp tramite la Business Platform ufficiale. L'invio è
+    # facoltativo e mantiene sempre l'email come fallback; i template vengono
+    # creati e approvati nel pannello Meta prima di abilitare la funzione.
+    WHATSAPP_REMINDERS_ENABLED = os.environ.get(
+        'WHATSAPP_REMINDERS_ENABLED', 'false'
+    ).lower() in ['true', 'on', '1']
+    WHATSAPP_GRAPH_API_VERSION = os.environ.get('WHATSAPP_GRAPH_API_VERSION')
+    WHATSAPP_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
+    WHATSAPP_ACCESS_TOKEN = os.environ.get('WHATSAPP_ACCESS_TOKEN')
+    WHATSAPP_TEMPLATE_24H = os.environ.get('WHATSAPP_TEMPLATE_24H')
+    WHATSAPP_TEMPLATE_2H = os.environ.get('WHATSAPP_TEMPLATE_2H')
+    WHATSAPP_TEMPLATE_LANGUAGE = os.environ.get('WHATSAPP_TEMPLATE_LANGUAGE') or 'it'
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
@@ -106,6 +118,12 @@ class TestingConfig(Config):
     GOOGLE_CALENDAR_ID = None
     GOOGLE_ANALYTICS_ID = None
     SONNO_CALL_URL = None
+    WHATSAPP_REMINDERS_ENABLED = False
+    WHATSAPP_GRAPH_API_VERSION = None
+    WHATSAPP_PHONE_NUMBER_ID = None
+    WHATSAPP_ACCESS_TOKEN = None
+    WHATSAPP_TEMPLATE_24H = None
+    WHATSAPP_TEMPLATE_2H = None
     APP_ENV = 'testing'
     STAGING_AUTH_USERNAME = None
     STAGING_AUTH_PASSWORD = None

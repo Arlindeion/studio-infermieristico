@@ -8,6 +8,7 @@
 .sleep-hero,
 .sleep-fit,
 .sleep-together,
+.sleep-offers,
 .sleep-faq,
 .sleep-final-cta {
     max-width: 1180px;
@@ -375,6 +376,129 @@
     margin-top: 0.8rem;
 }
 
+.sleep-offers {
+    padding-bottom: clamp(3.8rem, 6vw, 5.4rem);
+    padding-top: clamp(3.8rem, 6vw, 5.4rem);
+}
+
+.sleep-offers-intro {
+    max-width: 760px;
+}
+
+.sleep-offers-intro h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2.1rem, 4vw, 3.5rem);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+}
+
+.sleep-offers-intro > p:last-child {
+    line-height: 1.65;
+    margin-top: 1rem;
+}
+
+.sleep-offer-list {
+    border-top: 1px solid var(--verde-scuro-a20);
+    margin-top: 2.2rem;
+}
+
+.sleep-offer {
+    align-items: start;
+    border-bottom: 1px solid var(--verde-scuro-a20);
+    display: grid;
+    gap: 1.5rem clamp(2rem, 6vw, 5rem);
+    grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+    padding: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.sleep-offer--primary {
+    background: var(--verde-chiaro);
+}
+
+.sleep-offer--supported {
+    background: var(--verde-header-profondo);
+    border-bottom: 0;
+    border-left: 5px solid var(--rosso-cuore);
+    color: var(--bianco);
+}
+
+.sleep-offer h3 {
+    color: var(--verde-scuro);
+    font-size: clamp(1.45rem, 2.3vw, 2rem);
+    line-height: 1.05;
+}
+
+.sleep-offer--supported h3,
+.sleep-offer--supported .sleep-offer-kicker,
+.sleep-offer--supported .sleep-offer-price {
+    color: var(--bianco);
+}
+
+.sleep-offer-kicker {
+    color: var(--rosso-cuore);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+}
+
+.sleep-offer-price {
+    align-items: baseline;
+    color: var(--verde-scuro);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.7rem;
+    margin-top: 0.9rem;
+}
+
+.sleep-offer-price strong {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.sleep-offer-price span {
+    font-size: 0.88rem;
+}
+
+.sleep-offer ul {
+    display: grid;
+    gap: 0.65rem;
+    list-style: none;
+    padding-top: 0.35rem;
+}
+
+.sleep-offer li {
+    color: var(--testo);
+    line-height: 1.5;
+    padding-left: 1.15rem;
+    position: relative;
+}
+
+.sleep-offer.sleep-offer--supported li {
+    color: var(--bianco);
+}
+
+.sleep-offer li::before {
+    background: var(--rosso-cuore);
+    content: '';
+    height: 2px;
+    left: 0;
+    position: absolute;
+    top: 0.72rem;
+    width: 0.55rem;
+}
+
+.sleep-offers-note {
+    border-left: 3px solid var(--rosso-cuore);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-top: 1.4rem;
+    max-width: 850px;
+    padding-left: 0.9rem;
+}
+
 .sleep-final-cta .eyebrow {
     color: var(--verde-scuro) !important;
 }
@@ -520,11 +644,23 @@
     margin: 0.55rem 0 1.2rem;
 }
 
-.sleep-booking-intro > p:last-child,
+.sleep-booking-intro > p,
 .sleep-confirmation > p {
     font-size: 1.08rem;
     line-height: 1.7;
     max-width: 720px;
+}
+
+.sleep-booking-prices {
+    background: var(--verde-chiaro);
+    border-radius: 16px;
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+}
+
+.sleep-booking-prices a {
+    color: var(--verde-scuro);
+    font-weight: 700;
 }
 
 .sleep-pending-alert {
@@ -701,6 +837,7 @@
         padding: 3.4rem 1.15rem;
     }
 .sleep-together,
+.sleep-offers,
 .sleep-faq {
         padding: 3rem 1.15rem;
     }
@@ -756,6 +893,14 @@
     }
 .sleep-after-call h3 {
         font-size: 1.45rem;
+    }
+.sleep-offer {
+        gap: 1rem;
+        grid-template-columns: 1fr;
+        padding: 1.4rem 1.15rem;
+    }
+.sleep-offer--supported {
+        border-left-width: 4px;
     }
 .sleep-faq-list {
         margin-top: 1.45rem;

@@ -253,7 +253,7 @@ Il test dura tre mesi e promuove la consulenza del sonno 0-12 mesi. Per ogni ann
 - non restringere la promessa alla sola area geografica dell'annuncio: il servizio resta nazionale e online;
 - trattare un eventuale targeting su Abruzzo e regioni confinanti come scelta di distribuzione legata al budget.
 
-Budget, costo massimo per contatto e tono creativo/video non sono ancora approvati. Consultare `PROJECT_BRIEF.md` e `DECISIONS.md` prima di produrre la serie definitiva.
+Il primo test è nazionale su Meta/Instagram: massimo 200 €, verifica dopo 100 €, due angoli iniziali (`risvegli frequenti` e `addormentamento con forte supporto`) e arresto/rallentamento a 10 call prenotate nella settimana. Consultare `PROJECT_BRIEF.md` e `DECISIONS.md` prima di produrre la serie definitiva.
 
 ## Prezzi
 
@@ -273,14 +273,17 @@ Naming:
 - fascia attuale: 0-12 mesi;
 - non mescolare ciuccio, spannolinamento e consulenze generiche nella stessa offerta.
 
-Le due formule hanno funzioni differenti:
+Le tre formule hanno funzioni differenti:
 
 - `Consulenza mirata` — 75 €, dedicata a una singola difficoltà circoscritta;
 - `Percorso sonno personalizzato` — 180 €, proposta principale quando più aspetti si influenzano tra loro.
+- `Percorso sonno con affiancamento` — 320 €, stesso percorso con 60 giorni di WhatsApp entro i confini pubblicati.
 
 La formula breve deve apparire appropriata a casi limitati, non come versione scontata del percorso.
 
 La call conoscitiva gratuita di circa 20 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+
+I prezzi sono visibili prima della prenotazione. Non usare `premium` come nome pubblico: l'affiancamento descrive il valore senza introdurre un registro estraneo al brand.
 
 Inserire in modo leggibile, senza tono difensivo:
 

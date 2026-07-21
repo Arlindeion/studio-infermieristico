@@ -23,7 +23,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 
 ## D-004 — Due formule per il sonno
 
-- Stato: approvata per la fase pilota.
+- Stato: sostituita da D-033.
 - Decisione: consulenza mirata da 75 € per un solo problema circoscritto; percorso personalizzato da 180 € come offerta principale quando più fattori si influenzano.
 - Motivo: offrire una soglia d'ingresso senza svalutare il percorso completo.
 - Da verificare: domanda nazionale, appropriatezza e disponibilità a pagare.
@@ -145,10 +145,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-021 — Landing sonno editoriale e compatta
 
 - Data: 2026-07-16.
-- Stato: approvata.
-- Decisione: organizzare `/consulenze-online` come landing `call-first`: difficoltà riconoscibili, accesso immediato al calendario, metodo essenziale, domande e CTA finale. Le due formule vengono soltanto nominate dopo la CTA, perché la persona non deve sceglierle prima del contatto. Mantenere la fotografia reale di Selene nella hero e riservare un secondo spazio fotografico dentro la sezione sul metodo.
+- Stato: approvata, aggiornata da D-033 per la presentazione delle formule.
+- Decisione: organizzare `/consulenze-online` come landing `call-first`: difficoltà riconoscibili, accesso immediato al calendario, metodo essenziale, domande e CTA finale. La presentazione originaria di due formule soltanto nominate è sostituita da D-033, che rende confrontabili tre formule e relativi prezzi senza chiedere alla famiglia di scegliere prima del contatto. Mantenere la fotografia reale di Selene nella hero e riservare un secondo spazio fotografico dentro la sezione sul metodo.
 - Motivo: rendere la pagina più fresca, leggibile e mirata, riducendo ripetizioni e carico cognitivo senza adottare codici visivi estranei all'identità sanitaria.
-- Conseguenze: la CTA `Scegli l’orario della call` compare nella hero, subito dopo il riconoscimento del problema e alla fine. Nel blocco centrale l'azione occupa più spazio della rassicurazione sulle formule e non compete con un secondo collegamento WhatsApp. Le FAQ usano una composizione editoriale compatta a due colonne su desktop e controlli `details` chiaramente interattivi; su mobile pannello 0–12, fotografie e spaziature vengono ridotti per anticipare la call. I dettagli delle due formule e la sezione separata sui risultati attesi non precedono più la conversione. La seconda immagine usa `consulenza-sonno-neonato.jpg`, con proporzioni e testo alternativo definitivi per il layout; autorizzazione e provenienza restano da verificare prima del lancio. Bricolage Grotesque, Atkinson Hyperlegible, palette salvia e linea rossa restano gli elementi distintivi.
+- Conseguenze: la CTA `Scegli l’orario della call` compare nella hero, subito dopo il riconoscimento del problema e alla fine. Nel blocco centrale l'azione occupa più spazio della rassicurazione sulle formule e non compete con un secondo collegamento WhatsApp. Le FAQ usano una composizione editoriale compatta a due colonne su desktop e controlli `details` chiaramente interattivi; su mobile pannello 0–12, fotografie e spaziature vengono ridotti per anticipare la call. Le tre formule sono presentate dopo il primo passaggio call-first con una gerarchia editoriale, non come card equivalenti. La seconda immagine usa `consulenza-sonno-neonato.jpg`, con proporzioni e testo alternativo definitivi; le fotografie selezionate risultano autorizzate anche per social e inserzioni. Bricolage Grotesque, Atkinson Hyperlegible, palette salvia e linea rossa restano gli elementi distintivi.
 - Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/consulenze_online.html`, `static/css/consulenza.css`.
 
 ## D-022 — Ritagli morbidi per le fotografie della homepage
@@ -249,6 +249,33 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: evitare una CTA concorrente e indistinta accanto ai moduli dedicati per prestazioni, corsi e call sul sonno.
 - Conseguenze: le CTA WhatsApp contestuali sono tracciate singolarmente; la barra mobile compare soltanto nelle pagine con una prossima azione specifica e non rinvia alla pagina corrente.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `templates/base.html`, `static/js/conversion-tracking.js`.
+
+## D-033 — Tre formule sonno e prezzi visibili
+
+- Data: 2026-07-21.
+- Stato: approvata per la fase di lancio.
+- Decisione: presentare prima della prenotazione `Consulenza mirata` a 75 €, `Percorso sonno personalizzato` a 180 € e `Percorso sonno con affiancamento` a 320 €. Il percorso base comprende tre call da 60-75 minuti e diario; quello con affiancamento aggiunge 60 giorni di WhatsApp, dal lunedì al venerdì, con massimo tre confronti raggruppati a settimana e risposta entro il giorno lavorativo successivo. Entrambi durano orientativamente 60 giorni e devono chiudersi entro 75 salvo indisponibilità di Selene.
+- Motivo: evitare sorprese economiche prima della call, distinguere il valore dell'assistenza asincrona e mantenere il carico coerente con un compenso lordo minimo di 25-30 € l'ora.
+- Conseguenze: la landing resta `call-first` ma rende confrontabili contenuti e prezzi; la call gratuita dura 20 minuti e non eroga consulenza. Dopo i primi cinque percorsi vengono misurati tempo di call, diario e messaggi prima di confermare o correggere i prezzi. Il claim `consulente certificata` resta sospeso finché gli attestati non vengono verificati.
+- Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/consulenze_online.html`, `static/css/consulenza.css`.
+
+## D-034 — Pagamento, cancellazione e recesso delle consulenze sonno
+
+- Data: 2026-07-21.
+- Stato: approvata sul piano commerciale; testo contrattuale da validare.
+- Decisione: pagamento anticipato tramite collegamento privato e conferma del posto al pagamento; l'accettazione finale del caso spetta a Selene. Se la rateizzazione esterna non è concessa, il percorso base usa 75 € + 75 € + 30 €; il percorso con affiancamento usa 145 € + 145 € + 30 €, includendo due blocchi WhatsApp anticipati da 70 €. La parte WhatsApp interrotta si valorizza pro quota a 70 € / 30 giorni. Cancellazione e riprogrammazione tardive comportano il 50%; il no-show perde la quota; è concesso un solo spostamento. L'indisponibilità di Selene consente riprogrammazione oppure rimborso della parte non erogata. Il servizio può essere regalato, ma il contratto viene accettato da un genitore o tutore: chi firma dichiara la propria responsabilità genitoriale o tutela e, in caso di responsabilità condivisa, di avere informato e ottenuto il consenso dell'altro genitore; l'affido esclusivo viene dichiarato sulla base del relativo provvedimento.
+- Motivo: collegare pagamenti e rimborsi a componenti riconoscibili del servizio e proteggere il tempo riservato senza applicare automaticamente la perdita totale per un preavviso tardivo.
+- Conseguenze: per appuntamenti del lunedì la scadenza gratuita è venerdì alle 18; da martedì a sabato è 24 ore prima, anticipata alle 18 dell'ultimo giorno lavorativo se cade in un festivo. Prima dell'attivazione servono condizioni validate, richiesta esplicita di avvio entro il termine di recesso e presa d'atto coerente con l'effettiva esecuzione del servizio.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, futuro checkout privato.
+
+## D-035 — Qualificazione, promemoria e campagna Meta del sonno
+
+- Data: 2026-07-21.
+- Stato: approvata.
+- Decisione: la prenotazione raccoglie soltanto i dati necessari a verificare fascia 0-12 mesi, ruolo di genitore/tutore, difficoltà, durata, obiettivo, comprensione del perimetro educativo e presa visione dei prezzi. Le call sono disponibili anche il sabato. Email e calendario prevengono le assenze; WhatsApp è facoltativo, usa template organizzativi neutrali e non contiene informazioni del bambino. La campagna iniziale è nazionale su Meta/Instagram, con tetto di 200 €, checkpoint dopo 100 € e due creatività iniziali su risvegli frequenti e addormentamento con forte supporto.
+- Motivo: aumentare la percentuale di call effettivamente svolte, evitare richieste fuori ambito e apprendere dal primo budget senza suddividerlo fra servizi o pubblici diversi.
+- Conseguenze: KPI canonici sono costo per call prenotata, presenza, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Gli annunci vengono rallentati a 10 call settimanali. Meta riceve eventi soltanto dopo consenso; l'email resta il fallback se WhatsApp fallisce. L'attuale numero telefonico non viene migrato in modo rischioso: si prova la coesistenza ufficiale e, se non disponibile, si usa un numero separato per l'automazione.
+- Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `CONTENT_AND_ASSETS.md`, `app.py`.
 
 ## Modello per nuove decisioni
 

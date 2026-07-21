@@ -18,6 +18,9 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Disostruzione pediatrica e tagli sicuri: corso teorico-pratico di circa 2 ore e 30 minuti per genitori, nonni, babysitter e caregiver, con prove su manichini e laboratorio di tagli sicuri presso lo studio di Montesilvano.
 - Sonno: comprensione della situazione familiare e percorso non rigido, senza risultati garantiti.
 - Metodo sonno: lettura scientifica, relazionale e centrata sulla famiglia; osservare fisiologia, maturazione, ritmi, ambiente e bisogni prima di scegliere cambiamenti graduali e sostenibili.
+- Promessa campagna sonno: `Un percorso educativo personalizzato per comprendere il sonno del bambino, osservare ciò che accade nella vostra quotidianità e costruire strategie sostenibili per la famiglia.`
+- Credenziale pubblica verificata: `Selene è infermiera e ha conseguito il Master universitario in Management per le funzioni di coordinamento nell’area delle professioni sanitarie.` Non presentare il Master come specializzazione sul sonno.
+- Il claim `consulente del sonno infantile certificata` non è approvato finché non viene verificato che almeno un attestato attribuisca espressamente tale qualifica; in caso contrario usare `formata nella consulenza del sonno infantile`.
 - Sintesi campagna sonno: `Capire prima di cambiare.`
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti; corso di 5 ore con teoria ed esercitazioni pratiche su manichino, rivolto a cittadini, associazioni, aziende e gruppi.
@@ -33,6 +36,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 | Landing attuale | Consulenza del sonno / Consulenza sonno |
 | Formula breve | Consulenza mirata |
 | Formula principale | Percorso sonno personalizzato |
+| Formula con supporto | Percorso sonno con affiancamento |
 | Percorso nascita | Corso di accompagnamento alla nascita |
 | Corso pediatrico | Disostruzione pediatrica e tagli sicuri |
 | Rianimazione | BLSD, accompagnato da una spiegazione concreta |
@@ -71,13 +75,16 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 Il primo test pubblicitario dura tre mesi e deve usare la nuova identità senza introdurre un sottobrand.
 
 - Offerta: consulenza del sonno 0-12 mesi, con `Capire prima di cambiare.` come sintesi possibile e `Scegli l’orario della call` come CTA.
-- Angoli creativi: una difficoltà riconoscibile per contenuto, per esempio addormentamento serale, risvegli frequenti, pisolini brevi o necessità di forte supporto.
+- Angoli creativi del primo test: `risvegli frequenti` e `addormentamento con forte supporto`, una difficoltà per contenuto.
 - Percorso: ogni contenuto rimanda alla landing nazionale e al calendario della call; WhatsApp resta un'alternativa discreta per chi è indeciso.
 - Prova: usare competenze, metodo e presenza reale di Selene. Non simulare testimonianze, risultati o casi clinici.
 - Fotografia: preferire Selene, studio e attività reali. La landing usa `consulenza-sonno-neonato.jpg`; `placeholder.png` resta soltanto una guida interna non richiamata dalle pagine pubbliche.
-- Geografia: un targeting iniziale in Abruzzo e regioni confinanti non deve cambiare i testi nazionali della landing.
+- Geografia e canale: pubblico nazionale su Meta/Instagram.
+- Budget: massimo 200 €, con lettura e possibile modifica dopo i primi 100 €; fermare o rallentare a 10 call prenotate nella settimana.
+- Formato minimo: tre video verticali reali di Selene da 20-35 secondi, con copertine coordinate; due entrano nel test e uno resta come variante organica/di riserva.
+- Prove disponibili: volto, ruolo infermieristico, Master in coordinamento, metodo e fotografie autorizzate anche per social e inserzioni. Non sono ancora disponibili testimonianze specifiche del sonno.
 
-Budget, costo massimo per contatto, frequenza editoriale e tono dei video restano da definire prima dell'attivazione. I KPI e l'obiettivo di raccolta delle testimonianze sono documentati in `PROJECT_BRIEF.md`.
+I KPI, i costi obiettivo e l'obiettivo di raccolta delle testimonianze sono documentati in `PROJECT_BRIEF.md`. Montaggio e copertine vengono realizzati con la persona già disponibile per la produzione video.
 
 ## Inventario immagini in uso
 
@@ -122,9 +129,9 @@ Prima di assegnarle verificare soggetto, consenso, qualità, ritaglio mobile e r
 
 | File | Destinatari | Stato |
 |---|---|---|
-| `output/pdf/percorso_sonno_pilota.pdf` | Clienti selezionati per il primo test | Materiale pilota |
-| `output/pdf/consulenza_sonno_opzioni_e_prezzi.pdf` | Famiglie già interessate che chiedono percorso e prezzi | Materiale diretto |
-| `output/pdf/consulenza_sonno_opzioni_prezzi_senza_foto.pdf` | Stesso pubblico, senza fotografia iniziale | Versione preferita per clienti che già conoscono Selene |
+| `output/pdf/percorso_sonno_pilota.pdf` | Famiglie interessate al percorso base | Aggiornato alla formula da 180 €; il nome file storico resta invariato per non rompere link già condivisi |
+| `output/pdf/consulenza_sonno_opzioni_e_prezzi.pdf` | Famiglie già interessate che chiedono percorso e prezzi | Copia sincronizzata della scheda comparativa corrente |
+| `output/pdf/consulenza_sonno_opzioni_prezzi_senza_foto.pdf` | Stesso pubblico, senza fotografia iniziale | Versione sorgente preferita; include le tre formule da 75 €, 180 € e 320 € |
 
 I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_opzioni_sonno.py`. Se cambiano palette, naming o offerta, aggiornare sia i generatori sia i PDF prodotti.
 
@@ -136,7 +143,8 @@ I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_op
 - Prime testimonianze specifiche della consulenza del sonno, oggi non disponibili.
 - Fotografia o composizione Open Graph definitiva.
 - Informazioni complete e fonti per eventuali contenuti sanitari approfonditi.
-- Set coordinato iniziale di annunci e contenuti social per il test di tre mesi.
+- Riprese, montaggio e copertine del set iniziale di annunci e contenuti social.
+- Verifica documentale degli attestati 2025 e 2026 prima di approvare il claim `certificata`.
 - Testo e procedura di consenso per le testimonianze future.
 
 ## Criteri di selezione

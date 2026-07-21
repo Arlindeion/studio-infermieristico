@@ -13,7 +13,8 @@ Questa cartella raccoglie la memoria stabile di S.C. Studio Infermieristico: con
 5. [`DECISIONS.md`](DECISIONS.md) — registro delle decisioni durevoli e delle relative motivazioni.
 6. [`CONTENT_AND_ASSETS.md`](CONTENT_AND_ASSETS.md) — testi approvati, testimonianze, fotografie disponibili e materiali mancanti.
 7. [`locandine.md`](locandine.md) — istruzioni per PDF, locandine digitali, annunci e materiali social coerenti con il sito.
-8. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
+8. [`META_SONNO_CAMPAIGN.md`](META_SONNO_CAMPAIGN.md) — piano esecutivo, script e misurazione del primo test Meta.
+9. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
 
 ## Fonti di verità
 

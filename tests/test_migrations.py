@@ -104,4 +104,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == '56dda7f5137f'
+    assert revision == '9b7e2d4c6a10'

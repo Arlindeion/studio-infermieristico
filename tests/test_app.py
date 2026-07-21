@@ -200,9 +200,14 @@ def _dati_call_sonno(client, data=None, ora='09:00'):
         'telefono': '333 1234567',
         'email': 'anna@example.com',
         'eta_bambino_mesi': '7',
+        'ruolo_richiedente': 'Genitore con responsabilità genitoriale',
         'difficolta_principale': 'Risvegli notturni frequenti',
+        'durata_difficolta': 'Da 1 a 3 mesi',
+        'obiettivo_call': 'Capire quale percorso è adatto alla nostra situazione.',
         'data': data,
         'ora': ora,
+        'presa_visione_offerta': 'on',
+        'conferma_ambito': 'on',
         'consenso_privacy': 'on',
         '_csrf_token': _csrf_call_sonno(client),
     }
@@ -220,6 +225,9 @@ def test_prenotazione_call_sonno_blocca_subito_lo_slot(client):
         call = CallSonno.query.one()
         assert call.stato == 'In attesa'
         assert call.consenso_privacy is True
+        assert call.presa_visione_offerta is True
+        assert call.conferma_ambito is True
+        assert call.ruolo_richiedente == 'Genitore con responsabilità genitoriale'
 
     availability = client.get(f'/api/orari-call-sonno/{dati["data"]}').get_json()
     assert '09:00' in availability['occupati']
@@ -247,6 +255,97 @@ def test_call_sonno_dura_20_minuti_e_blocca_30_minuti_in_agenda(app):
         assert app_module.slot_occupato_db(data, '09:30', 10) is False
         assert '09:20' not in app_module.ORARI_CALL_SONNO
         assert '09:30' in app_module.ORARI_CALL_SONNO
+
+
+def test_call_sonno_prenotabile_anche_il_sabato(app):
+    giorno = app_module.prima_data_call_disponibile()
+    while giorno.weekday() != 5:
+        giorno += app_module.timedelta(days=1)
+
+    assert app_module.orario_call_prenotabile(giorno.isoformat(), '09:00') is True
+
+
+def test_prenotazione_call_sonno_salva_consenso_whatsapp_e_utm(client):
+    dati = _dati_call_sonno(client)
+    dati.update({
+        'consenso_whatsapp': 'on',
+        'utm_source': 'instagram',
+        'utm_medium': 'paid_social',
+        'utm_campaign': 'sonno_settembre',
+        'utm_content': 'risvegli_video_1',
+    })
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post('/prenota-call-sonno', data=dati)
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        call = CallSonno.query.one()
+        assert call.consenso_whatsapp is True
+        assert call.utm_source == 'instagram'
+        assert call.utm_content == 'risvegli_video_1'
+
+
+def test_pagina_sonno_mostra_formule_e_prezzi_prima_della_prenotazione(client):
+    landing = client.get('/consulenze-online')
+    booking = client.get('/prenota-call-sonno')
+
+    assert 'Consulenza mirata' in landing.text
+    assert 'Percorso sonno personalizzato' in landing.text
+    assert 'Percorso sonno con affiancamento' in landing.text
+    assert '320 €' in landing.text
+    assert 'partono da <strong>75 €</strong>' in booking.text
+
+
+def test_promemoria_call_sonno_email_e_whatsapp_non_si_duplicano(app):
+    adesso = datetime(2026, 9, 20, 10, 0, tzinfo=app_module.FUSO_ORARIO)
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, consenso_whatsapp=True,
+            data='2026-09-21', ora='09:00', stato='Confermata',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        with (
+            patch.object(app_module, 'invia_email_promemoria_call_sonno', return_value=True) as email,
+            patch.object(app_module, 'invia_whatsapp_promemoria_call_sonno', return_value=True) as whatsapp,
+        ):
+            app.config['WHATSAPP_REMINDERS_ENABLED'] = True
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+
+        db.session.refresh(call)
+        assert call.promemoria_email_24h_il is not None
+        assert call.promemoria_whatsapp_24h_il is not None
+        email.assert_called_once_with(call, 24)
+        whatsapp.assert_called_once_with(call, 24)
+
+
+def test_promemoria_whatsapp_non_parte_senza_consenso(app):
+    adesso = datetime(2026, 9, 21, 7, 30, tzinfo=app_module.FUSO_ORARIO)
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, consenso_whatsapp=False,
+            data='2026-09-21', ora='09:00', stato='Confermata',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        with (
+            patch.object(app_module, 'invia_email_promemoria_call_sonno', return_value=True),
+            patch.object(app_module, 'invia_whatsapp_promemoria_call_sonno') as whatsapp,
+        ):
+            app.config['WHATSAPP_REMINDERS_ENABLED'] = True
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+
+        db.session.refresh(call)
+        assert call.promemoria_email_2h_il is not None
+        assert call.promemoria_whatsapp_2h_il is None
+        whatsapp.assert_not_called()
 
 
 def test_call_sonno_non_si_sovrappone_a_prestazione(client):

@@ -1,6 +1,6 @@
 # Brief del progetto
 
-Ultimo aggiornamento: 16 luglio 2026.
+Ultimo aggiornamento: 21 luglio 2026.
 
 ## Scopo
 
@@ -63,7 +63,8 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Laboratori alimentari/gioco | 20-25 € a bambino | Circa 4 al mese; gruppi di 4-6 bambini | I bambini che ritornano sono il pubblico più ricorrente. |
 | Corso di accompagnamento alla nascita | 225 € a coppia | 9 incontri; media 5 coppie; capienza 7-8 | Il prezzo è per coppia. Una coppia conta come un posto nel percorso. |
 | Consulenza mirata sul sonno | 75 € | Singola difficoltà circoscritta | Formula breve, non sostitutiva del percorso quando più fattori si influenzano. |
-| Percorso sonno personalizzato | 180 € | Percorso principale | Offerta da validare; preceduta da call conoscitiva gratuita di circa 20 minuti. |
+| Percorso sonno personalizzato | 180 € | Tre call da 60-75 minuti e diario | Prezzo di lancio; durata prevista 60 giorni, chiusura entro 75 salvo indisponibilità di Selene. |
+| Percorso sonno con affiancamento | 320 € | Percorso personalizzato e WhatsApp per 60 giorni | Prezzo di lancio; massimo tre confronti raggruppati a settimana, risposta entro il giorno lavorativo successivo. |
 | Prestazioni infermieristiche | Variabile | Frequenza variabile | Da circa 12 € per un'iniezione a circa 60 € per un Holter; prezzi delle piattaforme esterne maggiorati dalle commissioni. |
 
 Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo l'accordo reale e al netto di spese, imposte, contributi e materiali. Nel percorso nascita gli altri professionisti fatturano direttamente i propri compensi: l'intero prezzo non è ricavo di Selene.
@@ -73,7 +74,8 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 - Affitto: circa 700 € al mese.
 - Utenze, software, commercialista e materiali: circa 500 € al mese.
 - Contributi e imposte non sono inclusi nella stima precedente.
-- Non è stato definito un budget pubblicitario mensile.
+- Il primo test Meta/Instagram usa un tetto di 200 €, con verifica obbligatoria dopo i primi 100 €.
+- Il costo obiettivo per cliente è 10 € per la consulenza mirata e 20 € per il percorso; sono ipotesi da verificare, non risultati attesi da comunicare.
 - La capacità di investimento resta contenuta finché non viene recuperato l'investimento iniziale dello studio.
 - La strategia preferita è uno sviluppo controllato: test piccoli, misurazione e automazione soltanto dopo la validazione.
 
@@ -103,11 +105,13 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 - Offerta promossa: consulenza del sonno infantile 0-12 mesi.
 - Durata iniziale del test: tre mesi.
 - Pubblico di servizio: famiglie con bambini lungo l'intera fascia 0-12 mesi, coperta dalla formazione specifica di Selene. Le creatività possono partire da difficoltà o fasi più circoscritte, ma la campagna non deve restringere arbitrariamente l'idoneità generale.
-- Geografia del servizio: nazionale e online. Abruzzo e regioni confinanti possono essere usati come primo perimetro pubblicitario solo se necessario per controllare la spesa; non diventano un limite della landing o dell'offerta.
+- Geografia del servizio e del primo test: nazionale e online.
 - Percorso principale: annuncio o contenuto social → landing `/consulenze-online` → scelta diretta di uno slot → call gratuita → eventuale proposta della formula adatta → questionario privato sul sito.
 - WhatsApp: canale secondario per chi è ancora indeciso, non conversione principale quando il calendario è disponibile.
 - Obiettivo di apprendimento: produrre casi reali sufficienti a raccogliere, solo dopo l'erogazione e con consenso, almeno tre testimonianze pubblicabili al mese sulla consulenza del sonno.
-- Misure di percorso: contatto qualificato, slot prenotato, call confermata, call svolta, formula scelta e testimonianza autorizzata. Il costo massimo per contatto verrà definito insieme al budget e ai primi dati, non dedotto automaticamente dai prezzi di listino.
+- Creatività iniziali: due video verticali sullo stesso pubblico 0-12 mesi, uno sui risvegli frequenti e uno sull'addormentamento con forte supporto; Meta distribuisce i primi 100 € fra le varianti.
+- Misure di percorso: costo per call prenotata, percentuale di presenze, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Obiettivo iniziale di conversione: 20%.
+- Capacità iniziale: 10 call gratuite, 2 consulenze mirate, 1 percorso e 2 corsi a settimana. Gli annunci vengono rallentati o fermati quando le call raggiungono 10 prenotazioni nella settimana; un percorso con affiancamento può superare il limite indicativo di un nuovo percorso settimanale se resta sostenibile la risposta WhatsApp.
 
 La testimonianza è un obiettivo interno di validazione, non una promessa pubblicitaria né una condizione richiesta alla famiglia prima del servizio. Non usare feedback di altri corsi come prova della consulenza del sonno.
 
@@ -146,10 +150,10 @@ Non presentare una relazione come partnership strutturata se non è stata formal
 ## Questioni ancora aperte
 
 - Validazione della domanda nazionale e del prezzo della consulenza del sonno.
-- Budget sostenibile per contenuti e campagne.
-- Perimetro geografico iniziale della campagna, da scegliere in funzione del budget senza cambiare il posizionamento nazionale.
-- Frequenza editoriale e tono creativo/video definitivi, da stabilire dopo una fase di test.
+- Verifica del tempo reale richiesto da diario, analisi e assistenza dopo i primi cinque percorsi; compenso lordo obiettivo almeno 25-30 € l'ora.
+- Verifica degli attestati 2025 e 2026 prima di usare pubblicamente il claim `consulente certificata`; in assenza di una qualifica espressa usare `formata nella consulenza del sonno infantile`.
+- Configurazione del numero, dei template e delle credenziali WhatsApp Business Platform.
 - Processo e testo di richiesta del consenso per le future testimonianze sulla consulenza del sonno.
-- Elenco finale delle fotografie e relative destinazioni.
+- Produzione delle prime tre creatività verticali con Selene e delle relative copertine.
 - Durate definitive degli slot delle prestazioni da allineare con Arzamed.
-- Policy su cancellazioni, spostamenti, rimborsi, rate e assenze.
+- Validazione professionale del testo contrattuale, del recesso anticipato e dei consensi prima di attivare il pagamento.
