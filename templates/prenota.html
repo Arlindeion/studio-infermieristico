@@ -37,37 +37,38 @@
                    value="{{ form_data.get('email', '') if form_data else '' }}" required>
         </div>
 
-        <div class="form-gruppo">
-            <label for="servizio">Prestazione richiesta *</label>
-            <select id="servizio" name="servizio" required>
-                <option value="">Seleziona una prestazione</option>
-                {% for categoria in prestazioni_categorie %}
-                <optgroup label="{{ categoria.nome }}">
-                    {% for prestazione in categoria.prestazioni %}
+        {% set categoria_selezionata = form_data.get('categoria_servizio', '') if form_data else '' %}
+        <div class="form-riga booking-service-selectors">
+            <div class="form-gruppo">
+                <label for="categoria-servizio">1. Categoria della prestazione *</label>
+                <select id="categoria-servizio" name="categoria_servizio" required>
+                    <option value="">Seleziona una categoria</option>
+                    {% for categoria in prestazioni_categorie %}
+                    <option value="{{ categoria.slug }}" {{ 'selected' if categoria_selezionata == categoria.slug }}>{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-gruppo">
+                <label for="servizio">2. Prestazione richiesta *</label>
+                <select id="servizio" name="servizio" required{% if not categoria_selezionata %} disabled{% endif %}>
+                    <option value="">{% if categoria_selezionata %}Seleziona una prestazione{% else %}Prima scegli una categoria{% endif %}</option>
+                    {% for categoria in prestazioni_categorie %}
+                        {% for prestazione in categoria.prestazioni %}
                     <option value="{{ prestazione.nome }}"
                         data-service-name="{{ prestazione.nome }}"
+                        data-category-slug="{{ categoria.slug }}"
                         data-category="{{ categoria.nome }}"
                         data-price="{{ prestazione.prezzo }}"
+                        {% if categoria_selezionata != categoria.slug %}hidden disabled{% endif %}
                         {{ 'selected' if form_data and form_data.get('servizio') == prestazione.nome }}
                     >{{ prestazione.nome }} — {{ prestazione.prezzo }}</option>
+                        {% endfor %}
                     {% endfor %}
-                </optgroup>
-                {% endfor %}
-            </select>
-
-            <div class="booking-service-summary" data-service-price-summary aria-live="polite">
-                <div class="booking-service-summary__service">
-                    <span>Riepilogo della prestazione</span>
-                    <strong data-service-summary-name>Nessuna prestazione selezionata</strong>
-                    <small data-service-summary-category>Le prestazioni sono divise nelle stesse categorie del listino.</small>
-                </div>
-                <p class="booking-service-summary__price">
-                    <span>Tariffa in studio</span>
-                    <strong data-service-summary-price>—</strong>
-                </p>
+                </select>
             </div>
-            <p class="booking-price-note">Le tariffe “da” o “su valutazione” dipendono dalla situazione e dai materiali necessari. Ogni variazione viene comunicata prima della conferma.</p>
         </div>
+        <p class="booking-selector-note">Scegli prima la categoria: il secondo menu mostrerà soltanto le prestazioni pertinenti.</p>
 
         <div class="form-riga">
             <div class="form-gruppo">
@@ -116,12 +117,25 @@
             </label>
         </div>
 
+        <div class="booking-service-summary" data-service-price-summary aria-live="polite">
+            <div class="booking-service-summary__service">
+                <span>Riepilogo della prestazione</span>
+                <strong data-service-summary-name>Nessuna prestazione selezionata</strong>
+                <small data-service-summary-category>Scegli categoria e prestazione per vedere il riepilogo.</small>
+            </div>
+            <p class="booking-service-summary__price">
+                <span>Tariffa in studio</span>
+                <strong data-service-summary-price>—</strong>
+            </p>
+        </div>
+        <p class="booking-price-note">Le tariffe “da” o “su valutazione” dipendono dalla situazione e dai materiali necessari. Ogni variazione viene comunicata prima della conferma.</p>
+
         <button type="submit" class="btn btn-privacy-mancante" id="btn-invia" data-conversion="prestazioni_booking_submit">Invia prenotazione</button>
 
     </form>
 </section>
 
-<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.1"></script>
+<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.2"></script>
 
 <script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 

@@ -3,8 +3,41 @@ document.getElementById('data').min = new Date().toISOString().split('T')[0];
 
 const privacyCheckbox = document.querySelector('.privacy-checkbox');
 const submitButton = document.getElementById('btn-invia');
+const serviceCategorySelect = document.getElementById('categoria-servizio');
 const serviceSelect = document.getElementById('servizio');
 const serviceSummary = document.querySelector('[data-service-price-summary]');
+
+function aggiornaMenuPrestazioni() {
+    if (!serviceCategorySelect || !serviceSelect) {
+        return;
+    }
+
+    const selectedCategory = serviceCategorySelect.value;
+    const selectedOption = serviceSelect.selectedOptions[0];
+    const selectionMatchesCategory = Boolean(
+        selectedOption
+        && selectedOption.value
+        && selectedOption.dataset.categorySlug === selectedCategory
+    );
+
+    Array.from(serviceSelect.options).forEach((option, index) => {
+        if (index === 0) {
+            option.textContent = selectedCategory
+                ? 'Seleziona una prestazione'
+                : 'Prima scegli una categoria';
+            return;
+        }
+
+        const belongsToCategory = option.dataset.categorySlug === selectedCategory;
+        option.hidden = !belongsToCategory;
+        option.disabled = !belongsToCategory;
+    });
+
+    serviceSelect.disabled = !selectedCategory;
+    if (!selectionMatchesCategory) {
+        serviceSelect.value = '';
+    }
+}
 
 function aggiornaRiepilogoPrestazione() {
     if (!serviceSelect || !serviceSummary) {
@@ -23,7 +56,7 @@ function aggiornaRiepilogoPrestazione() {
         : 'Nessuna prestazione selezionata';
     serviceCategory.textContent = hasSelection
         ? selectedOption.dataset.category
-        : 'Le prestazioni sono divise nelle stesse categorie del listino.';
+        : 'Scegli categoria e prestazione per vedere il riepilogo.';
     servicePrice.textContent = hasSelection ? selectedOption.dataset.price : '—';
 }
 
@@ -34,7 +67,12 @@ function aggiornaStatoPrivacy() {
 privacyCheckbox.addEventListener('change', aggiornaStatoPrivacy);
 aggiornaStatoPrivacy();
 
+serviceCategorySelect.addEventListener('change', function() {
+    aggiornaMenuPrestazioni();
+    aggiornaRiepilogoPrestazione();
+});
 serviceSelect.addEventListener('change', aggiornaRiepilogoPrestazione);
+aggiornaMenuPrestazioni();
 aggiornaRiepilogoPrestazione();
 
 // Disabilita il pulsante dopo l'invio per evitare doppi clic
