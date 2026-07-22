@@ -226,7 +226,7 @@ Evitare:
 
 Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
-- `Richiedi la call gratuita`
+- `Scegli l’orario della call`
 - `Iscrizione individuale`
 - `Scopri le prossime date`
 - `Prenota`
@@ -234,14 +234,26 @@ Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
 WhatsApp è adatto a:
 
-- call sonno nella fase pilota;
-- famiglie già interessate o indecise;
+- famiglie indecise sulla call sonno;
 - aziende e gruppi;
 - persone che non trovano una data.
 
 Quando esiste un modulo specifico, usare il modulo come CTA. Recuperare sempre URL, telefono e contatti dalle fonti correnti del sito; non riscriverli a memoria.
 
 Nei PDF rendere link, indirizzo email e numero di telefono cliccabili quando tecnicamente possibile.
+
+### Campagna iniziale sulla consulenza del sonno
+
+Il test dura tre mesi e promuove la consulenza del sonno 0-12 mesi. Per ogni annuncio, video o contenuto sponsorizzato:
+
+- partire da una sola difficoltà osservabile, non dal tema generico del sonno;
+- mantenere `Scegli l’orario della call` come CTA primaria verso la landing e il calendario;
+- usare l'identità dello studio e la presenza reale di Selene, senza creare un sottobrand;
+- non inventare testimonianze, casi o risultati: le prove specifiche del servizio saranno aggiunte solo quando reali e autorizzate;
+- non restringere la promessa alla sola area geografica dell'annuncio: il servizio resta nazionale e online;
+- trattare un eventuale targeting su Abruzzo e regioni confinanti come scelta di distribuzione legata al budget.
+
+Il primo test è nazionale su Meta/Instagram: massimo 200 €, verifica dopo 100 €, due angoli iniziali (`risvegli frequenti` e `addormentamento con forte supporto`) e arresto/rallentamento a 10 call prenotate nella settimana. Consultare `PROJECT_BRIEF.md` e `DECISIONS.md` prima di produrre la serie definitiva.
 
 ## Prezzi
 
@@ -261,14 +273,17 @@ Naming:
 - fascia attuale: 0-12 mesi;
 - non mescolare ciuccio, spannolinamento e consulenze generiche nella stessa offerta.
 
-Le due formule hanno funzioni differenti:
+Le tre formule hanno funzioni differenti:
 
 - `Consulenza mirata` — 75 €, dedicata a una singola difficoltà circoscritta;
 - `Percorso sonno personalizzato` — 180 €, proposta principale quando più aspetti si influenzano tra loro.
+- `Percorso sonno con affiancamento` — 320 €, stesso percorso con 60 giorni di WhatsApp entro i confini pubblicati.
 
 La formula breve deve apparire appropriata a casi limitati, non come versione scontata del percorso.
 
-La call conoscitiva gratuita di circa 15 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+La call conoscitiva gratuita di circa 20 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+
+I prezzi sono visibili prima della prenotazione. Non usare `premium` come nome pubblico: l'affiancamento descrive il valore senza introdurre un registro estraneo al brand.
 
 Inserire in modo leggibile, senza tono difensivo:
 

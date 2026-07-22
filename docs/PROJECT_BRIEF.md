@@ -1,6 +1,6 @@
 # Brief del progetto
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 21 luglio 2026.
 
 ## Scopo
 
@@ -17,12 +17,21 @@ L'obiettivo del lancio non è vendere tutto immediatamente, ma aumentare il valo
 - Lo studio è in affitto.
 - Il sito è il progetto centrale da cui dipendono il lancio nazionale delle consulenze, le campagne e una presenza social più riconoscibile.
 
+## Checkpoint interno del 15 settembre 2026
+
+Il lancio viene considerato riuscito se, entro il 15 settembre 2026, sono presenti entrambi questi risultati:
+
+1. sito tecnicamente pronto e sicuro, con attività P0 concluse e flussi principali collaudati;
+2. prima campagna pubblicitaria online/social pronta a partire con la nuova identità grafica, misurabile e utilizzabile come base per il test della consulenza del sonno.
+
+La data è un riferimento operativo interno, non una promessa pubblica. Non autorizza a pubblicare con problemi di sicurezza, privacy o perdita dei dati ancora aperti.
+
 ## Obiettivi 2026-2028
 
-- Arrivare al lancio grafico idealmente all'inizio di settembre 2026. La data non è stata annunciata e può essere spostata se serve a proteggere qualità e sostenibilità.
+- Superare il checkpoint interno del 15 settembre 2026 senza sacrificare sicurezza, privacy e affidabilità dei flussi.
 - Rendere immediatamente riconoscibili sito, social e materiali commerciali come parti dello stesso sistema.
 - Consolidare i corsi in presenza, che hanno già domanda reale.
-- Validare la consulenza del sonno prima in studio e con clienti già acquisiti, poi su scala nazionale.
+- Validare la consulenza del sonno con le famiglie già interessate e con un test di campagna di tre mesi, mantenendo il servizio disponibile su scala nazionale.
 - Aumentare valore percepito e scontrino medio più che il numero assoluto di clienti.
 - Costruire entro circa due anni un'attività sostenibile e compatibile con un buon equilibrio tra lavoro e vita privata.
 - Raggiungere progressivamente 1.500-2.000 euro mensili netti dopo costi, contributi e imposte.
@@ -54,7 +63,8 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Laboratori alimentari/gioco | 20-25 € a bambino | Circa 4 al mese; gruppi di 4-6 bambini | I bambini che ritornano sono il pubblico più ricorrente. |
 | Corso di accompagnamento alla nascita | 225 € a coppia | 9 incontri; media 5 coppie; capienza 7-8 | Il prezzo è per coppia. Una coppia conta come un posto nel percorso. |
 | Consulenza mirata sul sonno | 75 € | Singola difficoltà circoscritta | Formula breve, non sostitutiva del percorso quando più fattori si influenzano. |
-| Percorso sonno personalizzato | 180 € | Percorso principale | Offerta da validare; preceduta da call conoscitiva gratuita di circa 15 minuti. |
+| Percorso sonno personalizzato | 180 € | Tre call da 60-75 minuti e diario | Prezzo di lancio; durata prevista 60 giorni, chiusura entro 75 salvo indisponibilità di Selene. |
+| Percorso sonno con affiancamento | 320 € | Percorso personalizzato e WhatsApp per 60 giorni | Prezzo di lancio; massimo tre confronti raggruppati a settimana, risposta entro il giorno lavorativo successivo. |
 | Prestazioni infermieristiche | Variabile | Frequenza variabile | Da circa 12 € per un'iniezione a circa 60 € per un Holter; prezzi delle piattaforme esterne maggiorati dalle commissioni. |
 
 Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo l'accordo reale e al netto di spese, imposte, contributi e materiali. Nel percorso nascita gli altri professionisti fatturano direttamente i propri compensi: l'intero prezzo non è ricavo di Selene.
@@ -64,7 +74,8 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 - Affitto: circa 700 € al mese.
 - Utenze, software, commercialista e materiali: circa 500 € al mese.
 - Contributi e imposte non sono inclusi nella stima precedente.
-- Non è stato definito un budget pubblicitario mensile.
+- Il primo test Meta/Instagram usa un tetto di 200 €, con verifica obbligatoria dopo i primi 100 €.
+- Il costo obiettivo per cliente è 10 € per la consulenza mirata e 20 € per il percorso; sono ipotesi da verificare, non risultati attesi da comunicare.
 - La capacità di investimento resta contenuta finché non viene recuperato l'investimento iniziale dello studio.
 - La strategia preferita è uno sviluppo controllato: test piccoli, misurazione e automazione soltanto dopo la validazione.
 
@@ -88,6 +99,21 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 - Corsi in presenza: provincia di Pescara e dintorni.
 - Laboratori per bambini: raggio indicativo massimo di 30 km.
 - Consulenza del sonno: tutta Italia, online; possibile anche in studio.
+
+## Test di campagna per la consulenza del sonno
+
+- Offerta promossa: consulenza del sonno infantile 0-12 mesi.
+- Durata iniziale del test: tre mesi.
+- Pubblico di servizio: famiglie con bambini lungo l'intera fascia 0-12 mesi, coperta dalla formazione specifica di Selene. Le creatività possono partire da difficoltà o fasi più circoscritte, ma la campagna non deve restringere arbitrariamente l'idoneità generale.
+- Geografia del servizio e del primo test: nazionale e online.
+- Percorso principale: annuncio o contenuto social → landing `/consulenze-online` → scelta diretta di uno slot → call gratuita → eventuale proposta della formula adatta → questionario privato sul sito.
+- WhatsApp: canale secondario per chi è ancora indeciso, non conversione principale quando il calendario è disponibile.
+- Obiettivo di apprendimento: produrre casi reali sufficienti a raccogliere, solo dopo l'erogazione e con consenso, almeno tre testimonianze pubblicabili al mese sulla consulenza del sonno.
+- Creatività iniziali: due video verticali sullo stesso pubblico 0-12 mesi, uno sui risvegli frequenti e uno sull'addormentamento con forte supporto; Meta distribuisce i primi 100 € fra le varianti.
+- Misure di percorso: costo per call prenotata, percentuale di presenze, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Obiettivo iniziale di conversione: 20%.
+- Capacità iniziale: 10 call gratuite, 2 consulenze mirate, 1 percorso e 2 corsi a settimana. Gli annunci vengono rallentati o fermati quando le call raggiungono 10 prenotazioni nella settimana; un percorso con affiancamento può superare il limite indicativo di un nuovo percorso settimanale se resta sostenibile la risposta WhatsApp.
+
+La testimonianza è un obiettivo interno di validazione, non una promessa pubblicitaria né una condizione richiesta alla famiglia prima del servizio. Non usare feedback di altri corsi come prova della consulenza del sonno.
 
 ## Domanda, obiezioni e prove disponibili
 
@@ -124,8 +150,9 @@ Non presentare una relazione come partnership strutturata se non è stata formal
 ## Questioni ancora aperte
 
 - Validazione della domanda nazionale e del prezzo della consulenza del sonno.
-- Budget sostenibile per contenuti e campagne.
-- Frequenza editoriale social definitiva, da stabilire dopo una fase di test.
-- Elenco finale delle fotografie e relative destinazioni.
+- Verifica del tempo reale richiesto da diario, analisi e assistenza dopo i primi cinque percorsi; compenso lordo obiettivo almeno 25-30 € l'ora.
+- Verifica degli attestati 2025 e 2026 prima di usare pubblicamente il claim `consulente certificata`; in assenza di una qualifica espressa usare `formata nella consulenza del sonno infantile`.
+- Processo e testo di richiesta del consenso per le future testimonianze sulla consulenza del sonno.
+- Produzione delle prime tre creatività verticali con Selene e delle relative copertine.
 - Durate definitive degli slot delle prestazioni da allineare con Arzamed.
-- Policy su cancellazioni, spostamenti, rimborsi, rate e assenze.
+- Validazione professionale del testo contrattuale, del recesso anticipato e dei consensi prima di attivare il pagamento.

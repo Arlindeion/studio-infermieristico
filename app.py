@@ -1,4 +1,5 @@
 import logging
+import click
 import json
 import re
 import urllib.request
@@ -30,26 +31,31 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_mail import Mail, Message
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from sqlalchemy import text as sql_text
 
-# Configurazione del logging
+# Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
+# locale resta disponibile in sviluppo e non viene mai usato come archivio.
+config_name = os.environ.get('FLASK_ENV', 'development')
+log_handlers = [logging.StreamHandler()]
+if config_name == 'development':
+    log_handlers.insert(0, logging.FileHandler('app.log'))
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s:%(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
+    handlers=log_handlers,
 )
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 # Caricamento della configurazione
-config_name = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[config_name])
+if config_name == 'production':
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Limitazione del traffico
 limiter = Limiter(
@@ -105,7 +111,7 @@ talisman = Talisman(
         'font-src': ["'self'", "https://fonts.gstatic.com"],
         'frame-src': ["'self'", "https://www.google.com"],
     },
-    force_https=False,
+    force_https=config_name == 'production',
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
     session_cookie_http_only=True,
     session_cookie_samesite='Lax',
@@ -115,24 +121,152 @@ talisman = Talisman(
 @app.context_processor
 def inject_tracking_config():
     return {
-        'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID')
+        'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
+        'prestazioni_categorie': PRESTAZIONI_CATEGORIE,
+        'servizi_prenotabili': SERVIZI_PRENOTABILI,
     }
 
 
 # ─── COSTANTI ───
 
-SERVIZI_VALIDI = [
-    'Iniezione intramuscolare',
-    'Iniezione sottocutanea',
-    'Flebo e terapia infusionale',
-    'Medicazione semplice',
-    'Medicazione complessa',
-    'Controllo parametri vitali',
-    'Assistenza domiciliare',
-    'Gestione terapia farmacologica',
+PRESTAZIONI_CATEGORIE = [
+    {
+        'nome': 'Terapie e somministrazioni',
+        'slug': 'terapie-somministrazioni',
+        'prestazioni': [
+            {'nome': 'Iniezione intramuscolare', 'prezzo': '12 €'},
+            {'nome': 'Iniezione sottocutanea', 'prezzo': '10 €'},
+            {'nome': 'Terapia infusionale / flebo', 'prezzo': 'da 20 €'},
+            {'nome': 'Posizionamento accesso venoso', 'prezzo': '15 €'},
+            {'nome': 'Gestione e medicazione PICC/CVC', 'prezzo': 'da 25 €'},
+            {'nome': 'Lavaggio e mantenimento PICC/CVC', 'prezzo': 'da 20 €'},
+            {'nome': 'Gestione della terapia farmacologica', 'prezzo': 'su valutazione'},
+        ],
+    },
+    {
+        'nome': 'Medicazioni',
+        'slug': 'medicazioni',
+        'nota': 'Il prezzo può variare in base alle condizioni della lesione, al tempo necessario e ai materiali utilizzati.',
+        'prestazioni': [
+            {'nome': 'Medicazione semplice', 'prezzo': '15 €'},
+            {'nome': 'Medicazione chirurgica', 'prezzo': 'da 20 €'},
+            {'nome': 'Rimozione punti di sutura o graffette', 'prezzo': '20 €'},
+            {'nome': 'Medicazione avanzata di lesioni complesse', 'prezzo': 'da 30 €'},
+            {'nome': 'Valutazione infermieristica della lesione', 'prezzo': '20 €'},
+            {'nome': 'Cambio o gestione cannula tracheostomica', 'prezzo': 'da 25 €'},
+        ],
+    },
+    {
+        'nome': 'Controlli e diagnostica',
+        'slug': 'controlli-diagnostica',
+        'prestazioni': [
+            {'nome': 'Controllo parametri vitali', 'prezzo': '10 €'},
+            {'nome': 'Glicemia capillare', 'prezzo': '5 €'},
+            {'nome': 'Elettrocardiogramma con referto', 'prezzo': '20 €'},
+            {'nome': 'Holter pressorio 24 ore', 'prezzo': '55 €'},
+            {'nome': 'Holter ECG 24 ore', 'prezzo': '80 €'},
+            {'nome': 'Profilo lipidico capillare', 'prezzo': '20 €'},
+            {'nome': 'Emoglobina glicata - HbA1c', 'prezzo': '15 €'},
+            {'nome': 'Vitamina D', 'prezzo': '20 €'},
+            {'nome': 'PSA', 'prezzo': '15 €'},
+            {'nome': 'Profilo tiroideo TSH, FT3 e FT4', 'prezzo': '30 €'},
+        ],
+    },
+    {
+        'nome': 'Altre prestazioni',
+        'slug': 'altre-prestazioni',
+        'prestazioni': [
+            {'nome': 'Lavaggio auricolare', 'prezzo': '30 €'},
+            {'nome': 'Clistere evacuativo', 'prezzo': '30 €'},
+            {'nome': 'Gestione stomia', 'prezzo': 'da 20 €'},
+            {'nome': 'Gestione PEG', 'prezzo': 'da 20 €'},
+            {'nome': 'Cateterismo vescicale', 'prezzo': 'da 25 €'},
+            {'nome': 'Sostituzione catetere vescicale', 'prezzo': 'da 30 €'},
+            {'nome': 'Educazione del caregiver', 'prezzo': 'da 30 €'},
+            {'nome': 'Consulenza infermieristica', 'prezzo': '30 € all’ora'},
+        ],
+    },
 ]
 
+SERVIZI_PRENOTABILI = [
+    prestazione['nome']
+    for categoria in PRESTAZIONI_CATEGORIE
+    for prestazione in categoria['prestazioni']
+]
+
+# Mantiene validi i nomi usati dalle richieste create prima del nuovo listino.
+SERVIZI_VALIDI = list(dict.fromkeys(SERVIZI_PRENOTABILI + [
+    'Flebo e terapia infusionale',
+    'Medicazione complessa',
+    'Assistenza domiciliare',
+    'Gestione terapia farmacologica',
+]))
+
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
+STATI_CALL_SONNO_VALIDI = ['In attesa', 'Confermata', 'Annullata', 'Conclusa']
+FORMULE_SONNO = {
+    'mirata': 'Consulenza mirata',
+    'percorso': 'Percorso sonno personalizzato',
+    'affiancamento': 'Percorso sonno con affiancamento',
+}
+DIFFICOLTA_SONNO = [
+    'Addormentamento difficile la sera',
+    'Risvegli notturni frequenti',
+    'Pisolini difficili o brevi',
+    'Addormentamento solo con forte supporto (braccio/seno)',
+    'Cambiamenti / regressioni / distacchi',
+    'Altro',
+]
+RUOLI_RICHIEDENTE_SONNO = [
+    'Genitore con responsabilità genitoriale',
+    'Tutore legale',
+]
+DURATE_DIFFICOLTA_SONNO = [
+    'Da meno di 2 settimane',
+    'Da 2 a 4 settimane',
+    'Da 1 a 3 mesi',
+    'Da più di 3 mesi',
+    'Da sempre o quasi',
+]
+QUESTIONARIO_SONNO_LABELS = {
+    'nome_bambino': 'Nome del bambino',
+    'data_nascita': 'Data di nascita',
+    'nascita': 'Nascita e prematurità',
+    'eta_corretta': 'Età corretta',
+    'gestione_sonno': 'Chi gestisce il sonno',
+    'alimentazione': 'Alimentazione',
+    'poppate_notturne': 'Poppate o pasti notturni',
+    'addormentamento_seno': 'Addormentamento al seno',
+    'risveglio_mattino': 'Risveglio del mattino',
+    'pisolini': 'Pisolini',
+    'routine_serale': 'Routine serale',
+    'ora_addormentamento': 'Orario di addormentamento',
+    'cambiamenti_routine': 'Cambiamenti della routine',
+    'dove_si_addormenta': 'Dove si addormenta',
+    'dove_dorme': 'Dove dorme',
+    'supporti_addormentamento': 'Supporti per addormentarsi',
+    'risvegli_dettaglio': 'Risvegli',
+    'riaddormentamento': 'Come si riaddormenta',
+    'risveglio_precoce': 'Risveglio precoce',
+    'durata_difficolta': 'Durata della difficoltà',
+    'tentativi_fatti': 'Tentativi già fatti',
+    'eventi_recenti': 'Eventi recenti',
+    'momento_piu_difficile': 'Momento più difficile',
+    'cambiamento_desiderato': 'Cambiamento desiderato',
+    'cosa_non_cambiare': 'Cosa non cambiare',
+    'partecipanti_consulenza': 'Partecipanti alla consulenza',
+    'condizioni_note': 'Condizioni già valutate',
+    'terapie_indicazioni': 'Terapie o indicazioni',
+    'professionisti_coinvolti': 'Professionisti coinvolti',
+    'note_finali': 'Note finali',
+}
+DURATA_CALL_SONNO_MINUTI = 20
+BLOCCO_CALL_SONNO_MINUTI = 30
+ORARI_CALL_SONNO = [
+    f'{ora:02d}:{minuto:02d}'
+    for ora in [8, 9, 10, 11, 12, 15, 16, 17, 18]
+    for minuto in [0, 30]
+]
 STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
@@ -148,12 +282,12 @@ CORSI_ADMIN_TIPI = {
     'bls-d': {
         'label': 'BLSD',
         'titolo': 'BLSD',
-        'durata_ore': 4,
+        'durata_ore': 5,
     },
     'disostruzione-pediatrica': {
         'label': 'Disostruzione pediatrica e tagli sicuri',
         'titolo': 'Disostruzione pediatrica e tagli sicuri',
-        'durata_ore': 2,
+        'durata_ore': 2.5,
     },
     'accompagnamento-nascita': {
         'label': 'Corso di accompagnamento alla nascita',
@@ -185,6 +319,14 @@ CORSI_ISCRIVIBILI = {
     },
 }
 
+CORSI_SLUG_PUBBLICI = {
+    'bls-d': 'blsd',
+}
+
+STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
+STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
+
+
 FAQ_ITEMS = [
     {
         'id': 'corsi-disponibili',
@@ -196,7 +338,7 @@ FAQ_ITEMS = [
     {
         'id': 'iscrizione-corsi-online',
         'question': 'Come funziona l\'iscrizione online ai corsi?',
-        'answer': "Dalla pagina corsi scegli il corso, compili il modulo e invii la richiesta. Se c'è una data aperta, la richiesta viene collegata a quella data; se non ci sono date disponibili, puoi lasciare i tuoi dati per essere ricontattato quando si apre una nuova possibilità.",
+        'answer': "Dalla pagina corsi scegli il corso, compili il modulo e invii la richiesta. Se c'è una data aperta, la richiesta viene collegata a quella data; se non ci sono date disponibili, puoi lasciare i tuoi dati e ti ricontatterò quando si apre una nuova possibilità.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Vai alle iscrizioni',
     },
@@ -204,7 +346,7 @@ FAQ_ITEMS = [
         'id': 'blsd-privati-aziende',
         'question': 'Come posso iscrivermi a un corso BLSD o richiederlo per un\'azienda?',
         'answer': "Il BLSD ha due percorsi separati: i privati possono usare il modulo di iscrizione individuale per le date aperte, mentre aziende e gruppi devono contattare direttamente lo studio per organizzare un corso personalizzato in studio o in azienda.",
-        'link_href': '/iscrizione-corsi/bls-d',
+        'link_href': '/iscrizione-corsi/blsd',
         'link_text': 'Vedi BLSD',
     },
     {
@@ -231,21 +373,21 @@ FAQ_ITEMS = [
     {
         'id': 'durata-corsi',
         'question': 'Quanto durano i corsi?',
-        'answer': "La durata dipende dal tipo di corso: il BLSD dura circa 4 ore, disostruzione pediatrica e laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
+        'answer': "La durata dipende dal tipo di corso: il BLSD dura 5 ore, disostruzione pediatrica e tagli sicuri dura circa 2 ore e 30 minuti, i laboratori per l'infanzia durano circa 2 ore, mentre il corso completo di accompagnamento alla nascita è una serie di 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Vedi i corsi',
     },
     {
-        'id': 'consulenze-genitori',
-        'question': 'Cosa sono le consulenze genitori e quando possono aiutare una famiglia?',
-        'answer': "Le consulenze genitori sono incontri online o in studio per chi cerca una guida concreta su sonno, routine, spannolinamento, togliere il ciuccio, cura quotidiana e dubbi pratici dei primi mesi. Sono pensate per fare ordine senza giudizio e capire, anche con una call conoscitiva gratuita, quale passo è davvero utile.",
+        'id': 'consulenza-sonno-infantile',
+        'question': 'Quando può essere utile una consulenza sul sonno infantile?',
+        'answer': "La consulenza è dedicata al sonno dei bambini da 0 a 12 mesi e può essere utile quando addormentamento, risvegli o pisolini sono diventati difficili da leggere. Partiamo da una call gratuita per capire la situazione e verificare insieme quale passo sia davvero adatto alla famiglia.",
         'link_href': '/consulenze-online',
-        'link_text': 'Scopri le consulenze genitori',
+        'link_text': 'Scopri la consulenza del sonno',
     },
     {
         'id': 'consulenze-online-presenza',
-        'question': 'Le consulenze per neogenitori sono online o in presenza?',
-        'answer': "Le consulenze possono essere pensate come supporto online o in studio, in base al bisogno della famiglia. Prima di attivare un percorso strutturato, lo studio può prevedere un primo contatto conoscitivo per capire il problema e indirizzare meglio il supporto.",
+        'question': 'La consulenza sul sonno è online o in presenza?',
+        'answer': "La consulenza può svolgersi online in tutta Italia o in studio a Montesilvano. Prima di iniziare puoi scegliere una call gratuita: mi serve per comprendere la difficoltà principale e verificare se il servizio è adatto.",
         'link_href': '/consulenze-online',
         'link_text': 'Vedi consulenze',
     },
@@ -294,10 +436,10 @@ FAQ_ITEMS = [
     {
         'id': 'dove-si-trova-studio',
         'question': 'Dove si trova S.C. Studio Infermieristico e come posso contattarlo?',
-        'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattare lo studio al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
-        'map_embed_src': "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed",
+        'answer': "Lo studio si trova in Via C. D'Agnese 43 a Montesilvano, in provincia di Pescara. Puoi contattarmi al numero 3806317175 o tramite il pulsante WhatsApp presente sul sito.",
+        'map_embed_src': STUDIO_MAP_EMBED_SRC,
         'link_href': 'https://wa.me/393806317175',
-        'link_text': 'Contatta lo studio',
+        'link_text': 'Scrivimi su WhatsApp',
         'link_external': True,
     },
 ]
@@ -435,18 +577,20 @@ def _scarica_calendario_ics():
         return _cache_calendario['calendario']
 
 
-def orari_occupati_da_calendario(data_str):
-    """Restituisce l'insieme degli orari (stringhe 'HH:MM') di ORARI_DISPONIBILI
-    che risultano occupati, per la data indicata, da eventi sul calendario
-    Google (appuntamenti Arzamed o chiusure studio)."""
+def _intervalli_calendario(data_str, ignore_google_event_id=None):
+    """Restituisce gli intervalli occupati nel giorno richiesto.
+
+    La forma a intervalli permette di confrontare durate diverse senza
+    lasciare sovrapposizioni invisibili.
+    """
     calendario = _scarica_calendario_ics()
     if calendario is None:
-        return set()
+        return []
 
     try:
         giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
     except ValueError:
-        return set()
+        return []
 
     inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
     fine_giornata = inizio_giornata + timedelta(days=1)
@@ -455,10 +599,13 @@ def orari_occupati_da_calendario(data_str):
         eventi = recurring_ical_events.of(calendario).between(inizio_giornata, fine_giornata)
     except Exception as e:
         logger.error(f'>>> Errore nell\'espansione degli eventi del calendario: {e}', exc_info=True)
-        return set()
+        return []
 
-    occupati = set()
+    intervalli = []
     for evento in eventi:
+        uid = str(evento.get('UID') or '')
+        if ignore_google_event_id and uid.startswith(ignore_google_event_id):
+            continue
         inizio_evento = evento.get('DTSTART').dt
         fine_evento = evento.get('DTEND').dt if evento.get('DTEND') else inizio_evento
 
@@ -481,15 +628,34 @@ def orari_occupati_da_calendario(data_str):
         else:
             fine_evento = fine_evento.astimezone(FUSO_ORARIO)
 
-        for orario in ORARI_DISPONIBILI:
-            ora, minuto = map(int, orario.split(':'))
-            inizio_slot = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
-            fine_slot = inizio_slot + timedelta(minutes=DURATA_SLOT_MINUTI)
+        intervalli.append((inizio_evento, fine_evento))
 
-            # Due intervalli si sovrappongono se ciascuno inizia prima che
-            # l'altro finisca.
-            if inizio_slot < fine_evento and inizio_evento < fine_slot:
-                occupati.add(orario)
+    return intervalli
+
+
+def intervallo_occupato_da_calendario(data_str, ora, durata_minuti, ignore_google_event_id=None):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+        ore, minuti = map(int, ora.split(':'))
+    except (ValueError, TypeError):
+        return True
+    inizio_slot = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(
+        hour=ore,
+        minute=minuti,
+    )
+    fine_slot = inizio_slot + timedelta(minutes=durata_minuti)
+    return any(
+        inizio_slot < fine_evento and inizio_evento < fine_slot
+        for inizio_evento, fine_evento in _intervalli_calendario(data_str, ignore_google_event_id)
+    )
+
+
+def orari_occupati_da_calendario(data_str):
+    """Restituisce gli slot sanitari da 30 minuti occupati su Calendar."""
+    occupati = {
+        ora for ora in ORARI_DISPONIBILI
+        if intervallo_occupato_da_calendario(data_str, ora, DURATA_SLOT_MINUTI)
+    }
 
     return occupati
 
@@ -669,6 +835,104 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
             {'errore': str(e)},
         )
     return False
+
+
+def _corpo_evento_da_call_sonno(call):
+    inizio, fine = _intervallo_locale(call.data, call.ora, BLOCCO_CALL_SONNO_MINUTI)
+    in_attesa = call.stato == 'In attesa'
+    return {
+        'summary': f'Call sonno{" (da confermare)" if in_attesa else ""}: {call.nome}',
+        'description': (
+            f'Telefono: {call.telefono}\n'
+            f'Email: {call.email}\n'
+            f'Stato: {call.stato}\n'
+            f'(Richiesta dal sito web)'
+        ),
+        'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
+        'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+        'status': 'tentative' if in_attesa else 'confirmed',
+        'transparency': 'opaque',
+    }
+
+
+def crea_o_aggiorna_evento_calendario_call_sonno(call):
+    """Blocca subito la call su Calendar; il salvataggio DB resta prioritario."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Call sonno salvata, ma il blocco su Google Calendar non è stato creato.',
+            'CallSonno',
+            call.id,
+        )
+        return False
+    corpo = _corpo_evento_da_call_sonno(call)
+    try:
+        if call.google_event_id:
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=call.google_event_id,
+                body=corpo,
+            ).execute()
+        else:
+            evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            call.google_event_id = evento.get('id')
+            db.session.commit()
+        _cache_calendario['scaricato_il'] = 0
+        registra_evento(
+            'google_calendar',
+            'successo',
+            'Call sonno sincronizzata su Google Calendar.',
+            'CallSonno',
+            call.id,
+            {'google_event_id': call.google_event_id},
+        )
+        return True
+    except Exception as errore:
+        logger.error(f'>>> Errore Calendar per call sonno {call.id}: {errore}', exc_info=True)
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Errore durante la sincronizzazione Calendar della call sonno.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
+def elimina_evento_calendario_call_sonno(call):
+    if not call.google_event_id:
+        return True
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Call annullata, ma il blocco non è stato rimosso da Google Calendar.',
+            'CallSonno',
+            call.id,
+        )
+        return False
+    try:
+        servizio.events().delete(calendarId=calendar_id, eventId=call.google_event_id).execute()
+        call.google_event_id = None
+        db.session.commit()
+        _cache_calendario['scaricato_il'] = 0
+        return True
+    except HttpError as errore:
+        if getattr(errore, 'status_code', None) not in (404, 410):
+            registra_evento('google_calendar', 'errore', 'Errore eliminazione call sonno da Calendar.', 'CallSonno', call.id, {'errore': str(errore)})
+            return False
+        call.google_event_id = None
+        db.session.commit()
+        return True
+    except Exception as errore:
+        registra_evento('google_calendar', 'errore', 'Errore eliminazione call sonno da Calendar.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
 
 
 def crea_o_aggiorna_evento_calendario_corso(corso):
@@ -914,6 +1178,56 @@ class Appuntamento(db.Model):
     google_event_id = db.Column(db.String(255), nullable=True)
 
 
+class CallSonno(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    eta_bambino_mesi = db.Column(db.Integer, nullable=False)
+    difficolta_principale = db.Column(db.String(120), nullable=False)
+    difficolta_altro = db.Column(db.String(300), nullable=True)
+    ruolo_richiedente = db.Column(db.String(60), nullable=True)
+    durata_difficolta = db.Column(db.String(60), nullable=True)
+    obiettivo_call = db.Column(db.String(300), nullable=True)
+    presa_visione_offerta = db.Column(db.Boolean, default=False, nullable=False)
+    conferma_ambito = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
+    data = db.Column(db.String(20), nullable=False, index=True)
+    ora = db.Column(db.String(10), nullable=False)
+    stato = db.Column(db.String(20), default='In attesa', nullable=False, index=True)
+    google_event_id = db.Column(db.String(255), nullable=True)
+    formula_scelta = db.Column(db.String(30), nullable=True)
+    token_questionario = db.Column(db.String(96), unique=True, nullable=True, index=True)
+    questionario_inviato_il = db.Column(db.DateTime, nullable=True)
+    promemoria_email_24h_il = db.Column(db.DateTime, nullable=True)
+    promemoria_email_2h_il = db.Column(db.DateTime, nullable=True)
+    utm_source = db.Column(db.String(100), nullable=True)
+    utm_medium = db.Column(db.String(100), nullable=True)
+    utm_campaign = db.Column(db.String(100), nullable=True)
+    utm_content = db.Column(db.String(100), nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+
+class QuestionarioSonno(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    call_sonno_id = db.Column(db.Integer, db.ForeignKey('call_sonno.id'), unique=True, nullable=False)
+    risposte = db.Column(db.Text, nullable=False)
+    consenso_dati_sanitari = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_marketing = db.Column(db.Boolean, default=False, nullable=False)
+    compilato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    call_sonno = db.relationship(
+        'CallSonno',
+        backref=db.backref('questionario', uselist=False, cascade='all, delete-orphan'),
+    )
+
+    def risposte_dict(self):
+        try:
+            return json.loads(self.risposte)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+
 class Corso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titolo = db.Column(db.String(200), nullable=False)
@@ -1060,29 +1374,483 @@ def load_user(user_id):
     return db.session.get(Admin, int(user_id))
 
 
+def _intervallo_locale(data_str, ora, durata_minuti):
+    giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    ore, minuti = map(int, ora.split(':'))
+    inizio = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(
+        hour=ore,
+        minute=minuti,
+    )
+    return inizio, inizio + timedelta(minutes=durata_minuti)
+
+
+def _intervalli_si_sovrappongono(primo, secondo):
+    return primo[0] < secondo[1] and secondo[0] < primo[1]
+
+
+def _giorno_lavorativo_call(giorno):
+    return giorno.weekday() < 6 and not is_festivo(giorno)
+
+
+def prima_data_call_disponibile(da_giorno=None):
+    candidato = (da_giorno or date.today()) + timedelta(days=1)
+    while not _giorno_lavorativo_call(candidato):
+        candidato += timedelta(days=1)
+    return candidato
+
+
+def orario_call_prenotabile(data_str, ora):
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        return False
+    return (
+        ora in ORARI_CALL_SONNO
+        and _giorno_lavorativo_call(giorno)
+        and giorno >= prima_data_call_disponibile()
+    )
+
+
+def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_appuntamento_id=None):
+    """Controlla sovrapposizioni con prestazioni, call e corsi salvati."""
+    try:
+        intervallo_richiesto = _intervallo_locale(data_str, ora, durata_minuti)
+    except (ValueError, TypeError):
+        return True
+
+    appuntamenti_query = Appuntamento.query.filter(
+        Appuntamento.data == data_str,
+        Appuntamento.stato != 'Annullato',
+    )
+    if ignore_appuntamento_id is not None:
+        appuntamenti_query = appuntamenti_query.filter(Appuntamento.id != ignore_appuntamento_id)
+    for appuntamento in appuntamenti_query.all():
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(appuntamento.data, appuntamento.ora, DURATA_SLOT_MINUTI),
+        ):
+            return True
+
+    call_query = CallSonno.query.filter(
+        CallSonno.data == data_str,
+        CallSonno.stato != 'Annullata',
+    )
+    if ignore_call_id is not None:
+        call_query = call_query.filter(CallSonno.id != ignore_call_id)
+    for call in call_query.all():
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(call.data, call.ora, BLOCCO_CALL_SONNO_MINUTI),
+        ):
+            return True
+
+    corsi = Corso.query.filter(Corso.data == data_str, Corso.stato != 'Annullato').all()
+    for corso in corsi:
+        if not corso.ora:
+            return True
+        durata = int((corso.durata_ore or DURATA_CORSO_DEFAULT_ORE) * 60)
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(corso.data, corso.ora, durata),
+        ):
+            return True
+    return False
+
+
 # ─── INIZIALIZZAZIONE DATABASE ───
 # Questo blocco viene eseguito sia con flask run che con python3 app.py
 
-with app.app_context():
-    db.create_all()
-    if not Admin.query.first():
-        admin_utente = Admin(
-            username='admin',
-            password=generate_password_hash('cambiami123')
+def crea_amministratore_iniziale(username, password):
+    """Crea il primo amministratore senza incorporare credenziali nel codice."""
+    username = (username or '').strip()
+    password = password or ''
+
+    if Admin.query.first():
+        raise ValueError('Esiste già un amministratore.')
+    if not 3 <= len(username) <= 100:
+        raise ValueError('Il nome utente deve contenere da 3 a 100 caratteri.')
+    if len(password) < 16:
+        raise ValueError('La password deve contenere almeno 16 caratteri.')
+
+    admin_utente = Admin(
+        username=username,
+        password=generate_password_hash(password),
+    )
+    db.session.add(admin_utente)
+    db.session.commit()
+    logger.info('>>> Amministratore iniziale creato in modo sicuro.')
+    return admin_utente
+
+
+def valida_configurazione_staging():
+    """Blocca uno staging privo della protezione HTTP obbligatoria."""
+    if app.config.get('APP_ENV') == 'staging':
+        staging_username = app.config.get('STAGING_AUTH_USERNAME')
+        staging_password = app.config.get('STAGING_AUTH_PASSWORD')
+        if not staging_username or not staging_password:
+            raise RuntimeError(
+                'Lo staging richiede STAGING_AUTH_USERNAME e STAGING_AUTH_PASSWORD.'
+            )
+        if len(staging_password) < 16:
+            raise RuntimeError('La password dello staging deve contenere almeno 16 caratteri.')
+
+
+def valida_configurazione_runtime():
+    """Rifiuta configurazioni insicure prima di staging o produzione."""
+    ambiente = app.config.get('APP_ENV')
+    if ambiente not in {'staging', 'production'}:
+        return
+
+    valida_configurazione_staging()
+    if config_name != 'production':
+        raise RuntimeError('Staging e produzione richiedono FLASK_ENV=production.')
+    if app.config.get('SECRET_KEY_IS_EPHEMERAL') or len(app.config.get('SECRET_KEY', '')) < 32:
+        raise RuntimeError('Configurare una SECRET_KEY stabile di almeno 32 caratteri.')
+    database_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if not app.config.get('DATABASE_URL_IS_EXPLICIT') or not database_url.startswith('postgresql+psycopg://'):
+        raise RuntimeError('Staging e produzione richiedono DATABASE_URL PostgreSQL esplicita.')
+    if app.config.get('MAIL_USE_TLS') and app.config.get('MAIL_USE_SSL'):
+        raise RuntimeError('MAIL_USE_TLS e MAIL_USE_SSL non possono essere entrambe attive.')
+
+    valori_segreti = [
+        app.config.get('SECRET_KEY'),
+        app.config.get('ADMIN_BOOTSTRAP_PASSWORD'),
+        app.config.get('STAGING_AUTH_PASSWORD'),
+    ]
+    valori_presenti = [valore for valore in valori_segreti if valore]
+    if len(valori_presenti) != len(set(valori_presenti)):
+        raise RuntimeError('Usare segreti distinti per sessione, amministratore e staging.')
+
+    if ambiente == 'staging':
+        if not app.config.get('MAIL_SUPPRESS_SEND'):
+            raise RuntimeError('Lo staging gratuito richiede MAIL_SUPPRESS_SEND=true.')
+        return
+
+    campi_obbligatori = {
+        'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+        'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD'),
+        'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
+        'MAIL_ADMIN_RECIPIENT': app.config.get('MAIL_ADMIN_RECIPIENT'),
+        'GOOGLE_CALENDAR_ICS_URL': app.config.get('GOOGLE_CALENDAR_ICS_URL'),
+        'GOOGLE_SERVICE_ACCOUNT_FILE': app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+        'GOOGLE_CALENDAR_ID': app.config.get('GOOGLE_CALENDAR_ID'),
+    }
+    mancanti = [nome for nome, valore in campi_obbligatori.items() if not valore]
+    if mancanti:
+        raise RuntimeError(f'Configurazione produzione incompleta: {", ".join(mancanti)}.')
+    if app.config.get('MAIL_SUPPRESS_SEND'):
+        raise RuntimeError('La produzione richiede MAIL_SUPPRESS_SEND=false.')
+    if not os.path.isfile(app.config['GOOGLE_SERVICE_ACCOUNT_FILE']):
+        raise RuntimeError('File segreto Google Calendar non disponibile.')
+
+
+def inizializza_amministratore():
+    """Verifica o crea il primo admin dopo l'applicazione delle migrazioni."""
+    admin_esistente = Admin.query.first()
+    ambiente_produzione = app.config.get('ENV') == 'production' or config_name == 'production'
+    if admin_esistente:
+        credenziale_legacy = (
+            admin_esistente.username == 'admin'
+            and check_password_hash(admin_esistente.password, 'cambiami123')
         )
-        db.session.add(admin_utente)
-        db.session.commit()
-        logger.info('>>> Admin creato con credenziali di default. Cambiare la password al primo accesso.')
-    else:
+        if credenziale_legacy and ambiente_produzione:
+            raise RuntimeError(
+                'Credenziale amministratore legacy rilevata: cambiarla prima della produzione.'
+            )
+        if credenziale_legacy:
+            logger.warning(
+                '>>> Credenziale amministratore legacy rilevata. Sostituirla prima del deploy.'
+            )
         logger.info('>>> Database OK — Admin esistente')
+        return
+
+    username = app.config.get('ADMIN_BOOTSTRAP_USERNAME')
+    password = app.config.get('ADMIN_BOOTSTRAP_PASSWORD')
+    if bool(username) != bool(password):
+        raise RuntimeError(
+            'Configurare insieme ADMIN_BOOTSTRAP_USERNAME e ADMIN_BOOTSTRAP_PASSWORD.'
+        )
+    if username and password:
+        crea_amministratore_iniziale(username, password)
+        return
+    if ambiente_produzione:
+        raise RuntimeError(
+            'Database senza amministratore: configurare le credenziali di bootstrap sicure.'
+        )
+
+    logger.warning(
+        '>>> Database senza amministratore. Eseguire `flask --app app create-admin` '
+        'oppure configurare credenziali di bootstrap esplicite.'
+    )
+
+
+def inizializza_database():
+    """Helper per test e database locali nuovi; la produzione usa Alembic."""
+    db.create_all()
+    valida_configurazione_runtime()
+    inizializza_amministratore()
+
+
+@app.cli.command('create-admin')
+@click.option('--username', prompt='Nome utente amministratore')
+@click.password_option(
+    '--password',
+    prompt='Password amministratore',
+    confirmation_prompt=True,
+)
+def create_admin_command(username, password):
+    """Crea in modo interattivo il primo amministratore locale."""
+    try:
+        crea_amministratore_iniziale(username, password)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo('Amministratore creato.')
+
+
+@app.cli.command('bootstrap-admin')
+def bootstrap_admin_command():
+    """Verifica o crea il primo amministratore da segreti d'ambiente."""
+    try:
+        valida_configurazione_runtime()
+        inizializza_amministratore()
+    except (RuntimeError, ValueError) as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo('Bootstrap amministratore verificato.')
+
+
+@app.cli.command('validate-config')
+def validate_config_command():
+    """Verifica la configurazione senza mostrare i valori sensibili."""
+    try:
+        valida_configurazione_runtime()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f'Configurazione {app.config.get("APP_ENV")} valida.')
+
+
+valida_configurazione_runtime()
+
+
+@app.before_request
+def proteggi_staging():
+    """Limita l'accesso allo staging e impedisce l'indicizzazione accidentale."""
+    if app.config.get('APP_ENV') != 'staging':
+        return None
+    if request.path == '/healthz':
+        return None
+    if request.path == '/robots.txt':
+        return Response(
+            'User-agent: *\nDisallow: /\n',
+            mimetype='text/plain',
+            headers={'X-Robots-Tag': 'noindex, nofollow, noarchive'},
+        )
+
+    auth = request.authorization
+    username = app.config['STAGING_AUTH_USERNAME']
+    password = app.config['STAGING_AUTH_PASSWORD']
+    credenziali_valide = (
+        auth is not None
+        and secrets.compare_digest(auth.username or '', username)
+        and secrets.compare_digest(auth.password or '', password)
+    )
+    if credenziali_valide:
+        return None
+    return Response(
+        'Staging riservato.',
+        401,
+        {'WWW-Authenticate': 'Basic realm="Staging S.C. Studio Infermieristico"'},
+    )
+
+
+@app.after_request
+def impedisci_indicizzazione_staging(response):
+    if app.config.get('APP_ENV') == 'staging':
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+    return response
+
+
+@app.route('/healthz')
+def healthz():
+    try:
+        db.session.execute(sql_text('SELECT 1'))
+    except Exception:
+        logger.exception('>>> Health check database fallito.')
+        return jsonify({'status': 'unhealthy'}), 503
+    return jsonify({'status': 'ok'})
 
 
 # ─── EMAIL ───
 
+def invia_email_ricezione_call_sonno(call):
+    try:
+        msg = Message(
+            subject='Richiesta call sonno ricevuta - attendi la conferma',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'ho ricevuto la tua richiesta per la call gratuita sul sonno.\n\n'
+                f'Data richiesta: {call.data}\n'
+                f'Orario richiesto: {call.ora}\n'
+                f'Durata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n\n'
+                f'Lo slot è riservato provvisoriamente, ma la call non è ancora confermata. '
+                f'Attendi la mia email di conferma prima di considerare fissato l’appuntamento. '
+                f'Ti confermerò lo slot oppure ti contatterò per concordare un orario diverso '
+                f'entro il giorno lavorativo successivo.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email ricezione call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_alert_call_sonno(call):
+    try:
+        msg = Message(
+            subject=f'Nuova call sonno da confermare - {call.nome}',
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
+            body=(
+                f'Nuova richiesta di call sonno.\n\n'
+                f'Nome: {call.nome}\nTelefono: {call.telefono}\nEmail: {call.email}\n'
+                f'Ruolo: {call.ruolo_richiedente}\n'
+                f'Età bambino: {call.eta_bambino_mesi} mesi\n'
+                f'Difficoltà: {call.difficolta_altro or call.difficolta_principale}\n'
+                f'Durata: {call.durata_difficolta}\n'
+                f'Obiettivo della call: {call.obiettivo_call}\n'
+                f'Quando: {call.data} alle {call.ora}\n\n'
+                f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email alert call sonno non inviata allo studio.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_conferma_call_sonno(call, modificata=False):
+    try:
+        call_url = app.config.get('SONNO_CALL_URL')
+        istruzioni = (
+            f'Collegamento per la call: {call_url}\n'
+            if call_url
+            else 'Ti comunicherò la modalità di collegamento prima della call.\n'
+        )
+        msg = Message(
+            subject='Call sonno confermata - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'la tua call gratuita è {"stata riprogrammata e " if modificata else ""}confermata.\n\n'
+                f'Data: {call.data}\nOra: {call.ora}\nDurata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n'
+                f'{istruzioni}\n'
+                f'Prima della call non devi compilare altri moduli.\n\n'
+                f'Per necessità puoi contattarmi al 3806317175.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        )
+        calendario = icalendar.Calendar()
+        calendario.add('prodid', '-//S.C. Studio Infermieristico//Call sonno//IT')
+        calendario.add('version', '2.0')
+        evento = icalendar.Event()
+        inizio, _ = _intervallo_locale(call.data, call.ora, DURATA_CALL_SONNO_MINUTI)
+        evento.add('summary', 'Appuntamento con S.C. Studio Infermieristico')
+        evento.add('dtstart', inizio)
+        evento.add('dtend', inizio + timedelta(minutes=DURATA_CALL_SONNO_MINUTI))
+        evento.add('description', istruzioni.strip())
+        calendario.add_component(evento)
+        msg.attach(
+            'appuntamento-sc-studio.ics',
+            'text/calendar',
+            calendario.to_ical(),
+            disposition='attachment',
+        )
+        mail.send(msg)
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email conferma call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_annullamento_call_sonno(call):
+    try:
+        mail.send(Message(
+            subject='Call sonno annullata - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\nla call richiesta per il {call.data} alle {call.ora} '
+                f'è stata annullata. Per fissare un nuovo momento puoi contattarmi al 3806317175.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email annullamento call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_questionario_sonno(call):
+    try:
+        link = url_for('questionario_sonno', token=call.token_questionario, _external=True)
+        formula = FORMULE_SONNO.get(call.formula_scelta, 'percorso scelto')
+        mail.send(Message(
+            subject='Il questionario per iniziare il percorso sul sonno',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\ncome concordato dopo la call, puoi compilare il questionario '
+                f'riservato per {formula}. Le risposte mi permetteranno di preparare il lavoro sulla vostra situazione reale.\n\n'
+                f'Compila il questionario: {link}\n\n'
+                f'Il collegamento è personale: non inoltrarlo. Se hai dubbi, scrivimi su WhatsApp.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento('email', 'errore', 'Email questionario sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_promemoria_call_sonno(call, ore_prima):
+    """Invia un promemoria neutro per una call sonno già confermata."""
+    try:
+        call_url = app.config.get('SONNO_CALL_URL')
+        collegamento = (
+            f'Collegamento: {call_url}\n\n'
+            if call_url
+            else 'Trovi le modalità di collegamento nell’email di conferma.\n\n'
+        )
+        mail.send(Message(
+            subject='Promemoria appuntamento - S.C. Studio Infermieristico',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'ti ricordiamo l’appuntamento del {call.data} alle {call.ora}.\n'
+                f'Durata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti.\n\n'
+                f'{collegamento}'
+                f'Se non puoi partecipare, avvisaci appena possibile.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        ))
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            f'Email promemoria call sonno {ore_prima}h non inviata.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
 def invia_email_conferma(appuntamento):
     """Invia email di conferma al paziente dopo la conferma dell'appuntamento."""
     try:
-        logger.info(f'>>> Invio email conferma a {appuntamento.email}...')
+        logger.info('>>> Invio email conferma appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento confermato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
@@ -1092,7 +1860,7 @@ def invia_email_conferma(appuntamento):
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
-                f'Per qualsiasi necessità puoi contattarci al numero 3806317175.\n\n'
+                f'Per qualsiasi necessità puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1101,7 +1869,7 @@ def invia_email_conferma(appuntamento):
         logger.info('>>> Email conferma inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email conferma: {e}', exc_info=True)
+        logger.error('>>> Errore invio email conferma (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di conferma appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1109,19 +1877,19 @@ def invia_email_conferma(appuntamento):
 def invia_email_spostamento(appuntamento):
     """Invia email di notifica quando un appuntamento viene riprogrammato."""
     try:
-        logger.info(f'>>> Invio email spostamento a {appuntamento.email}...')
+        logger.info('>>> Invio email spostamento appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento spostato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento è stato spostato '
+                f'ti informo che il tuo appuntamento è stato spostato '
                 f'alle seguenti nuove data e ora:\n\n'
                 f'Servizio:     {appuntamento.servizio}\n'
                 f'Nuova data:   {appuntamento.data}\n'
                 f'Nuovo orario: {appuntamento.ora}\n\n'
                 f'Se hai domande o necessiti di ulteriori modifiche '
-                f'puoi contattarci al numero 3806317175.\n\n'
+                f'puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1130,7 +1898,7 @@ def invia_email_spostamento(appuntamento):
         logger.info('>>> Email spostamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email spostamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email spostamento (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di spostamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1138,18 +1906,18 @@ def invia_email_spostamento(appuntamento):
 def invia_email_annullamento(appuntamento):
     """Invia email di cancellazione al paziente."""
     try:
-        logger.info(f'>>> Invio email annullamento a {appuntamento.email}...')
+        logger.info('>>> Invio email annullamento appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Appuntamento cancellato - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informiamo che il tuo appuntamento è stato cancellato.\n\n'
+                f'ti informo che il tuo appuntamento è stato cancellato.\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
                 f'Se desideri fissare un nuovo appuntamento puoi prenotare '
-                f'direttamente dal nostro sito o contattarci al numero 3806317175.\n\n'
+                f'direttamente dal sito o contattarmi al numero 3806317175.\n\n'
                 f'Ci scusiamo per l\'inconveniente.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
@@ -1159,7 +1927,7 @@ def invia_email_annullamento(appuntamento):
         logger.info('>>> Email annullamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email annullamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email annullamento (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email di annullamento appuntamento non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1170,7 +1938,7 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.info('>>> Invio email alert nuova prenotazione...')
         msg = Message(
             subject=f'Nuova prenotazione - {appuntamento.nome}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Hai ricevuto una nuova richiesta di appuntamento.\n\n'
                 f'Nome:     {appuntamento.nome}\n'
@@ -1187,7 +1955,7 @@ def invia_email_nuova_prenotazione(appuntamento):
         logger.info('>>> Email alert inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert nuova prenotazione non inviata allo studio.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1204,7 +1972,7 @@ def invia_email_nuova_iscrizione(iscrizione):
             dettagli_extra += f'Partecipanti: {extra["numero_partecipanti"]}\n'
         msg = Message(
             subject=f'Nuova iscrizione corso - {iscrizione.corso_titolo}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Hai ricevuto una nuova richiesta di iscrizione corso.\n\n'
                 f'Corso:    {iscrizione.corso_titolo}\n'
@@ -1221,7 +1989,7 @@ def invia_email_nuova_iscrizione(iscrizione):
         logger.info('>>> Email alert iscrizione corso inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert iscrizione corso: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert corso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert iscrizione corso non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1231,7 +1999,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
     if not iscrizione.email:
         return
     try:
-        logger.info(f'>>> Invio email conferma percorso accompagnamento a {iscrizione.email}...')
+        logger.info('>>> Invio email conferma iscrizione corso %s...', iscrizione.id)
         date_percorso = '\n'.join(_riepilogo_date_percorso(percorso)) or 'Le date verranno comunicate dallo studio.'
         contatti = percorso.contatti or '3806317175'
         msg = Message(
@@ -1243,7 +2011,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
                 f'Percorso: {percorso.titolo}\n'
                 f'Luogo:    Studio infermieristico\n\n'
                 f'Calendario incontri:\n{date_percorso}\n\n'
-                f'Per qualsiasi necessità puoi contattarci al numero {contatti}.\n\n'
+                f'Per qualsiasi necessità puoi contattarmi al numero {contatti}.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1252,7 +2020,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Email conferma percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email conferma percorso accompagnamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email conferma percorso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email conferma percorso accompagnamento non inviata.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1263,7 +2031,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Invio email alert iscrizione percorso accompagnamento...')
         msg = Message(
             subject=f'Nuova iscrizione confermata - {percorso.titolo}',
-            recipients=['sc.studioinfermieristico@gmail.com'],
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
                 f'Nuova iscrizione confermata al corso di accompagnamento alla nascita.\n\n'
                 f'Percorso: {percorso.titolo}\n'
@@ -1277,7 +2045,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
         logger.info('>>> Email alert percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email alert percorso accompagnamento: {e}', exc_info=True)
+        logger.error('>>> Errore invio email alert percorso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert percorso accompagnamento non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
 
@@ -1285,18 +2053,18 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
 def invia_email_ricordo_24h(appuntamento):
     """Invia email di promemoria 24 ore prima dell'appuntamento."""
     try:
-        logger.info(f'>>> Invio email ricordo 24h a {appuntamento.email}...')
+        logger.info('>>> Invio email ricordo appuntamento %s...', appuntamento.id)
         msg = Message(
             subject='Ricordo: Appuntamento domani - S.C. Studio Infermieristico',
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'Ti ricordiamo che hai un appuntamento domani:\n\n'
+                f'Ti ricordo che hai un appuntamento domani:\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n\n'
                 f'Se hai bisogno di modificare o cancellare l\'appuntamento, '
-                f'puoi contattarci al numero 3806317175.\n\n'
+                f'puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1305,7 +2073,7 @@ def invia_email_ricordo_24h(appuntamento):
         logger.info('>>> Email ricordo 24h inviata con successo!')
         return True
     except Exception as e:
-        logger.error(f'>>> Errore invio email ricordo 24h: {e}', exc_info=True)
+        logger.error('>>> Errore invio email ricordo 24h (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email promemoria 24h non inviata.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
         return False
 
@@ -1343,7 +2111,62 @@ def controlla_e_invia_ricordi_24h():
 
         logger.info(f'> Inviati {ricordi_inviati} ricordi 24h')
     except Exception as e:
-        logger.error(f'> Errore in controlla_e_invia_ricordi_24h: {e}', exc_info=True)
+        logger.error('> Errore controllo ricordi 24h (%s).', type(e).__name__)
+
+
+def controlla_e_invia_promemoria_call_sonno(adesso=None):
+    """Invia una sola volta i promemoria 24h e 2h delle call confermate."""
+    adesso = adesso or datetime.now(FUSO_ORARIO)
+    oggi = adesso.date().isoformat()
+    limite = (adesso.date() + timedelta(days=1)).isoformat()
+    calls = CallSonno.query.filter(
+        CallSonno.stato == 'Confermata',
+        CallSonno.data >= oggi,
+        CallSonno.data <= limite,
+    ).all()
+
+    for call in calls:
+        try:
+            inizio, _ = _intervallo_locale(
+                call.data, call.ora, DURATA_CALL_SONNO_MINUTI
+            )
+        except (TypeError, ValueError):
+            continue
+        secondi_mancanti = (inizio - adesso).total_seconds()
+        if secondi_mancanti <= 0:
+            continue
+
+        ore_promemoria = None
+        if secondi_mancanti <= 2 * 3600 and call.promemoria_email_2h_il is None:
+            ore_promemoria = 2
+        elif (
+            secondi_mancanti <= 24 * 3600
+            and secondi_mancanti > 2 * 3600
+            and call.promemoria_email_24h_il is None
+        ):
+            ore_promemoria = 24
+
+        if ore_promemoria is None:
+            continue
+
+        invia_email_promemoria_call_sonno(call, ore_promemoria)
+        timestamp = datetime.now()
+        if ore_promemoria == 24:
+            call.promemoria_email_24h_il = timestamp
+        else:
+            call.promemoria_email_2h_il = timestamp
+
+        db.session.commit()
+
+
+def esegui_ricordi_24h_con_contesto():
+    with app.app_context():
+        controlla_e_invia_ricordi_24h()
+
+
+def esegui_promemoria_call_sonno_con_contesto():
+    with app.app_context():
+        controlla_e_invia_promemoria_call_sonno()
 
 # Pianifica il controllo dei promemoria per eseguirlo ogni ora.
 #
@@ -1356,14 +2179,26 @@ def controlla_e_invia_ricordi_24h():
 #   registrano e avviano il proprio scheduler, con il risultato di due
 #   promemoria 24h duplicati per ogni appuntamento (visibile in app.log
 #   come doppio "Scheduler started").
-if not app.config.get('TESTING') and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true'):
+if (
+    not app.config.get('TESTING')
+    and os.environ.get('DISABLE_SCHEDULER', '').lower() not in {'1', 'true', 'yes'}
+    and (not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true')
+):
     scheduler.add_job(
-        func=controlla_e_invia_ricordi_24h,
+        func=esegui_ricordi_24h_con_contesto,
         trigger="interval",
         hours=1,
         id='ricordi_24h_job',
         name='Controllo e invio ricordi 24h',
         replace_existing=True
+    )
+    scheduler.add_job(
+        func=esegui_promemoria_call_sonno_con_contesto,
+        trigger="interval",
+        minutes=15,
+        id='promemoria_call_sonno_job',
+        name='Controllo promemoria call sonno 24h e 2h',
+        replace_existing=True,
     )
     scheduler.start()
 
@@ -1388,12 +2223,23 @@ def faq():
 
 @app.route('/prestazioni-infermieristiche')
 def prestazioni():
-    return render_template('prestazioni_infermieristiche.html')
+    return render_template(
+        'prestazioni_infermieristiche.html',
+        prestazioni_categorie=PRESTAZIONI_CATEGORIE,
+        prestazioni_totale=len(SERVIZI_PRENOTABILI),
+        studio_map_embed_src=STUDIO_MAP_EMBED_SRC,
+        studio_map_link=STUDIO_MAP_LINK,
+    )
+
+
+@app.route('/corso-accompagnamento-nascita')
+def prima_della_nascita():
+    return render_template('prima_della_nascita.html')
 
 
 @app.route('/prima-della-nascita')
-def prima_della_nascita():
-    return render_template('prima_della_nascita.html')
+def prima_della_nascita_legacy():
+    return redirect(url_for('prima_della_nascita'), code=301)
 
 
 @app.route('/dopo-la-nascita')
@@ -1684,11 +2530,16 @@ def _corso_iscrivibile_con_date(corso_tipo):
     return corso
 
 
+def _slug_pubblico_corso(corso_tipo):
+    return CORSI_SLUG_PUBBLICI.get(corso_tipo, corso_tipo)
+
+
 def _render_iscrizione_con_errore(corso_tipo, messaggio):
     flash(messaggio, 'error')
     return render_template(
         'iscrizione_corso.html',
         corso_tipo=corso_tipo,
+        corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=_corso_iscrivibile_con_date(corso_tipo),
         form_data=request.form
     )
@@ -1697,6 +2548,16 @@ def _render_iscrizione_con_errore(corso_tipo, messaggio):
 @app.route('/iscrizione-corsi/<corso_tipo>', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def iscrizione_corso(corso_tipo):
+    if corso_tipo == 'bls-d':
+        return redirect(
+            url_for('iscrizione_corso', corso_tipo='blsd'),
+            code=308 if request.method == 'POST' else 301,
+        )
+
+    corso_tipo = next(
+        (tipo for tipo, slug in CORSI_SLUG_PUBBLICI.items() if slug == corso_tipo),
+        corso_tipo,
+    )
     if corso_tipo not in CORSI_ISCRIVIBILI:
         abort(404)
 
@@ -1870,7 +2731,13 @@ def iscrizione_corso(corso_tipo):
         invia_email_nuova_iscrizione(iscrizione)
         return redirect(url_for('conferma_iscrizione_corso'))
 
-    return render_template('iscrizione_corso.html', corso_tipo=corso_tipo, corso=corso, form_data={})
+    return render_template(
+        'iscrizione_corso.html',
+        corso_tipo=corso_tipo,
+        corso_slug=_slug_pubblico_corso(corso_tipo),
+        corso=corso,
+        form_data={},
+    )
 
 
 @app.route('/iscrizione-corsi')
@@ -1983,6 +2850,202 @@ def iscrizione_accompagnamento_privata(slug):
 @app.route('/iscrizione-accompagnamento/conferma')
 def conferma_iscrizione_accompagnamento():
     return render_template('conferma_iscrizione_accompagnamento.html')
+
+
+def _orari_call_occupati(data_str, ignore_call_id=None, ignore_google_event_id=None):
+    return {
+        ora for ora in ORARI_CALL_SONNO
+        if slot_occupato_db(data_str, ora, BLOCCO_CALL_SONNO_MINUTI, ignore_call_id)
+        or intervallo_occupato_da_calendario(
+            data_str,
+            ora,
+            BLOCCO_CALL_SONNO_MINUTI,
+            ignore_google_event_id,
+        )
+    }
+
+
+@app.route('/prenota-call-sonno', methods=['GET', 'POST'])
+@limiter.limit('5 per hour')
+def prenota_call_sonno():
+    prima_data = prima_data_call_disponibile().isoformat()
+    template_context = {
+        'prima_data': prima_data,
+        'difficolta_sonno': DIFFICOLTA_SONNO,
+        'durate_difficolta_sonno': DURATE_DIFFICOLTA_SONNO,
+        'ruoli_richiedente_sonno': RUOLI_RICHIEDENTE_SONNO,
+        'orari_call': ORARI_CALL_SONNO,
+    }
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template(
+                'prenota_call_sonno.html', form_data=request.form, **template_context
+            )
+
+        nome = request.form.get('nome', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        difficolta = request.form.get('difficolta_principale', '').strip()
+        difficolta_altro = request.form.get('difficolta_altro', '').strip()
+        ruolo_richiedente = request.form.get('ruolo_richiedente', '').strip()
+        durata_difficolta = request.form.get('durata_difficolta', '').strip()
+        obiettivo_call = request.form.get('obiettivo_call', '').strip()
+        data_scelta = request.form.get('data', '').strip()
+        ora = request.form.get('ora', '').strip()
+        eta_raw = request.form.get('eta_bambino_mesi', '').strip()
+
+        errori = []
+        try:
+            eta_mesi = int(eta_raw)
+        except ValueError:
+            eta_mesi = -1
+        if not nome or len(nome) > 100:
+            errori.append('Inserisci nome e cognome (massimo 100 caratteri).')
+        if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
+            errori.append('Inserisci un numero di telefono valido.')
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            errori.append('Inserisci un indirizzo email valido.')
+        if eta_mesi < 0 or eta_mesi > 12:
+            errori.append('L’età del bambino deve essere compresa tra 0 e 12 mesi.')
+        if ruolo_richiedente not in RUOLI_RICHIEDENTE_SONNO:
+            errori.append('Indica se sei genitore o tutore legale del bambino.')
+        if difficolta not in DIFFICOLTA_SONNO:
+            errori.append('Seleziona la difficoltà principale.')
+        if difficolta == 'Altro' and not difficolta_altro:
+            errori.append('Descrivi brevemente la difficoltà principale.')
+        if len(difficolta_altro) > 300:
+            errori.append('La descrizione può contenere al massimo 300 caratteri.')
+        if durata_difficolta not in DURATE_DIFFICOLTA_SONNO:
+            errori.append('Indica da quanto tempo osservi la difficoltà.')
+        if not obiettivo_call or len(obiettivo_call) > 300:
+            errori.append('Indica cosa vorresti capire durante la call (massimo 300 caratteri).')
+        if not request.form.get('presa_visione_offerta'):
+            errori.append('Conferma di aver visto modalità e prezzi delle consulenze.')
+        if not request.form.get('conferma_ambito'):
+            errori.append('Conferma che la richiesta non riguarda un’urgenza o una diagnosi.')
+        if not request.form.get('consenso_privacy'):
+            errori.append('Devi accettare l’informativa privacy per procedere.')
+        if not orario_call_prenotabile(data_scelta, ora):
+            errori.append('Scegli un giorno lavorativo e uno degli orari disponibili.')
+        elif (
+            slot_occupato_db(data_scelta, ora, BLOCCO_CALL_SONNO_MINUTI)
+            or intervallo_occupato_da_calendario(data_scelta, ora, BLOCCO_CALL_SONNO_MINUTI)
+        ):
+            errori.append('Questo orario non è più disponibile. Scegline un altro.')
+
+        if errori:
+            for errore in errori:
+                flash(errore, 'error')
+            return render_template(
+                'prenota_call_sonno.html', form_data=request.form, **template_context
+            )
+
+        utm = {
+            campo: request.form.get(campo, '').strip()[:100] or None
+            for campo in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']
+        }
+
+        nuova_call = CallSonno(
+            nome=nome,
+            telefono=telefono,
+            email=email,
+            eta_bambino_mesi=eta_mesi,
+            difficolta_principale=difficolta,
+            difficolta_altro=difficolta_altro if difficolta == 'Altro' else None,
+            ruolo_richiedente=ruolo_richiedente,
+            durata_difficolta=durata_difficolta,
+            obiettivo_call=obiettivo_call,
+            presa_visione_offerta=True,
+            conferma_ambito=True,
+            consenso_privacy=True,
+            data=data_scelta,
+            ora=ora,
+            **utm,
+        )
+        db.session.add(nuova_call)
+        db.session.commit()
+        crea_o_aggiorna_evento_calendario_call_sonno(nuova_call)
+        invia_email_ricezione_call_sonno(nuova_call)
+        invia_email_alert_call_sonno(nuova_call)
+        session['ultima_call_sonno'] = nuova_call.id
+        return redirect(url_for('conferma_call_sonno'))
+
+    form_data = {
+        campo: request.args.get(campo, '').strip()[:100]
+        for campo in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']
+    }
+    return render_template(
+        'prenota_call_sonno.html', form_data=form_data, **template_context
+    )
+
+
+@app.route('/prenota-call-sonno/conferma')
+def conferma_call_sonno():
+    call_id = session.get('ultima_call_sonno')
+    call = db.session.get(CallSonno, call_id) if call_id else None
+    return render_template('conferma_call_sonno.html', call=call)
+
+
+@app.route('/api/orari-call-sonno/<data_str>')
+@limiter.limit('30 per minute')
+def api_orari_call_sonno(data_str):
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', data_str):
+        abort(400)
+    if not _giorno_lavorativo_call(datetime.strptime(data_str, '%Y-%m-%d').date()):
+        return jsonify({'occupati': ORARI_CALL_SONNO})
+    return jsonify({'occupati': sorted(_orari_call_occupati(data_str))})
+
+
+@app.route('/questionario-sonno/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def questionario_sonno(token):
+    if not re.match(r'^[A-Za-z0-9_-]{32,96}$', token):
+        abort(404)
+    call = CallSonno.query.filter_by(token_questionario=token).first_or_404()
+    if not call.formula_scelta:
+        abort(404)
+    if call.questionario:
+        return render_template('questionario_sonno_completato.html', call=call)
+
+    if request.method == 'POST':
+        csrf = session.pop('_csrf_token', None)
+        if not csrf or csrf != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+        if not request.form.get('consenso_dati_sanitari'):
+            flash('Il consenso al trattamento dei dati sanitari è necessario per inviare il questionario.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+
+        campi = [
+            'nome_bambino', 'data_nascita', 'nascita', 'eta_corretta', 'gestione_sonno',
+            'alimentazione', 'poppate_notturne', 'addormentamento_seno', 'risveglio_mattino',
+            'pisolini', 'routine_serale', 'ora_addormentamento', 'cambiamenti_routine',
+            'dove_si_addormenta', 'dove_dorme', 'supporti_addormentamento', 'risvegli_dettaglio',
+            'riaddormentamento', 'risveglio_precoce', 'durata_difficolta', 'tentativi_fatti',
+            'eventi_recenti', 'momento_piu_difficile', 'cambiamento_desiderato',
+            'cosa_non_cambiare', 'partecipanti_consulenza', 'condizioni_note',
+            'terapie_indicazioni', 'professionisti_coinvolti', 'note_finali',
+        ]
+        risposte = {campo: request.form.get(campo, '').strip()[:2000] for campo in campi}
+        obbligatori = ['nome_bambino', 'data_nascita', 'alimentazione', 'dove_dorme',
+                       'durata_difficolta', 'cambiamento_desiderato']
+        if any(not risposte[campo] for campo in obbligatori):
+            flash('Completa tutti i campi contrassegnati come obbligatori.', 'error')
+            return render_template('questionario_sonno.html', call=call, form_data=request.form, formule_sonno=FORMULE_SONNO)
+
+        db.session.add(QuestionarioSonno(
+            call_sonno=call,
+            risposte=json.dumps(risposte, ensure_ascii=False),
+            consenso_dati_sanitari=True,
+            consenso_marketing=bool(request.form.get('consenso_marketing')),
+        ))
+        db.session.commit()
+        registra_evento('questionario_sonno', 'successo', 'Questionario sonno compilato.', 'CallSonno', call.id)
+        return redirect(url_for('questionario_sonno', token=token))
+
+    return render_template('questionario_sonno.html', call=call, form_data={}, formule_sonno=FORMULE_SONNO)
 
 
 def _panoramica_corsi(corsi):
@@ -2113,11 +3176,7 @@ def prenota():
         # questo controllo lato server evita doppie prenotazioni nel caso in
         # cui qualcuno invii comunque la richiesta (bypassando il JS, o per
         # una prenotazione fatta nel frattempo da un altro utente).
-        gia_occupato_db = Appuntamento.query.filter(
-            Appuntamento.data == data_scelta,
-            Appuntamento.ora == ora,
-            Appuntamento.stato != 'Annullato'
-        ).first() is not None
+        gia_occupato_db = slot_occupato_db(data_scelta, ora, DURATA_SLOT_MINUTI)
         gia_occupato_calendario = ora in orari_occupati_da_calendario(data_scelta)
         if gia_occupato_db or gia_occupato_calendario:
             flash('Questo orario non è più disponibile. Scegline un altro.')
@@ -2280,6 +3339,8 @@ def admin():
     iscrizioni_corsi = iscrizioni_query.order_by(IscrizioneCorso.creato_il.desc()).all()
     iscrizioni_totali_count = IscrizioneCorso.query.count()
     iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
+    call_sonno = CallSonno.query.order_by(CallSonno.data, CallSonno.ora).all()
+    call_sonno_in_attesa_count = CallSonno.query.filter_by(stato='In attesa').count()
     registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
     eventi_critici_count = RegistroEvento.query.filter(
         RegistroEvento.esito.in_(['errore', 'avviso']),
@@ -2298,6 +3359,9 @@ def admin():
                            iscrizioni_totali_count=iscrizioni_totali_count,
                            persone_corsi_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
+                           call_sonno=call_sonno,
+                           call_sonno_in_attesa_count=call_sonno_in_attesa_count,
+                           formule_sonno=FORMULE_SONNO,
                            registro_eventi=registro_eventi,
                            eventi_critici_count=eventi_critici_count,
                            tipo_richiesta_labels=TIPI_RICHIESTA_CORSO,
@@ -2311,20 +3375,143 @@ def admin():
                            in_attesa_count=in_attesa_count)
 
 
-@app.route('/admin/aggiorna/<int:id>/<stato>')
+def _csrf_admin_valido():
+    token = request.form.get('_csrf_token')
+    return bool(token and token == session.get('_csrf_token'))
+
+
+@app.route('/admin/call-sonno/<int:id>/conferma', methods=['POST'])
+@login_required
+def conferma_call_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    if call.stato == 'Annullata':
+        abort(400)
+    call.stato = 'Confermata'
+    db.session.commit()
+    invia_email_conferma_call_sonno(call)
+    if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+        flash('Call confermata, ma Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+    else:
+        flash('Call confermata e comunicazione inviata.', 'success')
+    return redirect(url_for('admin') + '#admin-call-sonno')
+
+
+@app.route('/admin/call-sonno/<int:id>/annulla', methods=['POST'])
+@login_required
+def annulla_call_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    call.stato = 'Annullata'
+    db.session.commit()
+    invia_email_annullamento_call_sonno(call)
+    if not elimina_evento_calendario_call_sonno(call):
+        flash('Call annullata, ma il blocco Calendar non è stato rimosso.', 'error')
+    else:
+        flash('Call annullata.', 'success')
+    return redirect(url_for('admin') + '#admin-call-sonno')
+
+
+@app.route('/admin/call-sonno/<int:id>/modifica', methods=['GET', 'POST'])
+@login_required
+def modifica_call_sonno_admin(id):
+    call = db.get_or_404(CallSonno, id)
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+        nuova_data = request.form.get('data', '').strip()
+        nuova_ora = request.form.get('ora', '').strip()
+        try:
+            giorno = datetime.strptime(nuova_data, '%Y-%m-%d').date()
+        except ValueError:
+            giorno = None
+        valido = (
+            giorno is not None and giorno >= date.today() and _giorno_lavorativo_call(giorno)
+            and nuova_ora in ORARI_CALL_SONNO
+        )
+        occupato = valido and (
+            slot_occupato_db(nuova_data, nuova_ora, BLOCCO_CALL_SONNO_MINUTI, call.id)
+            or intervallo_occupato_da_calendario(
+                nuova_data,
+                nuova_ora,
+                BLOCCO_CALL_SONNO_MINUTI,
+                call.google_event_id,
+            )
+        )
+        if not valido or occupato:
+            flash('Data o orario non disponibile. Verifica gli impegni e riprova.', 'error')
+            return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+        call.data = nuova_data
+        call.ora = nuova_ora
+        call.stato = 'Confermata'
+        db.session.commit()
+        invia_email_conferma_call_sonno(call, modificata=True)
+        if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+            flash('Nuovo orario salvato, ma Calendar non è stato aggiornato.', 'error')
+        else:
+            flash('Nuovo orario confermato e comunicato alla famiglia.', 'success')
+        return redirect(url_for('admin') + '#admin-call-sonno')
+    return render_template('modifica_call_sonno.html', call=call, orari_call=ORARI_CALL_SONNO)
+
+
+@app.route('/admin/call-sonno/<int:id>/questionario', methods=['GET'])
+@login_required
+def visualizza_questionario_sonno_admin(id):
+    call = db.get_or_404(CallSonno, id)
+    if not call.questionario:
+        abort(404)
+    risposte = call.questionario.risposte_dict()
+    risposte_ordinate = [
+        (etichetta, risposte.get(campo, ''))
+        for campo, etichetta in QUESTIONARIO_SONNO_LABELS.items()
+        if risposte.get(campo)
+    ]
+    return render_template(
+        'admin_questionario_sonno.html',
+        call=call,
+        risposte=risposte_ordinate,
+        formula=FORMULE_SONNO.get(call.formula_scelta, call.formula_scelta),
+    )
+
+
+@app.route('/admin/call-sonno/<int:id>/questionario', methods=['POST'])
+@login_required
+def invia_questionario_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    formula = request.form.get('formula_scelta', '').strip()
+    if formula not in FORMULE_SONNO:
+        flash('Seleziona la formula concordata.', 'error')
+        return redirect(url_for('admin') + '#admin-call-sonno')
+    call.formula_scelta = formula
+    call.stato = 'Conclusa'
+    if not call.token_questionario:
+        call.token_questionario = secrets.token_urlsafe(48)
+    call.questionario_inviato_il = datetime.now()
+    db.session.commit()
+    if invia_email_questionario_sonno(call):
+        flash('Questionario privato inviato.', 'success')
+    else:
+        flash('Il link è stato creato, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    return redirect(url_for('admin') + '#admin-call-sonno')
+
+
+@app.route('/admin/aggiorna/<int:id>/<stato>', methods=['POST'])
 @login_required
 def aggiorna_stato(id, stato):
     if stato not in STATI_VALIDI:
         abort(400)
-    # Protezione CSRF: questi link puntano a un'azione che modifica dati,
-    # quindi vanno protetti come un form. Non usiamo session.pop() perché
-    # più link nella stessa pagina admin condividono lo stesso token: se lo
-    # consumassimo al primo click, i click successivi (senza ricaricare la
-    # pagina) fallirebbero.
-    token = request.args.get('token')
+    # Il token resta riutilizzabile nella stessa pagina admin, dove sono
+    # disponibili più azioni POST prima del successivo caricamento.
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
-        return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
+        return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
     appuntamento = db.get_or_404(Appuntamento, id)
     appuntamento.stato = stato
     db.session.commit()
@@ -2336,7 +3523,7 @@ def aggiorna_stato(id, stato):
         invia_email_annullamento(appuntamento)
         if not elimina_evento_calendario(appuntamento):
             flash('Appuntamento annullato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
-    return redirect(url_for('admin', filtro=request.args.get('filtro', 'in_attesa')))
+    return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
 
 
 @app.route('/admin/modifica/<int:id>', methods=['GET', 'POST'])
@@ -2364,12 +3551,12 @@ def modifica_appuntamento(id):
             flash('Lo studio è chiuso nella data o nell\'orario selezionato. Scegli un altro appuntamento.', 'error')
             return render_template('modifica_appuntamento.html', a=appuntamento)
 
-        gia_occupato_db = Appuntamento.query.filter(
-            Appuntamento.id != appuntamento.id,
-            Appuntamento.data == nuova_data,
-            Appuntamento.ora == nuova_ora,
-            Appuntamento.stato != 'Annullato'
-        ).first() is not None
+        gia_occupato_db = slot_occupato_db(
+            nuova_data,
+            nuova_ora,
+            DURATA_SLOT_MINUTI,
+            ignore_appuntamento_id=appuntamento.id,
+        )
         orari_occupati_calendario = orari_occupati_da_calendario(nuova_data)
         if nuova_data == appuntamento.data:
             orari_occupati_calendario.discard(appuntamento.ora)
@@ -2702,11 +3889,10 @@ def aggiungi_iscrizione_corso_manuale():
     return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
 
-@app.route('/admin/corso/elimina/<int:id>')
+@app.route('/admin/corso/elimina/<int:id>', methods=['POST'])
 @login_required
 def elimina_corso(id):
-    # Protezione CSRF (stesso ragionamento di aggiorna_stato)
-    token = request.args.get('token')
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
@@ -2726,12 +3912,12 @@ def elimina_corso(id):
     return redirect(url_for('admin'))
 
 
-@app.route('/admin/iscrizione-corso/<int:id>/<stato>')
+@app.route('/admin/iscrizione-corso/<int:id>/<stato>', methods=['POST'])
 @login_required
 def aggiorna_stato_iscrizione_corso(id, stato):
     if stato not in STATI_ISCRIZIONE_VALIDI:
         abort(400)
-    token = request.args.get('token')
+    token = request.form.get('_csrf_token')
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
@@ -2744,14 +3930,16 @@ def aggiorna_stato_iscrizione_corso(id, stato):
 @app.route('/api/orari-occupati/<data>')
 def orari_occupati(data):
     # Restituisce la lista degli orari occupati per la data specificata (YYYY-MM-DD)
-    # Escludi gli appuntamenti annullati (stato != 'Annullato') in quanto liberano lo slot
     ignore_id = request.args.get('ignore_id', type=int)
-    occupati = Appuntamento.query.filter(
-        Appuntamento.data == data,
-        Appuntamento.stato != 'Annullato'
-    ).with_entities(Appuntamento.ora).all()
-    # Converti la lista di tuple in una lista di stringhe
-    orari = {ora for (ora,) in occupati}
+    orari = {
+        ora for ora in ORARI_DISPONIBILI
+        if slot_occupato_db(
+            data,
+            ora,
+            DURATA_SLOT_MINUTI,
+            ignore_appuntamento_id=ignore_id,
+        )
+    }
     # Aggiungi chiusure ricorrenti dello studio: domeniche, festivi e sabato pomeriggio
     orari |= orari_non_prenotabili_per_chiusura(data)
     # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)

@@ -1,62 +1,102 @@
 {% extends "base.html" %}
 {% block titolo %}Corso di accompagnamento alla nascita — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Corso di accompagnamento alla nascita a Montesilvano: 9 incontri con ostetrica, psicologa, osteopata, nutrizionista e infermiera.{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna pagina-consulenza">
-    <p class="eyebrow">Corso preparto in presenza</p>
-    <h1>Corso di accompagnamento alla nascita</h1>
-    <p class="sottotitolo">Un accompagnamento pratico e rassicurante per arrivare più preparati alla nascita e ai primi giorni con il neonato.</p>
-
-    <div class="pagina-hero-img">
-        <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Percorso di accompagnamento alla nascita">
+<section class="birth-course">
+    <div class="birth-course__hero">
+        <div class="birth-course__hero-copy">
+            <p class="eyebrow">Corso in presenza · Montesilvano</p>
+            <h1>Corso di accompagnamento alla nascita</h1>
+            <p class="birth-course__lead">Un percorso pensato per accompagnare i futuri genitori durante la gravidanza, prepararli alla nascita e offrire riferimenti concreti per i primi giorni con il neonato.</p>
+            <p>Gli incontri sono condotti da cinque professionisti, con competenze diverse e coordinate intorno ai bisogni della nuova famiglia.</p>
+            <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="accompagnamento_open_day_hero">Scopri l’open day gratuito</a>
+        </div>
+        <figure class="birth-course__hero-media">
+            <img src="{{ url_for('static', filename='img/corso-accompagnamento-nascita-professionisti.jpg') }}" alt="Selene Campetta con l’équipe del corso di accompagnamento alla nascita" width="1536" height="2048" fetchpriority="high">
+            <figcaption>Cinque professionisti, un unico percorso per la famiglia.</figcaption>
+        </figure>
     </div>
 
-    <div class="proof-grid proof-grid-consulenze" aria-label="Valore del corso di accompagnamento alla nascita">
-        <article class="proof-card">
+    <div class="birth-course__facts" aria-label="Informazioni essenziali sul corso">
+        <article>
             <span>Per chi</span>
-            <h3>Futuri genitori</h3>
-            <p>Per chi vuole arrivare al rientro a casa con meno improvvisazione e più riferimenti pratici.</p>
+            <h2>Futuri genitori</h2>
+            <p>Per mamme e coppie che desiderano arrivare alla nascita più informate, consapevoli e preparate.</p>
         </article>
-        <article class="proof-card">
+        <article>
             <span>Cosa</span>
-            <h3>Cura quotidiana</h3>
-            <p>Bagnetto, cambio, cordone, pianto, ambiente del sonno e segnali da osservare nei primi giorni.</p>
+            <h2>Un percorso completo</h2>
+            <p>Gravidanza, parto, allattamento, cura del neonato, alimentazione, benessere emotivo e cambiamenti nella coppia.</p>
         </article>
-        <article class="proof-card">
+        <article>
             <span>Come</span>
-            <h3>Domande reali</h3>
-            <p>Uno spazio per portare dubbi concreti, anche quelli che sembrano piccoli ma a casa pesano molto.</p>
+            <h2>Incontri pratici e partecipati</h2>
+            <p>Uno spazio accogliente in cui confrontarsi con i professionisti, fare domande e acquisire strumenti concreti.</p>
         </article>
     </div>
 
-    <div class="servizio-lista">
-        <div class="servizio-item">
-            <span>01</span>
-            <div>
-                <h3>Organizzazione del rientro a casa</h3>
-                <p>Spazi, materiali utili, prime routine e indicazioni per vivere i primi giorni con meno improvvisazione.</p>
-            </div>
+    <section class="birth-course__team" aria-labelledby="birth-course-team-title">
+        <div class="birth-course__section-heading">
+            <p class="eyebrow">Il percorso e l’équipe</p>
+            <h2 id="birth-course-team-title">Nove incontri, prima e dopo la nascita</h2>
+            <p>Il corso comprende 8 incontri durante la gravidanza e 1 incontro dopo il parto con tutta l’équipe, per offrire continuità anche dopo l’arrivo del bambino.</p>
         </div>
-        <div class="servizio-item">
-            <span>02</span>
-            <div>
-                <h3>Sonno sicuro e ambiente</h3>
-                <p>Prepariamo insieme l'ambiente del sonno e affrontiamo i dubbi più comuni con indicazioni prudenti e aggiornate.</p>
-            </div>
-        </div>
-        <div class="servizio-item">
-            <span>03</span>
-            <div>
-                <h3>Domande pratiche da futuri genitori</h3>
-                <p>Bagnetto, cambio, cordone, pianto, segnali da osservare e quando chiedere aiuto al pediatra.</p>
-            </div>
-        </div>
-    </div>
 
-    <section class="cta cta-interna">
-        <h2>Vuoi partecipare al percorso?</h2>
-        <p>Richiedi informazioni sul prossimo gruppo in presenza o su un incontro dedicato.</p>
-        <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn">Richiedi partecipazione</a>
+        <div class="birth-course__professionals">
+            <article class="birth-professional">
+                <p class="birth-professional__role">Con l’ostetrica</p>
+                <h3>Dal travaglio al rientro a casa</h3>
+                <p>Preparazione al parto, travaglio, nascita, allattamento e primi giorni con il neonato.</p>
+            </article>
+            <article class="birth-professional">
+                <p class="birth-professional__role">Con la psicologa</p>
+                <h3>Diventare genitori</h3>
+                <p>Cambiamenti emotivi in gravidanza, nascita della genitorialità, relazione di coppia e benessere nel post-partum.</p>
+            </article>
+            <article class="birth-professional">
+                <p class="birth-professional__role">Con l’osteopata</p>
+                <h3>Il corpo che cambia</h3>
+                <p>Cambiamenti del corpo in gravidanza, postura, respirazione e benessere di mamma e bambino.</p>
+            </article>
+            <article class="birth-professional">
+                <p class="birth-professional__role">Con la nutrizionista</p>
+                <h3>Alimentazione quotidiana</h3>
+                <p>Alimentazione in gravidanza e nel post-partum, bisogni nutrizionali e indicazioni pratiche per la quotidianità.</p>
+            </article>
+            <article class="birth-professional">
+                <p class="birth-professional__role">Con l’infermiera</p>
+                <h3>Prendersi cura del neonato</h3>
+                <p>Cordone ombelicale, cambio, bagnetto, sonno sicuro, sicurezza domestica e principali segnali da osservare.</p>
+            </article>
+        </div>
+
+        <article class="birth-course__postpartum">
+            <div class="birth-course__postpartum-label" aria-hidden="true">8 + 1</div>
+            <div>
+                <p class="birth-professional__role">Dopo la nascita · con tutta l’équipe</p>
+                <h3>Ritrovarsi, confrontarsi, fare nuove domande</h3>
+                <p>Un incontro dedicato alle nuove famiglie per confrontarsi sui primi giorni con il bambino, ricevere risposte ai propri dubbi e ritrovare i professionisti che le hanno accompagnate durante il percorso.</p>
+            </div>
+        </article>
     </section>
+
+    <section class="cta birth-course__cta">
+        <p class="eyebrow">Il primo passo</p>
+        <h2>Conosci il percorso e chi lo conduce</h2>
+        <p>Iscriviti all’open day gratuito: potrai incontrare i professionisti, fare domande e capire se il corso completo è adatto alla tua famiglia. L’iscrizione al percorso avverrà in un secondo momento tramite link privato.</p>
+        <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="accompagnamento_open_day_finale">Scopri il prossimo open day</a>
+    </section>
+
+    <aside class="birth-course__partner" aria-labelledby="birth-course-partner-title">
+        <div class="birth-course__partner-copy">
+            <p class="eyebrow">Collaborazione territoriale</p>
+            <h2 id="birth-course-partner-title">Farmacia Russo al fianco del percorso</h2>
+            <p>Il corso di accompagnamento alla nascita è realizzato con la collaborazione della Farmacia Russo.</p>
+        </div>
+        <a href="https://farmaciarussodomenico.it/" class="birth-course__partner-link" target="_blank" rel="noopener noreferrer" aria-label="Visita il sito della Farmacia Russo">
+            <img src="{{ url_for('static', filename='img/logo-farmacia-russo.png') }}" alt="Farmacia Russo" width="360" height="100" loading="lazy">
+        </a>
+    </aside>
 </section>
 {% endblock %}

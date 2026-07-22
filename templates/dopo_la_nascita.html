@@ -8,10 +8,11 @@
     <p class="sottotitolo">Supporto pratico per cura del neonato, sonno, routine e serenità dei genitori.</p>
 
     <div class="pagina-hero-img">
-        <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Supporto dopo la nascita per mamma e neonato">
+        <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Supporto dopo la nascita per mamma e neonato" width="1280" height="1920" fetchpriority="high">
     </div>
 
-    <div class="proof-grid proof-grid-consulenze" aria-label="Valore del supporto dopo la nascita">
+    <h2 class="visually-hidden" id="valore-supporto-nascita">Cosa offre il supporto dopo la nascita</h2>
+    <div class="proof-grid proof-grid-consulenze" aria-labelledby="valore-supporto-nascita">
         <article class="proof-card">
             <span>Sonno</span>
             <h3>Leggere i segnali</h3>
@@ -29,7 +30,8 @@
         </article>
     </div>
 
-    <div class="servizio-lista">
+    <h2 class="visually-hidden" id="ambiti-supporto-nascita">Ambiti del supporto</h2>
+    <div class="servizio-lista" aria-labelledby="ambiti-supporto-nascita">
         <div class="servizio-item">
             <span>SN</span>
             <div>
@@ -54,14 +56,14 @@
     </div>
 
     <div class="nota-sicurezza">
-        <h3>Un supporto pratico, non un sostituto del pediatra</h3>
+        <h2>Un supporto pratico, non un sostituto del pediatra</h2>
         <p>La consulenza aiuta nella gestione quotidiana e nell'organizzazione familiare. In caso di febbre, difficoltà respiratoria, scarso accrescimento o sintomi importanti, è sempre necessario contattare il pediatra o i servizi sanitari.</p>
     </div>
 
     <section class="cta cta-interna">
         <h2>Vuoi un aiuto nei primi mesi?</h2>
         <p>Chiedi informazioni per capire quale supporto può essere più adatto alla tua famiglia.</p>
-        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20informazioni%20sul%20supporto%20dopo%20la%20nascita." class="btn" target="_blank" rel="noopener noreferrer">Richiedi informazioni</a>
+        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20informazioni%20sul%20supporto%20dopo%20la%20nascita." class="btn" target="_blank" rel="noopener noreferrer" data-conversion="post_birth_whatsapp">Richiedi informazioni</a>
     </section>
 </section>
 {% endblock %}

@@ -1,16 +1,82 @@
 {% extends "base.html" %}
-{% block titolo %}Iscrizione — {{ corso.titolo }}{% endblock %}
+{% block titolo %}{{ corso.titolo }} — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}{% if corso_tipo == 'bls-d' %}Corso BLSD di 5 ore con teoria ed esercitazioni su manichino per cittadini, associazioni, aziende e gruppi a Montesilvano.{% elif corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% elif corso_tipo == 'laboratorio-infanzia' %}Laboratori in presenza per bambini dai 6 mesi ai 5 anni e famiglie: alimentazione, gioco sensoriale, creatività e autonomia a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
 
 {% block contenuto %}
-<section class="pagina-interna pagina-consulenza">
+<section class="pagina-interna pagina-consulenza{% if corso_tipo == 'bls-d' %} blsd-page{% elif corso_tipo == 'disostruzione-pediatrica' %} corso-disostruzione-page{% elif corso_tipo == 'laboratorio-infanzia' %} laboratori-page{% endif %}">
     {% set form_anchor_id = 'richiesta-ricontatto' if not corso.has_open_dates else ('iscrizione-individuale' if corso_tipo == 'bls-d' else 'modulo-iscrizione-corso') %}
     {% set page_eyebrow = 'Open day gratuito' if corso_tipo == 'accompagnamento-nascita' else ('Iscrizione laboratorio' if corso_tipo == 'laboratorio-infanzia' else 'Iscrizione corso') %}
+    {% if corso_tipo == 'bls-d' %}
+    <div class="blsd-hero">
+        <div class="blsd-hero__copy">
+            <p class="eyebrow">Corso in presenza</p>
+            <h1>{{ corso.titolo }}</h1>
+            <p class="blsd-lead">Cinque ore di teoria e pratica per riconoscere un’emergenza, intervenire con ordine e imparare a usare il defibrillatore.</p>
+            <p>Le esercitazioni su manichino trasformano i passaggi spiegati in gesti da provare, correggere e ripetere con la guida dell’istruttore.</p>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="corso_blsd_modulo">Vai al modulo</a>
+        </div>
+        <figure class="blsd-hero__media">
+            <img src="{{ url_for('static', filename='img/corso-blsd-esercitazione.jpg') }}" width="1200" height="1600" alt="Esercitazione BLSD con ventilazione su manichino e defibrillatore" fetchpriority="high">
+        </figure>
+    </div>
+    {% elif corso_tipo == 'disostruzione-pediatrica' %}
+    <div class="corso-disostruzione-hero">
+        <div class="corso-disostruzione-hero__copy">
+            <p class="eyebrow">Corso in presenza</p>
+            <h1>{{ corso.titolo }}</h1>
+            <p class="corso-disostruzione-lead">Un corso teorico-pratico dedicato a genitori, nonni e caregiver, per imparare a prevenire il soffocamento e intervenire correttamente in caso di emergenza.</p>
+            <p>Il corso si svolge presso S.C. Studio Infermieristico, in Via C. D’Agnese 43, 65015 Montesilvano (PE), e dura circa 2 ore e 30 minuti.</p>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="corso_disostruzione_modulo">Vai al modulo</a>
+        </div>
+        <figure class="corso-disostruzione-hero__media">
+            <img src="{{ url_for('static', filename='img/corso-disostruzione-copertina-studio.jpg') }}" width="1200" height="1600" alt="Sala dello studio pronta per il corso di disostruzione pediatrica e tagli sicuri" fetchpriority="high">
+        </figure>
+    </div>
+    {% elif corso_tipo == 'laboratorio-infanzia' %}
+    <div class="laboratori-hero">
+        <div class="laboratori-hero__copy">
+            <p class="eyebrow">Laboratori in presenza</p>
+            <h1>Laboratori per bambini e famiglie</h1>
+            <p class="laboratori-hero__lead">Esperienze pensate per accompagnare bambini e genitori alla scoperta del cibo, delle consistenze, del gioco e dell’autonomia.</p>
+            <p>Ogni proposta segue l’età e le competenze del bambino, in un ambiente accogliente dove osservare, provare e conoscere senza pressioni.</p>
+            <div class="laboratori-hero__meta" aria-label="Informazioni essenziali sui laboratori">
+                <span>Dai 6 mesi ai 5 anni</span>
+                <span>Insieme a un adulto</span>
+                <span>In studio a Montesilvano</span>
+            </div>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="laboratorio_infanzia_modulo">Vedi date e iscrizione</a>
+        </div>
+        <figure class="laboratori-hero__media">
+            <img src="{{ url_for('static', filename='img/laboratori-hero-esplorazione-sensoriale.jpg') }}" width="1200" height="1600" alt="Bambini impegnati in diverse attività sensoriali nello spazio del laboratorio" fetchpriority="high">
+            <figcaption>Spazi preparati per esplorare con libertà, insieme.</figcaption>
+        </figure>
+    </div>
+    {% else %}
     <p class="eyebrow">{{ page_eyebrow }}</p>
     <h1>{{ corso.titolo }}</h1>
+    {% endif %}
 
     {% if corso_tipo == 'bls-d' %}
-    <p class="sottotitolo">Un corso pratico di circa 4 ore per riconoscere l'emergenza, intervenire con ordine e usare il defibrillatore in modo corretto. Questo modulo è dedicato alle iscrizioni individuali.</p>
-    <div class="blsd-choice-panel" aria-label="Scegli come richiedere il corso BLSD">
+    <div class="course-facts blsd-facts" aria-label="Informazioni essenziali sul corso BLSD">
+        <article>
+            <strong>Durata</strong>
+            <span>5 ore</span>
+        </article>
+        <article>
+            <strong>Modalità</strong>
+            <span>Teoria ed esercitazioni pratiche su manichino</span>
+        </article>
+        <article>
+            <strong>Destinatari</strong>
+            <span>Cittadini, associazioni, aziende e gruppi</span>
+        </article>
+        <article>
+            <strong>Sede</strong>
+            <span>Via C. D’Agnese 43, 65015 Montesilvano (PE)</span>
+        </article>
+    </div>
+    <h2 class="visually-hidden" id="modalita-blsd">Scegli come richiedere il corso BLSD</h2>
+    <div class="blsd-choice-panel" aria-labelledby="modalita-blsd">
         <article class="blsd-choice-card">
             <span>Privati</span>
             <h3>Iscrizione individuale</h3>
@@ -21,13 +87,13 @@
             <span>Aziende e gruppi</span>
             <h3>Corso BLSD personalizzato</h3>
             <p>Per organizzare la formazione in studio o nella tua realtà, con data, sede e numero partecipanti definiti insieme.</p>
-            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="link-azione" target="_blank" rel="noopener noreferrer">Richiedi il corso</a>
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="course_blsd_company">Richiedi il corso</a>
         </article>
     </div>
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Una sequenza chiara da seguire nei primi minuti</h3>
+            <h2>Una sequenza chiara da seguire nei primi minuti</h2>
             <p>Il valore del corso non è ricordare tutto a memoria, ma allenare ordine, priorità e gesti essenziali quando l'emergenza richiede lucidità.</p>
         </div>
         <div class="course-value-grid">
@@ -46,26 +112,61 @@
         </div>
     </div>
     {% elif corso_tipo == 'disostruzione-pediatrica' %}
-    <p class="sottotitolo">Il corso si terrà presso lo studio in Via C. D'Agnese 43 e avrà una durata di circa 2 ore / 2 ore e mezza, con prove pratiche su lattante e bambino e laboratorio sui tagli sicuri.</p>
-    <div class="course-value-panel">
+    <div class="course-facts corso-disostruzione-facts" aria-label="Informazioni essenziali sul corso">
+        <article>
+            <strong>A chi è rivolto</strong>
+            <span>Genitori, nonni, babysitter e caregiver</span>
+        </article>
+        <article>
+            <strong>Durata</strong>
+            <span>Circa 2 ore e 30 minuti</span>
+        </article>
+        <article>
+            <strong>Modalità</strong>
+            <span>Teoria, prove pratiche su manichini e laboratorio di tagli sicuri</span>
+        </article>
+        <article>
+            <strong>Sede</strong>
+            <span>Via C. D’Agnese 43, 65015 Montesilvano (PE)</span>
+        </article>
+    </div>
+    <div class="course-value-panel corso-disostruzione-value">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Più sicurezza a tavola e nei piccoli imprevisti</h3>
-            <p>Il corso unisce prevenzione e pratica: impari a ridurre il rischio di soffocamento e ad agire con più ordine se qualcosa va storto.</p>
+            <h2>Più sicurezza a tavola e nei piccoli imprevisti</h2>
+            <p>Attraverso spiegazioni semplici e prove pratiche imparerai a riconoscere un’ostruzione delle vie aeree, eseguire correttamente le manovre di disostruzione e proporre gli alimenti in modo più sicuro.</p>
         </div>
-        <div class="course-value-grid">
+        <div class="course-value-grid corso-disostruzione-value__grid">
             <article>
-                <span>Manovre</span>
-                <p>Prove guidate su lattante e bambino, con attenzione alle differenze tra le età.</p>
+                <span>Manovre di disostruzione</span>
+                <p>Prove pratiche guidate su manichini lattante e bambino, per imparare i gesti corretti nelle diverse fasce d’età.</p>
             </article>
             <article>
                 <span>Tagli sicuri</span>
-                <p>Indicazioni pratiche su alimenti, consistenze e preparazione quotidiana.</p>
+                <p>Indicazioni pratiche su consistenze, forme e modalità di preparazione degli alimenti per ridurre il rischio di soffocamento.</p>
             </article>
             <article>
                 <span>Prevenzione</span>
-                <p>Segnali da riconoscere, comportamenti da evitare e quando chiedere aiuto.</p>
+                <p>Come riconoscere un’ostruzione parziale o completa, quali comportamenti evitare e quando chiamare immediatamente il 112.</p>
             </article>
+        </div>
+        <div class="corso-disostruzione-gallery" aria-label="Dalla teoria alla pratica durante il corso">
+            <figure>
+                <img src="{{ url_for('static', filename='img/corso-disostruzione-dimostrazione.jpg') }}" width="1350" height="1350" alt="Dimostrazione delle manovre su un manichino lattante durante il corso">
+                <figcaption><strong>Teoria</strong><span>Riconoscere l’ostruzione e capire come intervenire.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/corso-disostruzione-prova-pratica.jpg') }}" width="1200" height="1600" alt="Partecipante che si esercita su un manichino lattante">
+                <figcaption><strong>Prima prova pratica</strong><span>Provare le manovre sul manichino lattante.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/corso-disostruzione-esercitazione-partecipanti.jpg') }}" width="1200" height="1600" alt="Due partecipanti durante un’esercitazione pratica guidata">
+                <figcaption><strong>Seconda prova pratica</strong><span>Allenare la sequenza dei gesti in una simulazione.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/corso-disostruzione-tagli-sicuri.jpg') }}" width="1200" height="1600" alt="Alimenti e utensili preparati per il laboratorio sui tagli sicuri">
+                <figcaption><strong>Laboratorio tagli sicuri</strong><span>Preparare gli alimenti con tagli più sicuri e consistenze adeguate.</span></figcaption>
+            </figure>
         </div>
     </div>
     {% elif corso_tipo == 'accompagnamento-nascita' %}
@@ -73,7 +174,7 @@
     <div class="course-value-panel">
         <div class="section-heading section-heading-compact">
             <p class="eyebrow">Cosa chiarisci all'open day</p>
-            <h3>Capire il percorso prima di iscriverti davvero</h3>
+            <h2>Capire il percorso prima di iscriverti davvero</h2>
             <p>L'incontro serve a conoscere contenuti, professionisti, organizzazione e obiettivi del corso completo, senza confondere la richiesta open day con l'iscrizione definitiva.</p>
         </div>
         <div class="course-value-grid">
@@ -92,28 +193,86 @@
         </div>
     </div>
     {% elif corso_tipo == 'laboratorio-infanzia' %}
-    <p class="sottotitolo">Laboratori in presenza per genitori e bambini su alimentazione, svezzamento, gioco e tappe di sviluppo. Se non trovi una data aperta, puoi lasciare i dati per essere ricontattato.</p>
-    <div class="course-value-panel">
-        <div class="section-heading section-heading-compact">
+    <section class="laboratori-value" aria-labelledby="laboratori-value-title">
+        <div class="laboratori-section-heading">
             <p class="eyebrow">Cosa porti a casa</p>
-            <h3>Indicazioni pratiche da usare nella quotidianità</h3>
-            <p>Ogni laboratorio parte dall'età del bambino e da situazioni reali: pasti, gioco, sviluppo, dubbi frequenti e piccoli passaggi da rendere più semplici.</p>
+            <h2 id="laboratori-value-title">Nuove esperienze da vivere anche a casa</h2>
+            <p>Nei laboratori i bambini possono osservare, toccare, sperimentare e conoscere attraverso il gioco. I genitori ricevono idee pratiche e strumenti semplici da riproporre nella quotidianità.</p>
         </div>
-        <div class="course-value-grid">
+        <div class="laboratori-value__grid">
             <article>
-                <span>Svezzamento</span>
-                <p>Idee pratiche su alimenti, consistenze, autonomia e gestione dei dubbi più comuni.</p>
+                <h3>Svezzamento e alimentazione</h3>
+                <p>Consistenze, tagli sicuri, autonomia e primi approcci al cibo, nel rispetto dei tempi e delle competenze del bambino.</p>
             </article>
             <article>
-                <span>Gioco</span>
-                <p>Proposte semplici per sostenere sviluppo, relazione e curiosità del bambino.</p>
+                <h3>Gioco ed esperienze sensoriali</h3>
+                <p>Attività per stimolare curiosità, esplorazione, relazione e scoperta attraverso materiali, colori e consistenze.</p>
             </article>
             <article>
-                <span>Età</span>
-                <p>Indicazioni più utili se lasci nome ed età del bambino nel modulo.</p>
+                <h3>Per ogni fascia d’età</h3>
+                <p>Proposte differenziate dai 6 mesi ai 5 anni, con attività adeguate alle diverse fasi di crescita.</p>
             </article>
         </div>
-    </div>
+    </section>
+
+    <section class="laboratori-gallery-section" aria-labelledby="laboratori-gallery-title">
+        <div class="laboratori-section-heading laboratori-section-heading--split">
+            <div>
+                <p class="eyebrow">Dentro un laboratorio</p>
+                <h2 id="laboratori-gallery-title">Si scopre facendo</h2>
+            </div>
+            <p>Ogni incontro alterna esplorazione libera e proposte guidate, con l’adulto vicino ma senza sostituirsi al bambino.</p>
+        </div>
+        <p class="laboratori-gallery-hint" id="laboratori-gallery-hint">
+            <span class="laboratori-gallery-hint__desktop">Alcune attività reali vissute durante i laboratori.</span>
+            <span class="laboratori-gallery-hint__mobile">Scorri le immagini per vedere alcune attività reali.</span>
+        </p>
+        <div class="laboratori-gallery" role="region" aria-label="Fotografie delle attività nei laboratori" aria-describedby="laboratori-gallery-hint" tabindex="0">
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-primi-assaggi.jpg') }}" width="1200" height="1600" alt="Bambino che esplora alimenti e consistenze durante un laboratorio" loading="lazy">
+                <figcaption><strong>Primi assaggi</strong><span>Conoscere il cibo con mani, sguardo e curiosità.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-autonomia-a-tavola.jpg') }}" width="1200" height="1600" alt="Adulto e bambina preparano insieme un piatto di frutta" loading="lazy">
+                <figcaption><strong>Fare insieme</strong><span>Lasciare spazio ai piccoli gesti di autonomia.</span></figcaption>
+            </figure>
+            <figure>
+                <img src="{{ url_for('static', filename='img/laboratori-creativita-colori.jpg') }}" width="360" height="480" alt="Bambino che esplora materiali colorati in una vaschetta sensoriale" loading="lazy">
+                <figcaption><strong>Colori e creatività</strong><span>Sperimentare materiali e modi diversi di esprimersi.</span></figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="laboratori-ages" aria-labelledby="laboratori-ages-title">
+        <div class="laboratori-section-heading">
+            <p class="eyebrow">Le proposte per età</p>
+            <h2 id="laboratori-ages-title">Esperienze che crescono con il bambino</h2>
+            <p>La fascia d’età orienta materiali, tempi e livello di autonomia. Il tema specifico cambia in base alla data del laboratorio.</p>
+        </div>
+        <div class="laboratori-age-list">
+            <article>
+                <div class="laboratori-age" aria-label="Da 6 a 18 mesi"><strong>6–18</strong><span>mesi</span></div>
+                <div>
+                    <h3>Primi assaggi ed esplorazioni</h3>
+                    <p>Laboratori di svezzamento, alimentazione e scoperta sensoriale da vivere insieme a un adulto.</p>
+                </div>
+            </article>
+            <article>
+                <div class="laboratori-age" aria-label="Da 18 a 36 mesi"><strong>18–36</strong><span>mesi</span></div>
+                <div>
+                    <h3>Autonomia e mani in movimento</h3>
+                    <p>Esperienze pratiche con il cibo e il gioco per sperimentare, creare e fare sempre più “da soli”.</p>
+                </div>
+            </article>
+            <article>
+                <div class="laboratori-age" aria-label="Da 3 a 5 anni"><strong>3–5</strong><span>anni</span></div>
+                <div>
+                    <h3>Creatività e nuove scoperte</h3>
+                    <p>Laboratori dedicati a colori, natura, alimentazione, emozioni e piccole esperienze di autonomia.</p>
+                </div>
+            </article>
+        </div>
+    </section>
     {% endif %}
 
     {% with messages = get_flashed_messages() %}
@@ -127,7 +286,7 @@
         <div class="date-callout-copy">
             <p class="eyebrow">Prossime date</p>
             <h3>{{ 'Vuoi ricevere un avviso quando apre il prossimo open day?' if corso_tipo == 'accompagnamento-nascita' else 'Vuoi ricevere un avviso quando apre una nuova data?' }}</h3>
-            <p>Lasciando i dati nel modulo sotto, la richiesta resta registrata allo studio e ti ricontatteremo appena ci sarà una disponibilità adatta. WhatsApp resta utile se hai una domanda prima di compilare.</p>
+            <p>Lasciando i dati nel modulo sotto, la richiesta resta registrata e ti ricontatterò appena ci sarà una disponibilità adatta. WhatsApp resta utile se hai una domanda prima di compilare.</p>
         </div>
         <div class="date-callout-actions" aria-label="Scegli come restare aggiornato sulle prossime date">
             <a href="#{{ form_anchor_id }}" class="date-action-card date-action-card-primary">
@@ -135,7 +294,7 @@
                 <strong>Lascia i dati nel modulo</strong>
                 <small>Resta tutto tracciato per il ricontatto.</small>
             </a>
-            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="date-action-card" target="_blank" rel="noopener noreferrer">
+            <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20ricevere%20informazioni%20sulle%20prossime%20date%20del%20corso%20{{ corso.titolo | urlencode }}." class="date-action-card" target="_blank" rel="noopener noreferrer" data-conversion="course_no_dates_whatsapp">
                 <span>Domanda veloce</span>
                 <strong>Scrivimi su WhatsApp</strong>
                 <small>Per chiarire un dubbio prima di inviare.</small>
@@ -144,7 +303,7 @@
     </div>
     {% endif %}
 
-    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_tipo) }}" id="{{ form_anchor_id }}">
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         {% if not corso.has_open_dates %}
@@ -455,7 +614,7 @@
             <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
         </div>
 
-        <button type="submit" class="btn">
+        <button type="submit" class="btn" data-conversion="course_registration_submit">
             {% if not corso.has_open_dates %}
                 Lascia i dati per essere ricontattato
             {% elif corso_tipo == 'accompagnamento-nascita' %}

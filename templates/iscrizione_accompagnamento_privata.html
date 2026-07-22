@@ -14,7 +14,7 @@
         <div>
             <p class="eyebrow">Percorso confermato</p>
             <h3>{{ percorso.titolo }}</h3>
-            <p>Dopo l'invio riceverai una conferma con il riepilogo delle date e i contatti dello studio.</p>
+            <p>Dopo l'invio ti manderò una conferma con il riepilogo delle date e i contatti dello studio.</p>
         </div>
         <div class="private-course-meta">
             <span>{{ incontri|length }}/9 incontri inseriti</span>
@@ -109,13 +109,13 @@
                     <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
                 </div>
 
-                <button type="submit" class="btn">Conferma iscrizione</button>
+                <button type="submit" class="btn" data-conversion="birth_private_registration_submit">Conferma iscrizione</button>
             </form>
             {% else %}
             <div class="conferma-box">
                 <h2>Iscrizioni non disponibili</h2>
                 <p>Questo percorso non è aperto alle iscrizioni oppure ha raggiunto la capienza disponibile.</p>
-                <p>Per chiarimenti puoi contattare lo studio al numero {{ percorso.contatti or '3806317175' }}.</p>
+                <p>Per chiarimenti puoi contattarmi al numero {{ percorso.contatti or '3806317175' }}.</p>
             </div>
             {% endif %}
         </div>

@@ -6,14 +6,15 @@ Questa cartella raccoglie la memoria stabile di S.C. Studio Infermieristico: con
 
 ## Ordine di lettura
 
-1. [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md) — attività, pubblici, servizi, posizionamento, obiettivi e vincoli economici.
+1. [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md) — attività, pubblici, servizi, posizionamento, obiettivi, campagna di validazione e vincoli economici.
 2. [`BRAND_SYSTEM.md`](BRAND_SYSTEM.md) — palette, tipografia, fotografie, tono di voce e regole applicative dell'identità.
 3. [`SITE_MAP_AND_FLOWS.md`](SITE_MAP_AND_FLOWS.md) — pagine, gerarchie, CTA e flussi distinti per corsi, consulenze, prestazioni e aziende.
 4. [`ROADMAP.md`](ROADMAP.md) — stato corrente, obiettivi per il lancio e sviluppi successivi.
 5. [`DECISIONS.md`](DECISIONS.md) — registro delle decisioni durevoli e delle relative motivazioni.
 6. [`CONTENT_AND_ASSETS.md`](CONTENT_AND_ASSETS.md) — testi approvati, testimonianze, fotografie disponibili e materiali mancanti.
-7. [`locandine.md`](locandine.md) — istruzioni per PDF, locandine digitali e materiali social coerenti con il sito.
-8. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
+7. [`locandine.md`](locandine.md) — istruzioni per PDF, locandine digitali, annunci e materiali social coerenti con il sito.
+8. [`META_SONNO_CAMPAIGN.md`](META_SONNO_CAMPAIGN.md) — piano esecutivo, script e misurazione del primo test Meta.
+9. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
 
 ## Fonti di verità
 

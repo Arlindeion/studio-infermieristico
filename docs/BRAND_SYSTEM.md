@@ -73,11 +73,11 @@ Prima di pubblicare immagini con partecipanti, soprattutto minori, verificare il
 - Titolo breve della scheda browser in homepage: `S.C. Studio Infermieristico`.
 - Nei contenuti per genitori parlare in prima persona quando è Selene a offrire il supporto.
 
-Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia usare la variante che resta leggibile con navigazione scura; nel footer profondo usare la variante chiara.
+Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia il simbolo anatomico può usare il tratto bianco solo dentro un campo verde profondo compatto; non va usato bianco direttamente sul salvia. Il naming resta coerente con la navigazione scura; nel footer profondo usare la variante chiara.
 
 ## Header e footer
 
-- Header: fondo salvia identitario, logo e testi verde scuro.
+- Header: fondo salvia identitario, simbolo bianco in un campo verde profondo compatto, naming e testi verde scuro.
 - Footer: verde profondo e testo chiaro.
 - Le prestazioni infermieristiche restano nella navigazione, ma non diventano il pulsante dominante.
 - La navigazione deve mantenere chiari i due pilastri: corsi e consulenza del sonno.
@@ -93,6 +93,9 @@ La scelta del testo scuro nell'header è sia stilistica sia funzionale: crea con
 - Mantenere separate le responsabilità: fondamenta in `base.css`, componenti condivisi in `components.css`, homepage e consulenza nei rispettivi moduli e interfaccia gestionale in `admin.css`.
 - Il rosso è una firma, non un secondo colore dominante.
 - Le CTA devono essere brevi, specifiche e visivamente gerarchizzate.
+- La homepage estende il linguaggio dell'header con schede editoriali asimmetriche, profondità leggere e pesi visivi differenti: i corsi restano il percorso dominante, il sonno il secondo pilastro e le prestazioni una fascia separata.
+- La sezione del corso di accompagnamento alla nascita usa un fondo chiaro distinto dal salvia identitario dell'header, così il contenuto non si fonde con la navigazione durante lo scroll.
+- I widget esterni, come Instagram, mantengono il proprio rendering nativo. Il sito può incorniciarli e offrire un collegamento alternativo, ma non deve trasformarne internamente il contenuto con stili fragili.
 
 ## Tono di voce
 
@@ -132,6 +135,8 @@ Sito, social, PDF e locandine devono utilizzare:
 - lo stesso tono e gli stessi nomi dei servizi.
 
 Video generati possono sostenere la frequenza editoriale, ma non devono imitare testimonianze, risultati reali o situazioni cliniche. Devono restare chiaramente coerenti con il sistema visivo e non sostituire la presenza reale di Selene.
+
+La campagna iniziale sulla consulenza del sonno usa lo stesso sistema della landing e non crea un'identità parallela. Un eventuale targeting geografico ridotto per ragioni di spesa non modifica il tono nazionale dell'offerta né l'intera fascia 0-12 mesi; ogni creatività può però concentrarsi su una sola difficoltà osservabile.
 
 ## Controlli minimi
 

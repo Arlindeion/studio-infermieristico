@@ -2,8 +2,16 @@
 {% block titolo %}Admin — Gestione{% endblock %}
 
 {% block contenuto %}
+{% macro admin_post_action(action, label, variant, confirmation='', current_filter='') -%}
+<form method="post" action="{{ action }}" class="admin-inline-action"{% if confirmation %} data-confirm="{{ confirmation }}"{% endif %}>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% if current_filter %}<input type="hidden" name="filtro" value="{{ current_filter }}">{% endif %}
+    <button type="submit" class="btn-azione {{ variant }}">{{ label }}</button>
+</form>
+{%- endmacro %}
 
 <section class="pagina-interna admin-page">
+    <h1 class="visually-hidden">Area amministrativa</h1>
 
     <div class="admin-topbar">
         <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
@@ -25,6 +33,12 @@
             <span>Prenotazioni sanitarie</span>
             {% if in_attesa_count > 0 %}
             <strong>{{ in_attesa_count }}</strong>
+            {% endif %}
+        </button>
+        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false">
+            <span>Call sonno</span>
+            {% if call_sonno_in_attesa_count > 0 %}
+            <strong>{{ call_sonno_in_attesa_count }}</strong>
             {% endif %}
         </button>
         <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false">
@@ -57,22 +71,22 @@
     <div class="admin-filtri">
     <a href="/admin?filtro=in_attesa"
        class="filtro-btn {% if filtro == 'in_attesa' %}attivo{% endif %}">
-        🔔 In attesa
+        In attesa
         {% if in_attesa_count > 0 %}
         <span class="badge-count">{{ in_attesa_count }}</span>
         {% endif %}
     </a>
     <a href="/admin?filtro=confermati"
        class="filtro-btn {% if filtro == 'confermati' %}attivo{% endif %}">
-        ✅ Confermati
+        Confermati
     </a>
     <a href="/admin?filtro=annullati"
        class="filtro-btn {% if filtro == 'annullati' %}attivo{% endif %}">
-        ❌ Annullati
+        Annullati
     </a>
     <a href="/admin?filtro=passati"
        class="filtro-btn {% if filtro == 'passati' %}attivo{% endif %}">
-        🕐 Passati
+        Passati
     </a>
 </div>
 
@@ -122,30 +136,14 @@
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Confermare l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.">
-                           Conferma
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di conferma.', filtro) }}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'confermati' %}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'annullati' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Ripristinare l'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.">
-                           Ripristina
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '? Tornerà in stato In attesa.', filtro) }}
                     {% elif filtro == 'passati' %}
                         <span class="text-muted">Archiviato</span>
                     {% endif %}
@@ -174,30 +172,14 @@
             </div>
             <div class="card-admin-azioni">
                 {% if filtro == 'in_attesa' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Confermare l'appuntamento di {{ a.nome }}?">
-                       Conferma
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'confermati' %}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'annullati' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Ripristinare l'appuntamento di {{ a.nome }}?">
-                       Ripristina
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'passati' %}
                     <span class="text-muted">Archiviato</span>
                 {% endif %}
@@ -209,6 +191,53 @@
     <p class="nota nota-lg">Nessun appuntamento in questa categoria.</p>
     {% endif %}
 
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="call-sonno" id="admin-call-sonno">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Consulenza 0-12 mesi</p>
+            <h2>Call sul sonno</h2>
+        </div>
+        <span class="admin-total">{{ call_sonno|length }} richieste</span>
+    </div>
+    <p class="filtro-descrizione">Le nuove richieste bloccano subito lo slot. Conferma l’orario scelto oppure, dopo l’accordo telefonico, modificalo: il nuovo orario sarà già considerato accettato.</p>
+
+    {% if call_sonno %}
+    <div class="admin-table-wrap">
+        <table class="tabella-admin">
+            <thead><tr><th>Famiglia</th><th>Richiesta</th><th>Quando</th><th>Stato</th><th>Azioni</th></tr></thead>
+            <tbody>
+            {% for call in call_sonno %}
+            <tr class="stato-{{ call.stato|lower|replace(' ', '-') }}">
+                <td><strong class="admin-primary">{{ call.nome }}</strong><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
+                <td><strong class="admin-primary">{{ call.eta_bambino_mesi }} mesi</strong><span class="admin-secondary">{{ call.difficolta_altro or call.difficolta_principale }}</span></td>
+                <td><strong class="admin-primary">{{ call.data }}</strong><span class="admin-secondary">ore {{ call.ora }} · call 20 min · blocco 30 min</span></td>
+                <td><span class="badge">{{ call.stato }}</span>{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
+                <td class="azioni admin-call-actions">
+                    {% if call.questionario %}<a class="btn-azione blu" href="{{ url_for('visualizza_questionario_sonno_admin', id=call.id) }}">Leggi questionario</a>{% endif %}
+                    {% if call.stato == 'In attesa' %}
+                    <form method="post" action="{{ url_for('conferma_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Conferma</button></form>
+                    {% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}<a class="btn-azione blu" href="{{ url_for('modifica_call_sonno_admin', id=call.id) }}">Modifica dopo accordo</a>{% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}
+                    <form method="post" action="{{ url_for('annulla_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>
+                    {% endif %}
+                    {% if call.stato in ['Confermata', 'Conclusa'] and not call.questionario %}
+                    <form class="admin-questionnaire-send" method="post" action="{{ url_for('invia_questionario_sonno_admin', id=call.id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <label for="formula-{{ call.id }}">Dopo la call</label>
+                        <select id="formula-{{ call.id }}" name="formula_scelta" required><option value="">Formula concordata</option>{% for valore, etichetta in formule_sonno.items() %}<option value="{{ valore }}" {% if call.formula_scelta == valore %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}</select>
+                        <button class="btn-azione verde" type="submit">{% if call.questionario_inviato_il %}Reinvia questionario{% else %}Invia questionario{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}<p class="nota nota-lg">Nessuna call sul sonno ricevuta.</p>{% endif %}
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="eventi" id="admin-eventi">
@@ -821,9 +850,9 @@
                 </td>
                 <td><span class="badge">{{ i.stato }}</span></td>
                 <td class="azioni">
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
                 </td>
             </tr>
             {% endfor %}
@@ -857,9 +886,9 @@
                 {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
             </div>
             <div class="card-admin-azioni">
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
             </div>
         </div>
         {% endfor %}
@@ -977,8 +1006,7 @@
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
-                    <a href="/admin/corso/elimina/{{ c.id }}?token={{ csrf_token() }}" class="btn-azione rosso"
-                       data-confirm="Eliminare questo corso?">Elimina</a>
+                    {{ admin_post_action(url_for('elimina_corso', id=c.id), 'Elimina', 'rosso', 'Eliminare questo corso?') }}
                 </td>
             </tr>
             {% endfor %}

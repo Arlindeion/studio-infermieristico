@@ -5,9 +5,10 @@
 <section class="pagina-interna">
     <p class="eyebrow">Iscrizioni corsi</p>
     <h1>Corsi in presenza per sapere cosa fare nei momenti importanti</h1>
-    <p class="sottotitolo">Scegli il percorso più adatto tra sicurezza, nascita e laboratori per l'infanzia. Se c'è una data aperta puoi richiedere l'iscrizione; se non c'è ancora, lasci il tuo interesse e verrai ricontattato.</p>
+    <p class="sottotitolo">Scegli il percorso più adatto tra sicurezza, nascita e laboratori per l'infanzia. Se c'è una data aperta puoi richiedere l'iscrizione; se non c'è ancora, lasci il tuo interesse e ti ricontatterò.</p>
 
-    <div class="course-overview-strip" aria-label="Come funzionano le iscrizioni ai corsi">
+    <h2 class="visually-hidden" id="come-funzionano-corsi">Come funzionano le iscrizioni</h2>
+    <div class="course-overview-strip" aria-labelledby="come-funzionano-corsi">
         <article>
             <span>Pratica</span>
             <h3>Non solo teoria</h3>
@@ -25,26 +26,31 @@
         </article>
     </div>
 
-    <div class="course-directory">
+    <div class="course-directory" id="elenco-corsi">
+        <h2 class="visually-hidden">Corsi e laboratori disponibili</h2>
         <article class="course-directory-row percorso-sicurezza">
-            <img src="{{ url_for('static', filename='img/selene-blsd.jpg') }}" alt="Corso BLSD con defibrillatore">
+            <a href="/iscrizione-corsi/blsd" class="course-directory-media" aria-label="Scopri il corso BLSD">
+                <img src="{{ url_for('static', filename='img/selene-blsd.jpg') }}" alt="Corso BLSD con defibrillatore" width="1280" height="1920">
+            </a>
             <div class="course-directory-copy">
                 <span class="percorso-tag">Sicurezza</span>
-                <h3>Corso BLSD</h3>
+                <h3><a href="/iscrizione-corsi/blsd">Corso BLSD</a></h3>
                 <p>Per riconoscere l'emergenza, attivare i soccorsi, intervenire con una sequenza ordinata e imparare a usare il defibrillatore.</p>
                 <div class="course-meta" aria-label="Dettagli corso BLSD">
-                    <span>4 ore</span>
+                    <span>5 ore</span>
                     <span>Prove pratiche</span>
                     <span>Iscrizione individuale</span>
                 </div>
             </div>
-            <a href="/iscrizione-corsi/bls-d" class="link-azione">Iscrizione individuale</a>
+            <a href="/iscrizione-corsi/blsd" class="link-azione" data-conversion="course_directory_blsd">Iscrizione individuale</a>
         </article>
         <article class="course-directory-row percorso-primo-soccorso">
-            <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Corso di disostruzione pediatrica">
+            <a href="/iscrizione-corsi/disostruzione-pediatrica" class="course-directory-media" aria-label="Scopri il corso di disostruzione pediatrica e tagli sicuri">
+                <img src="{{ url_for('static', filename='img/selene-dopo-nascita.jpg') }}" alt="Corso di disostruzione pediatrica" width="1280" height="1920">
+            </a>
             <div class="course-directory-copy">
                 <span class="percorso-tag">Primo soccorso</span>
-                <h3>Disostruzione pediatrica e tagli sicuri</h3>
+                <h3><a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica e tagli sicuri</a></h3>
                 <p>Per genitori, nonni e caregiver: manovre su lattante e bambino, prevenzione del soffocamento e tagli sicuri degli alimenti.</p>
                 <div class="course-meta" aria-label="Dettagli corso disostruzione pediatrica">
                     <span>2 ore</span>
@@ -52,13 +58,15 @@
                     <span>Lattante e bambino</span>
                 </div>
             </div>
-            <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione">Richiedi iscrizione</a>
+            <a href="/iscrizione-corsi/disostruzione-pediatrica" class="link-azione" data-conversion="course_directory_disostruzione">Richiedi iscrizione</a>
         </article>
         <article class="course-directory-row percorso-nascita">
-            <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Corso di accompagnamento alla nascita">
+            <a href="/iscrizione-corsi/accompagnamento-nascita" class="course-directory-media" aria-label="Scopri il corso di accompagnamento alla nascita">
+                <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Corso di accompagnamento alla nascita" width="1280" height="1920">
+            </a>
             <div class="course-directory-copy">
                 <span class="percorso-tag">Nascita</span>
-                <h3>Corso di accompagnamento alla nascita</h3>
+                <h3><a href="/iscrizione-corsi/accompagnamento-nascita">Corso di accompagnamento alla nascita</a></h3>
                 <p>Open day gratuito e percorso completo con cinque professionisti sanitari per guardare gravidanza, nascita e rientro a casa da più prospettive.</p>
                 <div class="course-meta" aria-label="Dettagli corso accompagnamento alla nascita">
                     <span>In presenza</span>
@@ -66,13 +74,15 @@
                     <span>9 incontri</span>
                 </div>
             </div>
-            <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione">Richiedi iscrizione</a>
+            <a href="/iscrizione-corsi/accompagnamento-nascita" class="link-azione" data-conversion="course_directory_nascita">Richiedi iscrizione</a>
         </article>
         <article class="course-directory-row percorso-laboratori">
-            <img src="{{ url_for('static', filename='img/placeholder.png') }}" alt="Laboratori per l'infanzia">
+            <a href="/iscrizione-corsi/laboratorio-infanzia" class="course-directory-media" aria-label="Scopri i laboratori svezzamento, gioco e sviluppo">
+                <img src="{{ url_for('static', filename='img/laboratori-hero-esplorazione-sensoriale.jpg') }}" alt="Bambini impegnati in attività sensoriali durante un laboratorio" width="1200" height="1600">
+            </a>
             <div class="course-directory-copy">
                 <span class="percorso-tag">Infanzia</span>
-                <h3>Laboratori svezzamento, gioco e sviluppo</h3>
+                <h3><a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori svezzamento, gioco e sviluppo</a></h3>
                 <p>Incontri pratici per genitori e bambini su alimentazione, svezzamento, gioco e tappe di sviluppo, con indicazioni semplici da usare a casa.</p>
                 <div class="course-meta" aria-label="Dettagli laboratori per l'infanzia">
                     <span>2 ore</span>
@@ -80,7 +90,7 @@
                     <span>Date dedicate</span>
                 </div>
             </div>
-            <a href="/iscrizione-corsi/laboratorio-infanzia" class="link-azione">Mostra le date</a>
+            <a href="/iscrizione-corsi/laboratorio-infanzia" class="link-azione" data-conversion="course_directory_laboratori">Mostra le date</a>
         </article>
     </div>
 
@@ -99,7 +109,7 @@
             <h3>Rendi il tuo ambiente di lavoro più sicuro con un corso BLSD personalizzato</h3>
             <p>Nessun pacchetto standard: la formazione la costruiamo insieme, su misura per la tua realtà.</p>
         </div>
-        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="btn" target="_blank" rel="noopener noreferrer">Richiedi il corso in studio o in azienda</a>
+        <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20richiedere%20il%20corso%20BLSD%20in%20studio%20o%20in%20azienda." class="btn" target="_blank" rel="noopener noreferrer" data-conversion="course_blsd_company">Richiedi il corso in studio o in azienda</a>
     </div>
 </section>
 {% endblock %}

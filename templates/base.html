@@ -26,16 +26,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
     {% set page_endpoint = request.endpoint or '' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=4.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.3">
     {% if page_endpoint == 'homepage' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.1">
-    {% elif page_endpoint == 'consulenze_online' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
+    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.3">
+    {% elif page_endpoint == 'prima_della_nascita' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
+    {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/laboratori.css') }}?v=1.0">
+    {% elif page_endpoint in ['prestazioni', 'prenota'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.3">
     {% endif %}
-    {% if page_endpoint in ['admin', 'modifica_appuntamento'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">
+    {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.3">
     {% endif %}
     <script type="application/ld+json">
     {
@@ -67,84 +73,168 @@
 </head>
 <body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}">
 
-<header>
-    <a href="/" class="logo-link">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Studio Infermieristico" class="logo-img">
-        <span class="logo-testo">S.C. Studio Infermieristico</span>
-    </a>
+{% set current_endpoint = request.endpoint or '' %}
+{% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'dopo_la_nascita', 'conferma_iscrizione_corso'] %}
+{% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
+{% set nursing_active = current_endpoint in ['prestazioni', 'prenota', 'modifica_appuntamento', 'conferma'] %}
 
-    <!-- MENU DESKTOP -->
-    <nav class="nav-desktop">
-        <a href="/" class="nav-home-link" aria-label="Torna alla homepage">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4.5 10.8 12 4.4l7.5 6.4"/>
-                <path d="M6.4 9.9v8.7h11.2V9.9"/>
-                <path d="M9.6 14.4c0-1 .7-1.7 1.6-1.7.5 0 1 .3 1.3.7.3-.4.8-.7 1.3-.7.9 0 1.6.7 1.6 1.7 0 1.5-1.6 2.5-2.9 3.4-1.3-.9-2.9-1.9-2.9-3.4Z"/>
-            </svg>
+<a class="skip-link" href="#contenuto-principale">Vai al contenuto</a>
+
+<header class="site-header" data-site-header>
+    <div class="site-header__inner">
+        <a href="/" class="site-brand" aria-label="S.C. Studio Infermieristico, homepage">
+            <span class="site-brand__mark" aria-hidden="true">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" width="1024" height="1024">
+            </span>
+            <span class="site-brand__name">
+                <strong>S.C.</strong>
+                <span>Studio Infermieristico</span>
+            </span>
         </a>
-        <a href="/chi-sono">CHI SONO</a>
-        <div class="nav-dropdown">
-            <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
-                CORSI E ISCRIZIONI
-                <span class="nav-chevron" aria-hidden="true"></span>
-            </button>
-            <div class="nav-dropdown-menu">
-                <a href="/iscrizione-corsi">
-                    <strong>Corsi in presenza</strong>
-                    <small>Panoramica e prossime iscrizioni</small>
-                </a>
-                <a href="/iscrizione-corsi/disostruzione-pediatrica">
-                    <strong>Disostruzione pediatrica</strong>
-                    <small>Manovre e tagli sicuri</small>
-                </a>
-                <a href="/iscrizione-corsi/accompagnamento-nascita">
-                    <strong>Accompagnamento alla nascita</strong>
-                    <small>Open day e percorso completo</small>
-                </a>
-            </div>
-        </div>
-        <a href="/iscrizione-corsi/bls-d" class="nav-blsd-link">BLSD</a>
-        <a href="/consulenze-online" class="nav-supporto-link">CONSULENZA SONNO</a>
-        <a href="/faq">FAQ</a>
-        <a href="/prestazioni-infermieristiche" class="nav-prestazioni-link">PRESTAZIONI</a>
-    </nav>
 
-    <!-- HAMBURGER MOBILE -->
-    <button class="hamburger" id="hamburger" aria-label="Apri menu">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
+        <nav class="site-nav" aria-label="Navigazione principale" data-desktop-nav>
+            <span class="site-nav__thread" aria-hidden="true"></span>
+
+            <a href="/" class="site-nav__home{% if current_endpoint == 'homepage' %} is-current{% endif %}" aria-label="Torna alla homepage" data-nav-item{% if current_endpoint == 'homepage' %} data-nav-current aria-current="page"{% endif %}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4.5 10.8 12 4.4l7.5 6.4"/>
+                    <path d="M6.4 9.9v8.7h11.2V9.9"/>
+                    <path d="M9.6 14.4c0-1 .7-1.7 1.6-1.7.5 0 1 .3 1.3.7.3-.4.8-.7 1.3-.7.9 0 1.6.7 1.6 1.7 0 1.5-1.6 2.5-2.9 3.4-1.3-.9-2.9-1.9-2.9-3.4Z"/>
+                </svg>
+            </a>
+
+            <a href="/chi-sono" class="site-nav__link{% if current_endpoint == 'chi_siamo' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'chi_siamo' %} data-nav-current aria-current="page"{% endif %}>Chi sono</a>
+
+            <div class="site-nav__group" data-nav-dropdown>
+                <button type="button" class="site-nav__pillar site-nav__pillar--courses{% if courses_active %} is-current{% endif %}" aria-expanded="false" aria-controls="course-menu-panel" data-nav-dropdown-toggle data-nav-item{% if courses_active %} data-nav-current{% endif %}>
+                    <span>
+                        <small>In studio</small>
+                        <strong>Corsi</strong>
+                    </span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="m4 6 4 4 4-4"/>
+                    </svg>
+                </button>
+
+                <div class="course-menu" id="course-menu-panel" data-nav-dropdown-panel aria-hidden="true" inert>
+                    <div class="course-menu__intro">
+                        <span>Corsi in presenza</span>
+                        <strong>Imparare insieme, provare davvero.</strong>
+                        <p>Gesti, segnali e strumenti concreti per famiglie, caregiver e gruppi.</p>
+                        <a href="/iscrizione-corsi" data-conversion="header_corsi">
+                            Scopri tutti i corsi
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+                        </a>
+                    </div>
+                    <div class="course-menu__links">
+                        <a href="/iscrizione-corsi/disostruzione-pediatrica">
+                            <span>Sicurezza pediatrica</span>
+                            <strong>Disostruzione e tagli sicuri</strong>
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+                        </a>
+                        <a href="{{ url_for('prima_della_nascita') }}">
+                            <span>Prima della nascita</span>
+                            <strong>Accompagnamento alla nascita</strong>
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+                        </a>
+                        <a href="/iscrizione-corsi/blsd">
+                            <span>Per persone e aziende</span>
+                            <strong>BLSD</strong>
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+                        </a>
+                        <a href="/iscrizione-corsi/laboratorio-infanzia">
+                            <span>Alimentazione e sviluppo</span>
+                            <strong>Laboratori, gioco e sviluppo</strong>
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/consulenze-online" class="site-nav__pillar site-nav__pillar--sleep{% if sleep_active %} is-current{% endif %}" data-nav-item{% if sleep_active %} data-nav-current aria-current="page"{% endif %} data-conversion="header_call_sonno">
+                <span>
+                    <small>Online · 0–12 mesi</small>
+                    <strong>Consulenza sonno</strong>
+                </span>
+            </a>
+
+            <a href="/prestazioni-infermieristiche" class="site-nav__link site-nav__link--secondary{% if nursing_active %} is-current{% endif %}" aria-label="Prestazioni infermieristiche" data-nav-item{% if nursing_active %} data-nav-current{% endif %}>
+                <span>Prestazioni</span>
+                <span>infermieristiche</span>
+            </a>
+            <a href="/faq" class="site-nav__link{% if current_endpoint == 'faq' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'faq' %} data-nav-current aria-current="page"{% endif %}>FAQ</a>
+        </nav>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-mobile-menu" aria-label="Apri il menu" data-menu-toggle>
+            <span class="menu-toggle__text" aria-hidden="true">Menu</span>
+            <span class="menu-toggle__icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+            </span>
+        </button>
+    </div>
 </header>
 
-<!-- MENU MOBILE -->
-<div class="nav-mobile" id="nav-mobile">
-    <a href="/" class="nav-mobile-home">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.5 10.8 12 4.4l7.5 6.4"/>
-            <path d="M6.4 9.9v8.7h11.2V9.9"/>
-            <path d="M9.6 14.4c0-1 .7-1.7 1.6-1.7.5 0 1 .3 1.3.7.3-.4.8-.7 1.3-.7.9 0 1.6.7 1.6 1.7 0 1.5-1.6 2.5-2.9 3.4-1.3-.9-2.9-1.9-2.9-3.4Z"/>
-        </svg>
-        Home
-    </a>
-    <a href="/chi-sono">Chi sono</a>
-    <span class="nav-mobile-label">Corsi in presenza</span>
-    <a href="/iscrizione-corsi">Panoramica corsi</a>
-    <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica</a>
-    <a href="/iscrizione-corsi/accompagnamento-nascita">Accompagnamento alla nascita</a>
-    <a href="/iscrizione-corsi/bls-d">BLSD</a>
-    <a href="/consulenze-online">Consulenza del sonno</a>
-    <a href="/faq">FAQ</a>
-    <a href="/prestazioni-infermieristiche" class="nav-mobile-prenota">Prestazioni infermieristiche</a>
+<div class="mobile-nav" id="site-mobile-menu" aria-hidden="true" inert data-mobile-nav>
+    <div class="mobile-nav__backdrop" aria-hidden="true" data-menu-close></div>
+    <nav class="mobile-nav__sheet" aria-label="Navigazione mobile">
+        <div class="mobile-nav__intro">
+            <span>Da dove vuoi partire?</span>
+            <p>Scegli il percorso più vicino a ciò che serve oggi.</p>
+        </div>
+
+        <div class="mobile-nav__pillars">
+            <a href="/iscrizione-corsi" class="mobile-nav__pillar mobile-nav__pillar--courses{% if courses_active %} is-current{% endif %}" data-conversion="header_mobile_corsi">
+                <small>In studio</small>
+                <strong>Corsi in presenza</strong>
+                <span>Scopri attività e prossime date</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+            </a>
+            <a href="/consulenze-online" class="mobile-nav__pillar mobile-nav__pillar--sleep{% if sleep_active %} is-current{% endif %}" data-conversion="header_mobile_call_sonno">
+                <small>Online · 0–12 mesi</small>
+                <strong>Consulenza sonno</strong>
+                <span>Capire insieme cosa osservare</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+            </a>
+        </div>
+
+        <div class="mobile-courses">
+            <button type="button" aria-expanded="false" aria-controls="mobile-course-links" data-mobile-courses-toggle>
+                Esplora i corsi
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div class="mobile-courses__links" id="mobile-course-links" data-mobile-courses-list aria-hidden="true" inert>
+                <a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione e tagli sicuri</a>
+                <a href="{{ url_for('prima_della_nascita') }}">Accompagnamento alla nascita</a>
+                <a href="/iscrizione-corsi/blsd">BLSD</a>
+                <a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori alimentari, gioco e sviluppo</a>
+            </div>
+        </div>
+
+        <div class="mobile-nav__links">
+            <a href="/"{% if current_endpoint == 'homepage' %} aria-current="page"{% endif %}>Homepage</a>
+            <a href="/chi-sono"{% if current_endpoint == 'chi_siamo' %} aria-current="page"{% endif %}>Chi sono</a>
+            <a href="/prestazioni-infermieristiche"{% if nursing_active %} aria-current="page"{% endif %}>Prestazioni infermieristiche</a>
+            <a href="/faq"{% if current_endpoint == 'faq' %} aria-current="page"{% endif %}>Domande frequenti</a>
+        </div>
+
+        <div class="mobile-nav__contact">
+            <span>Studio a Montesilvano (PE)</span>
+            <a href="tel:+393806317175">380 631 7175</a>
+        </div>
+    </nav>
 </div>
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
 <script src="{{ url_for('static', filename='js/conversion-tracking.js') }}" defer></script>
+{% if page_endpoint == 'prestazioni' %}
+<script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
+{% endif %}
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}" defer></script>
 {% endif %}
 
-    <main>
+    <main id="contenuto-principale" tabindex="-1">
         {% block contenuto %}{% endblock %}
     </main>
 
@@ -170,37 +260,27 @@
         <p class="site-footer-legal">© 2026 S.C. Studio Infermieristico · Selene Campetta, infermiera iscritta all'Albo OPI di Pescara</p>
     </footer>
 
-    <!-- WIDGET WHATSAPP -->
 {% set endpoint = request.endpoint or '' %}
-{% if endpoint in ['chi_siamo', 'faq'] %}
-<a href="https://wa.me/393806317175" 
-   class="whatsapp-widget" 
-   target="_blank" 
-   rel="noopener noreferrer"
-   aria-label="Contattami su WhatsApp">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32px" height="32px">
-        <path fill="#fff" d="M4.868,43.303l2.694-9.835C5.9,30.59,5.026,27.324,5.027,23.979C5.032,13.514,13.548,5,24.014,5c5.079,0.002,9.845,1.979,13.43,5.566c3.584,3.588,5.558,8.356,5.556,13.428c-0.004,10.465-8.522,18.98-18.986,18.98c-0.001,0,0,0,0,0h-0.008c-3.177-0.001-6.3-0.798-9.073-2.311L4.868,43.303z"/>
-        <path fill="#fff" d="M4.868,43.803c-0.132,0-0.26-0.052-0.355-0.148c-0.125-0.127-0.174-0.312-0.127-0.483l2.639-9.636c-1.636-2.906-2.499-6.206-2.497-9.556C4.532,13.238,13.273,4.5,24.014,4.5c5.21,0.002,10.105,2.031,13.784,5.713c3.679,3.683,5.704,8.577,5.702,13.781c-0.004,10.741-8.746,19.48-19.486,19.48c-3.189-0.001-6.344-0.788-9.144-2.277l-9.875,2.589C4.953,43.798,4.911,43.803,4.868,43.803z"/>
-        <path fill="#ffffff" d="M24.014,5c5.079,0.002,9.845,1.979,13.43,5.566c3.584,3.588,5.558,8.356,5.556,13.428c-0.004,10.465-8.522,18.98-18.986,18.98h-0.008c-3.177-0.001-6.3-0.798-9.073-2.311L4.868,43.303l2.694-9.835C5.9,30.59,5.026,27.324,5.027,23.979C5.032,13.514,13.548,5,24.014,5 M24.014,42.974"/>
-        <path fill="#40c351" d="M35.176,12.832c-2.98-2.982-6.941-4.625-11.157-4.626c-8.704,0-15.783,7.076-15.787,15.774c-0.001,2.981,0.833,5.883,2.413,8.396l0.376,0.597l-1.595,5.821l5.973-1.566l0.577,0.342c2.422,1.438,5.2,2.198,8.032,2.199h0.006c8.698,0,15.777-7.077,15.78-15.776C39.795,19.778,38.156,15.814,35.176,12.832z"/>
-        <path fill="#fff" fill-rule="evenodd" d="M19.268,16.045c-0.355-0.79-0.729-0.806-1.068-0.82c-0.277-0.012-0.593-0.011-0.909-0.011c-0.316,0-0.83,0.119-1.265,0.594c-0.435,0.475-1.661,1.622-1.661,3.956c0,2.334,1.7,4.59,1.937,4.906c0.237,0.316,3.282,5.259,8.104,7.161c4.007,1.58,4.823,1.266,5.693,1.187c0.87-0.079,2.807-1.147,3.202-2.255c0.395-1.108,0.395-2.057,0.277-2.255c-0.119-0.198-0.435-0.316-0.909-0.554s-2.807-1.385-3.242-1.543c-0.435-0.158-0.751-0.237-1.068,0.238c-0.316,0.474-1.225,1.543-1.502,1.859c-0.277,0.317-0.554,0.357-1.028,0.119c-0.474-0.238-2.002-0.738-3.815-2.354c-1.41-1.257-2.362-2.81-2.639-3.285c-0.277-0.474-0.03-0.731,0.208-0.968c0.213-0.213,0.474-0.554,0.712-0.831c0.237-0.277,0.316-0.475,0.474-0.791c0.158-0.317,0.079-0.594-0.04-0.831C20.612,19.329,19.69,16.983,19.268,16.045z" clip-rule="evenodd"/>
-    </svg>
-    <span class="whatsapp-tooltip">Contattami per saperne di più</span>
-</a>
-{% endif %}
 <!-- BARRA STICKY MOBILE -->
+{% set sticky_enabled = endpoint in ['prestazioni', 'iscrizione_corso', 'iscrizione_corsi', 'consulenze_online', 'prima_della_nascita'] %}
 {% set sticky_href = '/prenota' %}
-{% set sticky_label = 'Prenota' %}
-{% if endpoint in ['iscrizione_corsi', 'iscrizione_corso'] %}
-    {% set sticky_href = '/iscrizione-corsi' %}
-    {% set sticky_label = 'Vai ai corsi' %}
-{% elif endpoint in ['consulenze_online', 'prima_della_nascita', 'dopo_la_nascita'] %}
-    {% set sticky_href = 'https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20pagina%20sulla%20consulenza%20del%20sonno%20e%20vorrei%20richiedere%20la%20call%20gratuita.' %}
-    {% set sticky_label = 'Call conoscitiva' %}
+{% set sticky_label = 'Prenota una prestazione' %}
+{% if endpoint == 'iscrizione_corso' %}
+    {% set sticky_href = '#richiesta-ricontatto' if not corso.has_open_dates else ('#iscrizione-individuale' if corso_tipo == 'bls-d' else '#modulo-iscrizione-corso') %}
+    {% set sticky_label = 'Vai al modulo' %}
+{% elif endpoint == 'iscrizione_corsi' %}
+    {% set sticky_href = '#elenco-corsi' %}
+    {% set sticky_label = 'Scegli il corso' %}
+{% elif endpoint == 'consulenze_online' %}
+    {% set sticky_href = '/prenota-call-sonno' %}
+    {% set sticky_label = 'Scegli l’orario della call' %}
+{% elif endpoint == 'prima_della_nascita' %}
+    {% set sticky_href = '/iscrizione-corsi/accompagnamento-nascita' %}
+    {% set sticky_label = 'Scopri l’open day' %}
 {% endif %}
-{% if endpoint != 'homepage' and endpoint != 'prenota' and endpoint != 'modifica_appuntamento' and endpoint != 'iscrizione_accompagnamento_privata' and endpoint != 'conferma_iscrizione_accompagnamento' and not endpoint.startswith('admin') and endpoint != 'login' %}
+{% if sticky_enabled %}
 <div class="sticky-prenota">
-    <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}"{% if sticky_href.startswith('https://') %} target="_blank" rel="noopener noreferrer"{% endif %}>
+    <a href="{{ sticky_href }}" class="sticky-prenota-btn" data-conversion="sticky_{{ endpoint }}">
         {{ sticky_label }}
     </a>
 </div>

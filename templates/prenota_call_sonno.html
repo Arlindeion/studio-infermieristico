@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block titolo %}Prenota la call gratuita sul sonno | Selene Campetta{% endblock %}
+{% block meta_description %}Scegli un orario per una call gratuita di circa 20 minuti con Selene e racconta la difficoltà principale sul sonno del tuo bambino 0-12 mesi.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,follow">{% endblock %}
+
+{% block contenuto %}
+<section class="sleep-booking-page">
+    <header class="sleep-booking-intro">
+        <p class="eyebrow">Primo passo · gratuito</p>
+        <h1>Scegli la call sul sonno</h1>
+        <p>Circa 20 minuti per capire cosa sta succedendo e verificare se la consulenza è adatta alla vostra situazione. Prima della call non ti chiederemo un questionario lungo.</p>
+        <p class="sleep-booking-prices">Le formule successive partono da <strong>75 €</strong>: consulenza mirata 75 €, percorso personalizzato 180 €, percorso con affiancamento WhatsApp 320 €. <a href="{{ url_for('consulenze_online') }}#formule">Confronta cosa comprendono</a>.</p>
+    </header>
+
+    <aside class="sleep-pending-alert" role="alert">
+        <strong>La call non è ancora confermata</strong>
+        <p>Stai inviando una richiesta per lo slot selezionato. Attendi la mia email di conferma prima di considerare fissato l’appuntamento. Se l’orario non fosse disponibile, ti contatterò per concordarne telefonicamente uno diverso entro il giorno lavorativo successivo.</p>
+    </aside>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-message" role="status" aria-live="polite">
+            {% for category, message in messages %}<p>{{ message }}</p>{% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <form class="form-prenotazione sleep-booking-form" method="post" action="{{ url_for('prenota_call_sonno') }}" data-call-sonno-form>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        {% for utm_field in ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'] %}
+        <input type="hidden" name="{{ utm_field }}" value="{{ form_data.get(utm_field, '') }}">
+        {% endfor %}
+        <div class="sleep-form-grid">
+            <div class="form-gruppo">
+                <label for="nome">Nome e cognome *</label>
+                <input id="nome" name="nome" type="text" autocomplete="name" maxlength="100" value="{{ form_data.get('nome', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="telefono">Telefono / WhatsApp *</label>
+                <input id="telefono" name="telefono" type="tel" autocomplete="tel" maxlength="20" value="{{ form_data.get('telefono', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="email">Email *</label>
+                <input id="email" name="email" type="email" autocomplete="email" maxlength="100" value="{{ form_data.get('email', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="eta_bambino_mesi">Età del bambino in mesi *</label>
+                <input id="eta_bambino_mesi" name="eta_bambino_mesi" type="number" min="0" max="12" inputmode="numeric" value="{{ form_data.get('eta_bambino_mesi', '') }}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="ruolo_richiedente">Il tuo ruolo *</label>
+                <select id="ruolo_richiedente" name="ruolo_richiedente" required>
+                    <option value="">Seleziona</option>
+                    {% for ruolo in ruoli_richiedente_sonno %}
+                    <option value="{{ ruolo }}" {% if form_data.get('ruolo_richiedente') == ruolo %}selected{% endif %}>{{ ruolo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-gruppo">
+                <label for="durata_difficolta">Da quanto tempo succede? *</label>
+                <select id="durata_difficolta" name="durata_difficolta" required>
+                    <option value="">Seleziona</option>
+                    {% for durata in durate_difficolta_sonno %}
+                    <option value="{{ durata }}" {% if form_data.get('durata_difficolta') == durata %}selected{% endif %}>{{ durata }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <fieldset class="sleep-difficulty-fieldset">
+            <legend>Difficoltà principale *</legend>
+            <div class="sleep-radio-list">
+                {% for difficolta in difficolta_sonno %}
+                <label>
+                    <input type="radio" name="difficolta_principale" value="{{ difficolta }}" {% if form_data.get('difficolta_principale') == difficolta %}checked{% endif %} required>
+                    <span>{{ difficolta }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="form-gruppo sleep-other-field" data-other-difficulty hidden>
+                <label for="difficolta_altro">Descrivila in poche parole *</label>
+                <textarea id="difficolta_altro" name="difficolta_altro" maxlength="300" rows="3">{{ form_data.get('difficolta_altro', '') }}</textarea>
+            </div>
+        </fieldset>
+
+        <div class="form-gruppo">
+            <label for="obiettivo_call">Che cosa vorresti capire durante questi 20 minuti? *</label>
+            <textarea id="obiettivo_call" name="obiettivo_call" maxlength="300" rows="3" required>{{ form_data.get('obiettivo_call', '') }}</textarea>
+            <small>La call serve a verificare appropriatezza e formula; non sostituisce la consulenza.</small>
+        </div>
+
+        <div class="sleep-slot-grid">
+            <div class="form-gruppo">
+                <label for="data-call-sonno">Giorno *</label>
+                <input id="data-call-sonno" name="data" type="date" min="{{ prima_data }}" value="{{ form_data.get('data', '') }}" required>
+                <small>Puoi scegliere dal giorno lavorativo successivo.</small>
+            </div>
+            <div class="form-gruppo">
+                <label for="ora-call-sonno">Orario *</label>
+                <select id="ora-call-sonno" name="ora" required disabled>
+                    <option value="">Prima scegli il giorno</option>
+                    {% for orario in orari_call %}
+                    <option value="{{ orario }}" {% if form_data.get('ora') == orario %}selected{% endif %}>{{ orario }}</option>
+                    {% endfor %}
+                </select>
+                <small data-slot-status aria-live="polite"></small>
+            </div>
+        </div>
+
+        <div class="form-gruppo">
+            <label class="privacy-label">
+                <input type="checkbox" name="presa_visione_offerta" required {% if form_data.get('presa_visione_offerta') %}checked{% endif %}>
+                <span class="privacy-text">Ho visto modalità e prezzi delle consulenze e so che la call gratuita serve a scegliere il passo appropriato. *</span>
+            </label>
+            <label class="privacy-label">
+                <input type="checkbox" name="conferma_ambito" required {% if form_data.get('conferma_ambito') %}checked{% endif %}>
+                <span class="privacy-text">La richiesta non riguarda un’urgenza e non sto richiedendo diagnosi o terapia. *</span>
+            </label>
+            <label class="privacy-label">
+                <input type="checkbox" name="consenso_privacy" required class="privacy-checkbox" {% if form_data.get('consenso_privacy') %}checked{% endif %}>
+                <span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link">informativa privacy</a> e acconsento al trattamento dei dati inviati per gestire la richiesta. *</span>
+            </label>
+        </div>
+
+        <button class="btn" type="submit" data-conversion="sleep_booking_submit">Riserva lo slot e invia la richiesta</button>
+    </form>
+
+    <p class="sleep-undecided">Non sai se fa per te? <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20ho%20un%20dubbio%20sulla%20consulenza%20del%20sonno." target="_blank" rel="noopener noreferrer" data-conversion="sleep_booking_whatsapp">Scrivimi su WhatsApp</a>.</p>
+</section>
+<script src="{{ url_for('static', filename='js/call-sonno-times.js') }}"></script>
+{% endblock %}

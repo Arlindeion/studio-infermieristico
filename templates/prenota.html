@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block titolo %}Prenota — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Scegli una prestazione infermieristica, consulta la tariffa indicativa e richiedi data e orario presso S.C. Studio Infermieristico a Montesilvano.{% endblock %}
 
 {% block contenuto %}
 
-<section class="pagina-interna">
+<section class="pagina-interna nursing-booking-page">
     <h1>Prenota una prestazione sanitaria</h1>
-    <p class="sottotitolo">Compila il modulo per le prestazioni infermieristiche. Per corsi e consulenze, scrivimi su WhatsApp.</p>
+    <p class="sottotitolo">Questo modulo è riservato alle prestazioni infermieristiche. Per partecipare a un corso vai alle <a href="{{ url_for('iscrizione_corsi') }}">iscrizioni</a>; per il sonno <a href="{{ url_for('prenota_call_sonno') }}">scegli l’orario della call gratuita</a>.</p>
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -36,20 +37,38 @@
                    value="{{ form_data.get('email', '') if form_data else '' }}" required>
         </div>
 
-        <div class="form-gruppo">
-            <label for="servizio">Servizio richiesto *</label>
-            <select id="servizio" name="servizio" required>
-                <option value="">-- Seleziona un servizio --</option>
-                <option value="Iniezione intramuscolare"     {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione intramuscolare' }}>Iniezione intramuscolare</option>
-                <option value="Iniezione sottocutanea"       {{ 'selected' if form_data and form_data.get('servizio') == 'Iniezione sottocutanea' }}>Iniezione sottocutanea</option>
-                <option value="Flebo e terapia infusionale"  {{ 'selected' if form_data and form_data.get('servizio') == 'Flebo e terapia infusionale' }}>Flebo e terapia infusionale</option>
-                <option value="Medicazione semplice"         {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione semplice' }}>Medicazione semplice</option>
-                <option value="Medicazione complessa"        {{ 'selected' if form_data and form_data.get('servizio') == 'Medicazione complessa' }}>Medicazione complessa</option>
-                <option value="Controllo parametri vitali"   {{ 'selected' if form_data and form_data.get('servizio') == 'Controllo parametri vitali' }}>Controllo parametri vitali</option>
-                <option value="Assistenza domiciliare"       {{ 'selected' if form_data and form_data.get('servizio') == 'Assistenza domiciliare' }}>Assistenza domiciliare</option>
-                <option value="Gestione terapia farmacologica" {{ 'selected' if form_data and form_data.get('servizio') == 'Gestione terapia farmacologica' }}>Gestione terapia farmacologica</option>
-            </select>
+        {% set categoria_selezionata = form_data.get('categoria_servizio', '') if form_data else '' %}
+        <div class="form-riga booking-service-selectors">
+            <div class="form-gruppo">
+                <label for="categoria-servizio">1. Categoria della prestazione *</label>
+                <select id="categoria-servizio" name="categoria_servizio" required>
+                    <option value="">Seleziona una categoria</option>
+                    {% for categoria in prestazioni_categorie %}
+                    <option value="{{ categoria.slug }}" {{ 'selected' if categoria_selezionata == categoria.slug }}>{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-gruppo">
+                <label for="servizio">2. Prestazione richiesta *</label>
+                <select id="servizio" name="servizio" required{% if not categoria_selezionata %} disabled{% endif %}>
+                    <option value="">{% if categoria_selezionata %}Seleziona una prestazione{% else %}Prima scegli una categoria{% endif %}</option>
+                    {% for categoria in prestazioni_categorie %}
+                        {% for prestazione in categoria.prestazioni %}
+                    <option value="{{ prestazione.nome }}"
+                        data-service-name="{{ prestazione.nome }}"
+                        data-category-slug="{{ categoria.slug }}"
+                        data-category="{{ categoria.nome }}"
+                        data-price="{{ prestazione.prezzo }}"
+                        {% if categoria_selezionata != categoria.slug %}hidden disabled{% endif %}
+                        {{ 'selected' if form_data and form_data.get('servizio') == prestazione.nome }}
+                    >{{ prestazione.nome }} — {{ prestazione.prezzo }}</option>
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
         </div>
+        <p class="booking-selector-note">Scegli prima la categoria: il secondo menu mostrerà soltanto le prestazioni pertinenti.</p>
 
         <div class="form-riga">
             <div class="form-gruppo">
@@ -98,12 +117,25 @@
             </label>
         </div>
 
-        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia">Invia prenotazione</button>
+        <div class="booking-service-summary" data-service-price-summary aria-live="polite">
+            <div class="booking-service-summary__service">
+                <span>Riepilogo della prestazione</span>
+                <strong data-service-summary-name>Nessuna prestazione selezionata</strong>
+                <small data-service-summary-category>Scegli categoria e prestazione per vedere il riepilogo.</small>
+            </div>
+            <p class="booking-service-summary__price">
+                <span>Tariffa in studio</span>
+                <strong data-service-summary-price>—</strong>
+            </p>
+        </div>
+        <p class="booking-price-note">Le tariffe “da” o “su valutazione” dipendono dalla situazione e dai materiali necessari. Ogni variazione viene comunicata prima della conferma.</p>
+
+        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia" data-conversion="prestazioni_booking_submit">Invia prenotazione</button>
 
     </form>
 </section>
 
-<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.2"></script>
 
 <script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 

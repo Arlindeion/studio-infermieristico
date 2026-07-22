@@ -84,12 +84,15 @@
 }
 
 .badge {
+    display: inline-flex;
+    align-items: center;
     padding: 0.3rem 0.8rem;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     background: var(--verde-chiaro);
     color: var(--verde-scuro);
+    white-space: nowrap;
 }
 
 .azioni {
@@ -103,7 +106,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 32px;
+    min-height: 44px;
     padding: 0.35rem 0.75rem;
     border-radius: 6px;
     font-size: 0.8rem;
@@ -111,6 +114,13 @@
     cursor: pointer;
     text-decoration: none;
     transition: background 0.16s, color 0.16s, transform 0.16s;
+    border: 0;
+    font-family: inherit;
+}
+
+.admin-inline-action {
+    display: inline-flex;
+    margin: 0;
 }
 
 .btn-azione.verde { background: #e8f8f0; color: #27ae60; }
@@ -466,7 +476,7 @@
     margin-bottom: 1rem;
 }
 
-.login-box h2 {
+.login-box h1 {
     color: var(--verde-scuro);
     margin-bottom: 0.3rem;
 }
@@ -598,6 +608,76 @@
 
 .admin-section-heading h2 {
     margin-bottom: 0;
+}
+
+.admin-call-actions form {
+    display: inline-flex;
+    margin: 0.2rem;
+}
+
+.admin-call-actions button.btn-azione {
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.admin-questionnaire-send {
+    align-items: flex-start;
+    border-top: 1px solid var(--verde-scuro-a14);
+    display: grid !important;
+    gap: 0.4rem;
+    margin-top: 0.6rem !important;
+    padding-top: 0.7rem;
+}
+
+.admin-questionnaire-send label {
+    color: var(--grigio);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.admin-questionnaire-send select {
+    border: 1px solid var(--verde-scuro-a20);
+    border-radius: 8px;
+    font: inherit;
+    min-height: 40px;
+    padding: 0.4rem;
+}
+
+.admin-questionnaire-summary {
+    background: var(--verde-chiaro);
+    border-radius: 12px;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 1.5rem 0;
+    padding: 1.2rem;
+}
+
+.admin-questionnaire-answers {
+    display: grid;
+    gap: 0;
+    margin: 1rem 0 2rem;
+}
+
+.admin-questionnaire-answers div {
+    border-bottom: 1px solid var(--verde-scuro-a14);
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(180px, 0.4fr) minmax(0, 1fr);
+    padding: 1rem 0;
+}
+
+.admin-questionnaire-answers dt {
+    color: var(--verde-scuro);
+    font-weight: 700;
+}
+
+.admin-questionnaire-answers dd {
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
 }
 
 .admin-eyebrow {
@@ -1026,5 +1106,11 @@ body.page-modifica-appuntamento {
     .filtro-btn {
         justify-content: center;
         text-align: center;
+    }
+
+    .admin-questionnaire-summary,
+    .admin-questionnaire-answers div {
+        gap: 0.4rem;
+        grid-template-columns: 1fr;
     }
 }

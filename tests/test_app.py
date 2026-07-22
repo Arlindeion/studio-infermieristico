@@ -1,11 +1,15 @@
 import os
+import base64
 import re
+import secrets
+import subprocess
 import sys
 from pathlib import Path
 import pytest
 import icalendar
 from unittest.mock import MagicMock, patch
 from datetime import date, datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # Assicurarsi che l'applicazione possa essere importata
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -24,6 +28,11 @@ from app import (
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
     RegistroEvento,
+    CallSonno,
+    QuestionarioSonno,
+    crea_amministratore_iniziale,
+    inizializza_database,
+    valida_configurazione_runtime,
 )
 
 @pytest.fixture
@@ -57,6 +66,107 @@ def test_app_is_testing(app):
     assert app.config['TESTING'] == True
 
 
+def _basic_auth_header(username, password):
+    token = base64.b64encode(f'{username}:{password}'.encode()).decode()
+    return {'Authorization': f'Basic {token}'}
+
+
+def test_staging_richiede_autenticazione_e_invia_noindex(app, client, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+
+    negato = client.get('/')
+    autorizzato = client.get(
+        '/',
+        headers=_basic_auth_header('tester', 'password-staging-lunga-2026'),
+    )
+
+    assert negato.status_code == 401
+    assert negato.headers['WWW-Authenticate'].startswith('Basic ')
+    assert negato.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+    assert autorizzato.status_code == 200
+    assert autorizzato.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+
+
+def test_staging_espone_health_check_e_robots_senza_credenziali(app, client, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+
+    health = client.get('/healthz')
+    robots = client.get('/robots.txt')
+
+    assert health.status_code == 200
+    assert health.get_json() == {'status': 'ok'}
+    assert robots.status_code == 200
+    assert 'Disallow: /' in robots.text
+    assert robots.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+
+
+def test_staging_non_si_avvia_senza_protezione(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', None)
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Lo staging richiede'):
+        inizializza_database()
+
+
+def _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='staging'):
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    monkeypatch.setitem(app.config, 'APP_ENV', ambiente)
+    monkeypatch.setitem(app.config, 'SECRET_KEY', 's' * 32)
+    monkeypatch.setitem(app.config, 'SECRET_KEY_IS_EPHEMERAL', False)
+    monkeypatch.setitem(app.config, 'SQLALCHEMY_DATABASE_URI', 'postgresql+psycopg://db/test')
+    monkeypatch.setitem(app.config, 'DATABASE_URL_IS_EXPLICIT', True)
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', 'tester')
+    monkeypatch.setitem(app.config, 'STAGING_AUTH_PASSWORD', 'password-staging-lunga-2026')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', 'password-admin-lunga-2026')
+    monkeypatch.setitem(app.config, 'MAIL_USE_TLS', True)
+    monkeypatch.setitem(app.config, 'MAIL_USE_SSL', False)
+    monkeypatch.setitem(app.config, 'MAIL_SUPPRESS_SEND', ambiente == 'staging')
+
+
+def test_validazione_staging_accetta_solo_configurazione_sicura(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+
+    valida_configurazione_runtime()
+
+
+def test_validazione_staging_rifiuta_secret_key_effimera(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+    monkeypatch.setitem(app.config, 'SECRET_KEY_IS_EPHEMERAL', True)
+
+    with pytest.raises(RuntimeError, match='SECRET_KEY stabile'):
+        valida_configurazione_runtime()
+
+
+def test_validazione_produzione_richiede_email_e_calendar(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', None)
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', None)
+
+    with pytest.raises(RuntimeError, match='MAIL_USERNAME.*GOOGLE_CALENDAR_ID'):
+        valida_configurazione_runtime()
+
+
+def test_validazione_produzione_completa(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@example.invalid')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(app.config, 'MAIL_DEFAULT_SENDER', 'Studio <info@example.invalid>')
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+
+    valida_configurazione_runtime()
+
+
 def test_database_url_postgres_compatibile_con_psycopg():
     assert normalize_database_url('postgres://user:pass@host/db').startswith('postgresql+psycopg://')
     assert normalize_database_url('postgresql://user:pass@host/db').startswith('postgresql+psycopg://')
@@ -74,6 +184,215 @@ def test_database_empty(app):
         assert IncontroAccompagnamento.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 0
         assert RegistroEvento.query.count() == 0
+        assert CallSonno.query.count() == 0
+        assert QuestionarioSonno.query.count() == 0
+
+
+def _csrf_call_sonno(client):
+    response = client.get('/prenota-call-sonno')
+    return re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+
+
+def _dati_call_sonno(client, data=None, ora='09:00'):
+    data = data or app_module.prima_data_call_disponibile().isoformat()
+    return {
+        'nome': 'Anna Verdi',
+        'telefono': '333 1234567',
+        'email': 'anna@example.com',
+        'eta_bambino_mesi': '7',
+        'ruolo_richiedente': 'Genitore con responsabilità genitoriale',
+        'difficolta_principale': 'Risvegli notturni frequenti',
+        'durata_difficolta': 'Da 1 a 3 mesi',
+        'obiettivo_call': 'Capire quale percorso è adatto alla nostra situazione.',
+        'data': data,
+        'ora': ora,
+        'presa_visione_offerta': 'on',
+        'conferma_ambito': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': _csrf_call_sonno(client),
+    }
+
+
+def test_prenotazione_call_sonno_blocca_subito_lo_slot(client):
+    dati = _dati_call_sonno(client)
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post('/prenota-call-sonno', data=dati, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert 'Lo slot è riservato provvisoriamente' in response.text
+    assert 'La call non è ancora confermata' in response.text
+    with flask_app.app_context():
+        call = CallSonno.query.one()
+        assert call.stato == 'In attesa'
+        assert call.consenso_privacy is True
+        assert call.presa_visione_offerta is True
+        assert call.conferma_ambito is True
+        assert call.ruolo_richiedente == 'Genitore con responsabilità genitoriale'
+
+    availability = client.get(f'/api/orari-call-sonno/{dati["data"]}').get_json()
+    assert '09:00' in availability['occupati']
+
+
+def test_call_sonno_dura_20_minuti_e_blocca_30_minuti_in_agenda(app):
+    data = app_module.prima_data_call_disponibile().isoformat()
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, data=data, ora='09:00', stato='In attesa',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        corpo_evento = app_module._corpo_evento_da_call_sonno(call)
+        inizio = datetime.fromisoformat(corpo_evento['start']['dateTime'])
+        fine = datetime.fromisoformat(corpo_evento['end']['dateTime'])
+
+        assert app_module.DURATA_CALL_SONNO_MINUTI == 20
+        assert app_module.BLOCCO_CALL_SONNO_MINUTI == 30
+        assert fine - inizio == app_module.timedelta(minutes=30)
+        assert app_module.slot_occupato_db(data, '09:20', 10) is True
+        assert app_module.slot_occupato_db(data, '09:30', 10) is False
+        assert '09:20' not in app_module.ORARI_CALL_SONNO
+        assert '09:30' in app_module.ORARI_CALL_SONNO
+
+
+def test_call_sonno_prenotabile_anche_il_sabato(app):
+    giorno = app_module.prima_data_call_disponibile()
+    while giorno.weekday() != 5:
+        giorno += app_module.timedelta(days=1)
+
+    assert app_module.orario_call_prenotabile(giorno.isoformat(), '09:00') is True
+
+
+def test_prenotazione_call_sonno_salva_utm(client):
+    dati = _dati_call_sonno(client)
+    dati.update({
+        'utm_source': 'instagram',
+        'utm_medium': 'paid_social',
+        'utm_campaign': 'sonno_settembre',
+        'utm_content': 'risvegli_video_1',
+    })
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post('/prenota-call-sonno', data=dati)
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        call = CallSonno.query.one()
+        assert call.utm_source == 'instagram'
+        assert call.utm_content == 'risvegli_video_1'
+
+
+def test_pagina_sonno_mostra_formule_e_prezzi_prima_della_prenotazione(client):
+    landing = client.get('/consulenze-online')
+    booking = client.get('/prenota-call-sonno')
+
+    assert 'Consulenza mirata' in landing.text
+    assert 'Percorso sonno personalizzato' in landing.text
+    assert 'Percorso sonno con affiancamento' in landing.text
+    assert '320 €' in landing.text
+    assert 'partono da <strong>75 €</strong>' in booking.text
+
+
+def test_promemoria_call_sonno_email_non_si_duplica(app):
+    adesso = datetime(2026, 9, 20, 10, 0, tzinfo=app_module.FUSO_ORARIO)
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True,
+            data='2026-09-21', ora='09:00', stato='Confermata',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        with patch.object(
+            app_module, 'invia_email_promemoria_call_sonno', return_value=True
+        ) as email:
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+
+        db.session.refresh(call)
+        assert call.promemoria_email_24h_il is not None
+        email.assert_called_once_with(call, 24)
+
+
+def test_promemoria_call_sonno_email_due_ore(app):
+    adesso = datetime(2026, 9, 21, 7, 30, tzinfo=app_module.FUSO_ORARIO)
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True,
+            data='2026-09-21', ora='09:00', stato='Confermata',
+        )
+        db.session.add(call)
+        db.session.commit()
+
+        with patch.object(
+            app_module, 'invia_email_promemoria_call_sonno', return_value=True
+        ) as email:
+            app_module.controlla_e_invia_promemoria_call_sonno(adesso)
+
+        db.session.refresh(call)
+        assert call.promemoria_email_2h_il is not None
+        email.assert_called_once_with(call, 2)
+
+
+def test_call_sonno_non_si_sovrappone_a_prestazione(client):
+    data = app_module.prima_data_call_disponibile().isoformat()
+    with flask_app.app_context():
+        db.session.add(Appuntamento(
+            nome='Paziente', telefono='3331234567', email='p@example.com',
+            servizio='Medicazione semplice', data=data, ora='09:00', stato='Confermato',
+        ))
+        db.session.commit()
+
+    response = client.post('/prenota-call-sonno', data=_dati_call_sonno(client, data, '09:00'))
+    assert 'Questo orario non è più disponibile' in response.text
+    with flask_app.app_context():
+        assert CallSonno.query.count() == 0
+
+
+def test_questionario_sonno_disponibile_solo_dopo_invito(client):
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, data='2026-09-21', ora='09:00', stato='Conclusa',
+            formula_scelta='percorso', token_questionario=secrets.token_urlsafe(48),
+        )
+        db.session.add(call)
+        db.session.commit()
+        token = call.token_questionario
+
+    response = client.get(f'/questionario-sonno/{token}')
+    assert response.status_code == 200
+    assert 'noindex,nofollow,noarchive' in response.text
+    csrf = re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+    payload = {
+        '_csrf_token': csrf,
+        'nome_bambino': 'Leo',
+        'data_nascita': '2026-02-01',
+        'alimentazione': 'Mista',
+        'dove_dorme': 'Lettino in camera dei genitori',
+        'durata_difficolta': 'Da alcune settimane',
+        'cambiamento_desiderato': 'Ridurre i risvegli più lunghi',
+        'consenso_dati_sanitari': 'on',
+    }
+    completed = client.post(f'/questionario-sonno/{token}', data=payload, follow_redirects=True)
+    assert 'Questionario ricevuto' in completed.text
+    with flask_app.app_context():
+        assert QuestionarioSonno.query.count() == 1
+        call_id = CallSonno.query.one().id
+
+    protected = client.get(f'/admin/call-sonno/{call_id}/questionario')
+    assert protected.status_code == 302
+    _login_admin(client)
+    admin_view = client.get(f'/admin/call-sonno/{call_id}/questionario')
+    assert admin_view.status_code == 200
+    assert 'Questionario sonno di Anna Verdi' in admin_view.text
+    assert 'Ridurre i risvegli più lunghi' in admin_view.text
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -82,6 +401,74 @@ def test_create_admin(app):
         db.session.add(admin)
         db.session.commit()
         assert Admin.query.filter_by(username='testadmin').first() is not None
+
+
+def test_database_vuoto_non_crea_admin_predefinito(app):
+    with app.app_context():
+        inizializza_database()
+
+        assert Admin.query.count() == 0
+
+
+def test_bootstrap_admin_richiede_credenziali_esplicite_e_salva_hash(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', 'selene-admin')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', 'frase-segreta-lunga-2026')
+
+    with app.app_context():
+        inizializza_database()
+        admin = Admin.query.one()
+
+        assert admin.username == 'selene-admin'
+        assert admin.password != 'frase-segreta-lunga-2026'
+        assert check_password_hash(admin.password, 'frase-segreta-lunga-2026')
+
+
+def test_bootstrap_admin_rifiuta_password_corta(app):
+    with app.app_context(), pytest.raises(ValueError, match='almeno 16 caratteri'):
+        crea_amministratore_iniziale('selene-admin', 'troppo-corta')
+
+
+def test_bootstrap_admin_richiede_entrambe_le_variabili(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', 'selene-admin')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Configurare insieme'):
+        inizializza_database()
+
+
+def test_produzione_rifiuta_database_senza_admin(app, monkeypatch):
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_USERNAME', None)
+    monkeypatch.setitem(app.config, 'ADMIN_BOOTSTRAP_PASSWORD', None)
+
+    with app.app_context(), pytest.raises(RuntimeError, match='Database senza amministratore'):
+        inizializza_database()
+
+
+def test_produzione_rifiuta_credenziale_legacy(app, monkeypatch):
+    with app.app_context():
+        db.session.add(Admin(
+            username='admin',
+            password=generate_password_hash('cambiami123'),
+        ))
+        db.session.commit()
+
+    monkeypatch.setattr(app_module, 'config_name', 'production')
+    with app.app_context(), pytest.raises(RuntimeError, match='legacy'):
+        inizializza_database()
+
+
+def test_comando_create_admin_crea_un_account_sicuro(app, runner):
+    result = runner.invoke(
+        args=['create-admin'],
+        input='selene-admin\nfrase-segreta-lunga-2026\nfrase-segreta-lunga-2026\n',
+    )
+
+    assert result.exit_code == 0
+    with app.app_context():
+        admin = Admin.query.one()
+        assert admin.username == 'selene-admin'
+        assert check_password_hash(admin.password, 'frase-segreta-lunga-2026')
 
 def test_create_appointment(app):
     """Testare la creazione di un appuntamento."""
@@ -134,7 +521,79 @@ def test_holiday_flow(client):
     resp = client.get('/')
     assert resp.status_code == 200
     assert b'S.C. Studio Infermieristico' in resp.data  # adeguare in base al contenuto effettivo
-    assert 'href="/faq">FAQ</a>' in resp.text
+    assert 'data-site-header' in resp.text
+    assert 'aria-label="Navigazione principale"' in resp.text
+    assert 'aria-label="Torna alla homepage"' in resp.text
+    assert 'href="/faq"' in resp.text
+    assert 'aria-label="Prestazioni infermieristiche"' in resp.text
+
+
+def test_header_elenca_tutte_le_tipologie_di_corso(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert resp.text.count('href="/iscrizione-corsi/laboratorio-infanzia"') == 3
+    assert 'Laboratori, gioco e sviluppo' in resp.text
+    assert 'Laboratori alimentari, gioco e sviluppo' in resp.text
+
+
+def test_comportamento_javascript_header():
+    project_root = Path(app_module.__file__).resolve().parent
+    test_file = project_root / 'tests' / 'js' / 'menu-mobile.test.js'
+    result = subprocess.run(
+        ['node', '--test', str(test_file)],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize('route', ['/', '/chi-sono', '/faq', '/iscrizione-corsi', '/consulenze-online', '/prenota-call-sonno'])
+def test_widget_whatsapp_globale_assente(client, route):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert 'class="whatsapp-widget"' not in resp.text
+    assert 'data-conversion="whatsapp_floating_' not in resp.text
+
+
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/prestazioni-infermieristiche',
+        '/prenota',
+        '/iscrizione-corsi/disostruzione-pediatrica',
+        '/admin/login',
+    ],
+)
+def test_widget_whatsapp_assente_dai_flussi_specifici(client, route):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert 'class="whatsapp-widget"' not in resp.text
+
+
+def test_whatsapp_resta_disponibile_solo_nelle_cta_contestuali(client):
+    faq = client.get('/faq')
+    sonno = client.get('/consulenze-online')
+
+    assert 'data-conversion="faq_whatsapp"' in faq.text
+    assert 'data-conversion="sleep_hero_whatsapp"' in sonno.text
+
+
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/admin/aggiorna/1/Confermato',
+        '/admin/corso/elimina/1',
+        '/admin/iscrizione-corso/1/Confermato',
+    ],
+)
+def test_azioni_admin_mutative_rifiutano_get(client, route):
+    assert client.get(route).status_code == 405
 
 
 def test_css_core_e_modulo_homepage(client):
@@ -176,18 +635,49 @@ def test_css_rgba_letterali_solo_nei_token():
     assert alpha_references <= set(alpha_definitions)
 
 
-def test_css_consulenza_caricato_solo_nella_landing(client):
+def test_css_consulenza_caricato_nel_percorso_sonno(client):
     consultation = client.get('/consulenze-online')
+    booking = client.get('/prenota-call-sonno')
     courses = client.get('/iscrizione-corsi')
 
     assert consultation.status_code == 200
     assert 'css/consulenza.css' in consultation.text
     assert 'css/homepage.css' not in consultation.text
     assert 'css/admin.css' not in consultation.text
+    assert booking.status_code == 200
+    assert 'css/consulenza.css' in booking.text
     assert courses.status_code == 200
     assert 'css/consulenza.css' not in courses.text
     assert 'css/homepage.css' not in courses.text
     assert 'css/admin.css' not in courses.text
+
+
+def test_elenco_corsi_usa_foto_reale_per_laboratori(client):
+    resp = client.get('/iscrizione-corsi')
+
+    assert resp.status_code == 200
+    assert 'img/laboratori-hero-esplorazione-sensoriale.jpg' in resp.text
+    assert 'alt="Bambini impegnati in attività sensoriali durante un laboratorio"' in resp.text
+
+
+def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
+    resp = client.get('/iscrizione-corsi')
+
+    assert resp.status_code == 200
+    directory_html = re.search(
+        r'<div class="course-directory" id="elenco-corsi">(.*?)</div>\s*<div class="course-flow">',
+        resp.text,
+        re.DOTALL,
+    ).group(1)
+    course_paths = [
+        '/iscrizione-corsi/blsd',
+        '/iscrizione-corsi/disostruzione-pediatrica',
+        '/iscrizione-corsi/accompagnamento-nascita',
+        '/iscrizione-corsi/laboratorio-infanzia',
+    ]
+    for path in course_paths:
+        assert directory_html.count(f'href="{path}"') == 3
+    assert directory_html.count('class="course-directory-media"') == 4
 
 
 def test_css_admin_caricato_nel_login(client):
@@ -213,7 +703,7 @@ def test_css_admin_caricato_nel_login(client):
 def test_faq_include_flussi_aggiornati(client):
     resp = client.get('/faq')
     assert resp.status_code == 200
-    assert 'consulenze genitori' in resp.text
+    assert 'consulenza del sonno' in resp.text
     assert 'BLSD' in resp.text
     assert 'link privato' in resp.text
     assert 'open day gratuito' in resp.text
@@ -244,6 +734,75 @@ def _csrf_iscrizione(client, corso_tipo):
     import re
     resp = client.get(f'/iscrizione-corsi/{corso_tipo}')
     return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def test_pagina_disostruzione_presenta_contenuti_e_foto_del_corso(client):
+    resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert resp.status_code == 200
+    assert 'Un corso teorico-pratico dedicato a genitori, nonni e caregiver' in resp.text
+    assert 'Circa 2 ore e 30 minuti' in resp.text
+    assert 'Manovre di disostruzione' in resp.text
+    assert 'corso-disostruzione-copertina-studio.jpg' in resp.text
+    assert 'corso-disostruzione-dimostrazione.jpg' in resp.text
+    assert 'corso-disostruzione-prova-pratica.jpg' in resp.text
+    assert 'corso-disostruzione-esercitazione-partecipanti.jpg' in resp.text
+    assert 'corso-disostruzione-tagli-sicuri.jpg' in resp.text
+    assert '<strong>Teoria</strong>' in resp.text
+    assert '<strong>Prima prova pratica</strong>' in resp.text
+    assert '<strong>Seconda prova pratica</strong>' in resp.text
+    assert '<strong>Laboratorio tagli sicuri</strong>' in resp.text
+    assert 'Selene nello studio' not in resp.text
+    assert 'Per approfondire:' not in resp.text
+    assert 'href="#richiesta-ricontatto"' in resp.text
+    assert 'Vai al modulo' in resp.text
+    assert resp.text.count('<h1>') == 1
+
+
+def test_pagina_laboratori_presenta_fasce_eta_e_foto_reali(client):
+    resp = client.get('/iscrizione-corsi/laboratorio-infanzia')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1>') == 1
+    assert 'Laboratori per bambini e famiglie' in resp.text
+    assert 'Nuove esperienze da vivere anche a casa' in resp.text
+    assert '6–18' in resp.text
+    assert '18–36' in resp.text
+    assert '3–5' in resp.text
+    assert 'laboratori-hero-esplorazione-sensoriale.jpg' in resp.text
+    assert 'laboratori-primi-assaggi.jpg' in resp.text
+    assert 'laboratori-autonomia-a-tavola.jpg' in resp.text
+    assert 'laboratori-creativita-colori.jpg' in resp.text
+    assert 'data-conversion="laboratorio_infanzia_modulo"' in resp.text
+
+
+def test_pagina_accompagnamento_presenta_percorso_ed_equipe(client):
+    resp = client.get('/corso-accompagnamento-nascita')
+
+    assert resp.status_code == 200
+    assert '8 incontri durante la gravidanza e 1 incontro dopo il parto' in resp.text
+    assert 'Con l’ostetrica' in resp.text
+    assert 'Con la psicologa' in resp.text
+    assert 'Con l’osteopata' in resp.text
+    assert 'Con la nutrizionista' in resp.text
+    assert 'Con l’infermiera' in resp.text
+    assert 'corso-accompagnamento-nascita-professionisti.jpg' in resp.text
+    assert 'data-conversion="accompagnamento_open_day_hero"' in resp.text
+    assert 'Scopri l’open day' in resp.text
+    assert 'data-conversion="sticky_prima_della_nascita"' in resp.text
+    assert 'Farmacia Russo al fianco del percorso' in resp.text
+    assert 'realizzato con la collaborazione della Farmacia Russo' in resp.text
+    assert 'logo-farmacia-russo.png' in resp.text
+    assert 'href="https://farmaciarussodomenico.it/"' in resp.text
+    assert 'aria-label="Visita il sito della Farmacia Russo"' in resp.text
+    assert resp.text.count('<h1>') == 1
+
+
+def test_vecchio_url_prima_della_nascita_reindirizza_al_corso(client):
+    resp = client.get('/prima-della-nascita')
+
+    assert resp.status_code == 301
+    assert resp.headers['Location'].endswith('/corso-accompagnamento-nascita')
 
 
 def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18:00', luogo='Studio'):
@@ -365,9 +924,9 @@ def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
 
 def test_iscrizione_blsd_salva_richiesta_individuale(client):
     data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
-    token = _csrf_iscrizione(client, 'bls-d')
+    token = _csrf_iscrizione(client, 'blsd')
 
-    resp = client.post('/iscrizione-corsi/bls-d', data={
+    resp = client.post('/iscrizione-corsi/blsd', data={
         'nome': 'Giulia Bianchi',
         'codice_fiscale': 'BNCGLI85A41G482Z',
         'telefono': '3331234567',
@@ -399,11 +958,29 @@ def test_iscrizione_blsd_salva_richiesta_individuale(client):
         assert 'numero_partecipanti' not in extra
 
 
+def test_pagina_blsd_usa_nuovo_slug_e_reindirizza_quello_precedente(client):
+    resp = client.get('/iscrizione-corsi/blsd')
+
+    assert resp.status_code == 200
+    assert 'action="/iscrizione-corsi/blsd"' in resp.text
+    assert '<link rel="canonical" href="http://localhost/iscrizione-corsi/blsd">' in resp.text
+    assert 'img/corso-blsd-esercitazione.jpg' in resp.text
+    assert '5 ore' in resp.text
+    assert 'Teoria ed esercitazioni pratiche su manichino' in resp.text
+    assert 'Cittadini, associazioni, aziende e gruppi' in resp.text
+    assert 'Via C. D’Agnese 43, 65015 Montesilvano (PE)' in resp.text
+
+    redirect_resp = client.get('/iscrizione-corsi/bls-d')
+
+    assert redirect_resp.status_code == 301
+    assert redirect_resp.headers['Location'] == '/iscrizione-corsi/blsd'
+
+
 def test_iscrizione_blsd_non_accetta_azienda_da_form(client):
     data_corso_id = _crea_data_corso('bls-d', 'Corso BLSD', data='2099-07-17', ora='09:00')
-    token = _csrf_iscrizione(client, 'bls-d')
+    token = _csrf_iscrizione(client, 'blsd')
 
-    resp = client.post('/iscrizione-corsi/bls-d', data={
+    resp = client.post('/iscrizione-corsi/blsd', data={
         'nome': 'Giulia Bianchi',
         'codice_fiscale': 'BNCGLI85A41G482Z',
         'telefono': '3331234567',
@@ -458,7 +1035,7 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
     admin_resp = client.get('/admin')
     assert 'Luisa Verdi' in admin_resp.text
     assert 'Corso di accompagnamento alla nascita' in admin_resp.text
-    stato_resp = client.get(f'/admin/iscrizione-corso/1/Contattato?token={csrf}')
+    stato_resp = client.post('/admin/iscrizione-corso/1/Contattato', data={'_csrf_token': csrf})
     assert stato_resp.status_code == 302
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.first()
@@ -971,6 +1548,25 @@ def google_calendar_scrittura_finto(app):
     app_module._servizio_calendario_cache = None
 
 
+def test_tutte_le_prestazioni_bloccano_trenta_minuti():
+    assert app_module.DURATA_SLOT_MINUTI == 30
+
+    for servizio in app_module.SERVIZI_PRENOTABILI:
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio=servizio,
+            data='2026-09-01',
+            ora='10:00',
+        )
+        corpo = app_module._corpo_evento_da_appuntamento(appuntamento)
+        inizio = datetime.fromisoformat(corpo['start']['dateTime'])
+        fine = datetime.fromisoformat(corpo['end']['dateTime'])
+
+        assert fine - inizio == app_module.timedelta(minutes=30), servizio
+
+
 def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_finto):
     """Confermare un appuntamento deve creare un evento su Google Calendar e
     salvarne l'ID sull'appuntamento."""
@@ -985,7 +1581,7 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
 
     mock_servizio.events().insert.assert_called()
     corpo_inviato = mock_servizio.events().insert.call_args.kwargs['body']
@@ -1008,7 +1604,7 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, g
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
 
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
@@ -1041,7 +1637,7 @@ def test_annullamento_elimina_evento_da_calendario(client, google_calendar_scrit
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/aggiorna/{appt_id}/Annullato?token={csrf}')
+    client.post(f'/admin/aggiorna/{appt_id}/Annullato', data={'_csrf_token': csrf})
 
     mock_servizio.events().delete.assert_called_with(
         calendarId='finto@group.calendar.google.com', eventId='evento-da-eliminare'
@@ -1154,7 +1750,7 @@ def test_eliminazione_corso_elimina_evento_su_calendario(client, google_calendar
         corso_id = corso.id
 
     csrf = _login_admin(client)
-    client.get(f'/admin/corso/elimina/{corso_id}?token={csrf}')
+    client.post(f'/admin/corso/elimina/{corso_id}', data={'_csrf_token': csrf})
 
     mock_servizio.events().delete.assert_called_once_with(
         calendarId='finto@group.calendar.google.com',
@@ -1231,7 +1827,11 @@ def test_nessuna_chiamata_google_se_non_configurato(client):
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    resp = client.get(f'/admin/aggiorna/{appt_id}/Confermato?token={csrf}', follow_redirects=True)
+    resp = client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf},
+        follow_redirects=True,
+    )
     assert resp.status_code == 200
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
@@ -1270,6 +1870,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
     assert 'data-conversion="home_hero_corsi"' in resp.text
     assert 'data-conversion="home_hero_call_sonno"' in resp.text
+    assert resp.text.count('Scegli l’orario della call') == 2
     assert '<meta name="description"' in resp.text
     assert '<link rel="canonical"' in resp.text
     assert '<meta property="og:title"' in resp.text
@@ -1279,6 +1880,51 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'behold-widget.js' in resp.text
     assert resp.text.index('class="home-instagram"') < resp.text.index('class="home-clinical-band"')
     assert resp.text.index('class="home-clinical-band"') < resp.text.index('class="home-final-cta"')
+    assert 'class="home-birth-shell"' in resp.text
+    assert 'class="home-professionals-label"' in resp.text
+    assert 'class="home-testimonial-featured"' in resp.text
+
+
+def test_homepage_senza_date_mostra_un_ricontatto_compatto(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'home-dates home-dates--empty' in resp.text
+    assert 'Le prossime date stanno arrivando.' in resp.text
+    assert 'data-conversion="home_date_interesse"' in resp.text
+    assert 'id="cal-griglia"' not in resp.text
+
+
+def test_homepage_con_date_mostra_il_calendario_accessibile(client):
+    _crea_data_corso('disostruzione-pediatrica', data='2099-07-16')
+
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'home-dates--empty' not in resp.text
+    assert 'id="cal-griglia"' in resp.text
+    assert 'id="cal-dettaglio" role="status" aria-live="polite"' in resp.text
+
+
+def test_calendario_homepage_usa_controlli_accessibili():
+    script = (Path(app_module.__file__).resolve().parent / 'static' / 'js' / 'calendario.js').read_text()
+
+    assert "document.createElement('button')" in script
+    assert "pulsante.type = 'button'" in script
+    assert "pulsante.setAttribute('aria-expanded', 'false')" in script
+    assert "Mostra i dettagli" in script
+    assert "'Orario: '" in script
+    assert "'Luogo: '" in script
+
+
+def test_homepage_non_forza_il_layout_del_widget_instagram():
+    stylesheet = (Path(app_module.__file__).resolve().parent / 'static' / 'css' / 'homepage.css').read_text()
+    regola_widget = re.search(r'\.home-instagram-feed behold-widget\s*\{([^}]*)\}', stylesheet)
+
+    assert regola_widget is not None
+    assert 'transform:' not in regola_widget.group(1)
+    assert 'width:' not in regola_widget.group(1)
+    assert 'height:' not in regola_widget.group(1)
 
 
 def test_consulenza_online_e_verticale_sul_sonno(client):
@@ -1292,6 +1938,18 @@ def test_consulenza_online_e_verticale_sul_sonno(client):
     assert 'spannolinamento' not in resp.text.lower()
     assert 'ciuccio' not in resp.text.lower()
     assert 'data-conversion="sleep_hero_call"' in resp.text
+    assert 'data-conversion="sleep_mid_call"' in resp.text
+    assert 'data-conversion="sleep_mid_whatsapp"' not in resp.text
+    assert 'data-conversion="sleep_final_call"' in resp.text
+    assert resp.text.count('Scegli l’orario della call') >= 3
+    assert 'Hai ancora un dubbio?' in resp.text
+    assert 'Applicate un metodo rigido per farlo dormire?' in resp.text
+    assert 'circa 20 minuti' in resp.text
+    assert '15 minuti' not in resp.text
+    assert resp.text.index('class="sleep-fit"') < resp.text.index('class="sleep-call-path"')
+    assert resp.text.index('class="sleep-call-path"') < resp.text.index('class="sleep-together"')
+    assert 'class="sleep-options"' not in resp.text
+    assert 'class="sleep-expectations"' not in resp.text
     assert '"@type": "Service"' in resp.text
 
 
@@ -1300,6 +1958,56 @@ def test_pagina_prestazioni_usa_h1(client):
 
     assert resp.status_code == 200
     assert '<h1>Prestazioni infermieristiche</h1>' in resp.text
+    assert 'href="/prenota"' in resp.text
+    assert 'Prenota una prestazione' in resp.text
+    assert 'data-conversion="prestazioni_prenota"' in resp.text
+    assert 'data-prestazioni-search' in resp.text
+    assert 'data-prestazioni-catalog' in resp.text
+    assert resp.text.count('data-service-group') == 4
+    assert resp.text.count('data-service-row') == 31
+    assert 'Lavaggio auricolare bilaterale' not in resp.text
+    assert '20 € un orecchio' not in resp.text
+    assert 'Terapie e somministrazioni' in resp.text
+    assert 'Medicazioni' in resp.text
+    assert 'Controlli e diagnostica' in resp.text
+    assert 'Altre prestazioni' in resp.text
+    assert 'Holter ECG 24 ore' in resp.text
+    assert '80 €' in resp.text
+    assert 'Le tariffe possono variare in base alla complessità della prestazione' in resp.text
+    assert 'Gli interventi a domicilio non si prenotano direttamente online' in resp.text
+    assert 'Per ulteriori informazioni, durante gli orari dello studio' in resp.text
+    assert 'urgenze fuori orario' not in resp.text
+    assert '<h2 id="studio-location-title">Dove ci troviamo</h2>' in resp.text
+    assert "Via C. D'Agnese 43, 65015 Montesilvano (PE)" in resp.text
+    assert 'Via Carmine' not in resp.text
+    assert 'data-conversion="prestazioni_mappa"' in resp.text
+    assert 'https://www.google.com/maps?q=' in resp.text
+    assert 'loading="lazy"' in resp.text
+
+
+def test_form_prenotazione_include_il_listino_aggiornato(client):
+    resp = client.get('/prenota')
+
+    assert resp.status_code == 200
+    assert 'css/prestazioni.css' in resp.text
+    assert '<select id="categoria-servizio" name="categoria_servizio" required>' in resp.text
+    assert '<option value="terapie-somministrazioni"' in resp.text
+    assert '<option value="medicazioni"' in resp.text
+    assert '<option value="controlli-diagnostica"' in resp.text
+    assert '<option value="altre-prestazioni"' in resp.text
+    assert '<select id="servizio" name="servizio" required disabled>' in resp.text
+    assert '<optgroup' not in resp.text
+    assert '<option value="Holter pressorio 24 ore"' in resp.text
+    assert '<option value="Medicazione chirurgica"' in resp.text
+    assert '<option value="Consulenza infermieristica"' in resp.text
+    assert 'data-category-slug="controlli-diagnostica"' in resp.text
+    assert 'data-price="80 €"' in resp.text
+    assert 'data-service-price-summary' in resp.text
+    assert 'Tariffa in studio' in resp.text
+    assert 'Ogni variazione viene comunicata prima della conferma.' in resp.text
+    assert '<option value="Assistenza domiciliare"' not in resp.text
+    assert resp.text.index('name="consenso_privacy"') < resp.text.index('data-service-price-summary')
+    assert resp.text.index('data-service-price-summary') < resp.text.index('id="btn-invia"')
 
 
 if __name__ == '__main__':

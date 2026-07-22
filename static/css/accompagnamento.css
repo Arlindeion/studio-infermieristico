@@ -1,0 +1,407 @@
+/* Pagina del corso di accompagnamento alla nascita */
+
+.birth-course {
+    margin: 0 auto;
+    max-width: 1180px;
+    padding: 4.5rem 2rem 5rem;
+}
+
+.birth-course__hero {
+    align-items: center;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.72fr);
+}
+
+.birth-course__hero-copy {
+    max-width: 690px;
+    min-width: 0;
+}
+
+.birth-course__hero h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(2.55rem, 5.5vw, 4.8rem);
+    line-height: 0.98;
+    margin-bottom: 1.4rem;
+    max-width: 12ch;
+}
+
+.birth-course__lead {
+    color: var(--verde-scuro);
+    font-size: clamp(1.16rem, 2vw, 1.4rem);
+    line-height: 1.55;
+    margin-bottom: 1rem;
+}
+
+.birth-course__hero-copy > p:not(.eyebrow):not(.birth-course__lead) {
+    color: var(--grigio);
+    font-size: 1.02rem;
+    line-height: 1.7;
+    margin-bottom: 1.6rem;
+    max-width: 60ch;
+}
+
+.birth-course__hero-media {
+    margin: 0;
+    padding: 0 0 1.25rem 1.25rem;
+    position: relative;
+}
+
+.birth-course__hero-media::before {
+    background: var(--verde-brand);
+    border-radius: 44% 56% 38% 62% / 52% 38% 62% 48%;
+    bottom: 0;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 1.15rem;
+    top: 1.15rem;
+}
+
+.birth-course__hero-media img {
+    aspect-ratio: 3 / 4;
+    border-radius: 52% 48% 46% 54% / 38% 45% 55% 62%;
+    display: block;
+    height: auto;
+    object-fit: cover;
+    position: relative;
+    width: 100%;
+}
+
+.birth-course__hero-media figcaption {
+    background: var(--verde-scuro);
+    border-radius: 1.1rem 0.25rem 1.1rem 0.25rem;
+    bottom: 0.35rem;
+    color: var(--avorio);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.35;
+    max-width: 16rem;
+    padding: 0.9rem 1.1rem 0.95rem 1.25rem;
+    position: absolute;
+    right: 0.15rem;
+    transform: rotate(-1.5deg);
+    z-index: 1;
+}
+
+.birth-course__hero-media figcaption::before {
+    background: var(--rosso-cuore);
+    border-radius: 999px;
+    content: "";
+    height: 3px;
+    left: 1.25rem;
+    position: absolute;
+    top: 0;
+    width: 3.5rem;
+}
+
+.birth-course__facts {
+    border-bottom: 1px solid var(--verde-scuro-a14);
+    border-top: 1px solid var(--verde-scuro-a14);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 5rem 0;
+}
+
+.birth-course__facts article {
+    padding: 1.65rem 1.8rem;
+}
+
+.birth-course__facts article + article {
+    border-left: 1px solid var(--verde-scuro-a14);
+}
+
+.birth-course__facts span,
+.birth-professional__role {
+    color: var(--rosso-cuore);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.55rem;
+    text-transform: uppercase;
+}
+
+.birth-course__facts h2 {
+    color: var(--verde-scuro);
+    font-size: 1.28rem;
+    line-height: 1.2;
+    margin-bottom: 0.55rem;
+}
+
+.birth-course__facts p {
+    color: var(--grigio);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.birth-course__team {
+    background: var(--verde-chiaro);
+    border: 1px solid var(--salvia-bordo-a24);
+    border-radius: 18px;
+    padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.birth-course__section-heading {
+    display: grid;
+    gap: 1rem 3rem;
+    grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.7fr);
+    margin-bottom: 2rem;
+}
+
+.birth-course__section-heading .eyebrow {
+    grid-column: 1 / -1;
+    margin-bottom: -0.4rem;
+}
+
+.birth-course__section-heading h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.05;
+    margin: 0;
+    max-width: 14ch;
+}
+
+.birth-course__section-heading > p:last-child {
+    align-self: end;
+    color: var(--grigio);
+    line-height: 1.7;
+    margin: 0;
+}
+
+.birth-course__professionals {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+}
+
+.birth-professional {
+    background: var(--carta-luminosa-a82);
+    border-bottom: 1px solid var(--verde-scuro-a12);
+    padding: 1.5rem;
+}
+
+.birth-professional:nth-child(odd) {
+    border-right: 1px solid var(--verde-scuro-a12);
+}
+
+.birth-professional:last-child {
+    grid-column: 1 / -1;
+}
+
+.birth-professional h3,
+.birth-course__postpartum h3 {
+    color: var(--verde-scuro);
+    font-size: 1.22rem;
+    line-height: 1.25;
+    margin-bottom: 0.5rem;
+}
+
+.birth-professional p:last-child,
+.birth-course__postpartum p:last-child {
+    color: var(--grigio);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.birth-course__postpartum {
+    align-items: center;
+    background: var(--carta);
+    border: 1px solid var(--corallo-tenue-a34);
+    border-left: 5px solid var(--rosso-cuore);
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: auto 1fr;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+}
+
+.birth-course__postpartum-label {
+    color: var(--rosso-cuore);
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.birth-course__cta {
+    margin-top: 3rem;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    text-align: left;
+}
+
+.birth-course__cta h2 {
+    max-width: 18ch;
+}
+
+.birth-course__cta > p:not(.eyebrow) {
+    max-width: 70ch;
+}
+
+.birth-course__partner {
+    align-items: center;
+    background: var(--carta-luminosa-a82);
+    border: 1px solid var(--salvia-bordo-a24);
+    border-top: 4px solid var(--verde-brand);
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.45fr);
+    margin-top: 1.5rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.birth-course__partner-copy {
+    max-width: 650px;
+}
+
+.birth-course__partner h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(1.45rem, 3vw, 2.1rem);
+    line-height: 1.15;
+    margin-bottom: 0.55rem;
+}
+
+.birth-course__partner-copy > p:last-child {
+    color: var(--grigio);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.birth-course__partner-link {
+    align-items: center;
+    background: var(--avorio);
+    border: 1px solid var(--verde-supporto-a24);
+    display: flex;
+    justify-content: center;
+    min-height: 144px;
+    padding: 1.5rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.birth-course__partner-link:hover {
+    border-color: var(--verde-supporto-a46);
+    box-shadow: var(--ombra-card);
+    transform: translateY(-2px);
+}
+
+.birth-course__partner-link:focus-visible {
+    outline: 3px solid var(--verde-scuro);
+    outline-offset: 4px;
+}
+
+.birth-course__partner-link img {
+    display: block;
+    height: auto;
+    max-width: 320px;
+    object-fit: contain;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .birth-course {
+        padding-top: 3rem;
+    }
+
+    .birth-course__hero {
+        grid-template-columns: 1fr;
+    }
+
+    .birth-course__hero-copy {
+        max-width: 760px;
+    }
+
+    .birth-course__hero-media {
+        justify-self: center;
+        max-width: 520px;
+        width: 100%;
+    }
+
+    .birth-course__facts {
+        grid-template-columns: 1fr;
+        margin: 3.5rem 0;
+    }
+
+    .birth-course__facts article + article {
+        border-left: 0;
+        border-top: 1px solid var(--verde-scuro-a14);
+    }
+}
+
+@media (max-width: 640px) {
+    .birth-course {
+        padding: 2.25rem 1rem 3rem;
+    }
+
+    .birth-course__hero h1 {
+        font-size: clamp(1.95rem, 8.8vw, 2.2rem);
+    }
+
+    .birth-course__hero-media {
+        padding: 0 0 0.85rem 0.85rem;
+    }
+
+    .birth-course__hero-media figcaption {
+        font-size: 0.82rem;
+        max-width: 13.5rem;
+        padding: 0.75rem 0.9rem 0.8rem 1rem;
+        right: 0;
+    }
+
+    .birth-course__hero-media figcaption::before {
+        left: 1rem;
+        width: 3rem;
+    }
+
+    .birth-course__facts article {
+        padding: 1.35rem 0.4rem;
+    }
+
+    .birth-course__team {
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+
+    .birth-course__section-heading,
+    .birth-course__professionals {
+        grid-template-columns: 1fr;
+    }
+
+    .birth-course__section-heading h2 {
+        max-width: none;
+    }
+
+    .birth-professional,
+    .birth-professional:nth-child(odd) {
+        border-bottom: 1px solid var(--verde-scuro-a12);
+        border-right: 0;
+        grid-column: auto;
+        padding: 1.25rem 0.2rem;
+    }
+
+    .birth-course__postpartum {
+        align-items: start;
+        grid-template-columns: 1fr;
+        padding: 1.25rem;
+    }
+
+    .birth-course__cta {
+        margin-top: 2rem;
+    }
+
+    .birth-course__partner {
+        gap: 1.25rem;
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+
+    .birth-course__partner-link {
+        min-height: 112px;
+        padding: 1.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .birth-course__partner-link {
+        transition: none;
+    }
+}

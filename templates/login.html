@@ -4,19 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accesso Admin — Studio Infermieristico</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=4.1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.1">
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.3">
 </head>
 <body>
 
 <div class="login-wrapper">
     <div class="login-box">
         <div class="login-logo">
-    <img src="{{ url_for('static', filename='img/logo_black.png') }}" alt="Studio Infermieristico" class="logo-login">
+    <img src="{{ url_for('static', filename='img/logo_black.png') }}" alt="Studio Infermieristico" class="logo-login" width="469" height="589">
 </div>
-        <h2>Area riservata</h2>
+        <h1>Area riservata</h1>
         <p class="sottotitolo">Accesso esclusivo per l'amministratore</p>
 
         {% with messages = get_flashed_messages() %}
