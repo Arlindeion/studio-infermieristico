@@ -122,6 +122,7 @@ talisman = Talisman(
 def inject_tracking_config():
     return {
         'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
+        'prestazioni_categorie': PRESTAZIONI_CATEGORIE,
         'servizi_prenotabili': SERVIZI_PRENOTABILI,
     }
 

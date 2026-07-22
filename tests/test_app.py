@@ -1989,9 +1989,19 @@ def test_form_prenotazione_include_il_listino_aggiornato(client):
     resp = client.get('/prenota')
 
     assert resp.status_code == 200
+    assert 'css/prestazioni.css' in resp.text
+    assert resp.text.count('<optgroup') == 4
+    assert '<optgroup label="Terapie e somministrazioni">' in resp.text
+    assert '<optgroup label="Medicazioni">' in resp.text
+    assert '<optgroup label="Controlli e diagnostica">' in resp.text
+    assert '<optgroup label="Altre prestazioni">' in resp.text
     assert '<option value="Holter pressorio 24 ore"' in resp.text
     assert '<option value="Medicazione chirurgica"' in resp.text
     assert '<option value="Consulenza infermieristica"' in resp.text
+    assert 'data-price="80 €"' in resp.text
+    assert 'data-service-price-summary' in resp.text
+    assert 'Tariffa in studio' in resp.text
+    assert 'Ogni variazione viene comunicata prima della conferma.' in resp.text
     assert '<option value="Assistenza domiciliare"' not in resp.text
 
 

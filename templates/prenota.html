@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block titolo %}Prenota — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Scegli una prestazione infermieristica, consulta la tariffa indicativa e richiedi data e orario presso S.C. Studio Infermieristico a Montesilvano.{% endblock %}
 
 {% block contenuto %}
 
-<section class="pagina-interna">
+<section class="pagina-interna nursing-booking-page">
     <h1>Prenota una prestazione sanitaria</h1>
     <p class="sottotitolo">Questo modulo è riservato alle prestazioni infermieristiche. Per partecipare a un corso vai alle <a href="{{ url_for('iscrizione_corsi') }}">iscrizioni</a>; per il sonno <a href="{{ url_for('prenota_call_sonno') }}">scegli l’orario della call gratuita</a>.</p>
 
@@ -37,13 +38,35 @@
         </div>
 
         <div class="form-gruppo">
-            <label for="servizio">Servizio richiesto *</label>
+            <label for="servizio">Prestazione richiesta *</label>
             <select id="servizio" name="servizio" required>
-                <option value="">-- Seleziona un servizio --</option>
-                {% for servizio in servizi_prenotabili %}
-                <option value="{{ servizio }}" {{ 'selected' if form_data and form_data.get('servizio') == servizio }}>{{ servizio }}</option>
+                <option value="">Seleziona una prestazione</option>
+                {% for categoria in prestazioni_categorie %}
+                <optgroup label="{{ categoria.nome }}">
+                    {% for prestazione in categoria.prestazioni %}
+                    <option value="{{ prestazione.nome }}"
+                        data-service-name="{{ prestazione.nome }}"
+                        data-category="{{ categoria.nome }}"
+                        data-price="{{ prestazione.prezzo }}"
+                        {{ 'selected' if form_data and form_data.get('servizio') == prestazione.nome }}
+                    >{{ prestazione.nome }} — {{ prestazione.prezzo }}</option>
+                    {% endfor %}
+                </optgroup>
                 {% endfor %}
             </select>
+
+            <div class="booking-service-summary" data-service-price-summary aria-live="polite">
+                <div class="booking-service-summary__service">
+                    <span>Riepilogo della prestazione</span>
+                    <strong data-service-summary-name>Nessuna prestazione selezionata</strong>
+                    <small data-service-summary-category>Le prestazioni sono divise nelle stesse categorie del listino.</small>
+                </div>
+                <p class="booking-service-summary__price">
+                    <span>Tariffa in studio</span>
+                    <strong data-service-summary-price>—</strong>
+                </p>
+            </div>
+            <p class="booking-price-note">Le tariffe “da” o “su valutazione” dipendono dalla situazione e dai materiali necessari. Ogni variazione viene comunicata prima della conferma.</p>
         </div>
 
         <div class="form-riga">
@@ -98,7 +121,7 @@
     </form>
 </section>
 
-<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.1"></script>
 
 <script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 

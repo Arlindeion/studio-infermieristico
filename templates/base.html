@@ -37,11 +37,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
     {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/laboratori.css') }}?v=1.0">
-    {% elif page_endpoint == 'prestazioni' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.0">
+    {% elif page_endpoint in ['prestazioni', 'prenota'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.2">
     {% endif %}
     {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.3">
     {% endif %}
     <script type="application/ld+json">
     {
