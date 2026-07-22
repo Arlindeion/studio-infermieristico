@@ -120,10 +120,6 @@
                 <input type="checkbox" name="consenso_privacy" required class="privacy-checkbox" {% if form_data.get('consenso_privacy') %}checked{% endif %}>
                 <span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link">informativa privacy</a> e acconsento al trattamento dei dati inviati per gestire la richiesta. *</span>
             </label>
-            <label class="privacy-label">
-                <input type="checkbox" name="consenso_whatsapp" {% if form_data.get('consenso_whatsapp') %}checked{% endif %}>
-                <span class="privacy-text">Acconsento a ricevere tramite WhatsApp conferme e promemoria organizzativi relativi alla prenotazione. Facoltativo.</span>
-            </label>
         </div>
 
         <button class="btn" type="submit" data-conversion="sleep_booking_submit">Riserva lo slot e invia la richiesta</button>

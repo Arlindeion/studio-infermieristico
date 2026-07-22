@@ -271,11 +271,20 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-035 — Qualificazione, promemoria e campagna Meta del sonno
 
 - Data: 2026-07-21.
-- Stato: approvata.
+- Stato: sostituita in parte da D-036 per il canale dei promemoria.
 - Decisione: la prenotazione raccoglie soltanto i dati necessari a verificare fascia 0-12 mesi, ruolo di genitore/tutore, difficoltà, durata, obiettivo, comprensione del perimetro educativo e presa visione dei prezzi. Le call sono disponibili anche il sabato. Email e calendario prevengono le assenze; WhatsApp è facoltativo, usa template organizzativi neutrali e non contiene informazioni del bambino. La campagna iniziale è nazionale su Meta/Instagram, con tetto di 200 €, checkpoint dopo 100 € e due creatività iniziali su risvegli frequenti e addormentamento con forte supporto.
 - Motivo: aumentare la percentuale di call effettivamente svolte, evitare richieste fuori ambito e apprendere dal primo budget senza suddividerlo fra servizi o pubblici diversi.
 - Conseguenze: KPI canonici sono costo per call prenotata, presenza, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Gli annunci vengono rallentati a 10 call settimanali. Meta riceve eventi soltanto dopo consenso; l'email resta il fallback se WhatsApp fallisce. L'attuale numero telefonico non viene migrato in modo rischioso: si prova la coesistenza ufficiale e, se non disponibile, si usa un numero separato per l'automazione.
 - Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `CONTENT_AND_ASSETS.md`, `app.py`.
+
+## D-036 — Promemoria delle call soltanto via email
+
+- Data: 2026-07-22.
+- Stato: approvata.
+- Decisione: eliminare i promemoria automatici WhatsApp e inviare le notifiche organizzative delle call esclusivamente via email, mantenendo i controlli a 24 ore e 2 ore e la prevenzione dei duplicati. WhatsApp resta soltanto un contatto umano contestuale e il canale incluso nel percorso sonno con affiancamento.
+- Motivo: evitare la complessità operativa, tecnica e autorizzativa della WhatsApp Business Platform per una funzione coperta in modo adeguato dall'email.
+- Conseguenze: il modulo non richiede un consenso WhatsApp; configurazione, template, credenziali, codice di invio e campi database della precedente automazione vengono rimossi. Non occorrono più Coexistence, un secondo numero o un provider WhatsApp per gestire i promemoria.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `OPERATIONS.md`, `templates/prenota_call_sonno.html`, `app.py`.
 
 ## Modello per nuove decisioni
 

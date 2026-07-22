@@ -152,7 +152,6 @@ Non presentare una relazione come partnership strutturata se non è stata formal
 - Validazione della domanda nazionale e del prezzo della consulenza del sonno.
 - Verifica del tempo reale richiesto da diario, analisi e assistenza dopo i primi cinque percorsi; compenso lordo obiettivo almeno 25-30 € l'ora.
 - Verifica degli attestati 2025 e 2026 prima di usare pubblicamente il claim `consulente certificata`; in assenza di una qualifica espressa usare `formata nella consulenza del sonno infantile`.
-- Configurazione del numero, dei template e delle credenziali WhatsApp Business Platform.
 - Processo e testo di richiesta del consenso per le future testimonianze sulla consulenza del sonno.
 - Produzione delle prime tre creatività verticali con Selene e delle relative copertine.
 - Durate definitive degli slot delle prestazioni da allineare con Arzamed.

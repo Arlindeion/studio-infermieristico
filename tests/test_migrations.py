@@ -53,12 +53,24 @@ def _table_names(database_path):
     return {row[0] for row in rows}
 
 
+def _column_names(database_path, table_name):
+    with sqlite3.connect(database_path) as connection:
+        rows = connection.execute(f'PRAGMA table_info({table_name})').fetchall()
+    return {row[1] for row in rows}
+
+
 def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     database_path = tmp_path / 'empty.sqlite'
     env = _migration_env(database_path)
 
     _run_flask(env, 'db', 'upgrade')
     assert EXPECTED_TABLES <= _table_names(database_path)
+    call_columns = _column_names(database_path, 'call_sonno')
+    assert 'promemoria_email_24h_il' in call_columns
+    assert 'promemoria_email_2h_il' in call_columns
+    assert 'consenso_whatsapp' not in call_columns
+    assert 'promemoria_whatsapp_24h_il' not in call_columns
+    assert 'promemoria_whatsapp_2h_il' not in call_columns
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
@@ -104,4 +116,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == '9b7e2d4c6a10'
+    assert revision == '7f3c1a2d9e40'

@@ -1191,7 +1191,6 @@ class CallSonno(db.Model):
     presa_visione_offerta = db.Column(db.Boolean, default=False, nullable=False)
     conferma_ambito = db.Column(db.Boolean, default=False, nullable=False)
     consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
-    consenso_whatsapp = db.Column(db.Boolean, default=False, nullable=False)
     data = db.Column(db.String(20), nullable=False, index=True)
     ora = db.Column(db.String(10), nullable=False)
     stato = db.Column(db.String(20), default='In attesa', nullable=False, index=True)
@@ -1201,8 +1200,6 @@ class CallSonno(db.Model):
     questionario_inviato_il = db.Column(db.DateTime, nullable=True)
     promemoria_email_24h_il = db.Column(db.DateTime, nullable=True)
     promemoria_email_2h_il = db.Column(db.DateTime, nullable=True)
-    promemoria_whatsapp_24h_il = db.Column(db.DateTime, nullable=True)
-    promemoria_whatsapp_2h_il = db.Column(db.DateTime, nullable=True)
     utm_source = db.Column(db.String(100), nullable=True)
     utm_medium = db.Column(db.String(100), nullable=True)
     utm_campaign = db.Column(db.String(100), nullable=True)
@@ -1514,23 +1511,6 @@ def valida_configurazione_runtime():
     if app.config.get('MAIL_USE_TLS') and app.config.get('MAIL_USE_SSL'):
         raise RuntimeError('MAIL_USE_TLS e MAIL_USE_SSL non possono essere entrambe attive.')
 
-    if app.config.get('WHATSAPP_REMINDERS_ENABLED'):
-        whatsapp_obbligatori = {
-            'WHATSAPP_GRAPH_API_VERSION': app.config.get('WHATSAPP_GRAPH_API_VERSION'),
-            'WHATSAPP_PHONE_NUMBER_ID': app.config.get('WHATSAPP_PHONE_NUMBER_ID'),
-            'WHATSAPP_ACCESS_TOKEN': app.config.get('WHATSAPP_ACCESS_TOKEN'),
-            'WHATSAPP_TEMPLATE_24H': app.config.get('WHATSAPP_TEMPLATE_24H'),
-            'WHATSAPP_TEMPLATE_2H': app.config.get('WHATSAPP_TEMPLATE_2H'),
-        }
-        whatsapp_mancanti = [
-            nome for nome, valore in whatsapp_obbligatori.items() if not valore
-        ]
-        if whatsapp_mancanti:
-            raise RuntimeError(
-                'Promemoria WhatsApp abilitati ma configurazione incompleta: '
-                f'{", ".join(whatsapp_mancanti)}.'
-            )
-
     valori_segreti = [
         app.config.get('SECRET_KEY'),
         app.config.get('ADMIN_BOOTSTRAP_PASSWORD'),
@@ -1739,7 +1719,6 @@ def invia_email_alert_call_sonno(call):
                 f'Difficoltà: {call.difficolta_altro or call.difficolta_principale}\n'
                 f'Durata: {call.durata_difficolta}\n'
                 f'Obiettivo della call: {call.obiettivo_call}\n'
-                f'Promemoria WhatsApp: {"sì" if call.consenso_whatsapp else "no"}\n'
                 f'Quando: {call.data} alle {call.ora}\n\n'
                 f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
             ),
@@ -1863,70 +1842,6 @@ def invia_email_promemoria_call_sonno(call, ore_prima):
             'CallSonno',
             call.id,
             {'errore': str(errore)},
-        )
-        return False
-
-
-def _numero_whatsapp_internazionale(numero):
-    cifre = re.sub(r'\D', '', numero or '')
-    if cifre.startswith('00'):
-        cifre = cifre[2:]
-    if len(cifre) == 10 and cifre.startswith('3'):
-        cifre = f'39{cifre}'
-    return cifre
-
-
-def invia_whatsapp_promemoria_call_sonno(call, ore_prima):
-    """Invia un template organizzativo tramite WhatsApp Cloud API."""
-    template_name = app.config.get(
-        'WHATSAPP_TEMPLATE_24H' if ore_prima == 24 else 'WHATSAPP_TEMPLATE_2H'
-    )
-    numero = _numero_whatsapp_internazionale(call.telefono)
-    if not numero or not template_name:
-        return False
-
-    endpoint = (
-        'https://graph.facebook.com/'
-        f'{app.config["WHATSAPP_GRAPH_API_VERSION"]}/'
-        f'{app.config["WHATSAPP_PHONE_NUMBER_ID"]}/messages'
-    )
-    payload = {
-        'messaging_product': 'whatsapp',
-        'to': numero,
-        'type': 'template',
-        'template': {
-            'name': template_name,
-            'language': {'code': app.config.get('WHATSAPP_TEMPLATE_LANGUAGE', 'it')},
-            'components': [{
-                'type': 'body',
-                'parameters': [
-                    {'type': 'text', 'text': call.data},
-                    {'type': 'text', 'text': call.ora},
-                ],
-            }],
-        },
-    }
-    richiesta = urllib.request.Request(
-        endpoint,
-        data=json.dumps(payload).encode('utf-8'),
-        headers={
-            'Authorization': f'Bearer {app.config["WHATSAPP_ACCESS_TOKEN"]}',
-            'Content-Type': 'application/json',
-        },
-        method='POST',
-    )
-    try:
-        contesto_ssl = ssl.create_default_context(cafile=certifi.where())
-        with urllib.request.urlopen(richiesta, timeout=10, context=contesto_ssl) as risposta:
-            return 200 <= risposta.status < 300
-    except (urllib.error.URLError, TimeoutError, ValueError) as errore:
-        registra_evento(
-            'whatsapp',
-            'errore',
-            f'Promemoria WhatsApp call sonno {ore_prima}h non inviato.',
-            'CallSonno',
-            call.id,
-            {'errore': type(errore).__name__},
         )
         return False
 
@@ -2239,22 +2154,6 @@ def controlla_e_invia_promemoria_call_sonno(adesso=None):
             call.promemoria_email_24h_il = timestamp
         else:
             call.promemoria_email_2h_il = timestamp
-
-        whatsapp_timestamp = (
-            call.promemoria_whatsapp_24h_il
-            if ore_promemoria == 24
-            else call.promemoria_whatsapp_2h_il
-        )
-        if (
-            call.consenso_whatsapp
-            and app.config.get('WHATSAPP_REMINDERS_ENABLED')
-            and whatsapp_timestamp is None
-        ):
-            invia_whatsapp_promemoria_call_sonno(call, ore_promemoria)
-            if ore_promemoria == 24:
-                call.promemoria_whatsapp_24h_il = timestamp
-            else:
-                call.promemoria_whatsapp_2h_il = timestamp
 
         db.session.commit()
 
@@ -3060,7 +2959,6 @@ def prenota_call_sonno():
             presa_visione_offerta=True,
             conferma_ambito=True,
             consenso_privacy=True,
-            consenso_whatsapp=bool(request.form.get('consenso_whatsapp')),
             data=data_scelta,
             ora=ora,
             **utm,

@@ -129,7 +129,7 @@ Homepage/campagna/condivisione
 - Prima della call vengono richiesti contatti, età 0-12 mesi, ruolo di genitore/tutore, difficoltà e durata, obiettivo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesto il diario.
 - Il questionario completo viene inviato solo dopo la call, quando la famiglia sceglie una formula. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile.
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
-- I promemoria WhatsApp sono facoltativi e separati dal consenso necessario alla richiesta; senza consenso il flusso usa email e calendario. I messaggi automatici sono neutrali e non includono dati del bambino o la difficoltà riferita.
+- Conferme e promemoria automatici vengono inviati esclusivamente via email; WhatsApp resta un contatto umano contestuale e non fa parte dell'automazione della prenotazione.
 - La consulenza non formula diagnosi, non prescrive terapie e non sostituisce il pediatra.
 
 ### Pagamenti, modifiche e rimborsi delle consulenze sonno

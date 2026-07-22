@@ -87,12 +87,6 @@ staging risponde con `Disallow: /`; ogni risposta include inoltre
 | `GOOGLE_CALENDAR_ID` | Calendario su cui scrivere | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
 | `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
-| `WHATSAPP_REMINDERS_ENABLED` | Abilita i promemoria WhatsApp solo quando l'integrazione è completa | No |
-| `WHATSAPP_GRAPH_API_VERSION` | Versione Graph API verificata al momento dell'attivazione | No |
-| `WHATSAPP_PHONE_NUMBER_ID` | Identificativo del numero sulla Business Platform | Potenzialmente |
-| `WHATSAPP_ACCESS_TOKEN` | Token della WhatsApp Business Platform | Sì |
-| `WHATSAPP_TEMPLATE_24H` / `WHATSAPP_TEMPLATE_2H` | Nomi dei template organizzativi approvati da Meta | No |
-| `WHATSAPP_TEMPLATE_LANGUAGE` | Lingua dei template, default `it` | No |
 | `ADMIN_BOOTSTRAP_USERNAME` | Nome del primo amministratore, solo per il bootstrap | Sì |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Password del primo amministratore, solo per il bootstrap | Sì |
 | `STAGING_AUTH_USERNAME` | Utente della protezione HTTP dello staging | Sì |
@@ -145,10 +139,6 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-service-account.json` |
 | `GOOGLE_ANALYTICS_ID` | facoltativo finché consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
-| `WHATSAPP_REMINDERS_ENABLED` | `true` soltanto dopo verifica del numero e approvazione dei template |
-| `WHATSAPP_GRAPH_API_VERSION` | versione corrente collaudata della Graph API |
-| `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_ACCESS_TOKEN` | valori segreti dell'integrazione |
-| `WHATSAPP_TEMPLATE_24H` / `WHATSAPP_TEMPLATE_2H` | template neutrali con parametri data e ora |
 
 `MAIL_USE_TLS` e `MAIL_USE_SSL` non possono essere entrambe attive. Sessione,
 admin e Basic Auth devono usare segreti diversi. Il comando
@@ -227,8 +217,9 @@ successivi non ne dipendono.
 ## Database e migrazioni
 
 La baseline Alembic `56dda7f5137f` crea l'intero schema; la revisione corrente è
-`9b7e2d4c6a10` e aggiunge qualificazione, consensi, UTM e stato dei promemoria
-alla call sonno. Un nuovo
+`7f3c1a2d9e40`: le revisioni successive aggiungono qualificazione, UTM e stato
+dei promemoria email alla call sonno e rimuovono i campi del precedente
+promemoria WhatsApp. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:
 
 ```bash
@@ -387,7 +378,7 @@ Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e cont
 - Credenziale admin predefinita rimossa o sostituita.
 - HTTPS e cookie sicuri verificati.
 - Email reali testate con mittente corretto.
-- Template WhatsApp 24h e 2h approvati, consenso verificato e fallback email collaudato prima di impostare `WHATSAPP_REMINDERS_ENABLED=true`.
+- Promemoria email delle call collaudati a 24h e 2h, inclusa la prevenzione dei duplicati.
 - Lettura e scrittura Calendar testate con permessi minimi.
 - GA4 caricato solo dopo consenso.
 - Privacy, cookie e policy operative validate.
