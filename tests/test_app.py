@@ -1990,22 +1990,25 @@ def test_form_prenotazione_include_il_listino_aggiornato(client):
 
     assert resp.status_code == 200
     assert 'css/prestazioni.css' in resp.text
-    assert '<select id="categoria-servizio" name="categoria_servizio" required>' in resp.text
-    assert '<option value="terapie-somministrazioni"' in resp.text
-    assert '<option value="medicazioni"' in resp.text
-    assert '<option value="controlli-diagnostica"' in resp.text
-    assert '<option value="altre-prestazioni"' in resp.text
-    assert '<select id="servizio" name="servizio" required disabled>' in resp.text
+    assert 'data-service-picker' in resp.text
+    assert resp.text.count('data-service-picker-group') == 4
+    assert resp.text.count('data-service-category') == 4
+    assert resp.text.count('data-service-option') == 31
+    assert 'Terapie e somministrazioni' in resp.text
+    assert 'Medicazioni' in resp.text
+    assert 'Controlli e diagnostica' in resp.text
+    assert 'Altre prestazioni' in resp.text
+    assert '<input type="hidden" id="servizio" name="servizio"' in resp.text
+    assert 'Passa sulla categoria per vedere le prestazioni.' in resp.text
     assert '<optgroup' not in resp.text
-    assert '<option value="Holter pressorio 24 ore"' in resp.text
-    assert '<option value="Medicazione chirurgica"' in resp.text
-    assert '<option value="Consulenza infermieristica"' in resp.text
-    assert 'data-category-slug="controlli-diagnostica"' in resp.text
+    assert 'data-service-name="Holter pressorio 24 ore"' in resp.text
+    assert 'data-service-name="Medicazione chirurgica"' in resp.text
+    assert 'data-service-name="Consulenza infermieristica"' in resp.text
     assert 'data-price="80 €"' in resp.text
     assert 'data-service-price-summary' in resp.text
     assert 'Tariffa in studio' in resp.text
     assert 'Ogni variazione viene comunicata prima della conferma.' in resp.text
-    assert '<option value="Assistenza domiciliare"' not in resp.text
+    assert 'data-service-name="Assistenza domiciliare"' not in resp.text
     assert resp.text.index('name="consenso_privacy"') < resp.text.index('data-service-price-summary')
     assert resp.text.index('data-service-price-summary') < resp.text.index('id="btn-invia"')
 

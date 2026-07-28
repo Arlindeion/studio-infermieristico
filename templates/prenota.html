@@ -37,38 +37,59 @@
                    value="{{ form_data.get('email', '') if form_data else '' }}" required>
         </div>
 
-        {% set categoria_selezionata = form_data.get('categoria_servizio', '') if form_data else '' %}
-        <div class="form-riga booking-service-selectors">
-            <div class="form-gruppo">
-                <label for="categoria-servizio">1. Categoria della prestazione *</label>
-                <select id="categoria-servizio" name="categoria_servizio" required>
-                    <option value="">Seleziona una categoria</option>
-                    {% for categoria in prestazioni_categorie %}
-                    <option value="{{ categoria.slug }}" {{ 'selected' if categoria_selezionata == categoria.slug }}>{{ categoria.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="form-gruppo booking-service-field">
+            <span class="booking-service-picker__label" id="service-picker-label">Prestazione richiesta *</span>
+            <div class="booking-service-picker" data-service-picker>
+                <input type="hidden" id="servizio" name="servizio" value="{{ form_data.get('servizio', '') if form_data else '' }}">
+                <button
+                    type="button"
+                    class="booking-service-picker__toggle"
+                    aria-expanded="false"
+                    aria-controls="service-picker-menu"
+                    aria-labelledby="service-picker-label service-picker-value"
+                    data-service-picker-toggle>
+                    <span id="service-picker-value" data-service-picker-value>Seleziona una categoria e una prestazione</span>
+                    <span class="booking-service-picker__toggle-icon" aria-hidden="true"></span>
+                </button>
 
-            <div class="form-gruppo">
-                <label for="servizio">2. Prestazione richiesta *</label>
-                <select id="servizio" name="servizio" required{% if not categoria_selezionata %} disabled{% endif %}>
-                    <option value="">{% if categoria_selezionata %}Seleziona una prestazione{% else %}Prima scegli una categoria{% endif %}</option>
-                    {% for categoria in prestazioni_categorie %}
-                        {% for prestazione in categoria.prestazioni %}
-                    <option value="{{ prestazione.nome }}"
-                        data-service-name="{{ prestazione.nome }}"
-                        data-category-slug="{{ categoria.slug }}"
-                        data-category="{{ categoria.nome }}"
-                        data-price="{{ prestazione.prezzo }}"
-                        {% if categoria_selezionata != categoria.slug %}hidden disabled{% endif %}
-                        {{ 'selected' if form_data and form_data.get('servizio') == prestazione.nome }}
-                    >{{ prestazione.nome }} — {{ prestazione.prezzo }}</option>
+                <div class="booking-service-picker__menu" id="service-picker-menu" data-service-picker-menu hidden>
+                    <p>Passa sulla categoria per vedere le prestazioni.</p>
+                    <ul class="booking-service-picker__categories">
+                        {% for categoria in prestazioni_categorie %}
+                        <li class="booking-service-picker__group" data-service-picker-group>
+                            <button
+                                type="button"
+                                class="booking-service-picker__category"
+                                aria-expanded="false"
+                                data-service-category>
+                                <span>{{ categoria.nome }}</span>
+                                <small>{{ categoria.prestazioni | length }} prestazioni</small>
+                                <span class="booking-service-picker__category-icon" aria-hidden="true"></span>
+                            </button>
+                            <ul class="booking-service-picker__submenu" aria-label="{{ categoria.nome }}">
+                                {% for prestazione in categoria.prestazioni %}
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="booking-service-picker__option"
+                                        data-service-option
+                                        data-service-name="{{ prestazione.nome }}"
+                                        data-category="{{ categoria.nome }}"
+                                        data-price="{{ prestazione.prezzo }}">
+                                        <span>{{ prestazione.nome }}</span>
+                                        <strong>{{ prestazione.prezzo }}</strong>
+                                    </button>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
                         {% endfor %}
-                    {% endfor %}
-                </select>
+                    </ul>
+                </div>
             </div>
+            <p class="booking-selector-note">Su computer passa sulla categoria; su telefono toccala. Poi scegli la prestazione.</p>
+            <p class="booking-selector-error" data-service-picker-error role="alert" hidden>Scegli una prestazione prima di continuare.</p>
         </div>
-        <p class="booking-selector-note">Scegli prima la categoria: il secondo menu mostrerà soltanto le prestazioni pertinenti.</p>
 
         <div class="form-riga">
             <div class="form-gruppo">
@@ -135,7 +156,7 @@
     </form>
 </section>
 
-<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.2"></script>
+<script src="{{ url_for('static', filename='js/form-prenotazione.js') }}?v=1.3"></script>
 
 <script src="{{ url_for('static', filename='js/prenota-times.js') }}"></script>
 

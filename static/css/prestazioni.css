@@ -389,21 +389,195 @@
     max-width: 46rem;
 }
 
-.booking-service-selectors {
-    margin-bottom: 0;
+.booking-service-picker__label {
+    color: var(--testo);
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
 }
 
-.booking-service-selectors select:disabled {
+.booking-service-picker {
+    position: relative;
+}
+
+.booking-service-picker__toggle {
+    align-items: center;
+    background: #fffaf6;
+    border: 1.5px solid #c8dbc9;
+    border-radius: 8px;
+    color: var(--grigio);
+    cursor: pointer;
+    display: flex;
+    font-family: inherit;
+    font-size: 0.95rem;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    width: 100%;
+}
+
+.booking-service-picker__toggle.has-selection {
+    color: var(--testo);
+}
+
+.booking-service-picker__toggle:focus-visible {
+    border-color: var(--verde-salvia);
+    box-shadow: 0 0 0 4px var(--salvia-bordo-a14);
+    outline: 0;
+}
+
+.booking-service-picker__toggle-icon,
+.booking-service-picker__category-icon {
+    border-bottom: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    flex: 0 0 auto;
+    height: 8px;
+    transform: rotate(45deg);
+    transition: transform 0.16s ease;
+    width: 8px;
+}
+
+.booking-service-picker.is-open .booking-service-picker__toggle-icon {
+    transform: rotate(225deg);
+}
+
+.booking-service-picker__menu {
+    background: var(--avorio);
+    border: 1px solid var(--salvia-bordo-a28);
+    border-radius: 8px;
+    box-shadow: var(--ombra-soft);
+    left: 0;
+    padding: 0.45rem;
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    width: min(19rem, 100%);
+    z-index: 30;
+}
+
+.booking-service-picker__menu[hidden] {
+    display: none;
+}
+
+.booking-service-picker__menu > p {
+    color: var(--grigio);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    margin: 0.25rem 0.45rem 0.55rem;
+}
+
+.booking-service-picker__categories,
+.booking-service-picker__submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.booking-service-picker__group {
+    position: relative;
+}
+
+.booking-service-picker__category,
+.booking-service-picker__option {
+    background: transparent;
+    border: 0;
+    color: var(--verde-scuro);
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+}
+
+.booking-service-picker__category {
+    align-items: center;
+    border-radius: 6px;
+    display: grid;
+    gap: 0.1rem 0.65rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 52px;
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+}
+
+.booking-service-picker__category > span:first-child {
+    font-weight: 700;
+}
+
+.booking-service-picker__category small {
+    color: var(--grigio);
+    font-size: 0.76rem;
+    grid-column: 1;
+}
+
+.booking-service-picker__category-icon {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    transform: rotate(-45deg);
+}
+
+.booking-service-picker__category:hover,
+.booking-service-picker__category:focus-visible,
+.booking-service-picker__group.is-open > .booking-service-picker__category {
     background: var(--verde-scuro-a07);
-    color: var(--verde-scuro-a72);
-    cursor: not-allowed;
+    outline: 0;
+}
+
+.booking-service-picker__submenu {
+    background: var(--avorio);
+    border: 1px solid var(--salvia-bordo-a28);
+    border-radius: 8px;
+    box-shadow: var(--ombra-soft);
+    display: none;
+    left: calc(100% - 0.15rem);
+    max-height: 23rem;
+    overflow-y: auto;
+    padding: 0.45rem;
+    position: absolute;
+    top: -0.45rem;
+    width: 22rem;
+}
+
+.booking-service-picker__group:hover > .booking-service-picker__submenu,
+.booking-service-picker__group:focus-within > .booking-service-picker__submenu,
+.booking-service-picker__group.is-open > .booking-service-picker__submenu {
+    display: block;
+}
+
+.booking-service-picker__option {
+    align-items: baseline;
+    border-radius: 6px;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    line-height: 1.35;
+    min-height: 44px;
+    padding: 0.6rem 0.7rem;
+    text-align: left;
+}
+
+.booking-service-picker__option strong {
+    white-space: nowrap;
+}
+
+.booking-service-picker__option:hover,
+.booking-service-picker__option:focus-visible,
+.booking-service-picker__option.is-selected {
+    background: var(--verde-chiaro);
+    outline: 0;
 }
 
 .booking-selector-note {
     color: var(--grigio);
     font-size: 0.84rem;
     line-height: 1.5;
-    margin: -0.75rem 0 1.4rem;
+    margin-top: 0.55rem;
+}
+
+.booking-selector-error {
+    color: var(--corallo-header-profondo);
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-top: 0.45rem;
 }
 
 .booking-service-summary {
@@ -506,6 +680,34 @@
     .nursing-facts p + p {
         border-left: 0;
         border-top: 1px solid var(--salvia-bordo-a22);
+    }
+
+    .booking-service-picker__menu {
+        width: 100%;
+    }
+
+    .booking-service-picker__submenu {
+        border-bottom: 0;
+        border-left: 3px solid var(--rosso-cuore);
+        border-radius: 0;
+        border-right: 0;
+        border-top: 0;
+        box-shadow: none;
+        left: auto;
+        margin: 0.25rem 0 0.6rem 0.65rem;
+        max-height: none;
+        padding: 0 0 0 0.35rem;
+        position: static;
+        top: auto;
+        width: calc(100% - 0.65rem);
+    }
+
+    .booking-service-picker__category-icon {
+        transform: rotate(45deg);
+    }
+
+    .booking-service-picker__group.is-open .booking-service-picker__category-icon {
+        transform: rotate(225deg);
     }
 }
 

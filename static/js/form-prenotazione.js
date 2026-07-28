@@ -3,49 +3,44 @@ document.getElementById('data').min = new Date().toISOString().split('T')[0];
 
 const privacyCheckbox = document.querySelector('.privacy-checkbox');
 const submitButton = document.getElementById('btn-invia');
-const serviceCategorySelect = document.getElementById('categoria-servizio');
-const serviceSelect = document.getElementById('servizio');
+const bookingForm = document.querySelector('form.form-prenotazione');
+const serviceInput = document.getElementById('servizio');
 const serviceSummary = document.querySelector('[data-service-price-summary]');
+const servicePicker = document.querySelector('[data-service-picker]');
+const servicePickerToggle = servicePicker.querySelector('[data-service-picker-toggle]');
+const servicePickerValue = servicePicker.querySelector('[data-service-picker-value]');
+const servicePickerMenu = servicePicker.querySelector('[data-service-picker-menu]');
+const servicePickerError = document.querySelector('[data-service-picker-error]');
+const serviceGroups = Array.from(servicePicker.querySelectorAll('[data-service-picker-group]'));
+const serviceOptions = Array.from(servicePicker.querySelectorAll('[data-service-option]'));
 
-function aggiornaMenuPrestazioni() {
-    if (!serviceCategorySelect || !serviceSelect) {
-        return;
-    }
-
-    const selectedCategory = serviceCategorySelect.value;
-    const selectedOption = serviceSelect.selectedOptions[0];
-    const selectionMatchesCategory = Boolean(
-        selectedOption
-        && selectedOption.value
-        && selectedOption.dataset.categorySlug === selectedCategory
-    );
-
-    Array.from(serviceSelect.options).forEach((option, index) => {
-        if (index === 0) {
-            option.textContent = selectedCategory
-                ? 'Seleziona una prestazione'
-                : 'Prima scegli una categoria';
-            return;
+function chiudiCategorie(tranne = null) {
+    serviceGroups.forEach(group => {
+        if (group !== tranne) {
+            group.classList.remove('is-open');
+            group.querySelector('[data-service-category]').setAttribute('aria-expanded', 'false');
         }
-
-        const belongsToCategory = option.dataset.categorySlug === selectedCategory;
-        option.hidden = !belongsToCategory;
-        option.disabled = !belongsToCategory;
     });
+}
 
-    serviceSelect.disabled = !selectedCategory;
-    if (!selectionMatchesCategory) {
-        serviceSelect.value = '';
+function impostaCategoriaAperta(group, isOpen) {
+    chiudiCategorie(isOpen ? group : null);
+    group.classList.toggle('is-open', isOpen);
+    group.querySelector('[data-service-category]').setAttribute('aria-expanded', String(isOpen));
+}
+
+function impostaMenuAperto(isOpen) {
+    servicePickerMenu.hidden = !isOpen;
+    servicePickerToggle.setAttribute('aria-expanded', String(isOpen));
+    servicePicker.classList.toggle('is-open', isOpen);
+    if (!isOpen) {
+        chiudiCategorie();
     }
 }
 
-function aggiornaRiepilogoPrestazione() {
-    if (!serviceSelect || !serviceSummary) {
-        return;
-    }
+function aggiornaRiepilogoPrestazione(selectedOption = null) {
+    const hasSelection = Boolean(selectedOption && serviceInput.value);
 
-    const selectedOption = serviceSelect.selectedOptions[0];
-    const hasSelection = Boolean(selectedOption && selectedOption.value);
     const serviceName = serviceSummary.querySelector('[data-service-summary-name]');
     const serviceCategory = serviceSummary.querySelector('[data-service-summary-category]');
     const servicePrice = serviceSummary.querySelector('[data-service-summary-price]');
@@ -60,6 +55,17 @@ function aggiornaRiepilogoPrestazione() {
     servicePrice.textContent = hasSelection ? selectedOption.dataset.price : '—';
 }
 
+function selezionaPrestazione(option) {
+    serviceInput.value = option.dataset.serviceName;
+    servicePickerValue.textContent = option.dataset.serviceName;
+    servicePickerToggle.classList.add('has-selection');
+    serviceOptions.forEach(item => item.classList.toggle('is-selected', item === option));
+    servicePickerError.hidden = true;
+    aggiornaRiepilogoPrestazione(option);
+    impostaMenuAperto(false);
+    servicePickerToggle.focus();
+}
+
 function aggiornaStatoPrivacy() {
     submitButton.classList.toggle('btn-privacy-mancante', !privacyCheckbox.checked);
 }
@@ -67,16 +73,68 @@ function aggiornaStatoPrivacy() {
 privacyCheckbox.addEventListener('change', aggiornaStatoPrivacy);
 aggiornaStatoPrivacy();
 
-serviceCategorySelect.addEventListener('change', function() {
-    aggiornaMenuPrestazioni();
-    aggiornaRiepilogoPrestazione();
+servicePickerToggle.addEventListener('click', function() {
+    impostaMenuAperto(servicePickerMenu.hidden);
 });
-serviceSelect.addEventListener('change', aggiornaRiepilogoPrestazione);
-aggiornaMenuPrestazioni();
-aggiornaRiepilogoPrestazione();
+
+serviceGroups.forEach(group => {
+    const categoryButton = group.querySelector('[data-service-category]');
+
+    group.addEventListener('mouseenter', function() {
+        impostaCategoriaAperta(group, true);
+    });
+    group.addEventListener('mouseleave', function() {
+        if (!group.contains(document.activeElement)) {
+            impostaCategoriaAperta(group, false);
+        }
+    });
+    categoryButton.addEventListener('focus', function() {
+        impostaCategoriaAperta(group, true);
+    });
+    categoryButton.addEventListener('click', function() {
+        impostaCategoriaAperta(group, true);
+    });
+});
+
+serviceOptions.forEach(option => {
+    option.addEventListener('click', function() {
+        selezionaPrestazione(option);
+    });
+});
+
+document.addEventListener('click', function(event) {
+    if (!servicePicker.contains(event.target)) {
+        impostaMenuAperto(false);
+    }
+});
+
+servicePicker.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        impostaMenuAperto(false);
+        servicePickerToggle.focus();
+    }
+});
+
+const initialServiceOption = serviceOptions.find(option => option.dataset.serviceName === serviceInput.value);
+if (initialServiceOption) {
+    servicePickerValue.textContent = initialServiceOption.dataset.serviceName;
+    servicePickerToggle.classList.add('has-selection');
+    initialServiceOption.classList.add('is-selected');
+    aggiornaRiepilogoPrestazione(initialServiceOption);
+} else {
+    aggiornaRiepilogoPrestazione();
+}
 
 // Disabilita il pulsante dopo l'invio per evitare doppi clic
-document.querySelector('form.form-prenotazione').addEventListener('submit', function() {
+bookingForm.addEventListener('submit', function(event) {
+    if (!serviceInput.value) {
+        event.preventDefault();
+        servicePickerError.hidden = false;
+        impostaMenuAperto(true);
+        servicePickerToggle.focus();
+        return;
+    }
+
     submitButton.disabled = true;
     submitButton.textContent = 'Invio in corso...';
 });
