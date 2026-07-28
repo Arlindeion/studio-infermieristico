@@ -28,7 +28,7 @@
     {% set page_endpoint = request.endpoint or '' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.4">
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=4.3">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
@@ -120,7 +120,7 @@
                     <div class="course-menu__intro">
                         <span>Corsi in presenza</span>
                         <strong>Imparare insieme, provare davvero.</strong>
-                        <p>Gesti, segnali e strumenti concreti per famiglie, caregiver e gruppi.</p>
+                        <p>Nei corsi si osservano i segnali, si provano i gesti e si chiarisce quando chiedere aiuto.</p>
                         <a href="/iscrizione-corsi" data-conversion="header_corsi">
                             Scopri tutti i corsi
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
@@ -193,7 +193,7 @@
             <a href="/consulenze-online" class="mobile-nav__pillar mobile-nav__pillar--sleep{% if sleep_active %} is-current{% endif %}" data-conversion="header_mobile_call_sonno">
                 <small>Online · 0–12 mesi</small>
                 <strong>Consulenza sonno</strong>
-                <span>Capire insieme cosa osservare</span>
+                <span>Leggere risvegli, sonnellini e addormentamento</span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
             </a>
         </div>
@@ -242,7 +242,7 @@
         <div class="site-footer-grid">
             <div>
                 <strong>S.C. Studio Infermieristico</strong>
-                <p>Con Selene, competenza sanitaria e parole semplici per bambini e famiglie.</p>
+                <p>Corsi, consulenza del sonno 0-12 mesi e prestazioni infermieristiche, con Selene.</p>
             </div>
             <div>
                 <strong>Studio</strong>

@@ -331,7 +331,7 @@ FAQ_ITEMS = [
     {
         'id': 'corsi-disponibili',
         'question': 'Quali corsi in presenza sono disponibili per famiglie, genitori e aziende?',
-        'answer': "I corsi principali sono BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita e laboratori per l'infanzia. I corsi sono pensati per trasformare dubbi e paura in gesti pratici, con una guida sanitaria chiara e vicina alle famiglie.",
+        'answer': "Puoi scegliere tra BLSD, disostruzione pediatrica e tagli sicuri, corso di accompagnamento alla nascita e laboratori per l'infanzia. Ogni pagina indica a chi è rivolto il corso, che cosa si fa e come richiedere l'iscrizione.",
         'link_href': '/iscrizione-corsi',
         'link_text': 'Scopri i corsi',
     },
@@ -345,7 +345,7 @@ FAQ_ITEMS = [
     {
         'id': 'blsd-privati-aziende',
         'question': 'Come posso iscrivermi a un corso BLSD o richiederlo per un\'azienda?',
-        'answer': "Il BLSD ha due percorsi separati: i privati possono usare il modulo di iscrizione individuale per le date aperte, mentre aziende e gruppi devono contattare direttamente lo studio per organizzare un corso personalizzato in studio o in azienda.",
+        'answer': "Se partecipi come privato, usa il modulo di iscrizione individuale per una delle date aperte. Per aziende e gruppi, contatta direttamente lo studio per concordare sede, data e numero di partecipanti.",
         'link_href': '/iscrizione-corsi/blsd',
         'link_text': 'Vedi BLSD',
     },
@@ -359,14 +359,14 @@ FAQ_ITEMS = [
     {
         'id': 'accompagnamento-nascita-open-day',
         'question': 'Come funziona il corso di accompagnamento alla nascita?',
-        'answer': "Il primo passaggio è l'open day gratuito: serve a conoscere il percorso, fare domande e capire se il corso completo è adatto alla famiglia. L'iscrizione vera e propria al percorso completo avviene solo tramite link privato fornito successivamente dallo studio.",
+        'answer': "Si comincia con un open day gratuito, durante il quale conosci il percorso e puoi fare domande. Se scegli il corso completo, lo studio ti invia in seguito il collegamento riservato per l'iscrizione.",
         'link_href': '/iscrizione-corsi/accompagnamento-nascita',
         'link_text': 'Vai all\'open day',
     },
     {
         'id': 'percorso-privato-accompagnamento-nascita',
         'question': 'Il link privato del corso di accompagnamento alla nascita conferma direttamente l\'iscrizione?',
-        'answer': "Sì. Il link privato è riservato al percorso completo: quando compili quel modulo, l'iscrizione viene registrata come confermata. Ricevi una email con riepilogo delle date, contatti dello studio e informazioni essenziali.",
+        'answer': "Sì. Quando invii il modulo riservato, l'iscrizione al percorso completo viene registrata come confermata. Riceverai un'email con il calendario degli incontri e i contatti dello studio.",
         'link_href': '/iscrizione-corsi/accompagnamento-nascita',
         'link_text': 'Scopri il percorso nascita',
     },
@@ -380,21 +380,21 @@ FAQ_ITEMS = [
     {
         'id': 'consulenza-sonno-infantile',
         'question': 'Quando può essere utile una consulenza sul sonno infantile?',
-        'answer': "La consulenza è dedicata al sonno dei bambini da 0 a 12 mesi e può essere utile quando addormentamento, risvegli o pisolini sono diventati difficili da leggere. Partiamo da una call gratuita per capire la situazione e verificare insieme quale passo sia davvero adatto alla famiglia.",
+        'answer': "La consulenza è dedicata al sonno dei bambini da 0 a 12 mesi. Può essere utile quando addormentamento, risvegli o pisolini sono difficili da capire. La call gratuita serve a raccontare la difficoltà principale e verificare se il servizio è adatto alla famiglia.",
         'link_href': '/consulenze-online',
         'link_text': 'Scopri la consulenza del sonno',
     },
     {
         'id': 'consulenze-online-presenza',
         'question': 'La consulenza sul sonno è online o in presenza?',
-        'answer': "La consulenza può svolgersi online in tutta Italia o in studio a Montesilvano. Prima di iniziare puoi scegliere una call gratuita: mi serve per comprendere la difficoltà principale e verificare se il servizio è adatto.",
+        'answer': "La consulenza si svolge online in tutta Italia oppure in studio a Montesilvano. Prima di iniziare puoi prenotare una call gratuita per raccontarmi la difficoltà principale e verificare se il servizio è adatto.",
         'link_href': '/consulenze-online',
         'link_text': 'Vedi consulenze',
     },
     {
         'id': 'prenotare-prestazione-infermieristica',
         'question': 'Come posso prenotare una prestazione infermieristica?',
-        'answer': "Puoi prenotare una prestazione infermieristica dalla pagina Prenota. Compili il modulo con i tuoi dati, scegli il servizio, la data e l'orario disponibili, accetti l'informativa privacy e invii la richiesta.",
+        'answer': "Dalla pagina Prenota inserisci i tuoi dati, scegli la prestazione, la data e l'orario, poi invii la richiesta. L'appuntamento è fissato solo dopo la conferma dello studio.",
         'link_href': '/prenota',
         'link_text': 'Vai alla prenotazione',
     },
@@ -422,7 +422,7 @@ FAQ_ITEMS = [
     {
         'id': 'dopo-invio-prenotazione',
         'question': 'Cosa succede dopo aver inviato una prenotazione sanitaria?',
-        'answer': "Dopo l'invio, la richiesta arriva allo studio. Ricevi una email di conferma della richiesta e l'appuntamento viene gestito manualmente; quando viene confermato, può essere sincronizzato con il calendario collegato al gestionale.",
+        'answer': "Dopo l'invio, lo studio verifica manualmente disponibilità e indicazioni necessarie. L'appuntamento è fissato quando ricevi la conferma.",
         'link_href': '/prenota',
         'link_text': 'Invia una richiesta',
     },
@@ -1685,7 +1685,7 @@ def healthz():
 def invia_email_ricezione_call_sonno(call):
     try:
         msg = Message(
-            subject='Richiesta call sonno ricevuta - attendi la conferma',
+            subject='Richiesta call sonno ricevuta: attendi la conferma',
             recipients=[call.email],
             body=(
                 f'Gentile {call.nome},\n\n'
@@ -1693,9 +1693,8 @@ def invia_email_ricezione_call_sonno(call):
                 f'Data richiesta: {call.data}\n'
                 f'Orario richiesto: {call.ora}\n'
                 f'Durata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n\n'
-                f'Lo slot è riservato provvisoriamente, ma la call non è ancora confermata. '
-                f'Attendi la mia email di conferma prima di considerare fissato l’appuntamento. '
-                f'Ti confermerò lo slot oppure ti contatterò per concordare un orario diverso '
+                f'Lo slot è riservato provvisoriamente. Considera fissato l’appuntamento solo dopo la mia email di conferma. '
+                f'Ti confermerò l’orario oppure ti contatterò per concordarne uno diverso '
                 f'entro il giorno lavorativo successivo.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
@@ -1748,7 +1747,7 @@ def invia_email_conferma_call_sonno(call, modificata=False):
                 f'Data: {call.data}\nOra: {call.ora}\nDurata indicativa: circa {DURATA_CALL_SONNO_MINUTI} minuti\n'
                 f'{istruzioni}\n'
                 f'Prima della call non devi compilare altri moduli.\n\n'
-                f'Per necessità puoi contattarmi al 3806317175.\n\n'
+                f'Se hai bisogno di contattarmi, chiama il 3806317175.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
         )
@@ -1883,13 +1882,12 @@ def invia_email_spostamento(appuntamento):
             recipients=[appuntamento.email],
             body=(
                 f'Gentile {appuntamento.nome},\n\n'
-                f'ti informo che il tuo appuntamento è stato spostato '
-                f'alle seguenti nuove data e ora:\n\n'
+                f'il tuo appuntamento è stato spostato. Qui trovi i nuovi dettagli:\n\n'
                 f'Servizio:     {appuntamento.servizio}\n'
                 f'Nuova data:   {appuntamento.data}\n'
                 f'Nuovo orario: {appuntamento.ora}\n\n'
-                f'Se hai domande o necessiti di ulteriori modifiche '
-                f'puoi contattarmi al numero 3806317175.\n\n'
+                f'Se hai domande o devi chiedere un’altra modifica, '
+                f'puoi contattarmi al 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )
@@ -1918,7 +1916,6 @@ def invia_email_annullamento(appuntamento):
                 f'Ora:      {appuntamento.ora}\n\n'
                 f'Se desideri fissare un nuovo appuntamento puoi prenotare '
                 f'direttamente dal sito o contattarmi al numero 3806317175.\n\n'
-                f'Ci scusiamo per l\'inconveniente.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
             )

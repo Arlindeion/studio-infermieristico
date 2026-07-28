@@ -21,7 +21,7 @@
 <section class="sleep-questionnaire-page">
     <header class="sleep-booking-intro">
         <p class="eyebrow">Area riservata · {{ formule_sonno.get(call.formula_scelta, call.formula_scelta) if formule_sonno is defined else call.formula_scelta }}</p>
-        <h1>Conosciamo il sonno nella vostra quotidianità.</h1>
+        <h1>Raccontami come dorme il bambino nella vostra quotidianità.</h1>
         <p>Le risposte mi servono per preparare la consulenza che abbiamo concordato. Non sostituiscono una valutazione pediatrica e il modulo non va usato per urgenze.</p>
         <div class="sleep-known-data"><strong>{{ call.nome }}</strong><span>{{ call.email }} · {{ call.telefono }} · bambino di {{ call.eta_bambino_mesi }} mesi</span></div>
     </header>
@@ -94,7 +94,7 @@
         <div class="form-gruppo">
             <label class="privacy-label"><input type="checkbox" name="consenso_marketing" class="privacy-checkbox"><span class="privacy-text">Desidero ricevere aggiornamenti su corsi e servizi. Consenso facoltativo e revocabile.</span></label>
         </div>
-        <button class="btn" type="submit">Inviami il questionario</button>
+        <button class="btn" type="submit">Invia il questionario</button>
     </form>
 </section>
 {% endblock %}

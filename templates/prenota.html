@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titolo %}Prenota — S.C. Studio Infermieristico{% endblock %}
+{% block titolo %}Prenota | S.C. Studio Infermieristico{% endblock %}
 {% block meta_description %}Scegli una prestazione infermieristica, consulta la tariffa indicativa e richiedi data e orario presso S.C. Studio Infermieristico a Montesilvano.{% endblock %}
 
 {% block contenuto %}
@@ -20,7 +20,7 @@
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <div class="form-gruppo">
-            <label for="nome">Nome e Cognome *</label>
+            <label for="nome">Nome e cognome *</label>
             <input type="text" id="nome" name="nome" placeholder="Es. Mario Rossi"
                    value="{{ form_data.get('nome', '') if form_data else '' }}" required>
         </div>
@@ -99,7 +99,7 @@
             <div class="form-gruppo">
                 <label for="ora">Ora *</label>
                 <select id="ora" name="ora" required>
-                    <option value="">-- Seleziona --</option>
+                    <option value="">Seleziona</option>
                     <option value="08:00"  {{ 'selected' if form_data and form_data.get('ora') == '08:00' }}>08:00</option>
                     <option value="08:30"  {{ 'selected' if form_data and form_data.get('ora') == '08:30' }}>08:30</option>
                     <option value="09:00"  {{ 'selected' if form_data and form_data.get('ora') == '09:00' }}>09:00</option>
@@ -151,7 +151,7 @@
         </div>
         <p class="booking-price-note">Le tariffe “da” o “su valutazione” dipendono dalla situazione e dai materiali necessari. Ogni variazione viene comunicata prima della conferma.</p>
 
-        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia" data-conversion="prestazioni_booking_submit">Invia prenotazione</button>
+        <button type="submit" class="btn btn-privacy-mancante" id="btn-invia" data-conversion="prestazioni_booking_submit">Invia la richiesta</button>
 
     </form>
 </section>

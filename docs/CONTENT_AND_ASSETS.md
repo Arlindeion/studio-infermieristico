@@ -8,6 +8,12 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 
 ## Messaggi approvati
 
+### Revisione editoriale del 28 luglio 2026
+
+- I testi pubblici sono stati rivisti per rendere la voce più naturale, concreta e coerente tra pagine commerciali, moduli e conferme.
+- Sono stati preservati fatti, prezzi, durate, CTA canoniche, confini clinici e testimonianze autorizzate.
+- La revisione della pagina `/chi-sono` è stata approvata e applicata integralmente il 28 luglio 2026.
+
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
 - Firma della hero: `Selene Campetta · infermiera e consulente del sonno`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.
 - Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`

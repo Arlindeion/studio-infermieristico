@@ -765,10 +765,10 @@ def test_pagina_laboratori_presenta_fasce_eta_e_foto_reali(client):
     assert resp.status_code == 200
     assert resp.text.count('<h1>') == 1
     assert 'Laboratori per bambini e famiglie' in resp.text
-    assert 'Nuove esperienze da vivere anche a casa' in resp.text
-    assert '6–18' in resp.text
-    assert '18–36' in resp.text
-    assert '3–5' in resp.text
+    assert 'Attività da riproporre anche a casa' in resp.text
+    assert '6-18' in resp.text
+    assert '18-36' in resp.text
+    assert '3-5' in resp.text
     assert 'laboratori-hero-esplorazione-sensoriale.jpg' in resp.text
     assert 'laboratori-primi-assaggi.jpg' in resp.text
     assert 'laboratori-autonomia-a-tavola.jpg' in resp.text
@@ -790,8 +790,8 @@ def test_pagina_accompagnamento_presenta_percorso_ed_equipe(client):
     assert 'data-conversion="accompagnamento_open_day_hero"' in resp.text
     assert 'Scopri l’open day' in resp.text
     assert 'data-conversion="sticky_prima_della_nascita"' in resp.text
-    assert 'Farmacia Russo al fianco del percorso' in resp.text
-    assert 'realizzato con la collaborazione della Farmacia Russo' in resp.text
+    assert 'In collaborazione con Farmacia Russo' in resp.text
+    assert 'La Farmacia Russo collabora alla realizzazione del corso' in resp.text
     assert 'logo-farmacia-russo.png' in resp.text
     assert 'href="https://farmaciarussodomenico.it/"' in resp.text
     assert 'aria-label="Visita il sito della Farmacia Russo"' in resp.text
@@ -1975,7 +1975,7 @@ def test_pagina_prestazioni_usa_h1(client):
     assert '80 €' in resp.text
     assert 'Le tariffe possono variare in base alla complessità della prestazione' in resp.text
     assert 'Gli interventi a domicilio non si prenotano direttamente online' in resp.text
-    assert 'Per ulteriori informazioni, durante gli orari dello studio' in resp.text
+    assert 'Per chiarire un dubbio puoi chiamare' in resp.text
     assert 'urgenze fuori orario' not in resp.text
     assert '<h2 id="studio-location-title">Dove ci troviamo</h2>' in resp.text
     assert "Via C. D'Agnese 43, 65015 Montesilvano (PE)" in resp.text

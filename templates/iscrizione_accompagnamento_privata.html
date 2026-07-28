@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block titolo %}Iscrizione al corso — Accompagnamento alla nascita{% endblock %}
+{% block titolo %}Iscrizione al corso | Accompagnamento alla nascita{% endblock %}
 {% block head_extra %}
 <meta name="robots" content="noindex,nofollow">
 {% endblock %}
 
 {% block contenuto %}
 <section class="pagina-interna pagina-consulenza private-course-page">
-    <p class="eyebrow">Iscrizione privata</p>
-            <h1>Iscrizione al corso</h1>
-    <p class="sottotitolo">Completa l'iscrizione al percorso di accompagnamento alla nascita. Il corso prevede 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.</p>
+    <p class="eyebrow">Collegamento riservato</p>
+    <h1>Iscrizione al corso</h1>
+    <p class="sottotitolo">Completa l'iscrizione al corso di accompagnamento alla nascita. Il percorso comprende 9 incontri con infermiera, ostetrica, psicologa, osteopata e nutrizionista.</p>
 
     <div class="private-course-hero">
         <div>
@@ -17,10 +17,10 @@
             <p>Dopo l'invio ti manderò una conferma con il riepilogo delle date e i contatti dello studio.</p>
         </div>
         <div class="private-course-meta">
-            <span>{{ incontri|length }}/9 incontri inseriti</span>
+            <span>{{ incontri|length }} incontri su 9 inseriti</span>
             <span>Studio infermieristico</span>
             {% if posti_liberi is not none %}
-            <span>{{ posti_liberi }} posti coppia disponibili</span>
+            <span>{{ posti_liberi }} posti per coppie disponibili</span>
             {% endif %}
         </div>
     </div>

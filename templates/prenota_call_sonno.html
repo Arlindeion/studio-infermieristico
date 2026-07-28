@@ -8,13 +8,13 @@
     <header class="sleep-booking-intro">
         <p class="eyebrow">Primo passo · gratuito</p>
         <h1>Scegli la call sul sonno</h1>
-        <p>Circa 20 minuti per capire cosa sta succedendo e verificare se la consulenza è adatta alla vostra situazione. Prima della call non ti chiederemo un questionario lungo.</p>
+        <p>In circa 20 minuti mi racconti la difficoltà principale e verifichiamo se la consulenza è adatta alla vostra situazione. Prima della call non ti chiederò di compilare il questionario completo.</p>
         <p class="sleep-booking-prices">Le formule successive partono da <strong>75 €</strong>: consulenza mirata 75 €, percorso personalizzato 180 €, percorso con affiancamento WhatsApp 320 €. <a href="{{ url_for('consulenze_online') }}#formule">Confronta cosa comprendono</a>.</p>
     </header>
 
     <aside class="sleep-pending-alert" role="alert">
         <strong>La call non è ancora confermata</strong>
-        <p>Stai inviando una richiesta per lo slot selezionato. Attendi la mia email di conferma prima di considerare fissato l’appuntamento. Se l’orario non fosse disponibile, ti contatterò per concordarne telefonicamente uno diverso entro il giorno lavorativo successivo.</p>
+        <p>La richiesta riserva provvisoriamente lo slot. Considera fissato l'appuntamento solo dopo la mia email di conferma. Se l'orario non fosse disponibile, entro il giorno lavorativo successivo ti chiamerò per concordarne uno diverso.</p>
     </aside>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -86,7 +86,7 @@
         <div class="form-gruppo">
             <label for="obiettivo_call">Che cosa vorresti capire durante questi 20 minuti? *</label>
             <textarea id="obiettivo_call" name="obiettivo_call" maxlength="300" rows="3" required>{{ form_data.get('obiettivo_call', '') }}</textarea>
-            <small>La call serve a verificare appropriatezza e formula; non sostituisce la consulenza.</small>
+            <small>La call serve a capire se il servizio è appropriato e quale formula valutare. Non sostituisce la consulenza.</small>
         </div>
 
         <div class="sleep-slot-grid">

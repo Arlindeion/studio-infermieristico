@@ -96,7 +96,7 @@ L'offerta breve non deve far apparire inutile il percorso principale.
 
 ### Clienti che già conoscono Selene
 
-Non sprecare la prima schermata con una presentazione generica o una fotografia puramente identitaria. Per il PDF con le due opzioni sonno è stata approvata la versione senza la fotografia iniziale con il cuore in mano.
+Non sprecare la prima schermata con una presentazione generica o una fotografia puramente identitaria. Per il PDF comparativo delle tre formule sonno è stata approvata la versione senza la fotografia iniziale con il cuore in mano.
 
 La riconoscibilità deve restare attraverso logo, palette, tipografia, tono e firma rossa.
 
@@ -141,7 +141,7 @@ Se il software non permette questi font, usare un'alternativa soltanto dopo aver
 - Non deformarlo, ricolorarlo liberamente o inserirlo su un fondo che ne riduce il contrasto.
 - Lasciare spazio libero intorno.
 - Non usare il logo come decorazione ripetuta.
-- Verificare il nome effettivo del file: il repository registra ancora `logo.PNG`, mentre alcuni riferimenti applicativi usano `logo.png`.
+- Usare `static/img/logo.png` come file principale; il nome è normalizzato per i filesystem Linux case-sensitive. `static/img/logo_black.png` resta disponibile per il login e i materiali PDF.
 
 ### Firma rossa
 
