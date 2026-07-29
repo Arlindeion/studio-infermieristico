@@ -3699,9 +3699,22 @@ def conferma_call_sonno_admin(id):
         abort(400)
     call.stato = 'Confermata'
     db.session.commit()
-    invia_email_conferma_call_sonno(call)
-    if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+    email_inviata = invia_email_conferma_call_sonno(call)
+    calendar_aggiornato = crea_o_aggiorna_evento_calendario_call_sonno(call)
+    if not email_inviata and not calendar_aggiornato:
+        flash(
+            'Call confermata, ma email e Calendar non sono stati aggiornati. '
+            'Controlla il registro eventi.',
+            'error',
+        )
+    elif not calendar_aggiornato:
         flash('Call confermata, ma Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+    elif not email_inviata:
+        flash(
+            'Call confermata e Calendar aggiornato, ma l’email non è partita. '
+            'Controlla il registro eventi.',
+            'error',
+        )
     else:
         flash('Call confermata e comunicazione inviata.', 'success')
     return redirect(url_for('admin') + '#admin-call-sonno')
@@ -3715,9 +3728,22 @@ def annulla_call_sonno_admin(id):
     call = db.get_or_404(CallSonno, id)
     call.stato = 'Annullata'
     db.session.commit()
-    invia_email_annullamento_call_sonno(call)
-    if not elimina_evento_calendario_call_sonno(call):
+    email_inviata = invia_email_annullamento_call_sonno(call)
+    calendar_aggiornato = elimina_evento_calendario_call_sonno(call)
+    if not email_inviata and not calendar_aggiornato:
+        flash(
+            'Call annullata, ma email e Calendar non sono stati aggiornati. '
+            'Controlla il registro eventi.',
+            'error',
+        )
+    elif not calendar_aggiornato:
         flash('Call annullata, ma il blocco Calendar non è stato rimosso.', 'error')
+    elif not email_inviata:
+        flash(
+            'Call annullata e Calendar aggiornato, ma l’email non è partita. '
+            'Controlla il registro eventi.',
+            'error',
+        )
     else:
         flash('Call annullata.', 'success')
     return redirect(url_for('admin') + '#admin-call-sonno')
@@ -3758,9 +3784,22 @@ def modifica_call_sonno_admin(id):
         call.ora = nuova_ora
         call.stato = 'Confermata'
         db.session.commit()
-        invia_email_conferma_call_sonno(call, modificata=True)
-        if not crea_o_aggiorna_evento_calendario_call_sonno(call):
+        email_inviata = invia_email_conferma_call_sonno(call, modificata=True)
+        calendar_aggiornato = crea_o_aggiorna_evento_calendario_call_sonno(call)
+        if not email_inviata and not calendar_aggiornato:
+            flash(
+                'Nuovo orario salvato, ma email e Calendar non sono stati aggiornati. '
+                'Controlla il registro eventi.',
+                'error',
+            )
+        elif not calendar_aggiornato:
             flash('Nuovo orario salvato, ma Calendar non è stato aggiornato.', 'error')
+        elif not email_inviata:
+            flash(
+                'Nuovo orario salvato e Calendar aggiornato, ma l’email non è partita. '
+                'Controlla il registro eventi.',
+                'error',
+            )
         else:
             flash('Nuovo orario confermato e comunicato alla famiglia.', 'success')
         return redirect(url_for('admin') + '#admin-call-sonno')
@@ -3867,13 +3906,39 @@ def aggiorna_stato(id, stato):
     appuntamento.stato = stato
     db.session.commit()
     if stato == 'Confermato':
-        invia_email_conferma(appuntamento)
-        if not crea_o_aggiorna_evento_calendario(appuntamento):
+        email_inviata = invia_email_conferma(appuntamento)
+        calendar_aggiornato = crea_o_aggiorna_evento_calendario(appuntamento)
+        if not email_inviata and not calendar_aggiornato:
+            flash(
+                'Appuntamento confermato, ma email e Google Calendar non sono stati aggiornati. '
+                'Controlla il registro eventi.',
+                'error',
+            )
+        elif not calendar_aggiornato:
             flash('Appuntamento confermato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+        elif not email_inviata:
+            flash(
+                'Appuntamento confermato e Google Calendar aggiornato, ma l’email non è partita. '
+                'Controlla il registro eventi.',
+                'error',
+            )
     elif stato == 'Annullato':
-        invia_email_annullamento(appuntamento)
-        if not elimina_evento_calendario(appuntamento):
+        email_inviata = invia_email_annullamento(appuntamento)
+        calendar_aggiornato = elimina_evento_calendario(appuntamento)
+        if not email_inviata and not calendar_aggiornato:
+            flash(
+                'Appuntamento annullato, ma email e Google Calendar non sono stati aggiornati. '
+                'Controlla il registro eventi.',
+                'error',
+            )
+        elif not calendar_aggiornato:
             flash('Appuntamento annullato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+        elif not email_inviata:
+            flash(
+                'Appuntamento annullato e Google Calendar aggiornato, ma l’email non è partita. '
+                'Controlla il registro eventi.',
+                'error',
+            )
     return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
 
 
@@ -3943,11 +4008,24 @@ def modifica_appuntamento(id):
         appuntamento.stato = 'Confermato'
         db.session.commit()
         if was_pending:
-            invia_email_conferma(appuntamento)
+            email_inviata = invia_email_conferma(appuntamento)
         else:
-            invia_email_spostamento(appuntamento)
-        if not crea_o_aggiorna_evento_calendario(appuntamento):
+            email_inviata = invia_email_spostamento(appuntamento)
+        calendar_aggiornato = crea_o_aggiorna_evento_calendario(appuntamento)
+        if not email_inviata and not calendar_aggiornato:
+            flash(
+                'Appuntamento modificato, ma email e Google Calendar non sono stati aggiornati. '
+                'Controlla il registro eventi.',
+                'error',
+            )
+        elif not calendar_aggiornato:
             flash('Appuntamento modificato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
+        elif not email_inviata:
+            flash(
+                'Appuntamento modificato e Google Calendar aggiornato, ma l’email non è partita. '
+                'Controlla il registro eventi.',
+                'error',
+            )
         return redirect(url_for('admin', filtro='in_attesa'))
     return render_template('modifica_appuntamento.html', a=appuntamento)
 
