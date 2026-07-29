@@ -529,6 +529,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: `GOOGLE_ANALYTICS_ID` resta assente dagli ambienti operativi fino alla validazione professionale; la suite JavaScript verifica assenza di richieste prima del consenso, accettazione, rifiuto, valori salvati non validi, revoca e conservazione dei cookie non Analytics.
 - Collegamenti: `static/js/analytics-consent.js`, `static/js/conversion-tracking.js`, `tests/js/analytics-consent.test.js`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-064 — Staging stabile su main con deploy manuali
+
+- Data: 2026-07-29.
+- Stato: approvata nel codice; da integrare e sincronizzare su Render.
+- Decisione: fare seguire al Blueprint e al Web Service di staging il branch `main`, mantenendo `autoDeployTrigger` disattivato. Il branch identifica la linea stabile del progetto; il commit effettivamente distribuito continua a essere scelto e verificato prima di ogni deploy manuale.
+- Motivo: i branch di lavorazione precedenti non devono restare configurazione permanente dell'ambiente condiviso e non devono creare divergenza tra pannello Render e Blueprint.
+- Conseguenze: l'integrazione del file non avvia un deploy automatico. Dopo il merge occorre sincronizzare il Blueprint o aggiornare il branch del servizio a `main`, senza modificare piani, dominio, integrazioni o segreti.
+- Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown
