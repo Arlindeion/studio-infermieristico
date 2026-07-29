@@ -502,6 +502,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: le route pubbliche e sensibili mantengono i propri limiti; soltanto l'endpoint tecnico, che non legge né modifica dati applicativi, resta sempre raggiungibile dal monitor. Il deploy `8a4ad84` ha superato 55 richieste consecutive con risposta `200` e nessun nuovo `429`; anche il riavvio successivo alla rimozione dei segreti bootstrap ha mantenuto il controllo stabile.
 - Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-061 — Produzione separata e preparazione senza spesa
+
+- Data: 2026-07-29.
+- Stato: approvata; configurazione preparata, non applicata.
+- Decisione: mantenere lo staging gratuito esistente come ambiente privato e creare, soltanto dopo un futuro ordine esplicito, un Web Service Starter e un PostgreSQL Basic-256mb nuovi e separati per la produzione. Il database gratuito non viene promosso né copiato. La prima accensione delle risorse definitive mantiene `APP_ENV=staging`, Basic Auth, `noindex`, email soppresse, integrazioni reali disattivate, nessun dominio e database non raggiungibile dall'esterno.
+- Motivo: un database vuoto e risorse isolate riducono il rischio di trasferire dati sintetici, configurazioni di prova o credenziali dello staging e rendono più chiari rollback, collaudo e cutover.
+- Conseguenze: `render.production.yaml` è un Blueprint distinto e non collegato al Blueprint attuale; contiene piani a pagamento ma non produce effetti senza selezione e sincronizzazione manuali. Il 29 luglio il pannello indicava un minimo di 13,30 USD al mese prima di eventuali imposte; il costo va riletto prima della creazione. `main` deve coincidere con il commit approvato prima dell'uso. Email reali, Calendar, DNS, passaggio a `APP_ENV=production` e apertura pubblica conservano autorizzazioni separate. Il database blocca inizialmente ogni accesso esterno; il backup locale richiederà in seguito una sorgente IP stabile e strettamente autorizzata.
+- Collegamenti: `render.production.yaml`, `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`, D-027, D-029, D-030, D-059.
+
 ## Modello per nuove decisioni
 
 ```markdown

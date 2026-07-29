@@ -40,6 +40,12 @@ comunque la pagina normalmente.
 | Staging iniziale | Render Web Service Free, Francoforte | Render PostgreSQL Free, Francoforte | sottodominio `onrender.com` | Basic Auth applicativa e `noindex` globale |
 | Produzione | Render Web Service Starter o superiore, Francoforte | Render PostgreSQL Basic-256mb o superiore, Francoforte | dominio definitivo definito in D-027 | pubblico dopo il gate pre-lancio |
 
+Staging e produzione usano risorse separate. Il database gratuito non viene
+promosso, copiato o collegato alla produzione: il database pagato nasce vuoto e
+riceve soltanto dati creati durante i collaudi controllati e, dopo il cutover,
+dati reali. Questa separazione evita che dati fittizi, credenziali o
+configurazioni dello staging entrino nell'ambiente pubblico.
+
 Render gestisce e rinnova HTTPS. Il filesystem del servizio è effimero e non
 contiene dati persistenti; ogni dato applicativo va in PostgreSQL. Lo staging
 usa esclusivamente dati fittizi. Il database gratuito scade 30 giorni dopo la
@@ -53,6 +59,65 @@ Render; `DATABASE_URL` proviene dal database associato. Le variabili con
 All'avvio Render esegue nell'ordine `flask db upgrade`, il comando sicuro
 `bootstrap-admin` e infine Gunicorn. I comandi preparatori disabilitano lo
 scheduler; il processo Gunicorn lo avvia una sola volta perché usa un worker.
+
+`render.production.yaml` prepara un secondo Blueprint con nomi distinti. Non è
+il file del Blueprint esistente e non viene scoperto o sincronizzato
+automaticamente. Dichiara piani a pagamento: non va selezionato nel pannello,
+validato tramite un'operazione che crei risorse o sincronizzato senza un nuovo
+ordine esplicito successivo alla presentazione del costo aggiornato.
+
+Il file è intenzionalmente sicuro per la prima accensione:
+
+- usa `main`, che prima della creazione deve essere portato esattamente al
+  commit approvato e nuovamente verificato;
+- crea Web Service Starter e PostgreSQL Basic-256mb separati in Francoforte;
+- fissa il disco iniziale a 1 GB e disabilita l'autoscaling per evitare aumenti
+  automatici di costo;
+- colloca le risorse in un ambiente Render protetto e con rete privata isolata;
+- blocca ogni connessione PostgreSQL esterna con `ipAllowList: []`;
+- mantiene `APP_ENV=staging`, Basic Auth, `noindex`, invii email soppressi e
+  integrazioni reali disattivate;
+- mantiene auto-deploy e preview disattivati;
+- non collega il dominio e conserva il sottodominio Render soltanto per il
+  collaudo privato;
+- usa un pre-deploy separato per migrazioni e bootstrap, lasciando a Gunicorn
+  il solo avvio dell'applicazione.
+
+Il JSON Google non è rappresentato nel Blueprint. Prima del collaudo reale va
+caricato direttamente come secret file con nome
+`google-calendar-service-account.json`; Render lo monta in
+`/etc/secrets/google-calendar-service-account.json`. Nessun valore segreto va
+inserito nel repository.
+
+### Gate delle risorse di produzione separate
+
+La sequenza seguente è obbligatoria e non può essere anticipata:
+
+1. ottenere un ordine esplicito per generare costi Render;
+2. rileggere dal pannello costo totale, metodo di pagamento e piani selezionati;
+3. portare `main` al commit verificato senza modificare la storia pubblicata;
+4. creare il Blueprint da `render.production.yaml` senza dominio e con
+   configurazione privata;
+5. inserire i segreti direttamente nel pannello e caricare il secret file;
+6. verificare database vuoto, migrazioni, admin, Basic Auth, `noindex`,
+   `/healthz` e assenza di dati reali;
+7. ottenere autorizzazioni separate prima di email reali e scritture Calendar;
+8. collaudare i flussi con dati sintetici e rimuovere gli eventi di prova;
+9. restringere l'accesso esterno al database alla sola sorgente necessaria per
+   il backup cifrato, dopo aver scelto una provenienza IP stabile; non usare
+   `0.0.0.0/0`;
+10. chiudere tutti i P0 e ottenere un ordine esplicito distinto prima di
+    impostare `APP_ENV=production`, collegare DNS/dominio o rendere pubblico il
+    servizio.
+
+L'attivazione delle integrazioni in preproduzione richiede una modifica
+intenzionale e congiunta di `STAGING_LIVE_INTEGRATIONS=true` e
+`MAIL_SUPPRESS_SEND=false`. Il cutover finale richiede invece
+`APP_ENV=production`, `PUBLIC_BASE_URL=https://scstudioinfermieristico.it`,
+rimozione delle variabili `STAGING_AUTH_*`, collegamento del dominio e, dopo la
+verifica dei canonical, disattivazione del sottodominio Render. Questi valori
+non sono inclusi nel Blueprint preparatorio per impedire un'apertura
+accidentale.
 
 Per il primo deploy dello staging sono obbligatorie:
 

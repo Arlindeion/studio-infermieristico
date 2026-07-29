@@ -1,0 +1,90 @@
+# PREPARAZIONE SOLTANTO.
+# Non creare o sincronizzare questo Blueprint senza un nuovo ordine esplicito:
+# i piani dichiarati sotto generano costi Render.
+#
+# Il primo stato delle risorse di produzione separate resta una preproduzione
+# privata. APP_ENV, dominio e integrazioni vengono attivati soltanto attraverso
+# i gate descritti in docs/OPERATIONS.md.
+
+previews:
+  generation: "off"
+
+projects:
+  - name: sc-studio-infermieristico
+    environments:
+      - name: production
+        networking:
+          isolation: enabled
+        permissions:
+          protection: enabled
+        services:
+          - type: web
+            name: sc-studio-infermieristico-production
+            runtime: python
+            region: frankfurt
+            plan: starter
+            branch: main
+            numInstances: 1
+            buildCommand: pip install -r requirements.txt
+            preDeployCommand: DISABLE_SCHEDULER=true flask --app app db upgrade && DISABLE_SCHEDULER=true flask --app app bootstrap-admin
+            startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app
+            healthCheckPath: /healthz
+            autoDeployTrigger: "off"
+            renderSubdomainPolicy: enabled
+            envVars:
+              - key: FLASK_ENV
+                value: production
+              - key: APP_ENV
+                value: staging
+              - key: SECRET_KEY
+                generateValue: true
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: sc-studio-infermieristico-production-db
+                  property: connectionString
+              - key: MAIL_SUPPRESS_SEND
+                value: "true"
+              - key: STAGING_LIVE_INTEGRATIONS
+                value: "false"
+              - key: STAGING_AUTH_USERNAME
+                sync: false
+              - key: STAGING_AUTH_PASSWORD
+                sync: false
+              - key: ADMIN_BOOTSTRAP_USERNAME
+                sync: false
+              - key: ADMIN_BOOTSTRAP_PASSWORD
+                sync: false
+              - key: MAIL_SERVER
+                value: smtp.mail.ovh.net
+              - key: MAIL_PORT
+                value: "587"
+              - key: MAIL_USE_TLS
+                value: "true"
+              - key: MAIL_USE_SSL
+                value: "false"
+              - key: MAIL_USERNAME
+                sync: false
+              - key: MAIL_PASSWORD
+                sync: false
+              - key: MAIL_DEFAULT_SENDER
+                sync: false
+              - key: MAIL_ADMIN_RECIPIENT
+                sync: false
+              - key: GOOGLE_CALENDAR_ICS_URL
+                sync: false
+              - key: GOOGLE_SERVICE_ACCOUNT_FILE
+                value: /etc/secrets/google-calendar-service-account.json
+              - key: GOOGLE_CALENDAR_ID
+                sync: false
+              - key: CALENDARIO_CACHE_SECONDI
+                value: "300"
+              - key: SONNO_CALL_URL
+                sync: false
+        databases:
+          - name: sc-studio-infermieristico-production-db
+            region: frankfurt
+            plan: basic-256mb
+            diskSizeGB: 1
+            storageAutoscalingEnabled: false
+            postgresMajorVersion: "18"
+            ipAllowList: []

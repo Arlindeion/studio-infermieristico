@@ -4,10 +4,11 @@ services:
     runtime: python
     region: frankfurt
     plan: free
+    branch: codex/snap-homepage
     buildCommand: pip install -r requirements.txt
     startCommand: DISABLE_SCHEDULER=true flask --app app db upgrade && DISABLE_SCHEDULER=true flask --app app bootstrap-admin && gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app
     healthCheckPath: /healthz
-    autoDeployTrigger: off
+    autoDeployTrigger: "off"
     envVars:
       - key: FLASK_ENV
         value: production
