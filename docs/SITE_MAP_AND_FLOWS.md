@@ -186,7 +186,11 @@ Pagina prestazioni
 ```
 
 - Le prestazioni sanitarie non condividono il form con corsi o consulenze.
-- Ogni prestazione selezionabile blocca uno slot uniforme di 30 minuti nel database, nella disponibilità pubblica e su Google Calendar.
+- Ogni richiesta pubblica blocca inizialmente 30 minuti. Prima della conferma
+  Selene indica nell'admin la durata effettiva, come avviene in Arzamed; il
+  database e l'evento Google Calendar conservano quindi l'intero intervallo.
+  Una durata che supera l'orario di apertura o si sovrappone a un altro impegno
+  non può essere confermata.
 - Gli appuntamenti a domicilio non sono prenotabili direttamente: richiedono contatto e valutazione di zona e fattibilità.
 - La modifica di un appuntamento deve riportarlo a `In attesa` e notificare lo studio.
 - Regola desiderata per modifica/annullamento: fino a 24 ore prima da martedì a sabato; per il lunedì entro il sabato precedente alle 12:00.

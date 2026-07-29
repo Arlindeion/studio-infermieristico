@@ -235,10 +235,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-031 — Listino infermieristico ricercabile per tipologia
 
 - Data: 2026-07-21.
-- Stato: approvata.
+- Stato: approvata; la sola regola sulla durata uniforme è sostituita da D-062.
 - Decisione: organizzare `/prestazioni-infermieristiche` nelle quattro tipologie del listino approvato, usando sezioni espandibili e una ricerca client-side progressiva. La prima tipologia resta aperta all’arrivo e l’intero contenuto rimane consultabile senza JavaScript.
 - Motivo: rendere leggibile un catalogo di oltre trenta prestazioni anche su mobile, senza trasformare la pagina in una griglia di card equivalenti o nascondere le informazioni ai dispositivi assistivi.
-- Conseguenze: il form `/prenota` usa un unico selettore gerarchico: su desktop il passaggio del mouse o il focus sulla tipologia apre il relativo sottomenu; su dispositivi touch la tipologia si apre al tocco. Subito prima dell’invio mostra un riepilogo con prestazione, categoria e tariffa indicativa in studio. Ogni prestazione selezionabile blocca uno slot uniforme di 30 minuti; le prestazioni a domicilio restano fuori dalla prenotazione diretta e richiedono valutazione manuale; tariffe variabili, materiali, distanza e prescrizione sono chiariti prima dell’azione. Il filtro apre soltanto le tipologie con risultati e comunica il numero di corrispondenze.
+- Conseguenze: il form `/prenota` usa un unico selettore gerarchico: su desktop il passaggio del mouse o il focus sulla tipologia apre il relativo sottomenu; su dispositivi touch la tipologia si apre al tocco. Subito prima dell’invio mostra un riepilogo con prestazione, categoria e tariffa indicativa in studio. Ogni richiesta blocca inizialmente 30 minuti; D-062 disciplina la durata effettiva scelta dall'admin prima della conferma. Le prestazioni a domicilio restano fuori dalla prenotazione diretta e richiedono valutazione manuale; tariffe variabili, materiali, distanza e prescrizione sono chiariti prima dell’azione. Il filtro apre soltanto le tipologie con risultati e comunica il numero di corrispondenze.
 - Collegamenti: `CONTENT_AND_ASSETS.md`, `SITE_MAP_AND_FLOWS.md`, `templates/prestazioni_infermieristiche.html`, `static/css/prestazioni.css`, `static/js/prestazioni-filter.js`.
 
 ## D-032 — WhatsApp solo come contatto contestuale
@@ -510,6 +510,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: un database vuoto e risorse isolate riducono il rischio di trasferire dati sintetici, configurazioni di prova o credenziali dello staging e rendono più chiari rollback, collaudo e cutover.
 - Conseguenze: `render.production.yaml` è un Blueprint distinto e non collegato al Blueprint attuale; contiene piani a pagamento ma non produce effetti senza selezione e sincronizzazione manuali. Il 29 luglio il pannello indicava un minimo di 13,30 USD al mese prima di eventuali imposte; il costo va riletto prima della creazione. `main` deve coincidere con il commit approvato prima dell'uso. Email reali, Calendar, DNS, passaggio a `APP_ENV=production` e apertura pubblica conservano autorizzazioni separate. Il database blocca inizialmente ogni accesso esterno; il backup locale richiederà in seguito una sorgente IP stabile e strettamente autorizzata.
 - Collegamenti: `render.production.yaml`, `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`, D-027, D-029, D-030, D-059.
+
+## D-062 — Durata effettiva scelta alla conferma delle prestazioni
+
+- Data: 2026-07-29.
+- Stato: approvata, implementata e verificata localmente; collaudo reale ancora richiesto.
+- Decisione: una richiesta sanitaria proveniente dal sito blocca provvisoriamente 30 minuti. Prima di confermarla Selene indica manualmente nell'admin la durata effettiva, come già fa creando un appuntamento in Arzamed. La durata viene salvata con l'appuntamento e determina l'intervallo occupato nel database e l'orario di fine su Google Calendar.
+- Motivo: Arzamed pubblica su Google Calendar l'inizio e la fine effettivi e le prestazioni possono richiedere tempi diversi anche all'interno della stessa tipologia; un catalogo di durate fisse non rappresenterebbe il lavoro reale.
+- Conseguenze: la conferma viene rifiutata se la durata manca, non è compresa tra 1 e 480 minuti, supera l'orario di apertura o si sovrappone a richieste, call, corsi o eventi Calendar. Le righe esistenti ricevono 30 minuti tramite migrazione; ogni modifica successiva può aggiornare la durata e l'evento collegato. Il 29 luglio il flusso ha superato i test automatici e il controllo dell'admin a 1440×900 e 390×844 px; durante il collaudo è stata corretta anche la precedenza CSS che nascondeva le card appuntamento su mobile.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/modifica_appuntamento.html`, `migrations/versions/4d8b2c7a91e6_durata_effettiva_appuntamento.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## Modello per nuove decisioni
 

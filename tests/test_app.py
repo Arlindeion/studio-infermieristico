@@ -1997,7 +1997,7 @@ def google_calendar_scrittura_finto(app):
     app_module._servizio_calendario_cache = None
 
 
-def test_tutte_le_prestazioni_bloccano_trenta_minuti():
+def test_richieste_prestazioni_usano_trenta_minuti_prima_della_scelta_admin():
     assert app_module.DURATA_SLOT_MINUTI == 30
 
     for servizio in app_module.SERVIZI_PRENOTABILI:
@@ -2016,6 +2016,69 @@ def test_tutte_le_prestazioni_bloccano_trenta_minuti():
         assert fine - inizio == app_module.timedelta(minutes=30), servizio
 
 
+def test_evento_appuntamento_usa_durata_effettiva_scelta():
+    appuntamento = Appuntamento(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Terapia infusionale / flebo',
+        data='2026-09-01',
+        ora='10:00',
+        duration_minutes=75,
+    )
+
+    corpo = app_module._corpo_evento_da_appuntamento(appuntamento)
+    inizio = datetime.fromisoformat(corpo['start']['dateTime'])
+    fine = datetime.fromisoformat(corpo['end']['dateTime'])
+
+    assert fine - inizio == app_module.timedelta(minutes=75)
+
+
+def test_durata_effettiva_rispetta_le_chiusure_dello_studio():
+    assert app_module.parse_appointment_duration('7') == 7
+    assert app_module.parse_appointment_duration('0') is None
+    assert app_module.parse_appointment_duration('481') is None
+    assert app_module.parse_appointment_duration('non-valida') is None
+
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-01', '12:30', 30
+    ) is True
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-01', '12:30', 35
+    ) is False
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-01', '18:30', 30
+    ) is True
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-01', '18:30', 60
+    ) is False
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-05', '11:30', 30
+    ) is True
+    assert app_module.is_appointment_interval_bookable(
+        '2026-09-05', '11:30', 35
+    ) is False
+
+
+def test_durata_effettiva_blocca_tutto_intervallo_nel_database(app):
+    with app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio='Terapia infusionale / flebo',
+            data='2026-09-01',
+            ora='10:00',
+            duration_minutes=75,
+            stato='Confermato',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+
+        assert app_module.slot_occupato_db('2026-09-01', '11:00', 30) is True
+        assert app_module.slot_occupato_db('2026-09-01', '11:30', 30) is False
+
+
 def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_finto):
     """Confermare un appuntamento deve creare un evento su Google Calendar e
     salvarne l'ID sull'appuntamento."""
@@ -2030,15 +2093,90 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
+    client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf, 'duration_minutes': '75'},
+    )
 
     mock_servizio.events().insert.assert_called()
     corpo_inviato = mock_servizio.events().insert.call_args.kwargs['body']
     assert corpo_inviato['summary'] == 'Mario Rossi Lavaggio auricolare'
+    assert corpo_inviato['end']['dateTime'].startswith('2026-09-01T11:15:00')
 
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.google_event_id == 'evento-abc-123'
+        assert aggiornato.duration_minutes == 75
+
+
+def test_conferma_richiede_durata_manuale(client, google_calendar_scrittura_finto):
+    mock_servizio = google_calendar_scrittura_finto
+    with flask_app.app_context():
+        appt = Appuntamento(
+            nome='Mario Rossi',
+            telefono='333',
+            email='m@example.com',
+            servizio='Lavaggio auricolare',
+            data='2026-09-01',
+            ora='10:00',
+        )
+        db.session.add(appt)
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf},
+        follow_redirects=True,
+    )
+
+    assert 'Indica una durata valida' in response.text
+    mock_servizio.events().insert.assert_not_called()
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.stato == 'In attesa'
+
+
+def test_conferma_rifiuta_durata_che_invade_un_altro_appuntamento(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    with flask_app.app_context():
+        appt = Appuntamento(
+            nome='Mario Rossi',
+            telefono='333',
+            email='m@example.com',
+            servizio='Terapia infusionale / flebo',
+            data='2026-09-01',
+            ora='10:00',
+        )
+        successivo = Appuntamento(
+            nome='Luisa Verdi',
+            telefono='334',
+            email='l@example.com',
+            servizio='Medicazione semplice',
+            data='2026-09-01',
+            ora='10:30',
+        )
+        db.session.add_all([appt, successivo])
+        db.session.commit()
+        appt_id = appt.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf, 'duration_minutes': '60'},
+        follow_redirects=True,
+    )
+
+    assert 'si sovrappone a un altro impegno' in response.text
+    mock_servizio.events().insert.assert_not_called()
+    with flask_app.app_context():
+        aggiornato = db.session.get(Appuntamento, appt_id)
+        assert aggiornato.stato == 'In attesa'
+        assert aggiornato.duration_minutes == 30
 
 
 def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, google_calendar_scrittura_finto):
@@ -2053,7 +2191,10 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, g
         appt_id = appt.id
 
     csrf = _login_admin(client)
-    client.post(f'/admin/aggiorna/{appt_id}/Confermato', data={'_csrf_token': csrf})
+    client.post(
+        f'/admin/aggiorna/{appt_id}/Confermato',
+        data={'_csrf_token': csrf, 'duration_minutes': '30'},
+    )
 
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
@@ -2111,12 +2252,14 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00', '_csrf_token': csrf
+        'data': '2026-09-02', 'ora': '11:00',
+        'duration_minutes': '45', '_csrf_token': csrf
     })
 
     mock_servizio.events().patch.assert_called_once()
     kwargs = mock_servizio.events().patch.call_args.kwargs
     assert kwargs['eventId'] == 'evento-esistente'
+    assert kwargs['body']['end']['dateTime'].startswith('2026-09-02T11:45:00')
     mock_servizio.events().insert.assert_not_called()
 
 
@@ -2224,7 +2367,8 @@ def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scri
     csrf = _login_admin(client)
     domenica = _prossimo_giorno_con_weekday(6).strftime('%Y-%m-%d')
     resp = client.post(f'/admin/modifica/{appt_id}', data={
-        'data': domenica, 'ora': '10:00', '_csrf_token': csrf
+        'data': domenica, 'ora': '10:00',
+        'duration_minutes': '30', '_csrf_token': csrf
     })
 
     assert 'studio è chiuso' in resp.text
@@ -2253,7 +2397,8 @@ def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     resp = client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00', '_csrf_token': csrf
+        'data': '2026-09-02', 'ora': '11:00',
+        'duration_minutes': '30', '_csrf_token': csrf
     })
 
     assert 'non è più disponibile' in resp.text
@@ -2278,7 +2423,7 @@ def test_nessuna_chiamata_google_se_non_configurato(client):
     csrf = _login_admin(client)
     resp = client.post(
         f'/admin/aggiorna/{appt_id}/Confermato',
-        data={'_csrf_token': csrf},
+        data={'_csrf_token': csrf, 'duration_minutes': '30'},
         follow_redirects=True,
     )
     assert resp.status_code == 200

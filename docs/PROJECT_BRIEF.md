@@ -67,6 +67,10 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Percorso sonno con affiancamento | 320 € | Percorso personalizzato e WhatsApp per 60 giorni | Prezzo di lancio; massimo tre confronti raggruppati a settimana, risposta entro il giorno lavorativo successivo. |
 | Prestazioni infermieristiche | Variabile | Frequenza variabile | Da circa 12 € per un'iniezione a circa 60 € per un Holter; prezzi delle piattaforme esterne maggiorati dalle commissioni. |
 
+Le prestazioni non hanno una durata fissa per tipologia: Selene indica la durata
+effettiva quando crea un appuntamento in Arzamed e fa la stessa scelta
+nell'admin per le richieste provenienti dal sito.
+
 Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo l'accordo reale e al netto di spese, imposte, contributi e materiali. Nel percorso nascita gli altri professionisti fatturano direttamente i propri compensi: l'intero prezzo non è ricavo di Selene.
 
 ## Struttura economica e propensione al rischio
@@ -154,5 +158,5 @@ Non presentare una relazione come partnership strutturata se non è stata formal
 - Verifica del tempo reale richiesto da diario, analisi e assistenza dopo i primi cinque percorsi; compenso lordo obiettivo almeno 25-30 € l'ora.
 - Processo e testo di richiesta del consenso per le future testimonianze sulla consulenza del sonno.
 - Produzione delle prime tre creatività verticali con Selene e delle relative copertine.
-- Durate definitive degli slot delle prestazioni da allineare con Arzamed.
-- Validazione professionale del testo contrattuale, del recesso anticipato e dei consensi prima di attivare il pagamento.
+- Validazione professionale del testo contrattuale, del recesso anticipato e
+  dei consensi prima di attivare il pagamento.

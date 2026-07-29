@@ -10,6 +10,33 @@
 </form>
 {%- endmacro %}
 
+{% macro admin_confirm_action(appointment, current_filter, field_suffix) -%}
+<form
+    method="post"
+    action="{{ url_for('aggiorna_stato', id=appointment.id, stato='Confermato') }}"
+    class="admin-confirm-action"
+    data-confirm="Confermare l'appuntamento di {{ appointment.nome }} per il {{ appointment.data }} alle {{ appointment.ora }} per la durata indicata? Verrà inviata una mail di conferma."
+>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% if current_filter %}<input type="hidden" name="filtro" value="{{ current_filter }}">{% endif %}
+    <label for="duration-{{ appointment.id }}-{{ field_suffix }}">Durata</label>
+    <span class="admin-duration-input">
+        <input
+            id="duration-{{ appointment.id }}-{{ field_suffix }}"
+            name="duration_minutes"
+            type="number"
+            min="1"
+            max="480"
+            step="1"
+            value="{{ appointment.duration_minutes or 30 }}"
+            required
+        >
+        <span>min</span>
+    </span>
+    <button type="submit" class="btn-azione verde">Conferma</button>
+</form>
+{%- endmacro %}
+
 <section class="pagina-interna admin-page">
     <h1 class="visually-hidden">Area amministrativa</h1>
 
@@ -131,12 +158,13 @@
                 <td>
                     <strong class="admin-primary">{{ a.data }}</strong>
                     <span class="admin-secondary">ore {{ a.ora }}</span>
+                    <span class="admin-secondary">{{ a.duration_minutes or 30 }} minuti</span>
                 </td>
                 <td class="admin-note-cell">{{ a.note or '—' }}</td>
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
-                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di conferma.', filtro) }}
+                        {{ admin_confirm_action(a, filtro, 'desktop') }}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                         {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'confermati' %}
@@ -165,6 +193,7 @@
             <div class="card-admin-body">
                 <p><span>Servizio</span> {{ a.servizio }}</p>
                 <p><span>Data</span> {{ a.data }} alle {{ a.ora }}</p>
+                <p><span>Durata</span> {{ a.duration_minutes or 30 }} minuti</p>
                 <p><span>Telefono</span> {{ a.telefono }}</p>
                 {% if a.note %}
                 <p><span>Note</span> {{ a.note }}</p>
@@ -172,7 +201,7 @@
             </div>
             <div class="card-admin-azioni">
                 {% if filtro == 'in_attesa' %}
-                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
+                    {{ admin_confirm_action(a, filtro, 'mobile') }}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
                     {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'confermati' %}

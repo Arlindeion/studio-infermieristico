@@ -4,8 +4,8 @@
 {% block contenuto %}
 
 <section class="pagina-interna">
-    <h2>✏️ Modifica Appuntamento</h2>
-<p class="sottotitolo">Modifica data e ora — verrà inviata automaticamente una mail di spostamento al paziente.</p>
+    <h1>{% if a.stato == 'In attesa' %}Imposta e conferma l’appuntamento{% else %}Modifica l’appuntamento{% endif %}</h1>
+<p class="sottotitolo">Imposta data, ora e durata effettiva. Il calendario userà l’intero intervallo e la persona riceverà i dettagli aggiornati.</p>
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -46,11 +46,26 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="form-gruppo">
+                    <label for="duration_minutes">Durata effettiva *</label>
+                    <input
+                        type="number"
+                        id="duration_minutes"
+                        name="duration_minutes"
+                        min="1"
+                        max="480"
+                        step="1"
+                        value="{{ a.duration_minutes or 30 }}"
+                        aria-describedby="duration-help"
+                        required
+                    >
+                    <small id="duration-help">Da 1 a 480 minuti.</small>
+                </div>
             </div>
 
             <div class="btn-group">
                 <button type="submit" class="btn btn-flex">
-                    ✅ Salva e invia conferma
+                    Salva e invia conferma
                 </button>
                 <a href="/admin?filtro=in_attesa" class="btn btn-flex btn-cancel">
                     Annulla
