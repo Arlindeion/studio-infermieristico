@@ -496,10 +496,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-060 — Health check operativo fuori dai limiti applicativi
 
 - Data: 2026-07-29.
-- Stato: implementata nel codice; da verificare su Render.
+- Stato: implementata e verificata su Render.
 - Decisione: mantenere `/healthz` fuori dalla Basic Auth dello staging e renderlo esente dai limiti globali di Flask-Limiter, conservando la verifica della connessione al database e la risposta `503` in caso di errore.
 - Motivo: Render interroga l'endpoint ogni cinque secondi durante l'avvio. Il limite applicativo generale di 50 richieste l'ora esaurisce quindi la quota del monitor, produce falsi `429` e provoca riavvii periodici di un servizio altrimenti funzionante.
-- Conseguenze: le route pubbliche e sensibili mantengono i propri limiti; soltanto l'endpoint tecnico, che non legge né modifica dati applicativi, resta sempre raggiungibile dal monitor. Il deploy successivo deve dimostrare l'assenza dei `429` prima di considerare stabile lo staging.
+- Conseguenze: le route pubbliche e sensibili mantengono i propri limiti; soltanto l'endpoint tecnico, che non legge né modifica dati applicativi, resta sempre raggiungibile dal monitor. Il deploy `8a4ad84` ha superato 55 richieste consecutive con risposta `200` e nessun nuovo `429`; anche il riavvio successivo alla rimozione dei segreti bootstrap ha mantenuto il controllo stabile.
 - Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## Modello per nuove decisioni
