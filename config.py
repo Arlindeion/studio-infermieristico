@@ -42,19 +42,11 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     # CSRF
     WTF_CSRF_ENABLED = False  # gestiamo CSRF manualmente per ora
-    # Calendario Google (sincronizzato da Arzamed): indirizzo segreto in
-    # formato iCal del calendario su cui Arzamed segna appuntamenti e
-    # chiusure studio. Vedi Impostazioni calendario > Integra calendario
-    # su Google Calendar. Se non impostato, il sito funziona comunque,
-    # semplicemente non conoscerà gli impegni presi solo su Arzamed.
-    GOOGLE_CALENDAR_ICS_URL = os.environ.get('GOOGLE_CALENDAR_ICS_URL')
-    # Per quanti secondi tenere in cache il calendario scaricato, per non
-    # interrogare Google Calendar ad ogni singola richiesta del sito.
+    # Per quanti secondi tenere in cache gli eventi letti tramite Google
+    # Calendar API, per non interrogare Google ad ogni richiesta del sito.
     CALENDARIO_CACHE_SECONDI = int(os.environ.get('CALENDARIO_CACHE_SECONDI') or 300)
-    # Scrittura su Google Calendar: quando un appuntamento viene confermato
-    # dall'area admin, viene creato un evento su questo calendario tramite un
-    # account di servizio (permesso di modifica, non solo lettura). Se non
-    # configurato, il sito funziona comunque: semplicemente non crea eventi.
+    # Lettura e scrittura Google Calendar usano lo stesso account di servizio
+    # condiviso sul calendario operativo sincronizzato con Arzamed.
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID')
     GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID')
@@ -109,7 +101,6 @@ class TestingConfig(Config):
     # Email non inviate realmente durante i test
     MAIL_SUPPRESS_SEND = True
     # Durante i test non contattiamo mai Google Calendar
-    GOOGLE_CALENDAR_ICS_URL = None
     GOOGLE_SERVICE_ACCOUNT_FILE = None
     GOOGLE_CALENDAR_ID = None
     GOOGLE_ANALYTICS_ID = None

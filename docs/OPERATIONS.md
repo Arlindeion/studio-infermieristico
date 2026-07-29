@@ -106,6 +106,13 @@ caricato direttamente come secret file con nome
 `/etc/secrets/google-calendar-service-account.json`. Nessun valore segreto va
 inserito nel repository.
 
+Il repository non registra la creazione effettiva dell'account di servizio:
+al 30 luglio 2026 documenta soltanto la procedura prevista. L'account Google
+dello studio deve creare o controllare il progetto Cloud, abilitare Google
+Calendar API e creare un'identità tecnica dedicata. Il calendario operativo
+sincronizzato con Arzamed va condiviso con tale identità usando il permesso di
+modifica degli eventi, senza concedere la gestione della condivisione.
+
 ### Gate delle risorse di produzione separate
 
 La sequenza seguente è obbligatoria e non può essere anticipata:
@@ -173,10 +180,9 @@ inoltre `X-Robots-Tag: noindex, nofollow, noarchive`.
 | `MAIL_PASSWORD` | Password applicativa SMTP | Sì |
 | `MAIL_DEFAULT_SENDER` | Nome/indirizzo mittente | Potenzialmente |
 | `MAIL_ADMIN_RECIPIENT` | Destinatario interno degli avvisi | Potenzialmente |
-| `GOOGLE_CALENDAR_ICS_URL` | Lettura del calendario condiviso con Arzamed | Sì |
 | `CALENDARIO_CACHE_SECONDI` | Durata cache calendario, default 300 | No |
-| `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale di scrittura | Sì |
-| `GOOGLE_CALENDAR_ID` | Calendario su cui scrivere | Sì |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale API per lettura e scrittura | Sì |
+| `GOOGLE_CALENDAR_ID` | Calendario operativo sincronizzato con Arzamed | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
 | `PUBLIC_BASE_URL` | Origine HTTPS canonica del sito pubblico | No |
 | `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
@@ -209,8 +215,8 @@ Lo staging gratuito usa:
 | `STAGING_AUTH_USERNAME` | valore segreto per i tester |
 | `STAGING_AUTH_PASSWORD` | valore segreto distinto, almeno 16 caratteri |
 
-Nello staging iniziale non inserire credenziali SMTP, Calendar reale, URL iCal
-o Analytics. I dati sono esclusivamente fittizi. Dopo il primo login riuscito,
+Nello staging iniziale non inserire credenziali SMTP, Calendar reale o
+Analytics. I dati sono esclusivamente fittizi. Dopo il primo login riuscito,
 rimuovere `ADMIN_BOOTSTRAP_USERNAME` e `ADMIN_BOOTSTRAP_PASSWORD`, salvare e
 ridistribuire; `bootstrap-admin` verificherà l'account già presente.
 
@@ -249,10 +255,9 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `MAIL_PASSWORD` | segreto SMTP inserito nel pannello |
 | `MAIL_DEFAULT_SENDER` | `S.C. Studio Infermieristico <info@scstudioinfermieristico.it>` |
 | `MAIL_ADMIN_RECIPIENT` | indirizzo interno scelto dall'attività |
-| `GOOGLE_CALENDAR_ICS_URL` | URL iCal segreto di lettura |
 | `GOOGLE_CALENDAR_ID` | identificativo del calendario operativo |
-| secret file `google-service-account.json` | JSON caricato dal pannello, disponibile in `/etc/secrets/` |
-| `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-service-account.json` |
+| secret file `google-calendar-service-account.json` | JSON caricato dal pannello, disponibile in `/etc/secrets/` |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-calendar-service-account.json` |
 | `PUBLIC_BASE_URL` | origine HTTPS definitiva, senza percorso, per esempio `https://scstudioinfermieristico.it` |
 | `GOOGLE_ANALYTICS_ID` | facoltativo finché informativa, consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
@@ -283,8 +288,8 @@ trasforma nell'origine pubblica del sito.
 
 In produzione i log vengono inviati soltanto a stdout/stderr per Render. Non
 viene creato `app.log`; le operazioni email registrano ID interni e tipo di
-errore, non indirizzi dei destinatari. Non inserire mai URL iCal, token,
-password, contenuto dei questionari o dati identificativi nei log.
+errore, non indirizzi dei destinatari. Non inserire mai token, password,
+contenuto dei questionari o dati identificativi nei log.
 
 ## Modelli principali
 
@@ -314,16 +319,22 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
 
 ## Google Calendar e Arzamed
 
-- Lettura: `GOOGLE_CALENDAR_ICS_URL` permette di conoscere impegni e chiusure segnati sul calendario sincronizzato da Arzamed.
-- Cache: controllata da `CALENDARIO_CACHE_SECONDI`.
-- Scrittura: un account di servizio crea o aggiorna eventi quando appuntamenti o corsi vengono confermati; le call sonno vengono invece inserite subito come provvisorie per bloccare lo slot anche in Arzamed.
+- Lettura e scrittura usano Google Calendar API con un unico account di
+  servizio e lo scope limitato agli eventi. Non viene usato alcun URL iCal.
+- La lettura chiede a Google le singole occorrenze degli eventi nell'intervallo
+  giornaliero, comprese le ricorrenze espanse, e usa una cache controllata da
+  `CALENDARIO_CACHE_SECONDI`.
+- Lo stesso account di servizio crea o aggiorna eventi quando appuntamenti o
+  corsi vengono confermati; le call sonno vengono invece inserite subito come
+  provvisorie per bloccare lo slot anche in Arzamed.
 - Gli eventi creati in Arzamed espongono su Google Calendar inizio e fine
   effettivi, che il sito usa integralmente per rilevare i conflitti. Una
   richiesta sanitaria dal sito blocca inizialmente 30 minuti; prima di
   confermarla l'admin deve scegliere la durata effettiva, da 1 a 480 minuti. Il
   valore viene salvato in `Appuntamento.duration_minutes` e
   determina conflitti, disponibilità e fine dell'evento Calendar.
-- L'account di servizio deve avere sul calendario soltanto i permessi necessari.
+- L'account di servizio deve avere sul solo calendario operativo il permesso di
+  modificare gli eventi, non quello di gestire la condivisione.
 - Un conflitto con un evento Calendar impedisce la conferma di quell'intervallo,
   ma non elimina la richiesta: l'admin riceve un avviso e può modificarla. Un
   errore secondario durante la successiva scrittura Calendar non annulla invece
@@ -540,6 +551,5 @@ Non aggiungere a `docs/`:
 - contenuto di `.env`;
 - database o backup reali;
 - JSON degli account di servizio;
-- URL iCal;
 - elenchi iscritti, pazienti o partecipanti;
 - feedback non anonimizzati o prove di consenso.
