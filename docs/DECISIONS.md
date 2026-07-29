@@ -538,6 +538,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: l'integrazione del file non avvia un deploy automatico. Dopo il merge occorre sincronizzare il Blueprint o aggiornare il branch del servizio a `main`, senza modificare piani, dominio, integrazioni o segreti.
 - Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-065 — L'ultima disponibilità può accogliere una coppia
+
+- Data: 2026-07-29.
+- Stato: approvata dall'attività e implementata.
+- Decisione: per i corsi individuali una richiesta di coppia occupa due posti ma resta accettabile quando, al momento dell'invio, il corso ha ancora un solo posto disponibile. Dopo il salvataggio la data non accetta altre richieste. Le iscrizioni annullate non occupano posti e possono rendere nuovamente disponibile la data.
+- Motivo: l'eccezione sull'ultimo posto è una scelta operativa esplicita dell'attività, non un errore di capienza da bloccare automaticamente.
+- Conseguenze: il form esclude le date già piene, propone la successiva quando esiste e salva un ricontatto se non restano date. Su PostgreSQL la riga del corso viene bloccata durante il controllo finale per impedire che richieste simultanee superino ulteriormente questa eccezione. L'admin mostra `Completo` quando la disponibilità residua arriva a zero.
+- Collegamenti: `app.py`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

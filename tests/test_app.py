@@ -370,6 +370,22 @@ def test_prenotazione_call_sonno_blocca_subito_lo_slot(client):
     assert '09:00' in availability['occupati']
 
 
+def test_errori_email_e_calendar_non_perdono_la_call_sonno(client):
+    dati = _dati_call_sonno(client)
+
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('servizio non disponibile')):
+        response = client.post('/prenota-call-sonno', data=dati)
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        call = CallSonno.query.one()
+        assert call.stato == 'In attesa'
+        eventi = RegistroEvento.query.filter_by(entita_tipo='CallSonno', entita_id=call.id).all()
+        assert {evento.categoria for evento in eventi} == {'email', 'google_calendar'}
+        assert sum(evento.categoria == 'email' for evento in eventi) == 2
+        assert all(evento.esito in {'errore', 'avviso'} for evento in eventi)
+
+
 def test_call_sonno_dura_20_minuti_e_blocca_30_minuti_in_agenda(app):
     data = app_module.prima_data_call_disponibile().isoformat()
     with app.app_context():
@@ -1104,7 +1120,14 @@ def test_vecchio_url_prima_della_nascita_reindirizza_al_corso(client):
     assert resp.headers['Location'].endswith('/corso-accompagnamento-nascita')
 
 
-def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18:00', luogo='Studio'):
+def _crea_data_corso(
+    corso_tipo,
+    titolo='Corso test',
+    data='2099-07-16',
+    ora='18:00',
+    luogo='Studio',
+    capienza_massima=None,
+):
     with flask_app.app_context():
         corso = Corso(
             titolo=titolo,
@@ -1114,19 +1137,20 @@ def _crea_data_corso(corso_tipo, titolo='Corso test', data='2099-07-16', ora='18
             ora=ora,
             luogo=luogo,
             durata_ore=2,
+            capienza_massima=capienza_massima,
         )
         db.session.add(corso)
         db.session.commit()
         return str(corso.id)
 
 
-def _crea_percorso_accompagnamento(slug='percorso-test', incontri=9):
+def _crea_percorso_accompagnamento(slug='percorso-test', incontri=9, capienza_coppie=8):
     with flask_app.app_context():
         percorso = PercorsoAccompagnamento(
             titolo='Iscrizione al corso',
             slug=slug,
             descrizione='Edizione privata test',
-            capienza_coppie=8,
+            capienza_coppie=capienza_coppie,
             luogo='Studio',
             contatti='3806317175',
             stato='Aperto',
@@ -1184,6 +1208,40 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
         assert PersonaCorso.query.count() == 1
+
+
+def test_errore_email_non_perde_iscrizione_corso(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+    )
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+            'nome': 'Mario Rossi',
+            'codice_fiscale': 'RSSMRA80A01G482X',
+            'telefono': '3331234567',
+            'email': 'mario@example.com',
+            'partecipazione': 'Singolo 34 euro',
+            'data_corso': data_corso_id,
+            'scopo_informativo': 'on',
+            'no_certificazione': 'on',
+            'buono_stato_salute': 'on',
+            'consenso_privacy': 'on',
+            '_csrf_token': token,
+        })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione.id,
+        ).one()
+        assert evento.esito == 'errore'
+        assert 'non inviata' in evento.messaggio
 
 
 def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
@@ -1473,6 +1531,177 @@ def test_iscrizione_coppia_occupa_due_posti(client):
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.posti == 2
+
+
+def test_data_piena_scompare_e_viene_proposta_quella_successiva(client):
+    data_piena_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Prima data',
+        data='2099-07-16',
+        capienza_massima=1,
+    )
+    data_successiva_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Data successiva',
+        data='2099-07-23',
+        capienza_massima=8,
+    )
+    with flask_app.app_context():
+        db.session.add(IscrizioneCorso(
+            corso_id=int(data_piena_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Prima data',
+            nome='Persona già iscritta',
+            telefono='3331234567',
+            email='iscritta@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        ))
+        db.session.commit()
+
+    resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert resp.status_code == 200
+    assert f'value="{data_piena_id}"' not in resp.text
+    assert f'value="{data_successiva_id}"' in resp.text
+    with flask_app.app_context():
+        panoramica = app_module._panoramica_corsi(
+            [db.session.get(Corso, int(data_piena_id))]
+        )
+        assert panoramica[0]['stato'] == 'Completo'
+        assert panoramica[0]['posti_liberi'] == 0
+
+
+def test_coppia_ammessa_con_un_posto_residuo(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        capienza_massima=2,
+    )
+    with flask_app.app_context():
+        db.session.add(IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Persona già iscritta',
+            telefono='3331234567',
+            email='iscritta@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        ))
+        db.session.commit()
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Luisa Verdi',
+        'codice_fiscale': 'VRDLSU90A41G482Y',
+        'telefono': '3337654321',
+        'email': 'luisa@example.com',
+        'partecipazione': 'Coppia 60 euro',
+        'data_corso': data_corso_id,
+        'nome_secondo_partecipante': 'Mario Verdi',
+        'codice_fiscale_secondo_partecipante': 'VRDMRA80A01G482Z',
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 2
+        coppia = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
+        assert coppia.posti == 2
+        corso = db.session.get(Corso, int(data_corso_id))
+        assert app_module._posti_liberi_corso(corso) == 0
+        assert not app_module._corso_ha_posti(corso)
+
+
+def test_annullamento_riapre_automaticamente_la_data(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        capienza_massima=1,
+    )
+    with flask_app.app_context():
+        db.session.add(IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Persona annullata',
+            telefono='3331234567',
+            email='annullata@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+            stato='Annullato',
+        ))
+        db.session.commit()
+
+    resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert resp.status_code == 200
+    assert f'value="{data_corso_id}"' in resp.text
+
+
+def test_data_piena_senza_successiva_diventa_ricontatto(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        capienza_massima=1,
+    )
+    with flask_app.app_context():
+        db.session.add(IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Persona già iscritta',
+            telefono='3331234567',
+            email='iscritta@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        ))
+        db.session.commit()
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Luisa Verdi',
+        'codice_fiscale': 'VRDLSU90A41G482Y',
+        'telefono': '3337654321',
+        'email': 'luisa@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        ricontatto = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
+        assert ricontatto.corso_id is None
+        assert ricontatto.tipo_richiesta == 'ricontatto'
+        assert ricontatto.posti == 0
 
 
 def test_admin_mostra_panoramica_iscritti_per_corso(client):
@@ -1891,6 +2120,81 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert iscrizione.consenso_immagini is True
         assert PersonaCorso.query.count() == 1
         assert PresenzaAccompagnamento.query.count() == 9
+
+
+def test_capienza_percorso_privato_blocca_e_annullamento_riapre(client):
+    slug, percorso_id = _crea_percorso_accompagnamento(
+        slug='percorso-capienza-test',
+        capienza_coppie=1,
+    )
+    with flask_app.app_context():
+        percorso = db.session.get(PercorsoAccompagnamento, percorso_id)
+        iscrizione = IscrizioneCorso(
+            percorso_accompagnamento=percorso,
+            corso_tipo='accompagnamento-nascita',
+            corso_titolo=percorso.titolo,
+            nome='Luisa Verdi',
+            telefono='3331234567',
+            email='luisa@example.com',
+            codice_fiscale='VRDLSU90A41G482Y',
+            data_corso='Percorso di 9 incontri',
+            partecipazione='Coppia - partner si',
+            tipo_richiesta='iscrizione_effettiva',
+            posti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+
+    pieno = client.get(f'/iscrizione-accompagnamento/{slug}')
+    assert pieno.status_code == 200
+    assert 'Iscrizioni non disponibili' in pieno.text
+    assert 'name="codice_fiscale"' not in pieno.text
+
+    with flask_app.app_context():
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        iscrizione.stato = 'Annullato'
+        db.session.commit()
+
+    riaperto = client.get(f'/iscrizione-accompagnamento/{slug}')
+    assert riaperto.status_code == 200
+    assert 'name="codice_fiscale"' in riaperto.text
+
+
+def test_errori_email_non_perdono_iscrizione_e_presenze_del_percorso(client):
+    slug, _ = _crea_percorso_accompagnamento(
+        slug='percorso-email-test',
+        capienza_coppie=2,
+    )
+    resp = client.get(f'/iscrizione-accompagnamento/{slug}')
+    token = re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post(f'/iscrizione-accompagnamento/{slug}', data={
+            'nome': 'Luisa Verdi',
+            'telefono': '3331234567',
+            'email': 'luisa@example.com',
+            'codice_fiscale': 'VRDLSU90A41G482Y',
+            'data_presunta_parto': '2100-01-10',
+            'partner_presente': 'Si',
+            'consenso_privacy': 'on',
+            '_csrf_token': token,
+        })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.stato == 'Confermato'
+        assert PresenzaAccompagnamento.query.count() == 9
+        eventi = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione.id,
+        ).all()
+        assert len(eventi) == 2
+        assert all(evento.esito == 'errore' for evento in eventi)
 
 
 def test_percorso_accompagnamento_chiuso_offre_un_contatto_utilizzabile(client):
