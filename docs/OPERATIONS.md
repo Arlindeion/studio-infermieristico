@@ -56,9 +56,14 @@ Il repository contiene `render.yaml` con auto-deploy disattivato. I deploy
 partono intenzionalmente da un commit identificabile. `SECRET_KEY` è generata da
 Render; `DATABASE_URL` proviene dal database associato. Le variabili con
 `sync: false` vanno compilate nel pannello senza inserirne il valore nel file.
-Lo staging segue `main`: cambiare il branch non distribuisce automaticamente
-codice perché `autoDeployTrigger` resta `off`; ogni deploy continua a essere
-avviato manualmente da un commit già verificato.
+Lo staging segue `main` e `autoDeployTrigger` resta `off`: i nuovi commit non
+avviano deploy automatici. Una sincronizzazione del Blueprint è però una
+modifica di configurazione e può avviare il deploy dei servizi interessati
+anche con l'auto-deploy spento. Va quindi trattata come un'operazione capace di
+pubblicare codice: prima di approvarla verificare il commit proposto e
+monitorare subito la cronologia deploy, annullando l'esecuzione se lo scopo era
+soltanto allineare la configurazione. Ogni deploy intenzionale continua a
+partire da un commit già verificato.
 All'avvio Render esegue nell'ordine `flask db upgrade`, il comando sicuro
 `bootstrap-admin` e infine Gunicorn. I comandi preparatori disabilitano lo
 scheduler; il processo Gunicorn lo avvia una sola volta perché usa un worker.
