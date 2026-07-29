@@ -11,7 +11,7 @@
     "description": "Osservazione di routine, risvegli, addormentamento e sonnellini con indicazioni personalizzate, attenzione al sonno sicuro e alle raccomandazioni per ridurre il rischio di SIDS.",
     "areaServed": "Italia",
     "availableChannel": [
-        {"@type": "ServiceChannel", "serviceUrl": {{ request.base_url | tojson }}, "serviceLocation": {"@type": "Place", "name": "Online"}},
+        {"@type": "ServiceChannel", "serviceUrl": {{ public_url() | tojson }}, "serviceLocation": {"@type": "Place", "name": "Online"}},
         {"@type": "ServiceChannel", "serviceLocation": {"@type": "Place", "name": "S.C. Studio Infermieristico, Montesilvano"}}
     ],
     "provider": {

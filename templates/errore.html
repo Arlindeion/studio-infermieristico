@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titolo %}{{ titolo }} | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}La pagina richiesta non è disponibile. Torna alla homepage di S.C. Studio Infermieristico o scegli uno dei percorsi attivi.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        <p class="eyebrow">S.C. Studio Infermieristico</p>
+        <h1>{{ titolo }}</h1>
+        <p>{{ messaggio }}</p>
+        <a href="/" class="btn">Torna alla homepage</a>
+    </div>
+</section>
+{% endblock %}

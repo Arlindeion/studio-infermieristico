@@ -122,6 +122,7 @@ talisman = Talisman(
 def inject_tracking_config():
     return {
         'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
+        'public_url': public_url,
         'prestazioni_categorie': PRESTAZIONI_CATEGORIE,
         'servizi_prenotabili': SERVIZI_PRENOTABILI,
     }
@@ -566,7 +567,11 @@ def is_safe_redirect_target(target):
 # Il risultato del download viene tenuto in cache per qualche minuto
 # (CALENDARIO_CACHE_SECONDI) per non interrogare Google ad ogni richiesta.
 
-_cache_calendario = {'calendario': None, 'scaricato_il': 0}
+_cache_calendario = {
+    'calendario': None,
+    'scaricato_il': 0,
+    'errore_registrato_il': 0,
+}
 
 
 def _scarica_calendario_ics():
@@ -593,8 +598,21 @@ def _scarica_calendario_ics():
         _cache_calendario['calendario'] = calendario
         _cache_calendario['scaricato_il'] = adesso
         return calendario
-    except Exception as e:
-        logger.error(f'>>> Errore nel download/lettura del calendario Google: {e}', exc_info=True)
+    except Exception as errore:
+        logger.error(
+            '>>> Errore nel download/lettura del calendario Google (%s).',
+            type(errore).__name__,
+            exc_info=True,
+        )
+        intervallo_registro = app.config.get('CALENDARIO_CACHE_SECONDI', 300)
+        if adesso >= _cache_calendario['errore_registrato_il'] + intervallo_registro:
+            registra_evento(
+                'google_calendar',
+                'errore',
+                'Lettura del calendario non disponibile; usata la copia in cache quando presente.',
+                dettagli={'tipo_errore': type(errore).__name__},
+            )
+            _cache_calendario['errore_registrato_il'] = adesso
         # Se il download fallisce ma avevamo già una copia in cache (anche se
         # "scaduta"), meglio riusarla piuttosto che non bloccare nessun orario.
         return _cache_calendario['calendario']
@@ -1518,6 +1536,54 @@ def valida_configurazione_staging():
             raise RuntimeError('La password dello staging deve contenere almeno 16 caratteri.')
 
 
+def public_url(path=None):
+    """Costruisce un URL assoluto senza ereditare per forza l'host richiesto."""
+    base_url = (app.config.get('PUBLIC_BASE_URL') or request.url_root).rstrip('/')
+    if path is None:
+        path = request.path
+    if not path.startswith('/'):
+        path = f'/{path}'
+    return f'{base_url}{path}'
+
+
+def _campi_integrazioni_mancanti():
+    campi_obbligatori = {
+        'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+        'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD'),
+        'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
+        'MAIL_ADMIN_RECIPIENT': app.config.get('MAIL_ADMIN_RECIPIENT'),
+        'GOOGLE_CALENDAR_ICS_URL': app.config.get('GOOGLE_CALENDAR_ICS_URL'),
+        'GOOGLE_SERVICE_ACCOUNT_FILE': app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+        'GOOGLE_CALENDAR_ID': app.config.get('GOOGLE_CALENDAR_ID'),
+    }
+    return [nome for nome, valore in campi_obbligatori.items() if not valore]
+
+
+def _valida_integrazioni_reali():
+    mancanti = _campi_integrazioni_mancanti()
+    if mancanti:
+        raise RuntimeError(f'Configurazione integrazioni incompleta: {", ".join(mancanti)}.')
+    if app.config.get('MAIL_SERVER') != 'smtp.mail.ovh.net':
+        raise RuntimeError('MAIL_SERVER deve essere smtp.mail.ovh.net.')
+    if app.config.get('MAIL_PORT') != 587:
+        raise RuntimeError('MAIL_PORT deve essere 587.')
+    if not app.config.get('MAIL_USE_TLS') or app.config.get('MAIL_USE_SSL'):
+        raise RuntimeError('SMTP Zimbra richiede MAIL_USE_TLS=true e MAIL_USE_SSL=false.')
+    if app.config.get('MAIL_USERNAME') != 'info@scstudioinfermieristico.it':
+        raise RuntimeError('MAIL_USERNAME deve usare la casella Zimbra approvata.')
+    mittente = app.config.get('MAIL_DEFAULT_SENDER')
+    indirizzo_mittente = (
+        mittente[1]
+        if isinstance(mittente, (tuple, list)) and len(mittente) == 2
+        else str(mittente)
+    )
+    if 'info@scstudioinfermieristico.it' not in indirizzo_mittente:
+        raise RuntimeError('MAIL_DEFAULT_SENDER deve usare la casella Zimbra approvata.')
+    if not os.path.isfile(app.config['GOOGLE_SERVICE_ACCOUNT_FILE']):
+        raise RuntimeError('File segreto Google Calendar non disponibile.')
+
+
 def valida_configurazione_runtime():
     """Rifiuta configurazioni insicure prima di staging o produzione."""
     ambiente = app.config.get('APP_ENV')
@@ -1545,27 +1611,35 @@ def valida_configurazione_runtime():
         raise RuntimeError('Usare segreti distinti per sessione, amministratore e staging.')
 
     if ambiente == 'staging':
-        if not app.config.get('MAIL_SUPPRESS_SEND'):
-            raise RuntimeError('Lo staging gratuito richiede MAIL_SUPPRESS_SEND=true.')
+        integrazioni_reali = app.config.get('STAGING_LIVE_INTEGRATIONS')
+        if not integrazioni_reali and not app.config.get('MAIL_SUPPRESS_SEND'):
+            raise RuntimeError(
+                'Lo staging gratuito richiede MAIL_SUPPRESS_SEND=true; '
+                'per la preproduzione pagata impostare STAGING_LIVE_INTEGRATIONS=true.'
+            )
+        if integrazioni_reali:
+            if app.config.get('MAIL_SUPPRESS_SEND'):
+                raise RuntimeError(
+                    'La preproduzione con integrazioni reali richiede MAIL_SUPPRESS_SEND=false.'
+                )
+            _valida_integrazioni_reali()
         return
 
-    campi_obbligatori = {
-        'MAIL_SERVER': app.config.get('MAIL_SERVER'),
-        'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
-        'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD'),
-        'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
-        'MAIL_ADMIN_RECIPIENT': app.config.get('MAIL_ADMIN_RECIPIENT'),
-        'GOOGLE_CALENDAR_ICS_URL': app.config.get('GOOGLE_CALENDAR_ICS_URL'),
-        'GOOGLE_SERVICE_ACCOUNT_FILE': app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
-        'GOOGLE_CALENDAR_ID': app.config.get('GOOGLE_CALENDAR_ID'),
-    }
-    mancanti = [nome for nome, valore in campi_obbligatori.items() if not valore]
-    if mancanti:
-        raise RuntimeError(f'Configurazione produzione incompleta: {", ".join(mancanti)}.')
     if app.config.get('MAIL_SUPPRESS_SEND'):
         raise RuntimeError('La produzione richiede MAIL_SUPPRESS_SEND=false.')
-    if not os.path.isfile(app.config['GOOGLE_SERVICE_ACCOUNT_FILE']):
-        raise RuntimeError('File segreto Google Calendar non disponibile.')
+    _valida_integrazioni_reali()
+    public_base_url = app.config.get('PUBLIC_BASE_URL')
+    if not public_base_url:
+        raise RuntimeError('La produzione richiede PUBLIC_BASE_URL esplicita.')
+    parsed_public_url = urlsplit(public_base_url)
+    if (
+        parsed_public_url.scheme != 'https'
+        or not parsed_public_url.netloc
+        or parsed_public_url.path not in {'', '/'}
+        or parsed_public_url.query
+        or parsed_public_url.fragment
+    ):
+        raise RuntimeError('PUBLIC_BASE_URL deve essere un’origine HTTPS senza percorso.')
 
 
 def inizializza_amministratore():
@@ -1694,6 +1768,7 @@ def impedisci_indicizzazione_staging(response):
 
 
 @app.route('/healthz')
+@limiter.exempt
 def healthz():
     try:
         db.session.execute(sql_text('SELECT 1'))
@@ -1701,6 +1776,29 @@ def healthz():
         logger.exception('>>> Health check database fallito.')
         return jsonify({'status': 'unhealthy'}), 503
     return jsonify({'status': 'ok'})
+
+
+@app.errorhandler(404)
+def not_found(_errore):
+    return render_template(
+        'errore.html',
+        titolo='Pagina non trovata',
+        messaggio=(
+            'Il collegamento potrebbe essere cambiato oppure la pagina non è disponibile.'
+        ),
+    ), 404
+
+
+@app.errorhandler(500)
+def server_error(_errore):
+    db.session.rollback()
+    return render_template(
+        'errore.html',
+        titolo='Non è stato possibile completare la richiesta',
+        messaggio=(
+            'Riprova tra poco. Se il problema continua, contatta direttamente lo studio.'
+        ),
+    ), 500
 
 
 # ─── EMAIL ───
@@ -1816,7 +1914,7 @@ def invia_email_annullamento_call_sonno(call):
 
 def invia_email_questionario_sonno(call):
     try:
-        link = url_for('questionario_sonno', token=call.token_questionario, _external=True)
+        link = public_url(url_for('questionario_sonno', token=call.token_questionario))
         formula = FORMULE_SONNO.get(call.formula_scelta, 'percorso scelto')
         mail.send(Message(
             subject='Il questionario per iniziare il percorso sul sonno',

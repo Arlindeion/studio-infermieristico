@@ -19,6 +19,7 @@ from app import app as flask_app
 from config import config, normalize_database_url
 from app import (
     db,
+    limiter,
     Appuntamento,
     Admin,
     Corso,
@@ -66,6 +67,32 @@ def test_app_is_testing(app):
     assert app.config['TESTING'] == True
 
 
+def test_errore_404_usa_layout_pubblico_e_non_viene_indicizzato(client):
+    resp = client.get('/pagina-inesistente')
+
+    assert resp.status_code == 404
+    assert resp.text.count('<h1') == 1
+    assert 'Pagina non trovata' in resp.text
+    assert '<meta name="robots" content="noindex,nofollow">' in resp.text
+    assert 'Torna alla homepage' in resp.text
+
+
+@pytest.mark.parametrize('route', [
+    '/conferma',
+    '/prenota-call-sonno/conferma',
+    '/iscrizione-corsi/conferma',
+    '/iscrizione-accompagnamento/conferma',
+    '/iscrizione-corsi/interesse/conferma',
+])
+def test_pagine_di_conferma_hanno_un_h1_e_non_vengono_indicizzate(client, route):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1') == 1
+    assert '<meta name="robots" content="noindex,nofollow">' in resp.text
+    assert 'href="/"' in resp.text
+
+
 def _basic_auth_header(username, password):
     token = base64.b64encode(f'{username}:{password}'.encode()).decode()
     return {'Authorization': f'Basic {token}'}
@@ -104,6 +131,12 @@ def test_staging_espone_health_check_e_robots_senza_credenziali(app, client, mon
     assert robots.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
 
 
+def test_health_check_e_esente_dai_limiti_globali(app):
+    route_esenti = limiter.limit_manager._route_exemptions
+
+    assert any(route.endswith('.healthz') for route in route_esenti)
+
+
 def test_staging_non_si_avvia_senza_protezione(app, monkeypatch):
     monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
     monkeypatch.setitem(app.config, 'STAGING_AUTH_USERNAME', None)
@@ -126,6 +159,12 @@ def _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='staging'):
     monkeypatch.setitem(app.config, 'MAIL_USE_TLS', True)
     monkeypatch.setitem(app.config, 'MAIL_USE_SSL', False)
     monkeypatch.setitem(app.config, 'MAIL_SUPPRESS_SEND', ambiente == 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_LIVE_INTEGRATIONS', False)
+    monkeypatch.setitem(
+        app.config,
+        'PUBLIC_BASE_URL',
+        'https://scstudioinfermieristico.it' if ambiente == 'production' else None,
+    )
 
 
 def test_validazione_staging_accetta_solo_configurazione_sicura(app, monkeypatch):
@@ -156,15 +195,113 @@ def test_validazione_produzione_completa(app, monkeypatch, tmp_path):
     service_account_file = tmp_path / 'google-service-account.json'
     service_account_file.write_text('{}')
     monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
-    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@example.invalid')
+    monkeypatch.setitem(app.config, 'MAIL_PORT', 587)
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@scstudioinfermieristico.it')
     monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
-    monkeypatch.setitem(app.config, 'MAIL_DEFAULT_SENDER', 'Studio <info@example.invalid>')
+    monkeypatch.setitem(
+        app.config,
+        'MAIL_DEFAULT_SENDER',
+        'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
+    )
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
 
     valida_configurazione_runtime()
+
+
+def test_validazione_produzione_non_accetta_fallback_smtp(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.gmail.com')
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@scstudioinfermieristico.it')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(
+        app.config,
+        'MAIL_DEFAULT_SENDER',
+        'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
+    )
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+
+    with pytest.raises(RuntimeError, match='smtp.mail.ovh.net'):
+        valida_configurazione_runtime()
+
+
+def test_validazione_produzione_rifiuta_mittente_diverso_da_zimbra(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
+    monkeypatch.setitem(app.config, 'MAIL_PORT', 587)
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@scstudioinfermieristico.it')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(app.config, 'MAIL_DEFAULT_SENDER', 'Studio <altro@example.invalid>')
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+
+    with pytest.raises(RuntimeError, match='MAIL_DEFAULT_SENDER'):
+        valida_configurazione_runtime()
+
+
+def test_preproduzione_privata_ammette_integrazioni_reali(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'STAGING_LIVE_INTEGRATIONS', True)
+    monkeypatch.setitem(app.config, 'MAIL_SUPPRESS_SEND', False)
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
+    monkeypatch.setitem(app.config, 'MAIL_PORT', 587)
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@scstudioinfermieristico.it')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(
+        app.config,
+        'MAIL_DEFAULT_SENDER',
+        'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
+    )
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+
+    valida_configurazione_runtime()
+
+
+def test_staging_gratuito_non_puo_inviare_email_reali(app, monkeypatch):
+    _configura_runtime_esterno_sicuro(app, monkeypatch)
+    monkeypatch.setitem(app.config, 'MAIL_SUPPRESS_SEND', False)
+
+    with pytest.raises(RuntimeError, match='staging gratuito'):
+        valida_configurazione_runtime()
+
+
+def test_produzione_richiede_origine_pubblica_https(app, monkeypatch, tmp_path):
+    _configura_runtime_esterno_sicuro(app, monkeypatch, ambiente='production')
+    service_account_file = tmp_path / 'google-service-account.json'
+    service_account_file.write_text('{}')
+    monkeypatch.setitem(app.config, 'MAIL_SERVER', 'smtp.mail.ovh.net')
+    monkeypatch.setitem(app.config, 'MAIL_PORT', 587)
+    monkeypatch.setitem(app.config, 'MAIL_USERNAME', 'info@scstudioinfermieristico.it')
+    monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
+    monkeypatch.setitem(
+        app.config,
+        'MAIL_DEFAULT_SENDER',
+        'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
+    )
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    monkeypatch.setitem(app.config, 'PUBLIC_BASE_URL', 'https://example.invalid/percorso')
+
+    with pytest.raises(RuntimeError, match='origine HTTPS senza percorso'):
+        valida_configurazione_runtime()
 
 
 def test_database_url_postgres_compatibile_con_psycopg():
@@ -1518,6 +1655,36 @@ def test_prenotazione_rifiutata_se_studio_chiuso(client):
         assert Appuntamento.query.count() == 0
 
 
+def test_errore_email_non_perde_prenotazione_e_viene_registrato(client):
+    giorno = _prossimo_giorno_con_weekday(1).strftime('%Y-%m-%d')
+    token = _csrf_prenota(client)
+
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post('/prenota', data={
+            'nome': 'Mario Rossi',
+            'telefono': '333 1234567',
+            'email': 'mario@example.com',
+            'servizio': 'Medicazione semplice',
+            'data': giorno,
+            'ora': '10:00',
+            'consenso_privacy': 'on',
+            '_csrf_token': token,
+        })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/conferma'
+    with flask_app.app_context():
+        appuntamento = Appuntamento.query.one()
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            esito='errore',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento.id,
+        ).one()
+        assert appuntamento.stato == 'In attesa'
+        assert 'non inviata' in evento.messaggio
+
+
 def test_login_admin_ignora_redirect_esterno(client):
     """Il parametro next non deve poter portare l'admin verso domini esterni."""
     from werkzeug.security import generate_password_hash
@@ -1570,6 +1737,31 @@ END:VCALENDAR
     app_module.app.config['GOOGLE_CALENDAR_ICS_URL'] = None
     app_module._cache_calendario['calendario'] = None
     app_module._cache_calendario['scaricato_il'] = 0
+    app_module._cache_calendario['errore_registrato_il'] = 0
+
+
+def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
+    calendario = icalendar.Calendar()
+    app_module._cache_calendario['calendario'] = calendario
+    app_module._cache_calendario['scaricato_il'] = 0
+    app_module._cache_calendario['errore_registrato_il'] = 0
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'CALENDARIO_CACHE_SECONDI', 300)
+
+    with patch.object(app_module.urllib.request, 'urlopen', side_effect=RuntimeError('rete assente')):
+        with app.app_context():
+            risultato = app_module._scarica_calendario_ics()
+            eventi = RegistroEvento.query.filter_by(
+                categoria='google_calendar',
+                esito='errore',
+            ).all()
+
+    assert risultato is calendario
+    assert len(eventi) == 1
+    assert 'Lettura del calendario non disponibile' in eventi[0].messaggio
+    app_module._cache_calendario['calendario'] = None
+    app_module._cache_calendario['scaricato_il'] = 0
+    app_module._cache_calendario['errore_registrato_il'] = 0
 
 
 def test_calendario_google_blocca_appuntamento_singolo(calendario_finto):
@@ -2117,6 +2309,18 @@ def test_google_analytics_presente_se_configurato(client):
     assert 'meta name="google-analytics-id" content="G-TEST1234"' in resp.text
     assert 'analytics-consent.js' in resp.text
     assert 'Preferenze cookie' in resp.text
+
+
+def test_canonical_e_open_graph_usano_origine_pubblica_configurata(client):
+    flask_app.config['PUBLIC_BASE_URL'] = 'https://scstudioinfermieristico.it'
+    try:
+        resp = client.get('/consulenze-online', base_url='https://servizio.onrender.com')
+    finally:
+        flask_app.config['PUBLIC_BASE_URL'] = None
+
+    assert '<link rel="canonical" href="https://scstudioinfermieristico.it/consulenze-online">' in resp.text
+    assert '<meta property="og:url" content="https://scstudioinfermieristico.it/consulenze-online">' in resp.text
+    assert 'https://servizio.onrender.com' not in resp.text
 
 
 def test_homepage_ha_gerarchia_commerciale_e_seo(client):

@@ -484,6 +484,24 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: la transizione tra pagine posiziona anche l'anteprima su `#formule`, con il titolo libero dall'header sticky; non mostra prima la hero o la CTA della call e non produce un secondo salto dopo il caricamento. Il fallback senza animazione conserva il normale comportamento dell'ancora.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `templates/consulenze_online.html`, `static/js/page-transitions.js`.
 
+## D-059 — Preproduzione privata esplicita e origine pubblica canonica
+
+- Data: 2026-07-29.
+- Stato: implementata nel codice; da attivare e collaudare su Render.
+- Decisione: mantenere `APP_ENV=staging`, Basic Auth e `noindex` durante il collaudo a pagamento di SMTP e Calendar, abilitando gli invii reali soltanto con `STAGING_LIVE_INTEGRATIONS=true` e configurazione completa. In produzione richiedere `PUBLIC_BASE_URL` come origine HTTPS esplicita e usare tale origine per canonical, Open Graph, dati strutturati e link assoluti nelle email.
+- Motivo: il piano gratuito deve restare incapace di inviare email per errore, mentre la preproduzione deve poter collaudare le integrazioni senza aprire il sito. L'host della richiesta non è una fonte affidabile per la SEO quando il sottodominio Render resta raggiungibile.
+- Conseguenze: i fallback Gmail vengono eliminati; preproduzione e produzione rifiutano configurazioni SMTP diverse da Zimbra approvato o prive del secret file Calendar. Il dominio definitivo resta disciplinato da D-027 e viene inserito come valore esterno senza hardcoding nel codice.
+- Collegamenti: `config.py`, `app.py`, `templates/base.html`, `templates/consulenze_online.html`, `OPERATIONS.md`, `ROADMAP.md`.
+
+## D-060 — Health check operativo fuori dai limiti applicativi
+
+- Data: 2026-07-29.
+- Stato: implementata nel codice; da verificare su Render.
+- Decisione: mantenere `/healthz` fuori dalla Basic Auth dello staging e renderlo esente dai limiti globali di Flask-Limiter, conservando la verifica della connessione al database e la risposta `503` in caso di errore.
+- Motivo: Render interroga l'endpoint ogni cinque secondi durante l'avvio. Il limite applicativo generale di 50 richieste l'ora esaurisce quindi la quota del monitor, produce falsi `429` e provoca riavvii periodici di un servizio altrimenti funzionante.
+- Conseguenze: le route pubbliche e sensibili mantengono i propri limiti; soltanto l'endpoint tecnico, che non legge né modifica dati applicativi, resta sempre raggiungibile dal monitor. Il deploy successivo deve dimostrare l'assenza dei `429` prima di considerare stabile lo staging.
+- Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

@@ -68,9 +68,11 @@ nelle fasi previste dalla roadmap, non aggirando la limitazione con segreti o
 dati reali nello staging gratuito.
 
 Endpoint operativo: `/healthz` verifica anche la connessione al database e resta
-escluso dalla Basic Auth per consentire i controlli Render. `/robots.txt` nello
-staging risponde con `Disallow: /`; ogni risposta include inoltre
-`X-Robots-Tag: noindex, nofollow, noarchive`.
+escluso sia dalla Basic Auth sia dai limiti globali di Flask-Limiter. Render lo
+interroga più volte durante l'avvio e poi periodicamente: applicargli il limite
+generale produce falsi `429` e può mettere l'istanza in un ciclo di riavvii.
+`/robots.txt` nello staging risponde con `Disallow: /`; ogni risposta include
+inoltre `X-Robots-Tag: noindex, nofollow, noarchive`.
 
 ## Variabili d'ambiente
 
@@ -94,11 +96,13 @@ staging risponde con `Disallow: /`; ogni risposta include inoltre
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale di scrittura | Sì |
 | `GOOGLE_CALENDAR_ID` | Calendario su cui scrivere | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
+| `PUBLIC_BASE_URL` | Origine HTTPS canonica del sito pubblico | No |
 | `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
 | `ADMIN_BOOTSTRAP_USERNAME` | Nome del primo amministratore, solo per il bootstrap | Sì |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Password del primo amministratore, solo per il bootstrap | Sì |
 | `STAGING_AUTH_USERNAME` | Utente della protezione HTTP dello staging | Sì |
 | `STAGING_AUTH_PASSWORD` | Password della protezione HTTP dello staging | Sì |
+| `STAGING_LIVE_INTEGRATIONS` | Opt-in per email e Calendar reali nella preproduzione privata pagata | No |
 
 Le credenziali restano in `.env` o nel secret manager dell'hosting. Il JSON dell'account di servizio non va committato.
 
@@ -128,6 +132,28 @@ o Analytics. I dati sono esclusivamente fittizi. Dopo il primo login riuscito,
 rimuovere `ADMIN_BOOTSTRAP_USERNAME` e `ADMIN_BOOTSTRAP_PASSWORD`, salvare e
 ridistribuire; `bootstrap-admin` verificherà l'account già presente.
 
+### Preproduzione privata con integrazioni reali
+
+Il collaudo di SMTP e Calendar avviene su un Web Service a pagamento ancora
+configurato come `APP_ENV=staging`: Basic Auth, `robots.txt` bloccante e
+`X-Robots-Tag` restano obbligatori. Sono ammessi esclusivamente dati sintetici,
+destinatari email controllati ed eventi Calendar chiaramente riconoscibili,
+rimossi al termine della prova.
+
+Per abilitare questa fase impostare insieme:
+
+- `STAGING_LIVE_INTEGRATIONS=true`;
+- `MAIL_SUPPRESS_SEND=false`;
+- la configurazione Zimbra e Calendar completa indicata nella matrice di
+  produzione.
+
+Senza l'opt-in esplicito lo staging continua a richiedere
+`MAIL_SUPPRESS_SEND=true`; il Blueprint gratuito corrente resta quindi incapace
+di inviare email per errore. `flask --app app validate-config` verifica anche
+server `smtp.mail.ovh.net`, porta 587, TLS attivo, SSL disattivo, casella
+mittente approvata e presenza del secret file Google, senza mostrare valori
+sensibili.
+
 Prima dell'apertura pubblica la produzione richiede inoltre:
 
 | Chiave/file | Configurazione prevista |
@@ -145,6 +171,7 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `GOOGLE_CALENDAR_ID` | identificativo del calendario operativo |
 | secret file `google-service-account.json` | JSON caricato dal pannello, disponibile in `/etc/secrets/` |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-service-account.json` |
+| `PUBLIC_BASE_URL` | origine HTTPS definitiva, senza percorso, per esempio `https://scstudioinfermieristico.it` |
 | `GOOGLE_ANALYTICS_ID` | facoltativo finché consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
 
@@ -152,6 +179,12 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 admin e Basic Auth devono usare segreti diversi. Il comando
 `flask --app app validate-config` verifica la presenza e la coerenza senza
 mostrare i valori.
+
+In produzione non esistono fallback Gmail per server SMTP o destinatario
+amministrativo: ogni valore deve essere configurato esplicitamente. Canonical,
+Open Graph, dati strutturati e link assoluti nelle email usano
+`PUBLIC_BASE_URL`, così una richiesta arrivata dal sottodominio Render non lo
+trasforma nell'origine pubblica del sito.
 
 In produzione i log vengono inviati soltanto a stdout/stderr per Render. Non
 viene creato `app.log`; le operazioni email registrano ID interni e tipo di
@@ -383,6 +416,8 @@ Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e cont
 - Migrazioni provate su una copia dei dati.
 - Backup e procedura di ripristino verificati.
 - `FLASK_ENV=production`, `SECRET_KEY` stabile e segreti configurati.
+- `PUBLIC_BASE_URL` coincide con il dominio definitivo ed è indipendente
+  dall'host `onrender.com`.
 - Credenziale admin predefinita rimossa o sostituita.
 - HTTPS e cookie sicuri verificati.
 - Email reali testate con mittente corretto.

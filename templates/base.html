@@ -8,14 +8,14 @@
     <meta name="description" content="{{ page_description | striptags | trim }}">
     <meta name="author" content="Selene Campetta, infermiera iscritta all'Albo OPI di Pescara">
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
-    <link rel="canonical" href="{{ request.base_url }}">
+    <link rel="canonical" href="{{ public_url() }}">
     <meta property="og:locale" content="it_IT">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="S.C. Studio Infermieristico">
     <meta property="og:title" content="{{ self.titolo() | striptags | trim }}">
     <meta property="og:description" content="{{ page_description | striptags | trim }}">
-    <meta property="og:url" content="{{ request.base_url }}">
-    <meta property="og:image" content="{{ url_for('static', filename='img/selene-hero-home.jpg', _external=True) }}">
+    <meta property="og:url" content="{{ public_url() }}">
+    <meta property="og:image" content="{{ public_url(url_for('static', filename='img/selene-hero-home.jpg')) }}">
     <meta property="og:image:alt" content="Selene Campetta, infermiera per bambini e famiglie">
     <meta name="twitter:card" content="summary_large_image">
     {% if google_analytics_id %}
@@ -28,7 +28,7 @@
     {% set page_endpoint = request.endpoint or '' %}
     {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy'] %}
     {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest'] %}
-    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation'] %}
+    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'not_found', 'server_error'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.9">
@@ -56,10 +56,10 @@
     {
         "@context": "https://schema.org",
         "@type": "MedicalBusiness",
-        "@id": {{ (request.url_root ~ "#studio") | tojson }},
+        "@id": {{ (public_url('/') ~ "#studio") | tojson }},
         "name": "S.C. Studio Infermieristico",
-        "url": {{ request.url_root | tojson }},
-        "image": {{ url_for('static', filename='img/selene-hero-home.jpg', _external=True) | tojson }},
+        "url": {{ public_url('/') | tojson }},
+        "image": {{ public_url(url_for('static', filename='img/selene-hero-home.jpg')) | tojson }},
         "telephone": "+39 380 631 7175",
         "address": {
             "@type": "PostalAddress",

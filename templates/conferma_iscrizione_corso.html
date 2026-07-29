@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% block titolo %}Richiesta corso inviata | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}La richiesta di iscrizione al corso è stata ricevuta ed è in attesa di conferma.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
 
 {% block contenuto %}
 <section class="pagina-interna testo-centro">
     <div class="conferma-box">
-        <span class="conferma-icona">✓</span>
-        <h2>Richiesta inviata</h2>
+        <span class="conferma-icona" aria-hidden="true">✓</span>
+        <h1>Richiesta inviata</h1>
         <p>Grazie, ho ricevuto la tua richiesta di iscrizione.</p>
         <p>Ti contatterò per confermare la disponibilità e comunicarti i dettagli organizzativi.</p>
         <a href="/" class="btn">Torna alla homepage</a>
