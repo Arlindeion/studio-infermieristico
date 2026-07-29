@@ -62,7 +62,6 @@ MAIL_PASSWORD=
 MAIL_DEFAULT_SENDER=
 MAIL_ADMIN_RECIPIENT=
 
-GOOGLE_CALENDAR_ICS_URL=
 CALENDARIO_CACHE_SECONDI=300
 GOOGLE_SERVICE_ACCOUNT_FILE=
 GOOGLE_CALENDAR_ID=
@@ -78,13 +77,18 @@ STAGING_AUTH_PASSWORD=
 
 `DATABASE_URL` è facoltativa: senza questa variabile viene utilizzato `appuntamenti.db`. Gli URL `postgres://` e `postgresql://` vengono normalizzati per il driver `psycopg`.
 
+La lettura e la scrittura del calendario operativo usano entrambe Google
+Calendar API tramite `GOOGLE_SERVICE_ACCOUNT_FILE` e `GOOGLE_CALENDAR_ID`.
+L'account di servizio deve essere condiviso soltanto sul calendario
+sincronizzato con Arzamed, con permesso di modifica degli eventi.
+
 Per generare una chiave applicativa:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Non inserire mai nel repository `.env`, database reali, URL iCal privati o file JSON di account di servizio.
+Non inserire mai nel repository `.env`, database reali o file JSON di account di servizio.
 Usare [`.env.example`](.env.example)
 come elenco delle chiavi, mai come contenitore dei valori reali.
 

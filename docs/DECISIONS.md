@@ -556,6 +556,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: lo staging non è temporaneamente gestito dal Blueprint, ma il Web Service resta collegato a `main`, il database resta intatto e il deploy live resta `8a4ad84`. La disconnessione non ha avviato deploy e il successivo controllo di `/healthz` ha restituito `200`. Il futuro ricollegamento deve verificare il piano proposto e considerare la prima sincronizzazione capace di avviare un deploy.
 - Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-067 — Google Calendar API unica per lettura e scrittura
+
+- Data: 2026-07-30.
+- Stato: approvata dall'attività e implementata localmente; configurazione esterna da completare.
+- Decisione: usare un unico account di servizio e Google Calendar API per leggere gli impegni sincronizzati da Arzamed e per creare, modificare o cancellare gli eventi del sito. Eliminare l'URL iCal dalla configurazione.
+- Motivo: il calendario Google operativo è già il collante bidirezionale con Arzamed e la scrittura richiede comunque un'identità API. Usare la stessa integrazione anche in lettura riduce segreti e percorsi di errore duplicati.
+- Conseguenze: l'account Google dello studio resta proprietario del calendario; l'app usa un'identità tecnica separata con accesso limitato agli eventi del solo calendario operativo. La lettura API espande le ricorrenze, conserva una cache per giorno e riusa la copia scaduta in caso di errore. La verifica documentale non ha trovato evidenza che l'account di servizio sia già stato generato o condiviso: prima del collaudo reale occorre completare e verificare questi passaggi senza inserire il JSON nel repository.
+- Collegamenti: `app.py`, `config.py`, `render.production.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

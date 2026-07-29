@@ -2,10 +2,6 @@ import logging
 import click
 import json
 import re
-import urllib.request
-import urllib.error
-import ssl
-import certifi
 from urllib.parse import urlsplit
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, Response
 from dotenv import load_dotenv
@@ -16,7 +12,6 @@ from collections import defaultdict
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 import icalendar
-import recurring_ical_events
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -594,119 +589,152 @@ def is_safe_redirect_target(target):
 
 # ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
 #
-# Arzamed sincronizza appuntamenti e chiusure studio su un calendario
-# Google. Leggiamo quel calendario tramite il suo "indirizzo segreto in
-# formato iCal" (nessuna credenziale API necessaria) per bloccare, anche
-# sul sito, gli orari già impegnati su Arzamed.
-#
-# Il risultato del download viene tenuto in cache per qualche minuto
-# (CALENDARIO_CACHE_SECONDI) per non interrogare Google ad ogni richiesta.
+# Arzamed sincronizza appuntamenti e chiusure studio sul calendario Google
+# operativo. Il sito usa lo stesso account di servizio sia per leggere gli
+# intervalli occupati sia per creare, modificare e cancellare i propri eventi.
+# La lettura usa singleEvents=True, così Google espande anche le ricorrenze.
 
 _cache_calendario = {
-    'calendario': None,
-    'scaricato_il': 0,
+    'per_data': {},
     'errore_registrato_il': 0,
 }
 
 
-def _scarica_calendario_ics():
-    """Scarica e interpreta il feed iCal di Google Calendar, con cache in memoria.
+def _invalida_cache_calendario():
+    _cache_calendario['per_data'].clear()
 
-    Restituisce un oggetto icalendar.Calendar, oppure None se l'URL non è
-    configurato o se il download/parsing fallisce (in quel caso il sito
-    continua a funzionare usando solo gli appuntamenti presi dal form).
-    """
-    url = app.config.get('GOOGLE_CALENDAR_ICS_URL')
-    if not url:
+
+def _registra_errore_lettura_calendario(tipo_errore, adesso, durata_cache):
+    if adesso < _cache_calendario['errore_registrato_il'] + durata_cache:
+        return
+    registra_evento(
+        'google_calendar',
+        'errore',
+        'Lettura del calendario non disponibile; usata la copia in cache quando presente.',
+        dettagli={'tipo_errore': tipo_errore},
+    )
+    _cache_calendario['errore_registrato_il'] = adesso
+
+
+def _datetime_evento_google(valore, timezone_evento=None):
+    """Normalizza date e dateTime restituite dalla Calendar API."""
+    if not valore:
         return None
-
-    adesso = time.time()
-    cache_valida_fino_a = _cache_calendario['scaricato_il'] + app.config.get('CALENDARIO_CACHE_SECONDI', 300)
-    if _cache_calendario['calendario'] is not None and adesso < cache_valida_fino_a:
-        return _cache_calendario['calendario']
-
-    try:
-        contesto_ssl = ssl.create_default_context(cafile=certifi.where())
-        with urllib.request.urlopen(url, timeout=10, context=contesto_ssl) as risposta:
-            contenuto = risposta.read()
-        calendario = icalendar.Calendar.from_ical(contenuto)
-        _cache_calendario['calendario'] = calendario
-        _cache_calendario['scaricato_il'] = adesso
-        return calendario
-    except Exception as errore:
-        logger.error(
-            '>>> Errore nel download/lettura del calendario Google (%s).',
-            type(errore).__name__,
-            exc_info=True,
+    if 'T' not in valore:
+        return datetime.combine(
+            datetime.strptime(valore, '%Y-%m-%d').date(),
+            datetime.min.time(),
+            tzinfo=FUSO_ORARIO,
         )
-        intervallo_registro = app.config.get('CALENDARIO_CACHE_SECONDI', 300)
-        if adesso >= _cache_calendario['errore_registrato_il'] + intervallo_registro:
-            registra_evento(
-                'google_calendar',
-                'errore',
-                'Lettura del calendario non disponibile; usata la copia in cache quando presente.',
-                dettagli={'tipo_errore': type(errore).__name__},
-            )
-            _cache_calendario['errore_registrato_il'] = adesso
-        # Se il download fallisce ma avevamo già una copia in cache (anche se
-        # "scaduta"), meglio riusarla piuttosto che non bloccare nessun orario.
-        return _cache_calendario['calendario']
+
+    data_ora = datetime.fromisoformat(valore.replace('Z', '+00:00'))
+    if data_ora.tzinfo is None:
+        try:
+            fuso_evento = ZoneInfo(timezone_evento) if timezone_evento else FUSO_ORARIO
+        except (KeyError, ValueError):
+            fuso_evento = FUSO_ORARIO
+        data_ora = data_ora.replace(tzinfo=fuso_evento)
+    return data_ora.astimezone(FUSO_ORARIO)
 
 
-def _intervalli_calendario(data_str, ignore_google_event_id=None):
-    """Restituisce gli intervalli occupati nel giorno richiesto.
+def _intervallo_da_evento_google(evento):
+    inizio_dati = evento.get('start') or {}
+    fine_dati = evento.get('end') or {}
+    inizio = _datetime_evento_google(
+        inizio_dati.get('dateTime') or inizio_dati.get('date'),
+        inizio_dati.get('timeZone'),
+    )
+    fine = _datetime_evento_google(
+        fine_dati.get('dateTime') or fine_dati.get('date'),
+        fine_dati.get('timeZone'),
+    )
+    if inizio is None:
+        return None
+    if fine is None:
+        fine = inizio
+    return inizio, fine, str(evento.get('id') or '')
 
-    La forma a intervalli permette di confrontare durate diverse senza
-    lasciare sovrapposizioni invisibili.
-    """
-    calendario = _scarica_calendario_ics()
-    if calendario is None:
-        return []
 
+def _scarica_intervalli_calendario(data_str):
+    """Legge via API gli intervalli di un giorno, con cache e fallback stale."""
     try:
         giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
-    except ValueError:
+    except (TypeError, ValueError):
         return []
+
+    adesso = time.time()
+    durata_cache = app.config.get('CALENDARIO_CACHE_SECONDI', 300)
+    voce_cache = _cache_calendario['per_data'].get(data_str)
+    if voce_cache and adesso < voce_cache['scaricato_il'] + durata_cache:
+        return voce_cache['intervalli']
+
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    if not calendar_id:
+        return voce_cache['intervalli'] if voce_cache else []
+    servizio = _ottieni_servizio_calendario()
+    if servizio is None:
+        _registra_errore_lettura_calendario(
+            'servizio_non_disponibile',
+            adesso,
+            durata_cache,
+        )
+        return voce_cache['intervalli'] if voce_cache else []
 
     inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
     fine_giornata = inizio_giornata + timedelta(days=1)
+    intervalli = []
+    page_token = None
 
     try:
-        eventi = recurring_ical_events.of(calendario).between(inizio_giornata, fine_giornata)
-    except Exception as e:
-        logger.error(f'>>> Errore nell\'espansione degli eventi del calendario: {e}', exc_info=True)
-        return []
+        while True:
+            parametri = {
+                'calendarId': calendar_id,
+                'timeMin': inizio_giornata.isoformat(),
+                'timeMax': fine_giornata.isoformat(),
+                'singleEvents': True,
+                'showDeleted': False,
+                'orderBy': 'startTime',
+                'maxResults': 2500,
+            }
+            if page_token:
+                parametri['pageToken'] = page_token
+            risposta = servizio.events().list(**parametri).execute()
+            for evento in risposta.get('items', []):
+                if evento.get('status') == 'cancelled':
+                    continue
+                intervallo = _intervallo_da_evento_google(evento)
+                if intervallo is not None:
+                    intervalli.append(intervallo)
+            page_token = risposta.get('nextPageToken')
+            if not isinstance(page_token, str) or not page_token:
+                break
 
-    intervalli = []
-    for evento in eventi:
-        uid = str(evento.get('UID') or '')
-        if ignore_google_event_id and uid.startswith(ignore_google_event_id):
-            continue
-        inizio_evento = evento.get('DTSTART').dt
-        fine_evento = evento.get('DTEND').dt if evento.get('DTEND') else inizio_evento
+        _cache_calendario['per_data'][data_str] = {
+            'intervalli': intervalli,
+            'scaricato_il': adesso,
+        }
+        return intervalli
+    except Exception as errore:
+        logger.error(
+            '>>> Errore nella lettura Google Calendar API (%s).',
+            type(errore).__name__,
+            exc_info=True,
+        )
+        _registra_errore_lettura_calendario(
+            type(errore).__name__,
+            adesso,
+            durata_cache,
+        )
+        return voce_cache['intervalli'] if voce_cache else []
 
-        # Un evento "tutto il giorno" ha date (non datetime) come inizio/fine:
-        # lo trattiamo come se occupasse l'intera fascia oraria dello studio.
-        if not isinstance(inizio_evento, datetime):
-            inizio_evento = datetime.combine(inizio_evento, datetime.min.time(), tzinfo=FUSO_ORARIO)
-        if not isinstance(fine_evento, datetime):
-            fine_evento = datetime.combine(fine_evento, datetime.min.time(), tzinfo=FUSO_ORARIO)
 
-        # Normalizza al fuso orario locale per confrontare correttamente con
-        # gli slot orari dello studio (gli eventi Google possono arrivare in
-        # UTC o con un altro fuso a seconda di come sono stati creati).
-        if inizio_evento.tzinfo is None:
-            inizio_evento = inizio_evento.replace(tzinfo=FUSO_ORARIO)
-        else:
-            inizio_evento = inizio_evento.astimezone(FUSO_ORARIO)
-        if fine_evento.tzinfo is None:
-            fine_evento = fine_evento.replace(tzinfo=FUSO_ORARIO)
-        else:
-            fine_evento = fine_evento.astimezone(FUSO_ORARIO)
-
-        intervalli.append((inizio_evento, fine_evento))
-
-    return intervalli
+def _intervalli_calendario(data_str, ignore_google_event_id=None):
+    """Restituisce gli intervalli occupati nel giorno richiesto."""
+    return [
+        (inizio, fine)
+        for inizio, fine, event_id in _scarica_intervalli_calendario(data_str)
+        if not ignore_google_event_id or event_id != ignore_google_event_id
+    ]
 
 
 def intervallo_occupato_da_calendario(data_str, ora, durata_minuti, ignore_google_event_id=None):
@@ -736,7 +764,7 @@ def orari_occupati_da_calendario(data_str):
     return occupati
 
 
-# ─── SCRITTURA SU GOOGLE CALENDAR (account di servizio) ───
+# ─── CLIENT GOOGLE CALENDAR (account di servizio) ───
 #
 # Quando un appuntamento viene confermato dall'area admin, creiamo un evento
 # corrispondente sul calendario Google (lo stesso usato da Arzamed), così chi
@@ -744,29 +772,28 @@ def orari_occupati_da_calendario(data_str):
 # Se l'appuntamento viene poi annullato o spostato, aggiorniamo/eliminiamo
 # anche l'evento, per restare sincronizzati nei due sensi.
 #
-# A differenza della lettura (che usa il feed iCal pubblico/segreto), la
-# scrittura richiede un vero accesso alle API di Google Calendar tramite un
-# account di servizio con permesso di modifica sul calendario.
+# Lettura e scrittura passano dalla stessa Calendar API e dallo stesso account
+# di servizio, condiviso soltanto sul calendario operativo.
 
 _servizio_calendario_cache = None
 
 
 def _ottieni_servizio_calendario():
     """Restituisce un client autenticato per le API di Google Calendar, o None
-    se la scrittura su Google Calendar non è configurata o fallisce."""
+    se l'integrazione Google Calendar non è configurata o fallisce."""
     global _servizio_calendario_cache
     if _servizio_calendario_cache is not None:
         return _servizio_calendario_cache
 
     percorso_chiave = app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     if not percorso_chiave:
-        logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_SERVICE_ACCOUNT_FILE mancante.')
+        logger.warning('>>> Google Calendar non configurato: GOOGLE_SERVICE_ACCOUNT_FILE mancante.')
         return None
 
     try:
         credenziali = service_account.Credentials.from_service_account_file(
             percorso_chiave,
-            scopes=['https://www.googleapis.com/auth/calendar']
+            scopes=['https://www.googleapis.com/auth/calendar.events']
         )
         _servizio_calendario_cache = build('calendar', 'v3', credentials=credenziali, cache_discovery=False)
         return _servizio_calendario_cache
@@ -891,6 +918,7 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
                 appuntamento.id,
                 {'google_event_id': appuntamento.google_event_id},
             )
+        _invalida_cache_calendario()
         return True
     except HttpError as e:
         logger.error(f'>>> Errore nella scrittura su Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
@@ -958,7 +986,7 @@ def crea_o_aggiorna_evento_calendario_call_sonno(call):
             evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
             call.google_event_id = evento.get('id')
             db.session.commit()
-        _cache_calendario['scaricato_il'] = 0
+        _invalida_cache_calendario()
         registra_evento(
             'google_calendar',
             'successo',
@@ -999,7 +1027,7 @@ def elimina_evento_calendario_call_sonno(call):
         servizio.events().delete(calendarId=calendar_id, eventId=call.google_event_id).execute()
         call.google_event_id = None
         db.session.commit()
-        _cache_calendario['scaricato_il'] = 0
+        _invalida_cache_calendario()
         return True
     except HttpError as errore:
         if getattr(errore, 'status_code', None) not in (404, 410):
@@ -1007,6 +1035,7 @@ def elimina_evento_calendario_call_sonno(call):
             return False
         call.google_event_id = None
         db.session.commit()
+        _invalida_cache_calendario()
         return True
     except Exception as errore:
         registra_evento('google_calendar', 'errore', 'Errore eliminazione call sonno da Calendar.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -1068,6 +1097,7 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
                 corso.id,
                 {'google_event_id': corso.google_event_id},
             )
+        _invalida_cache_calendario()
         return True
     except HttpError as e:
         logger.error(f'>>> Errore nella scrittura su Google Calendar per corso {corso.id}: {e}', exc_info=True)
@@ -1160,6 +1190,7 @@ def elimina_evento_calendario(appuntamento):
     if eliminato:
         appuntamento.google_event_id = None
         db.session.commit()
+        _invalida_cache_calendario()
     return eliminato
 
 
@@ -1228,6 +1259,7 @@ def elimina_evento_calendario_corso(corso):
     if eliminato:
         corso.google_event_id = None
         db.session.commit()
+        _invalida_cache_calendario()
     return eliminato
 
 
@@ -1599,7 +1631,6 @@ def _campi_integrazioni_mancanti():
         'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD'),
         'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
         'MAIL_ADMIN_RECIPIENT': app.config.get('MAIL_ADMIN_RECIPIENT'),
-        'GOOGLE_CALENDAR_ICS_URL': app.config.get('GOOGLE_CALENDAR_ICS_URL'),
         'GOOGLE_SERVICE_ACCOUNT_FILE': app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
         'GOOGLE_CALENDAR_ID': app.config.get('GOOGLE_CALENDAR_ID'),
     }

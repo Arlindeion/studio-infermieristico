@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 import pytest
-import icalendar
 from unittest.mock import MagicMock, patch
 from datetime import date, datetime
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -204,7 +203,6 @@ def test_validazione_produzione_completa(app, monkeypatch, tmp_path):
         'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
     )
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
 
@@ -224,7 +222,6 @@ def test_validazione_produzione_non_accetta_fallback_smtp(app, monkeypatch, tmp_
         'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
     )
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
 
@@ -242,7 +239,6 @@ def test_validazione_produzione_rifiuta_mittente_diverso_da_zimbra(app, monkeypa
     monkeypatch.setitem(app.config, 'MAIL_PASSWORD', 'password-email-test')
     monkeypatch.setitem(app.config, 'MAIL_DEFAULT_SENDER', 'Studio <altro@example.invalid>')
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
 
@@ -266,7 +262,6 @@ def test_preproduzione_privata_ammette_integrazioni_reali(app, monkeypatch, tmp_
         'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
     )
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
 
@@ -295,7 +290,6 @@ def test_produzione_richiede_origine_pubblica_https(app, monkeypatch, tmp_path):
         'S.C. Studio Infermieristico <info@scstudioinfermieristico.it>',
     )
     monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'admin@example.invalid')
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
     monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', str(service_account_file))
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
     monkeypatch.setitem(app.config, 'PUBLIC_BASE_URL', 'https://example.invalid/percorso')
@@ -1938,58 +1932,78 @@ def test_login_admin_ignora_redirect_esterno(client):
 
 @pytest.fixture
 def calendario_finto(app):
-    """Inietta un calendario Google finto (senza fare richieste di rete reali),
-    con un appuntamento singolo e una chiusura settimanale ricorrente."""
-    ics = b"""BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Test//Test//IT
-BEGIN:VEVENT
-UID:appuntamento-arzamed-1@test
-DTSTART;TZID=Europe/Rome:20260811T100000
-DTEND;TZID=Europe/Rome:20260811T110000
-SUMMARY:Visita paziente
-END:VEVENT
-BEGIN:VEVENT
-UID:chiusura-ricorrente@test
-DTSTART;TZID=Europe/Rome:20260803T150000
-DTEND;TZID=Europe/Rome:20260803T160000
-RRULE:FREQ=WEEKLY;BYDAY=MO
-SUMMARY:Chiuso
-END:VEVENT
-END:VCALENDAR
-"""
-    app_module.app.config['GOOGLE_CALENDAR_ICS_URL'] = 'https://esempio-fittizio.invalid/calendario.ics'
-    app_module._cache_calendario['calendario'] = icalendar.Calendar.from_ical(ics)
-    app_module._cache_calendario['scaricato_il'] = app_module.time.time()
-    yield
-    # Ripristina lo stato per non influenzare altri test
-    app_module.app.config['GOOGLE_CALENDAR_ICS_URL'] = None
-    app_module._cache_calendario['calendario'] = None
-    app_module._cache_calendario['scaricato_il'] = 0
+    """Inietta risposte Calendar API senza contattare Google."""
+    eventi_per_data = {
+        '2026-08-03': [{
+            'id': 'chiusura-ricorrente-20260803',
+            'start': {'dateTime': '2026-08-03T15:00:00+02:00'},
+            'end': {'dateTime': '2026-08-03T16:00:00+02:00'},
+            'recurringEventId': 'chiusura-ricorrente',
+        }],
+        '2026-08-11': [{
+            'id': 'appuntamento-arzamed-1',
+            'start': {'dateTime': '2026-08-11T10:00:00+02:00'},
+            'end': {'dateTime': '2026-08-11T11:00:00+02:00'},
+        }],
+        '2026-08-17': [{
+            'id': 'chiusura-ricorrente-20260817',
+            'start': {'dateTime': '2026-08-17T15:00:00+02:00'},
+            'end': {'dateTime': '2026-08-17T16:00:00+02:00'},
+            'recurringEventId': 'chiusura-ricorrente',
+        }],
+    }
+    mock_servizio = MagicMock()
+
+    def risposta_lista(**parametri):
+        risposta = MagicMock()
+        data_richiesta = parametri['timeMin'][:10]
+        risposta.execute.return_value = {
+            'items': eventi_per_data.get(data_richiesta, []),
+        }
+        return risposta
+
+    mock_servizio.events.return_value.list.side_effect = risposta_lista
+    app_module.app.config['GOOGLE_CALENDAR_ID'] = 'finto@group.calendar.google.com'
+    app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = '/percorso/finto/service-account.json'
+    app_module._servizio_calendario_cache = mock_servizio
+    app_module._invalida_cache_calendario()
+    yield mock_servizio
+    app_module.app.config['GOOGLE_CALENDAR_ID'] = None
+    app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = None
+    app_module._servizio_calendario_cache = None
+    app_module._invalida_cache_calendario()
     app_module._cache_calendario['errore_registrato_il'] = 0
 
 
 def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
-    calendario = icalendar.Calendar()
-    app_module._cache_calendario['calendario'] = calendario
-    app_module._cache_calendario['scaricato_il'] = 0
+    intervalli = [(
+        datetime.fromisoformat('2026-08-11T10:00:00+02:00'),
+        datetime.fromisoformat('2026-08-11T11:00:00+02:00'),
+        'evento-cache',
+    )]
+    app_module._cache_calendario['per_data']['2026-08-11'] = {
+        'intervalli': intervalli,
+        'scaricato_il': 0,
+    }
     app_module._cache_calendario['errore_registrato_il'] = 0
-    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ICS_URL', 'https://example.invalid/calendar.ics')
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
     monkeypatch.setitem(app.config, 'CALENDARIO_CACHE_SECONDI', 300)
+    mock_servizio = MagicMock()
+    mock_servizio.events.return_value.list.return_value.execute.side_effect = RuntimeError('rete assente')
+    monkeypatch.setattr(app_module, '_servizio_calendario_cache', mock_servizio)
 
-    with patch.object(app_module.urllib.request, 'urlopen', side_effect=RuntimeError('rete assente')):
-        with app.app_context():
-            risultato = app_module._scarica_calendario_ics()
-            eventi = RegistroEvento.query.filter_by(
-                categoria='google_calendar',
-                esito='errore',
-            ).all()
+    with app.app_context():
+        risultato = app_module._scarica_intervalli_calendario('2026-08-11')
+        eventi = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            esito='errore',
+        ).all()
 
-    assert risultato is calendario
+    assert risultato == intervalli
     assert len(eventi) == 1
     assert 'Lettura del calendario non disponibile' in eventi[0].messaggio
-    app_module._cache_calendario['calendario'] = None
-    app_module._cache_calendario['scaricato_il'] = 0
+    app_module._servizio_calendario_cache = None
+    app_module._invalida_cache_calendario()
     app_module._cache_calendario['errore_registrato_il'] = 0
 
 
@@ -1999,17 +2013,85 @@ def test_calendario_google_blocca_appuntamento_singolo(calendario_finto):
     assert occupati == {'10:00', '10:30'}
 
 
-def test_calendario_google_espande_ricorrenze(calendario_finto):
-    """Una chiusura settimanale ricorrente deve applicarsi anche alle settimane successive."""
+def test_calendario_google_riceve_ricorrenze_espanse_dalla_api(calendario_finto):
+    """La API deve espandere la chiusura ricorrente nelle singole occorrenze."""
     occupati_originale = app_module.orari_occupati_da_calendario('2026-08-03')
     occupati_successivo = app_module.orari_occupati_da_calendario('2026-08-17')
     assert occupati_originale == {'15:00', '15:30'}
     assert occupati_successivo == {'15:00', '15:30'}
+    for chiamata in calendario_finto.events.return_value.list.call_args_list:
+        assert chiamata.kwargs['singleEvents'] is True
 
 
 def test_calendario_google_nessun_evento(calendario_finto):
     """Un giorno senza eventi non deve risultare bloccato."""
     assert app_module.orari_occupati_da_calendario('2026-08-12') == set()
+
+
+def test_calendar_api_gestisce_paginazione_e_eventi_giornalieri(app, monkeypatch):
+    prima_pagina = MagicMock()
+    prima_pagina.execute.return_value = {
+        'items': [{
+            'id': 'evento-mattina',
+            'start': {'dateTime': '2026-08-18T09:00:00+02:00'},
+            'end': {'dateTime': '2026-08-18T10:00:00+02:00'},
+        }],
+        'nextPageToken': 'pagina-2',
+    }
+    seconda_pagina = MagicMock()
+    seconda_pagina.execute.return_value = {
+        'items': [{
+            'id': 'chiusura-giornaliera',
+            'start': {'date': '2026-08-18'},
+            'end': {'date': '2026-08-19'},
+        }],
+    }
+    mock_servizio = MagicMock()
+    mock_servizio.events.return_value.list.side_effect = [
+        prima_pagina,
+        seconda_pagina,
+    ]
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    monkeypatch.setattr(app_module, '_servizio_calendario_cache', mock_servizio)
+    app_module._invalida_cache_calendario()
+
+    intervalli = app_module._scarica_intervalli_calendario('2026-08-18')
+
+    assert len(intervalli) == 2
+    assert mock_servizio.events.return_value.list.call_count == 2
+    seconda_chiamata = mock_servizio.events.return_value.list.call_args_list[1]
+    assert seconda_chiamata.kwargs['pageToken'] == 'pagina-2'
+    assert seconda_chiamata.kwargs['singleEvents'] is True
+    app_module._servizio_calendario_cache = None
+    app_module._invalida_cache_calendario()
+
+
+def test_google_calendar_usa_scope_limitato_agli_eventi(app, monkeypatch):
+    credenziali = object()
+    client = MagicMock()
+    monkeypatch.setitem(
+        app.config,
+        'GOOGLE_SERVICE_ACCOUNT_FILE',
+        '/percorso/finto/google-calendar-service-account.json',
+    )
+    monkeypatch.setattr(app_module, '_servizio_calendario_cache', None)
+
+    with patch.object(
+        app_module.service_account.Credentials,
+        'from_service_account_file',
+        return_value=credenziali,
+    ) as crea_credenziali, patch.object(
+        app_module,
+        'build',
+        return_value=client,
+    ):
+        risultato = app_module._ottieni_servizio_calendario()
+
+    assert risultato is client
+    assert crea_credenziali.call_args.kwargs['scopes'] == [
+        'https://www.googleapis.com/auth/calendar.events',
+    ]
+    app_module._servizio_calendario_cache = None
 
 
 def test_endpoint_orari_occupati_unisce_db_e_calendario(client, calendario_finto):
@@ -2294,6 +2376,9 @@ def google_calendar_scrittura_finto(app):
     app_module.app.config['GOOGLE_CALENDAR_ID'] = 'finto@group.calendar.google.com'
     app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = '/percorso/finto/service-account.json'
     mock_servizio = MagicMock()
+    mock_servizio.events.return_value.list.return_value.execute.return_value = {
+        'items': [],
+    }
     app_module._servizio_calendario_cache = mock_servizio
     yield mock_servizio
     app_module.app.config['GOOGLE_CALENDAR_ID'] = None
