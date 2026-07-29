@@ -64,6 +64,15 @@ pubblicare codice: prima di approvarla verificare il commit proposto e
 monitorare subito la cronologia deploy, annullando l'esecuzione se lo scopo era
 soltanto allineare la configurazione. Ogni deploy intenzionale continua a
 partire da un commit già verificato.
+
+Il 30 luglio 2026 il Blueprint dello staging è stato disconnesso per revocare
+un Sync Hook considerato non più affidabile. La disconnessione non ha eliminato
+né modificato Web Service e PostgreSQL: il servizio resta collegato a `main`,
+con deploy manuali, ed esegue il commit live `8a4ad84`. Prima di ricollegare
+`render.yaml` occorre scegliere una finestra di deploy controllata, verificare
+il piano proposto e considerare la prima sincronizzazione capace di avviare un
+deploy.
+
 All'avvio Render esegue nell'ordine `flask db upgrade`, il comando sicuro
 `bootstrap-admin` e infine Gunicorn. I comandi preparatori disabilitano lo
 scheduler; il processo Gunicorn lo avvia una sola volta perché usa un worker.

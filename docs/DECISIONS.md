@@ -547,6 +547,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il form esclude le date già piene, propone la successiva quando esiste e salva un ricontatto se non restano date. Su PostgreSQL la riga del corso viene bloccata durante il controllo finale per impedire che richieste simultanee superino ulteriormente questa eccezione. L'admin mostra `Completo` quando la disponibilità residua arriva a zero.
 - Collegamenti: `app.py`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`.
 
+## D-066 — Revoca del Sync Hook tramite disconnessione del Blueprint
+
+- Data: 2026-07-30.
+- Stato: approvata dall'attività e implementata.
+- Decisione: disconnettere il Blueprint dello staging dopo che il relativo Sync Hook è stato visualizzato durante un controllo operativo e non può più essere considerato affidabile. Mantenere Web Service e PostgreSQL esistenti, senza ricollegare il Blueprint fino a una finestra di deploy controllata.
+- Motivo: Render non espone una rotazione isolata del Sync Hook; la disconnessione ne revoca l'uso senza eliminare le risorse gestite.
+- Conseguenze: lo staging non è temporaneamente gestito dal Blueprint, ma il Web Service resta collegato a `main`, il database resta intatto e il deploy live resta `8a4ad84`. La disconnessione non ha avviato deploy e il successivo controllo di `/healthz` ha restituito `200`. Il futuro ricollegamento deve verificare il piano proposto e considerare la prima sincronizzazione capace di avviare un deploy.
+- Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown
