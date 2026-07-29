@@ -70,7 +70,10 @@ Homepage/pagina corsi
 ```
 
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
-- Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto.
+- Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo
+  dove la coppia vale un posto. Nei corsi individuali una coppia può ancora
+  inviare la richiesta quando resta un solo posto: la data si chiude alle
+  richieste successive dopo il salvataggio della coppia.
 - Se il corso è pieno, proporre una data successiva; se non esiste, raccogliere preferenze indicative e creare un ricontatto.
 - Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e consenso privacy; non richiede i dati amministrativi necessari a una vera iscrizione.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.

@@ -2453,6 +2453,30 @@ def _tipo_richiesta_da_corso(corso_tipo, corso_id):
     return 'richiesta_iscrizione'
 
 
+def _posti_attivi_corso(corso_id):
+    iscrizioni = IscrizioneCorso.query.filter(
+        IscrizioneCorso.corso_id == corso_id,
+        IscrizioneCorso.stato != 'Annullato',
+    ).all()
+    return sum(
+        iscrizione.posti
+        if iscrizione.posti is not None
+        else _posti_iscrizione_da_partecipazione(iscrizione.partecipazione)
+        for iscrizione in iscrizioni
+    )
+
+
+def _posti_liberi_corso(corso):
+    if corso.capienza_massima is None:
+        return None
+    return max(corso.capienza_massima - _posti_attivi_corso(corso.id), 0)
+
+
+def _corso_ha_posti(corso):
+    posti_liberi = _posti_liberi_corso(corso)
+    return posti_liberi is None or posti_liberi > 0
+
+
 def _label_tipo_richiesta(tipo_richiesta):
     return TIPI_RICHIESTA_CORSO.get(tipo_richiesta, tipo_richiesta or 'Richiesta')
 
@@ -2691,6 +2715,7 @@ def _opzioni_date_corso(corso_tipo):
             'label': _etichetta_data_corso(corso),
         }
         for corso in corsi
+        if _corso_ha_posti(corso)
     ]
 
 
@@ -2951,6 +2976,20 @@ def iscrizione_corso(corso_tipo):
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.')
 
+        posti_richiesti = 0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione)
+        if corso_id:
+            corso_selezionato = Corso.query.filter_by(id=corso_id).with_for_update().first()
+            if (
+                not corso_selezionato
+                or corso_selezionato.stato != 'Aperto'
+                or not _corso_ha_posti(corso_selezionato)
+            ):
+                db.session.rollback()
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'La data scelta non ha più posti sufficienti. Seleziona la prossima data disponibile.'
+                )
+
         persona = _trova_o_crea_persona_corso(
             nome=nome,
             telefono=telefono,
@@ -2974,7 +3013,7 @@ def iscrizione_corso(corso_tipo):
             note=request.form.get('note', '').strip(),
             dati_extra=json.dumps(extra, ensure_ascii=False),
             tipo_richiesta=tipo_richiesta,
-            posti=0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione),
+            posti=posti_richiesti,
             consenso_privacy=consenso_privacy,
             consenso_immagini=consenso_immagini,
         )
@@ -3056,6 +3095,21 @@ def iscrizione_accompagnamento_privata(slug):
             return _render_accompagnamento_privato(percorso, 'Indica se il partner sarà presente.')
         if not consenso_privacy:
             return _render_accompagnamento_privato(percorso, 'Devi autorizzare il trattamento dei dati personali.')
+
+        percorso = PercorsoAccompagnamento.query.filter_by(
+            id=percorso.id
+        ).with_for_update().first()
+        if not percorso:
+            abort(404)
+        if (
+            percorso.stato != 'Aperto'
+            or not _percorso_ha_posto(percorso)
+        ):
+            db.session.rollback()
+            return _render_accompagnamento_privato(
+                percorso,
+                'Il percorso ha raggiunto la capienza massima.'
+            )
 
         persona = _trova_o_crea_persona_corso(
             nome=nome,
@@ -3321,9 +3375,12 @@ def _panoramica_corsi(corsi):
             i for i in attive
             if i.tipo_richiesta in ['richiesta_iscrizione', 'iscrizione_effettiva']
         ]
-        posti_attivi = sum(i.posti or _posti_iscrizione_da_partecipazione(i.partecipazione) for i in attive)
+        posti_attivi = _posti_attivi_corso(corso.id)
         capienza = corso.capienza_massima
         posti_liberi = None if capienza is None else max(capienza - posti_attivi, 0)
+        stato = corso.stato or 'Aperto'
+        if stato == 'Aperto' and posti_liberi == 0:
+            stato = 'Completo'
         panoramica.append({
             'corso': corso,
             'iscrizioni': iscrizioni_corso,
@@ -3335,7 +3392,7 @@ def _panoramica_corsi(corsi):
             'posti_attivi': posti_attivi,
             'capienza': capienza,
             'posti_liberi': posti_liberi,
-            'stato': corso.stato or 'Aperto',
+            'stato': stato,
         })
     return panoramica
 
