@@ -1,6 +1,6 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 16 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Principio di architettura
 
@@ -17,12 +17,12 @@ Le priorità commerciali sono:
 | Route | Scopo | Azione principale |
 |---|---|---|
 | `/` | Presentare Selene, prova di fiducia e due pilastri | Scoprire i corsi o scegliere l'orario della call sonno |
-| `/chi-sono` | Credenziali, metodo e volto umano | Approfondire il servizio pertinente |
+| `/chi-sono` | Credenziali, metodo e volto umano | Scoprire corsi o consulenza del sonno; prestazioni come collegamento secondario |
 | `/iscrizione-corsi` | Elenco delle tipologie di corso | Scegliere un corso |
 | `/iscrizione-corsi/<corso_tipo>` | Data disponibile o raccolta interesse | Inviare la richiesta di iscrizione |
+| `/iscrizione-corsi/interesse` | Raccogliere l'interesse quando non ci sono date future | Scegliere una tematica e chiedere di essere ricontattati |
 | `/corso-accompagnamento-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
-| `/dopo-la-nascita` | Orientare verso attività e supporto dopo la nascita | Scegliere corso, laboratorio o consulenza pertinente |
 | `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere l'orario della call gratuita |
 | `/prenota-call-sonno` | Prenotazione breve della call gratuita | Riservare provvisoriamente uno slot |
 | `/questionario-sonno/<token>` | Questionario privato inviato dopo la call | Preparare la formula concordata |
@@ -31,7 +31,9 @@ Le priorità commerciali sono:
 | `/faq` | Rimuovere dubbi senza moltiplicare CTA | Proseguire nel flusso appropriato |
 | `/privacy` | Informativa sul trattamento dei dati | Nessuna CTA commerciale |
 
-Le pagine di conferma devono spiegare cosa è stato registrato e cosa succede dopo, senza far credere che una richiesta sia già confermata quando richiede verifica manuale.
+La bozza dedicata a eventuali servizi dopo la nascita non appartiene al perimetro pubblico attuale: non ha una route, non compare nella navigazione e non deve essere indicizzata finché l'offerta non sarà definita e approvata.
+
+Le pagine di conferma devono spiegare cosa è stato registrato e cosa succede dopo, senza far credere che una richiesta sia già confermata quando richiede verifica manuale. Dopo il messaggio di esito devono offrire almeno un ritorno alla homepage o al percorso pertinente.
 
 ## Gerarchia della homepage
 
@@ -49,13 +51,20 @@ Ordine da mantenere salvo decisione esplicita:
 
 La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel hero e nella sezione immediatamente successiva.
 
+### Comportamento dello scroll e dei passaggi
+
+- Da 1024 px di larghezza e 640 px di altezza, con movimento non ridotto, ogni scena della homepage occupa un solo viewport sotto l'header e non contiene scroll interno.
+- Su mobile, sotto una delle due soglie, con `prefers-reduced-motion` o senza JavaScript, la homepage conserva lo scroll libero e tutti i contenuti restano raggiungibili.
+- Le pagine interne non usano snap: le pagine narrative hanno avanzamento di lettura ed entrate discrete, i moduli una regia quieta e le conferme una composizione di esito.
+- I link tra pagine pubbliche dello stesso sito usano una transizione orizzontale progressiva; il ritorno alla homepage procede nella direzione opposta. Link esterni, area admin, movimento ridotto e ancore nella stessa pagina mantengono il comportamento nativo.
+- Se un collegamento contiene un'ancora verso un'altra pagina, anteprima animata e pagina definitiva devono mostrare lo stesso punto, senza passare prima dalla parte superiore della destinazione.
+
 ## Flusso corsi individuali
 
 ```text
 Homepage/pagina corsi
-  → scelta tipologia
-  → data disponibile
-  → modulo di iscrizione
+  → se esistono date: scelta tipologia → data → modulo di iscrizione
+  → se non esistono date: modulo unico → scelta tematica → ricontatto
   → richiesta salvata
   → conferma o ricontatto manuale
 ```
@@ -63,6 +72,7 @@ Homepage/pagina corsi
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
 - Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto.
 - Se il corso è pieno, proporre una data successiva; se non esiste, raccogliere preferenze indicative e creare un ricontatto.
+- Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e consenso privacy; non richiede i dati amministrativi necessari a una vera iscrizione.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 
 ## Flusso corso di accompagnamento alla nascita
@@ -99,7 +109,12 @@ Link privato generico
 ## Flusso consulenza del sonno
 
 ```text
-Homepage/campagna/condivisione
+Homepage, CTA `Scopri la consulenza`
+  → `/consulenze-online#formule`
+  → confronto diretto tra le tre formule
+  → scelta dell'orario della call gratuita
+
+Campagna/condivisione
   → landing sonno 0-12 mesi
   → prenotazione breve della call gratuita
   → slot riservato subito come In attesa su database e Calendar
@@ -112,6 +127,7 @@ Homepage/campagna/condivisione
 ```
 
 - La landing deve essere verticale sul sonno e pronta per traffico freddo nazionale.
+- La CTA `Scopri la consulenza` dello snap sonno ha funzione informativa e apre `#formule`; `Prima parliamone` e le CTA `Scegli l’orario della call` portano invece alla prenotazione.
 - Deve chiarire problemi osservabili, differenze indicative tra 0-4 e 5-12 mesi, metodo, formule, confini clinici, FAQ e passo successivo.
 - `Consulenza mirata`: una difficoltà circoscritta.
 - `Percorso sonno personalizzato`: tre call da 60-75 minuti e diario quando più aspetti si influenzano; durata prevista 60 giorni e chiusura entro 75.

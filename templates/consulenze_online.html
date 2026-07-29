@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block titolo %}Consulenza del sonno infantile 0-12 mesi | Selene Campetta{% endblock %}
-{% block meta_description %}Consulenza educativa sul sonno infantile 0-12 mesi online in tutta Italia o in studio a Montesilvano con Selene Campetta, infermiera.{% endblock %}
+{% block meta_description %}Consulenza sul sonno infantile 0-12 mesi con Selene Campetta, infermiera e consulente del sonno infantile. Online in Italia, con attenzione a SIDS e sonno sicuro.{% endblock %}
 {% block head_extra %}
 <script type="application/ld+json">
 {
@@ -8,7 +8,7 @@
     "@type": "Service",
     "name": "Consulenza del sonno infantile 0-12 mesi",
     "serviceType": "Consulenza educativa sul sonno infantile",
-    "description": "Osservazione di routine, risvegli, addormentamento e sonnellini con indicazioni personalizzate e attenzione al sonno sicuro.",
+    "description": "Osservazione di routine, risvegli, addormentamento e sonnellini con indicazioni personalizzate, attenzione al sonno sicuro e alle raccomandazioni per ridurre il rischio di SIDS.",
     "areaServed": "Italia",
     "availableChannel": [
         {"@type": "ServiceChannel", "serviceUrl": {{ request.base_url | tojson }}, "serviceLocation": {"@type": "Place", "name": "Online"}},
@@ -17,7 +17,7 @@
     "provider": {
         "@type": "Person",
         "name": "Selene Campetta",
-        "jobTitle": "Infermiera",
+        "jobTitle": "Infermiera e consulente del sonno infantile",
         "memberOf": "Ordine delle Professioni Infermieristiche di Pescara"
     }
 }
@@ -30,14 +30,14 @@
     <div class="sleep-hero-copy">
         <p class="eyebrow">Consulenza del sonno infantile · 0-12 mesi</p>
         <h1>Capire prima di cambiare.</h1>
-        <p class="sleep-hero-lead">Se risvegli, addormentamenti o sonnellini sono diventati difficili da leggere, partiamo da ciò che accade nella vostra famiglia. Le indicazioni tengono conto dell'età del bambino e della vostra quotidianità.</p>
+        <p class="sleep-hero-lead">Se risvegli, addormentamenti o sonnellini sono diventati difficili da leggere, partiamo da ciò che accade nella tua famiglia. Le indicazioni tengono conto dell'età del bambino e della vita di ogni giorno.</p>
         <div class="sleep-hero-actions">
             <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_hero_call">Scegli l’orario della call</a>
             <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20non%20so%20se%20la%20consulenza%20del%20sonno%20fa%20per%20noi%20e%20vorrei%20capirlo." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="sleep_hero_whatsapp">Non sai se fa per te? Scrivimi</a>
         </div>
         <div class="sleep-authority">
             <strong>Selene Campetta</strong>
-            <span>Infermiera con Master universitario in Management per le funzioni di coordinamento nell’area delle professioni sanitarie</span>
+            <span>Infermiera e consulente del sonno infantile</span>
         </div>
         <ul class="sleep-hero-facts" aria-label="Informazioni essenziali">
             <li>Call iniziale gratuita di circa 20 minuti</li>
@@ -54,7 +54,7 @@
     <div class="sleep-fit-copy">
         <p class="eyebrow">Quando può essere utile</p>
         <h2>Quando risvegli, sonnellini o addormentamento diventano difficili da capire.</h2>
-        <p>Possiamo fare chiarezza anche su una sola difficoltà che si ripresenta e condiziona le vostre giornate.</p>
+        <p>Possiamo fare chiarezza anche su una sola difficoltà che si ripresenta e condiziona le tue giornate.</p>
         <ul class="sleep-situation-list">
             <li>Addormentamento difficile la sera</li>
             <li>Risvegli notturni frequenti</li>
@@ -165,11 +165,11 @@
             <span>03</span>
             <div>
                 <h3>Adattiamo le indicazioni</h3>
-                <p>Costruiamo passi graduali e sostenibili, rispettando la relazione e ciò che osservate mentre li mettete in pratica.</p>
+                <p>Costruiamo passi graduali e sostenibili, rispettando la relazione e ciò che osservi mentre li metti in pratica.</p>
             </div>
         </article>
     </div>
-    <p class="sleep-method-boundary"><strong>Il mio confine professionale:</strong> la consulenza non formula diagnosi e non sostituisce il pediatra. Se emergono segnali clinici, vi indico di coinvolgere il professionista competente.</p>
+    <p class="sleep-method-boundary"><strong>Il mio confine professionale:</strong> la consulenza non formula diagnosi e non sostituisce il pediatra. Se emergono segnali clinici, ti indico di coinvolgere il professionista competente.</p>
 </section>
 
 <section class="sleep-faq">
@@ -193,6 +193,10 @@
         <details>
             <summary>Applicate un metodo rigido per farlo dormire?</summary>
             <p>No. Parto dall'età, dalla fisiologia, dalla sicurezza e dagli equilibri della famiglia. Le indicazioni vengono costruite sul contesto reale.</p>
+        </details>
+        <details>
+            <summary>La consulenza affronta anche il sonno sicuro e la SIDS?</summary>
+            <p>Sì. Possiamo chiarire le raccomandazioni per il sonno sicuro e i comportamenti associati alla riduzione del rischio di SIDS. Per indicazioni sanitarie specifiche o dubbi clinici resta necessario rivolgersi al pediatra. <a href="https://www.salute.gov.it/new/it/tema/salute-del-bambino-e-delladolescente/sids/" target="_blank" rel="noopener noreferrer">Leggi le indicazioni del Ministero della Salute</a>.</p>
         </details>
     </div>
 </section>

@@ -21,7 +21,7 @@
 <section class="sleep-questionnaire-page">
     <header class="sleep-booking-intro">
         <p class="eyebrow">Area riservata · {{ formule_sonno.get(call.formula_scelta, call.formula_scelta) if formule_sonno is defined else call.formula_scelta }}</p>
-        <h1>Raccontami come dorme il bambino nella vostra quotidianità.</h1>
+        <h1>Raccontami come dorme il bambino nella vita di ogni giorno.</h1>
         <p>Le risposte mi servono per preparare la consulenza che abbiamo concordato. Non sostituiscono una valutazione pediatrica e il modulo non va usato per urgenze.</p>
         <div class="sleep-known-data"><strong>{{ call.nome }}</strong><span>{{ call.email }} · {{ call.telefono }} · bambino di {{ call.eta_bambino_mesi }} mesi</span></div>
     </header>
@@ -64,7 +64,7 @@
             {{ field('dove_si_addormenta', 'Dove si addormenta di solito?') }}
             {{ field('dove_dorme', 'Dove dorme durante notte e pisolini?', true) }}
             {{ area('supporti_addormentamento', 'Quale supporto usa per addormentarsi?', help='Per esempio braccio, seno, movimento, presenza, ciuccio.') }}
-            {{ area('risvegli_dettaglio', 'Quanti risvegli osservate e quanto durano?') }}
+            {{ area('risvegli_dettaglio', 'Quanti risvegli osservi e quanto durano?') }}
             {{ area('riaddormentamento', 'Come riesce a riaddormentarsi?') }}
             {{ field('risveglio_precoce', 'Ci sono risvegli molto precoci? Se sì, a che ora?') }}
         </fieldset>
@@ -72,11 +72,11 @@
         <fieldset>
             <legend>5. Difficoltà, tentativi e obiettivi</legend>
             {{ field('durata_difficolta', 'Da quanto dura la difficoltà?', true) }}
-            {{ area('tentativi_fatti', 'Che cosa avete già provato? Che cosa ha aiutato, anche solo un po’?') }}
+            {{ area('tentativi_fatti', 'Che cosa hai già provato? Che cosa ha aiutato, anche solo un po’?') }}
             {{ area('eventi_recenti', 'Ci sono stati eventi recenti?', help='Malattia, dentizione, nido, trasloco, distacchi, nascita di un fratello o altro.') }}
             {{ area('momento_piu_difficile', 'Qual è il momento più difficile della giornata o della notte?') }}
-            {{ area('cambiamento_desiderato', 'Quale cambiamento vi sarebbe concretamente utile?', true) }}
-            {{ area('cosa_non_cambiare', 'C’è qualcosa che non volete cambiare?', help='Per esempio allattamento o vicinanza durante il sonno.') }}
+            {{ area('cambiamento_desiderato', 'Quale cambiamento ti sarebbe concretamente utile?', true) }}
+            {{ area('cosa_non_cambiare', 'C’è qualcosa che non vuoi cambiare?', help='Per esempio allattamento o vicinanza durante il sonno.') }}
             {{ field('partecipanti_consulenza', 'Chi parteciperà alla consulenza?') }}
         </fieldset>
 

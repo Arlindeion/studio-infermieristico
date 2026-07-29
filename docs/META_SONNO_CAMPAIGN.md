@@ -1,6 +1,6 @@
 # Campagna Meta — consulenza del sonno
 
-Ultimo aggiornamento: 21 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Obiettivo e vincoli
 
@@ -12,7 +12,7 @@ Ultimo aggiornamento: 21 luglio 2026.
 - Primo checkpoint: 100 € spesi; non cambiare contemporaneamente pubblico, video e landing.
 - Capacità: rallentare o fermare la campagna quando sono prenotate 10 call nella stessa settimana.
 - Testimonianze: nessuna disponibile; non usare citazioni, casi simulati o risultati attribuiti a clienti.
-- Claim `consulente certificata`: sospeso fino alla verifica documentale degli attestati.
+- Credenziale approvata: `infermiera e consulente del sonno infantile`. Gli attestati specifici sono stati verificati; non occorre aggiungere l'aggettivo promozionale `certificata` nelle creatività.
 
 La piattaforma misura la prenotazione; il controllo interno misura anche presenza,
 call svolta, cliente acquisito e formula scelta. Il risultato commerciale
@@ -75,7 +75,7 @@ servizio è appropriato e quale formula può essere utile. Online in tutta Itali
 
 > Braccio, seno e presenza possono avere significati diversi secondo l'età e
 > la quotidianità della famiglia. Prima di cambiare qualcosa, serve capire che
-> cosa è sostenibile e che cosa state osservando. Sono Selene, infermiera e
+> cosa è sostenibile e che cosa stai osservando. Sono Selene, infermiera e
 > consulente del sonno infantile. Prenota una call gratuita di 20 minuti per
 > raccontarmi la difficoltà principale e verificare insieme il passo adatto.
 
@@ -107,16 +107,15 @@ riserva se una delle due creatività principali presenta problemi.
 
 ### Script parlato
 
-> Sono Selene, infermiera con Master universitario in Management per le
-> funzioni di coordinamento nell'area delle professioni sanitarie. Nel lavoro
-> sul sonno infantile osservo con la famiglia ciò che accade davvero: ritmi,
+> Sono Selene, infermiera e consulente del sonno infantile. Nel lavoro sul
+> sonno osservo con la famiglia ciò che accade davvero: ritmi,
 > ambiente, addormentamento e bisogni. Non prometto una notte perfetta: aiutare
 > a comprendere viene prima del cambiare. Dal sito puoi scegliere una call
 > gratuita di 20 minuti.
 
-Non collegare il Master a una specializzazione sul sonno. Se gli attestati
-specifici vengono verificati, la credenziale può essere aggiornata secondo
-`CONTENT_AND_ASSETS.md`.
+Il Master in Management resta una credenziale generale e non va presentato come
+specializzazione sul sonno. La durata di 127 ore non è una leva della landing o
+degli annunci; per le forme approvate consultare `CONTENT_AND_ASSETS.md`.
 
 ## Controllo dopo i primi 100 €
 
@@ -137,4 +136,3 @@ click. Intervenire subito se un annuncio genera zero prenotazioni dopo una spesa
 molto superiore al costo obiettivo, se attira richieste fuori fascia o se la
 percentuale di presenza scende sotto il 70%. Negli altri casi completare il
 checkpoint e modificare una sola variabile per volta.
-

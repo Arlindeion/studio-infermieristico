@@ -1,6 +1,6 @@
 # Brief del progetto
 
-Ultimo aggiornamento: 21 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Scopo
 
@@ -105,6 +105,7 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 - Offerta promossa: consulenza del sonno infantile 0-12 mesi.
 - Durata iniziale del test: tre mesi.
 - Pubblico di servizio: famiglie con bambini lungo l'intera fascia 0-12 mesi, coperta dalla formazione specifica di Selene. Le creatività possono partire da difficoltà o fasi più circoscritte, ma la campagna non deve restringere arbitrariamente l'idoneità generale.
+- Credenziale pubblica: `Selene Campetta · infermiera e consulente del sonno infantile`. La qualifica è sostenuta da un certificato di consulente del sonno del 2026 e da una formazione sul sonno infantile di 127 ore. La landing non comunica la durata della formazione e tratta la SIDS soltanto nel contesto delle raccomandazioni sul sonno sicuro e della riduzione del rischio.
 - Geografia del servizio e del primo test: nazionale e online.
 - Percorso principale: annuncio o contenuto social → landing `/consulenze-online` → scelta diretta di uno slot → call gratuita → eventuale proposta della formula adatta → questionario privato sul sito.
 - WhatsApp: canale secondario per chi è ancora indeciso, non conversione principale quando il calendario è disponibile.
@@ -151,7 +152,6 @@ Non presentare una relazione come partnership strutturata se non è stata formal
 
 - Validazione della domanda nazionale e del prezzo della consulenza del sonno.
 - Verifica del tempo reale richiesto da diario, analisi e assistenza dopo i primi cinque percorsi; compenso lordo obiettivo almeno 25-30 € l'ora.
-- Verifica degli attestati 2025 e 2026 prima di usare pubblicamente il claim `consulente certificata`; in assenza di una qualifica espressa usare `formata nella consulenza del sonno infantile`.
 - Processo e testo di richiesta del consenso per le future testimonianze sulla consulenza del sonno.
 - Produzione delle prime tre creatività verticali con Selene e delle relative copertine.
 - Durate definitive degli slot delle prestazioni da allineare con Arzamed.

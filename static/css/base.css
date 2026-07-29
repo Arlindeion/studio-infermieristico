@@ -841,6 +841,15 @@ button.site-nav__pillar {
     }
 }
 
+/* La quota dell'header resta identica tra homepage snap e pagine interne. */
+@media (min-width: 1024px) and (min-height: 640px) {
+    .site-header__inner,
+    .site-header.is-scrolled .site-header__inner {
+        height: 76px;
+        min-height: 76px;
+    }
+}
+
 @media (max-width: 430px) {
     .site-brand__name span {
         max-width: 128px;

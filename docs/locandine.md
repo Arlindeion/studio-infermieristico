@@ -1,6 +1,6 @@
 # Istruzioni per locandine e materiali commerciali
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Scopo di questo documento
 
@@ -271,7 +271,14 @@ Naming:
 
 - `Consulenza del sonno` o `Consulenza sonno`;
 - fascia attuale: 0-12 mesi;
+- ruolo pubblico pertinente: `infermiera e consulente del sonno infantile`;
 - non mescolare ciuccio, spannolinamento e consulenze generiche nella stessa offerta.
+
+Il Master in Management documenta il profilo generale ma non è una
+specializzazione sul sonno. Non usare le 127 ore come leva nella landing o
+negli annunci. La SIDS può essere nominata soltanto nel contesto del sonno
+sicuro e della riduzione del rischio, con una fonte sanitaria affidabile e senza
+promettere prevenzione.
 
 Le tre formule hanno funzioni differenti:
 

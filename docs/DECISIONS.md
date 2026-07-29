@@ -244,8 +244,8 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-032 — WhatsApp solo come contatto contestuale
 
 - Data: 2026-07-21.
-- Stato: approvata.
-- Decisione: non mostrare un widget WhatsApp globale. Il contatto resta disponibile soltanto nei punti in cui il flusso lo prevede: persone indecise sulla consulenza del sonno, aziende o gruppi, assenza di date e richieste informative dopo la nascita.
+- Stato: approvata; aggiornata dalla D-053 e dalla D-057.
+- Decisione: non mostrare un widget WhatsApp globale. Il contatto resta disponibile soltanto nei punti in cui il flusso lo prevede: persone indecise sulla consulenza del sonno, aziende o gruppi e persone che non trovano una data adatta. Quando esiste il modulo specifico per l'interesse ai corsi, questo resta l'azione principale.
 - Motivo: evitare una CTA concorrente e indistinta accanto ai moduli dedicati per prestazioni, corsi e call sul sonno.
 - Conseguenze: le CTA WhatsApp contestuali sono tracciate singolarmente; la barra mobile compare soltanto nelle pagine con una prossima azione specifica e non rinvia alla pagina corrente.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `templates/base.html`, `static/js/conversion-tracking.js`.
@@ -256,7 +256,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Stato: approvata per la fase di lancio.
 - Decisione: presentare prima della prenotazione `Consulenza mirata` a 75 €, `Percorso sonno personalizzato` a 180 € e `Percorso sonno con affiancamento` a 320 €. Il percorso base comprende tre call da 60-75 minuti e diario; quello con affiancamento aggiunge 60 giorni di WhatsApp, dal lunedì al venerdì, con massimo tre confronti raggruppati a settimana e risposta entro il giorno lavorativo successivo. Entrambi durano orientativamente 60 giorni e devono chiudersi entro 75 salvo indisponibilità di Selene.
 - Motivo: evitare sorprese economiche prima della call, distinguere il valore dell'assistenza asincrona e mantenere il carico coerente con un compenso lordo minimo di 25-30 € l'ora.
-- Conseguenze: la landing resta `call-first` ma rende confrontabili contenuti e prezzi; la call gratuita dura 20 minuti e non eroga consulenza. Dopo i primi cinque percorsi vengono misurati tempo di call, diario e messaggi prima di confermare o correggere i prezzi. Il claim `consulente certificata` resta sospeso finché gli attestati non vengono verificati.
+- Conseguenze: la landing resta `call-first` ma rende confrontabili contenuti e prezzi; la call gratuita dura 20 minuti e non eroga consulenza. Dopo i primi cinque percorsi vengono misurati tempo di call, diario e messaggi prima di confermare o correggere i prezzi. La credenziale pertinente è definita dalla D-052.
 - Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/consulenze_online.html`, `static/css/consulenza.css`.
 
 ## D-034 — Pagamento, cancellazione e recesso delle consulenze sonno
@@ -289,10 +289,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-037 — Regia scroll della homepage differenziata per dispositivo
 
 - Data: 2026-07-28.
-- Stato: approvata; ritmo desktop aggiornato dalla D-044, guida laterale dalla D-045, livelli hero dalla D-046 e numero di scene dalla D-048 il 2026-07-29.
-- Decisione: trattare la homepage come una sequenza di otto scene autonome: apertura, corsi, sonno, date, nascita, metodo, attività e contatti. Quando lo snap è attivo, ogni scena e il footer occupano esattamente lo spazio visibile sotto l'header e non richiedono né consentono uno scorrimento interno. Corsi e sonno hanno due scene editoriali distinte, con priorità visiva ai corsi. La linea rossa laterale indica la scena attiva. Il parallax fotografico resta circoscritto all'apertura.
+- Stato: approvata; ritmo desktop aggiornato dalla D-044, guida laterale dalla D-045, livelli hero dalla D-046, numero di scene dalla D-048 e footer dalla D-050 il 2026-07-29.
+- Decisione: trattare la homepage come una sequenza di sette scene autonome, oppure otto quando esistono date future: apertura, corsi, sonno, eventuali date, nascita, metodo, attività e scelta finale. Quando lo snap è attivo, ogni scena occupa esattamente lo spazio visibile sotto l'header e non richiede né consente uno scorrimento interno; il footer mantiene invece altezza e scorrimento naturali. Corsi e sonno hanno due scene editoriali distinte, con priorità visiva ai corsi. La linea rossa laterale indica la scena attiva. Il parallax fotografico resta circoscritto all'apertura.
 - Motivo: far corrispondere ogni arresto dello scroll a un solo argomento e a una sola schermata, eliminando l'ambiguità di uno snap che conteneva sezioni più alte del viewport.
-- Conseguenze: snap e guida laterale si attivano soltanto da 1024 px di larghezza e 640 px di altezza, con movimento non ridotto. Tra 640 e 840 px la composizione riduce spazi e dimensioni fotografiche per conservare una scena per schermata; sotto una delle due soglie, con `prefers-reduced-motion` o senza JavaScript, la homepage torna a essere una pagina continua e tutti i contenuti restano visibili. Il footer costituisce una schermata conclusiva autonoma. I livelli fotografici definitivi della hero sono descritti nella D-046.
+- Conseguenze: snap e guida laterale si attivano soltanto da 1024 px di larghezza e 640 px di altezza, con movimento non ridotto. All'ingresso la guida si costruisce con una cucitura rossa temporanea, seguita dall'apertura progressiva dei tre capitoli e dal segno della scena attiva; la cucitura scompare al termine e non diventa una seconda linea decorativa permanente. Tra 640 e 840 px la composizione riduce spazi e dimensioni fotografiche per conservare una scena per schermata; sotto una delle due soglie, con `prefers-reduced-motion` o senza JavaScript, la homepage torna a essere una pagina continua e tutti i contenuti restano visibili. La guida scompare quando entra il footer naturale. I livelli fotografici definitivi della hero sono descritti nella D-046.
 - Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
 
 ## D-038 — Passaggio di luce tra gli organi della homepage
@@ -352,7 +352,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-044 — Ritmo coreografico calibrato sul sistema ibrido
 
 - Data: 2026-07-29.
-- Stato: implementata; resa da validare.
+- Stato: implementata; comportamento rappresentativo verificato a 1440 e 390 px.
 - Decisione: rallentare i passaggi fra gli snap desktop con una durata di 0,85 secondi e una curva sinusoidale continua. Un gesto di rotella, trackpad o tastiera avanza di una sola scena; gli impulsi residui vengono assorbiti fino all'arresto. I salti richiesti dalla navigazione laterale restano più brevi di 1,15 secondi anche quando attraversano più scene.
 - Motivo: rendere leggibile la traiettoria degli organi e dare respiro ai passaggi di profondità senza riproporre la sensazione vischiosa del precedente prototipo da 1,05 secondi.
 - Conseguenze: durante il tragitto lo snap CSS viene sospeso e riattivato sul punto di arresto esatto. Scroll, staffetta e profondità condividono un solo ciclo di rendering; geometrie fotografiche e punti di arresto vengono misurati prima del passaggio, evitando ricalcoli di layout durante l'animazione. Gli organi seguono direttamente la curva dello snap, con dissolvenza estesa fra le due fotografie e ridimensionamento affidato a trasformazioni composite anziché a variazioni di larghezza e altezza. Mobile conserva lo scroll libero; `prefers-reduced-motion` mantiene il comportamento nativo e disattiva gli effetti. Link, pulsanti e campi non vengono intercettati dalla navigazione da tastiera.
@@ -361,7 +361,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-045 — Guida laterale organizzata per capitoli
 
 - Data: 2026-07-29.
-- Stato: implementata; resa da validare.
+- Stato: implementata; comportamento rappresentativo verificato a 1440 e 390 px.
 - Decisione: organizzare la navigazione laterale della homepage in tre capitoli: `Orientarsi` per apertura, corsi, sonno e date; `Conoscere` per nascita, metodo e attività; `Scegliere` per la scena finale. Corsi e sonno mantengono tacche più evidenti anche quando non sono attivi. Il nome della scena corrente fa parte della riga della guida, senza un riquadro sospeso.
 - Motivo: rendere visibile la gerarchia del racconto e impedire che otto indicatori equivalenti attribuiscano lo stesso peso ai due pilastri commerciali, alle prove di fiducia e alla scelta finale.
 - Conseguenze: il capitolo corrente viene aggiornato insieme alla scena; hover e focus continuano a mostrare il nome di ogni destinazione. La guida resta disponibile soltanto nel layout desktop con snap e non modifica lo scroll libero mobile.
@@ -370,7 +370,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-046 — Livelli fotografici definitivi della hero
 
 - Data: 2026-07-29.
-- Stato: implementata; resa da validare.
+- Stato: implementata; comportamento rappresentativo verificato a 1440 e 390 px.
 - Decisione: mantenere composizione e intensità del parallax della hero, sostituendo il fondale prototipale e la sagoma SVG con due livelli ricavati dall'originale `SELENE-16.jpg` a 6000×4000 px. Il fondale conserva colore e grana della parete dello scatto; il primo piano usa una maschera fotografica per-pixel di Selene.
 - Motivo: evitare che il parallax faccia percepire Selene come una figura ritagliata e conservare i dettagli irregolari di capelli e spalle che un tracciato geometrico non può seguire.
 - Conseguenze: il fallback resta la fotografia completa a 1920×1280; con JavaScript attivo vengono caricati un JPEG di fondale e un WebP trasparente della stessa misura. Non cambiano testi, proporzioni, intensità del movimento o comportamento mobile. L'originale ad alta risoluzione resta fuori dal repository.
@@ -411,6 +411,78 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: evitare che la chiusura ripeta semplicemente la hero, rispettare la gerarchia commerciale e impedire che informazioni legali e recapiti occupino un'intera schermata vuota.
 - Conseguenze: lo snap desktop termina sulla scelta finale e il successivo gesto di scorrimento entra nel footer con comportamento nativo. Su mobile il testo precede le fotografie nei due pilastri, le scelte si impilano, la galleria Instagram resta su due colonne e il footer conserva il flusso naturale. La linea rossa segnala soltanto l'inizio dei tre capitoli del racconto mobile.
 - Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-051 — Un linguaggio comune con regie diverse nelle pagine interne
+
+- Data: 2026-07-29.
+- Stato: implementata; resa rappresentativa verificata a 1440 e 390 px.
+- Decisione: estendere alle pagine interne il ritmo editoriale, la scala tipografica, i ritagli fotografici e l'uso funzionale della linea rossa introdotti dalla nuova homepage, mantenendo però lo scroll libero. Le pagine pubbliche vengono distinte in tre modalità: narrative per servizi e contenuti, operative per moduli e questionari, di esito per conferme. Le pagine narrative mostrano un sottile avanzamento di lettura sotto l'header e una sola entrata morbida per ogni capitolo; i moduli usano superfici calme senza progressione coreografica; le conferme sono trattate come punti di arrivo. La CTA mobile fissa si ritira quando la stessa azione o la sua destinazione sono già visibili.
+- Motivo: rendere riconoscibile lo stesso studio in tutti i percorsi senza trasferire lo snap dove la persona deve leggere, confrontare, usare ancore, correggere errori o compilare campi. Lo snap resta quindi una firma esclusiva della homepage.
+- Conseguenze: `Chi sono`, FAQ, directory corsi e privacy abbandonano l'aspetto a griglia di schede a favore di composizioni editoriali; landing sonno, nascita, corsi e prestazioni conservano le loro gerarchie specifiche ma condividono movimento e avanzamento. Sotto 640 px lo scroll resta nativo e le composizioni si impilano; `prefers-reduced-motion` elimina le entrate. Admin, login e homepage non caricano il modulo delle pagine interne.
+- Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `templates/base.html`, `static/css/internal-pages.css`, `static/js/internal-page-motion.js`.
+
+## D-052 — Credenziale pertinente e riferimento prudente alla SIDS
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: presentare Selene nella landing `/consulenze-online` come `infermiera e consulente del sonno infantile`, spostando fuori dalla pagina il Master in Management per le funzioni di coordinamento. Non mostrare nella landing la durata di 127 ore della formazione. Nominare la SIDS nella meta description e in una domanda frequente dedicata al sonno sicuro, usando la formulazione `riduzione del rischio` e collegando le indicazioni del Ministero della Salute.
+- Motivo: la qualifica sul sonno è direttamente pertinente al servizio, mentre il Master documenta il profilo generale ma può essere interpretato come una specializzazione sul sonno. Il riferimento alla SIDS risponde a un tema importante per le famiglie senza usare paura, promesse di prevenzione o affermazioni oltre il perimetro educativo della consulenza.
+- Conseguenze: metadati, dati strutturati e testo visibile della landing usano la stessa qualifica. La pagina `/chi-sono` resta invariata; le credenziali complete sono registrate nella documentazione interna per un eventuale intervento successivo.
+- Collegamenti: `CONTENT_AND_ASSETS.md`, `PROJECT_BRIEF.md`, `templates/consulenze_online.html`.
+
+## D-053 — Supporto dopo la nascita fuori dal perimetro pubblico
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: mantenere il contenuto dedicato a eventuali servizi dopo la nascita come bozza interna, senza route pubblica, collegamenti di navigazione o indicizzazione. La pagina potrà essere ripresa soltanto dopo aver definito offerta, confini, flusso e azione principale.
+- Motivo: il contenuto anticipa servizi futuri che non fanno parte dell'offerta attuale e non deve sembrare prenotabile o disponibile prima della loro approvazione.
+- Conseguenze: `/dopo-la-nascita` risponde con 404; il contatto WhatsApp per richieste generiche dopo la nascita non è più un punto previsto dal flusso corrente. Il template resta nel repository come bozza non raggiungibile.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `app.py`, `templates/dopo_la_nascita.html`.
+
+## D-054 — Una sola persona grammaticale nei testi di percorso
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: rivolgere i testi pubblici a una persona con il `tu`, usando `la tua famiglia` quando è necessario includere il nucleo familiare. Conservare il plurale soltanto nelle testimonianze, nei contenuti destinati realmente a coppie o gruppi e nelle azioni che Selene compie insieme alla persona. Rendere inoltre esplicita la funzione dei collegamenti: `Scopri` apre una pagina di dettaglio, mentre l'iscrizione viene nominata solo quando l'azione porta al relativo modulo.
+- Motivo: evitare passaggi involontari tra singolare e plurale, soprattutto nella pagina `Chi sono`, e fare in modo che ogni pulsante anticipi correttamente ciò che succede dopo il clic.
+- Conseguenze: homepage, `Chi sono`, directory corsi, consulenza del sonno, questionario, call, FAQ e prestazioni usano la stessa voce. La bozza disattivata `/dopo-la-nascita` resta esclusa dalla revisione. La precedente indicazione di non modificare `Chi sono` registrata in D-052 è superata soltanto per questa correzione editoriale.
+- Collegamenti: `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `templates/chi_siamo.html`, `templates/iscrizione_corsi.html`, `templates/consulenze_online.html`.
+
+## D-055 — Nessun vicolo cieco nei percorsi attivi
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: chiudere la pagina `Chi sono` con due azioni principali, corsi e consulenza del sonno, e mantenere le prestazioni infermieristiche come collegamento secondario. Ogni pagina di conferma deve offrire almeno una via di ritorno; se un modulo privato non è disponibile, il recapito mostrato deve essere utilizzabile direttamente.
+- Motivo: chi arriva in fondo a una pagina deve capire quale azione può compiere senza dover tornare all'header o cercare un recapito nel footer.
+- Conseguenze: `Chi sono` non usa una barra fissa e non introduce un contatto WhatsApp generico. La conferma del percorso nascita torna alla homepage e il numero della pagina privata chiusa diventa un collegamento telefonico. Privacy resta priva di CTA commerciale perché è una pagina legale aperta dai moduli.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/chi_siamo.html`, `templates/conferma_iscrizione_accompagnamento.html`, `templates/iscrizione_accompagnamento_privata.html`.
+
+## D-056 — Le pagine si susseguono come scene
+
+- Data: 2026-07-29.
+- Stato: implementata.
+- Decisione: usare una transizione orizzontale controllata tra tutte le pagine pubbliche dello stesso sito. La homepage occupa idealmente il lato sinistro del racconto: entrando in un percorso la destinazione arriva da destra; tornando alla homepage, anche con una navigazione indietro ripristinata dalla cache del browser, la home viene rivelata da sinistra. La pagina richiesta compare direttamente dietro un sottile bordo rosso: la linea coincide con il bordo fisico della nuova schermata e ne trascina testi, immagini e superfici, invece di attraversare lo schermo da sola o aprire un ritaglio statico. Non esiste una schermata intermedia. L'header resta il riferimento stabile e, quando lo snap desktop è attivo, usa la stessa altezza di 76 px nella homepage e nelle pagine interne. La regia vale per CTA, logo, navigazione principale, menu mobile, footer e collegamenti interni nei contenuti. Ancore nella stessa pagina, collegamenti esterni e area amministrativa mantengono il comportamento standard.
+- Motivo: ogni passaggio interno deve continuare lo stesso racconto, indipendentemente dal punto da cui la persona sceglie il percorso. Il bordo rosso rende leggibile il confine in movimento e conserva la funzione di guida assegnata alla firma del brand.
+- Conseguenze: Flask continua a servire pagine complete e non viene introdotto un router client-side. Per i collegamenti pubblici idonei, uno script prepara una copia isolata e non interattiva della destinazione, senza eseguirne gli script, e la fa scorrere sopra la pagina corrente: il vecchio contenuto scompare quindi in modo progressivo, seguendo il bordo rosso. L'anteprima conserva l'intero viewport e lo spazio occupato dall'header, rendendo invisibile soltanto la sua copia sotto l'header stabile: misure `vh`, ritagli fotografici e posizione dei contenuti coincidono così con il documento definitivo. Se il link contiene un'ancora verso un'altra pagina, anche la copia viene posizionata sul bersaglio, evitando un passaggio dalla hero prima del contenuto richiesto. Il movimento può iniziare quando CSS, font e immagini del primo viewport sono pronti, senza attendere mappe o contenuti esterni collocati più in basso; la hero della homepage usa già nell'anteprima la stessa composizione fotografica a livelli della pagina caricata. Concluso il movimento, la navigazione reale sostituisce la copia senza ripetere l'entrata orizzontale né la rivelazione dei contenuti già visibili; le animazioni dei capitoli successivi restano disponibili durante lo scroll. Tornando alla homepage, il filo attivo nell'header si apre da destra verso sinistra e l'indicatore delle scene esegue la propria apertura a cucitura, invece di apparire istantaneamente. La preparazione richiede una richiesta HTML aggiuntiva per clic; se non termina entro il tempo previsto o non è disponibile, il collegamento apre comunque la destinazione e usa l'entrata direzionale semplice. La stessa entrata di riserva gestisce la cronologia del browser. Il sistema usa soltanto codice client e asset statici: non aggiunge processi, dipendenze o servizi a pagamento e non cambia il piano Render approvato, pur producendo un modesto aumento di richieste HTML e banda. Questa regia sostituisce la View Transition API nativa, che poteva annullare l'animazione in modo non deterministico. `prefers-reduced-motion` esclude l'effetto e lascia la navigazione immediata; errori JavaScript o CSS non impediscono ai collegamenti di funzionare.
+- Collegamenti: `templates/base.html`, `static/css/page-transitions.css`, `static/js/page-transitions.js`.
+
+## D-057 — Un modulo minimo per l'interesse ai corsi
+
+- Data: 2026-07-29.
+- Stato: implementata.
+- Decisione: quando la homepage non contiene date future, la CTA `Lascia il tuo interesse` apre direttamente un modulo unico di ricontatto. La persona sceglie tra disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo richiede nome, telefono, tematica e consenso privacy; email e note restano facoltative. Non vengono richiesti codice fiscale, dichiarazioni per le prove pratiche o altri dati propri dell'iscrizione.
+- Motivo: passare dalla CTA alla directory dei corsi aggiungeva un passaggio senza aiutare chi vuole soltanto conoscere la prossima data. Un ricontatto non è ancora un'iscrizione e deve rispettare il principio di minimizzazione dei dati.
+- Conseguenze: la richiesta viene salvata nello stesso gestionale dei corsi con tipo `Da ricontattare`, zero posti occupati e tematica visibile nel titolo. Lo studio riceve l'alert email; la conferma chiarisce che una futura proposta di data non vincola all'iscrizione. I moduli specifici dei singoli corsi restano disponibili per contenuti, date aperte e richieste contestuali.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/interesse_corsi.html`, `app.py`.
+
+## D-058 — La CTA informativa sul sonno apre il confronto delle formule
+
+- Data: 2026-07-29.
+- Stato: implementata e verificata a 1440×666 e 390×844 px.
+- Decisione: nello snap sonno della homepage la CTA `Scopri la consulenza` apre direttamente la sezione `#formule` di `/consulenze-online`, dove sono presentate consulenza mirata, percorso personalizzato e percorso con affiancamento. Il collegamento secondario `Prima parliamone` continua invece ad aprire la prenotazione della call gratuita.
+- Motivo: le due azioni devono mantenere funzioni diverse. `Scopri` serve a comprendere e confrontare l'offerta; la call è il passo successivo per chi desidera parlarne o scegliere uno slot.
+- Conseguenze: la transizione tra pagine posiziona anche l'anteprima su `#formule`, con il titolo libero dall'header sticky; non mostra prima la hero o la CTA della call e non produce un secondo salto dopo il caricamento. Il fallback senza animazione conserva il normale comportamento dell'ancora.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `templates/consulenze_online.html`, `static/js/page-transitions.js`.
 
 ## Modello per nuove decisioni
 

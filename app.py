@@ -323,6 +323,29 @@ CORSI_SLUG_PUBBLICI = {
     'bls-d': 'blsd',
 }
 
+COURSE_INTEREST_TOPICS = {
+    'disostruzione-tagli-sicuri': {
+        'label': 'Disostruzione pediatrica e tagli sicuri',
+        'course_type': 'disostruzione-pediatrica',
+    },
+    'blsd': {
+        'label': 'BLSD',
+        'course_type': 'bls-d',
+    },
+    'accompagnamento-nascita': {
+        'label': 'Accompagnamento alla nascita',
+        'course_type': 'accompagnamento-nascita',
+    },
+    'laboratori': {
+        'label': "Laboratori per l'infanzia",
+        'course_type': 'laboratorio-infanzia',
+    },
+    'gioco-sviluppo': {
+        'label': 'Gioco e sviluppo',
+        'course_type': 'laboratorio-infanzia',
+    },
+}
+
 STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
 STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
 
@@ -1962,22 +1985,28 @@ def invia_email_nuova_iscrizione(iscrizione):
     try:
         logger.info('>>> Invio email alert nuova iscrizione corso...')
         extra = iscrizione.extra_dict()
+        is_course_interest = iscrizione.tipo_richiesta == 'ricontatto'
         dettagli_extra = ''
         if extra.get('ente_azienda'):
             dettagli_extra += f'Azienda/gruppo: {extra["ente_azienda"]}\n'
         if extra.get('numero_partecipanti'):
             dettagli_extra += f'Partecipanti: {extra["numero_partecipanti"]}\n'
         msg = Message(
-            subject=f'Nuova iscrizione corso - {iscrizione.corso_titolo}',
+            subject=(
+                f'Nuovo interesse corso - {iscrizione.corso_titolo}'
+                if is_course_interest
+                else f'Nuova iscrizione corso - {iscrizione.corso_titolo}'
+            ),
             recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
-                f'Hai ricevuto una nuova richiesta di iscrizione corso.\n\n'
+                f'Hai ricevuto una nuova richiesta di {"ricontatto" if is_course_interest else "iscrizione corso"}.\n\n'
                 f'Corso:    {iscrizione.corso_titolo}\n'
                 f'Nome:     {iscrizione.nome}\n'
                 f'Telefono: {iscrizione.telefono}\n'
                 f'Email:    {iscrizione.email or "Non indicata"}\n'
                 f'Data:     {iscrizione.data_corso or "Da definire"}\n'
-                f'Tipo:     {iscrizione.partecipazione or "Non indicato"}\n\n'
+                f'Tipo:     {iscrizione.partecipazione or "Non indicato"}\n'
+                f'Note:     {iscrizione.note or "Nessuna"}\n\n'
                 f'{dettagli_extra}'
                 f'Accedi all\'area admin per gestire la richiesta.'
             )
@@ -2241,11 +2270,6 @@ def prima_della_nascita():
 @app.route('/prima-della-nascita')
 def prima_della_nascita_legacy():
     return redirect(url_for('prima_della_nascita'), code=301)
-
-
-@app.route('/dopo-la-nascita')
-def dopo_la_nascita():
-    return render_template('dopo_la_nascita.html')
 
 
 @app.route('/consulenze-online')
@@ -2544,6 +2568,87 @@ def _render_iscrizione_con_errore(corso_tipo, messaggio):
         corso=_corso_iscrivibile_con_date(corso_tipo),
         form_data=request.form
     )
+
+
+def _render_course_interest_error(message):
+    flash(message, 'error')
+    return render_template(
+        'interesse_corsi.html',
+        topics=COURSE_INTEREST_TOPICS,
+        form_data=request.form,
+    )
+
+
+@app.route('/iscrizione-corsi/interesse', methods=['GET', 'POST'])
+@limiter.limit('5 per minute')
+def course_interest():
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            return _render_course_interest_error('Richiesta non valida. Riprova.')
+
+        name = request.form.get('nome', '').strip()
+        phone = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        topic_key = request.form.get('tematica', '').strip()
+        notes = request.form.get('note', '').strip()
+        privacy_consent = _checkbox_checked('consenso_privacy')
+        topic = COURSE_INTEREST_TOPICS.get(topic_key)
+
+        if not name or len(name) > 100:
+            return _render_course_interest_error('Inserisci nome e cognome.')
+        if not phone or not _telefono_valido(phone):
+            return _render_course_interest_error('Inserisci un numero di telefono valido.')
+        if email and not _email_valida(email):
+            return _render_course_interest_error('Inserisci un indirizzo email valido.')
+        if not topic:
+            return _render_course_interest_error('Seleziona il corso o la tematica che ti interessa.')
+        if len(notes) > 2000:
+            return _render_course_interest_error('Le note sono troppo lunghe.')
+        if not privacy_consent:
+            return _render_course_interest_error('Devi autorizzare il trattamento dei dati personali.')
+
+        person = _trova_o_crea_persona_corso(
+            nome=name,
+            telefono=phone,
+            email=email,
+        )
+        interest = IscrizioneCorso(
+            corso_id=None,
+            persona=person,
+            corso_tipo=topic['course_type'],
+            corso_titolo=topic['label'],
+            nome=name,
+            telefono=phone,
+            email=email,
+            codice_fiscale='',
+            data_corso='Da ricontattare per prossime date',
+            partecipazione=None,
+            note=notes,
+            dati_extra=json.dumps({
+                'richiesta_prossime_date': True,
+                'tematica_interesse': topic_key,
+            }, ensure_ascii=False),
+            tipo_richiesta='ricontatto',
+            posti=0,
+            consenso_privacy=privacy_consent,
+            consenso_immagini=False,
+        )
+        db.session.add(interest)
+        db.session.commit()
+        invia_email_nuova_iscrizione(interest)
+        return redirect(url_for('course_interest_confirmation'))
+
+    return render_template(
+        'interesse_corsi.html',
+        topics=COURSE_INTEREST_TOPICS,
+        form_data={},
+    )
+
+
+@app.route('/iscrizione-corsi/interesse/conferma')
+def course_interest_confirmation():
+    return render_template('conferma_interesse_corsi.html')
 
 
 @app.route('/iscrizione-corsi/<corso_tipo>', methods=['GET', 'POST'])

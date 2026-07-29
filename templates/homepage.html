@@ -54,9 +54,9 @@
 <section class="home-parallax-stage" id="home-intro" data-home-parallax data-home-scene="intro" aria-labelledby="home-title">
     <div class="home-scene-shell home-hero" data-home-parallax-hero>
         <div class="home-hero-copy" data-home-parallax-copy>
-            <p class="eyebrow">Con Selene, infermiera per bambini e famiglie</p>
+            <p class="eyebrow">Per genitori, bambini e chi se ne prende cura</p>
             <h1 id="home-title">Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.</h1>
-            <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno da 0 a 12 mesi, in studio oppure online in tutta Italia. Partiamo dai dubbi che pesano di più e li trasformiamo in indicazioni da usare nella vostra quotidianità.</p>
+            <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno da 0 a 12 mesi, in studio oppure online in tutta Italia. Partiamo dai dubbi che pesano di più e li trasformiamo in indicazioni da usare nella vita di ogni giorno.</p>
             <div class="home-actions" aria-label="Azioni principali">
                 <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
                 <a href="{{ url_for('prenota_call_sonno') }}" class="btn btn-linea" data-conversion="home_hero_call_sonno">Scegli l’orario della call</a>
@@ -64,7 +64,7 @@
             <p class="home-hero-note">La call dura circa 20 minuti e serve a capire se la consulenza è davvero il passo adatto.</p>
         </div>
 
-        <div class="home-hero-media" data-home-parallax-media role="img" aria-label="Selene Campetta, infermiera e consulente del sonno, con un cuore anatomico lavorato a uncinetto">
+        <div class="home-hero-media" data-home-parallax-media role="img" aria-label="Selene Campetta, infermiera e consulente del sonno infantile, con un cuore anatomico lavorato a uncinetto">
             <img class="home-hero-photo-fallback" src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="" width="1920" height="1280" fetchpriority="high">
             <div class="home-hero-photo-layers" aria-hidden="true">
                 <div class="home-hero-photo-frame">
@@ -74,7 +74,7 @@
             </div>
             <span class="home-handoff-anchor" data-home-handoff-anchor="hero-heart" data-organ-source-x="1045" data-organ-source-y="840" data-organ-source-size="340" aria-hidden="true"></span>
             <div class="home-hero-signature" data-home-parallax-signature>
-                <span>Selene Campetta · infermiera e consulente del sonno</span>
+                <span>Selene Campetta · infermiera e consulente del sonno infantile</span>
                 <strong>Competenza sanitaria,<br>parole semplici</strong>
             </div>
         </div>
@@ -92,7 +92,7 @@
             </figure>
             <div class="home-feature-copy" data-scene-motion="right">
                 <p class="eyebrow">Corsi pratici in presenza · Montesilvano</p>
-                <h2 id="home-courses-title">Arrivate preparati ai momenti che contano.</h2>
+                <h2 id="home-courses-title">Sapere cosa fare nei momenti che contano.</h2>
                 <p>Incontri concreti per fare domande, provare i gesti e capire quando è il momento di chiedere aiuto.</p>
                 <div class="home-course-families" aria-label="Famiglie di corsi">
                     <section class="home-course-family" aria-labelledby="home-course-family-safety">
@@ -115,7 +115,7 @@
                 {% else %}
                 <div class="home-courses-next-step">
                     <span>Nuove date in preparazione.</span>
-                    <a href="/iscrizione-corsi" class="btn" data-conversion="home_date_interesse">Lascia il tuo interesse</a>
+                    <a href="{{ url_for('course_interest') }}" class="btn" data-conversion="home_date_interesse">Lascia il tuo interesse</a>
                 </div>
                 {% endif %}
             </div>
@@ -129,21 +129,21 @@
             <div class="home-feature-copy" data-scene-motion="left">
                 <p class="eyebrow">Consulenza del sonno · 0–12 mesi</p>
                 <h2 id="home-sleep-title">Leggiamo insieme risvegli, sonnellini e addormentamento.</h2>
-                <p>Osserviamo il quadro completo e costruiamo cambiamenti graduali, adatti all’età e alla vostra quotidianità, senza metodi rigidi.</p>
+                <p>Osserviamo il quadro completo e costruiamo cambiamenti graduali, adatti all’età del bambino e alla vita della tua famiglia, senza metodi rigidi.</p>
                 <ul class="home-proof-list">
-                    <li><strong>Contesto</strong><span>Indicazioni calibrate sulla vostra famiglia</span></li>
+                    <li><strong>Contesto</strong><span>Indicazioni adatte alla tua famiglia</span></li>
                     <li><strong>Sicurezza</strong><span>Attenzione alle raccomandazioni sul sonno sicuro</span></li>
                     <li><strong>Confini clinici</strong><span>Chiarezza su quando coinvolgere il pediatra</span></li>
                 </ul>
                 <div class="home-actions">
-                    <a href="/consulenze-online" class="btn" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
+                    <a href="{{ url_for('consulenze_online') }}#formule" class="btn" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
                     <a href="{{ url_for('prenota_call_sonno') }}" class="link-azione">Prima parliamone</a>
                 </div>
             </div>
             <figure class="home-feature-media home-feature-media--sleep" data-scene-motion="right">
                 <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Selene Campetta durante una consulenza per genitori" width="1280" height="1920" loading="lazy">
                 <span class="home-handoff-anchor" data-home-handoff-anchor="sleep-gallbladder" data-organ-source-x="1085" data-organ-source-y="1350" data-organ-source-size="390" aria-hidden="true"></span>
-                <figcaption>In studio oppure online, in tutta Italia.</figcaption>
+                <figcaption>In studio a Montesilvano oppure online.</figcaption>
             </figure>
         </div>
     </div>
@@ -212,7 +212,7 @@
         </figure>
 
         <div class="home-team-signature" data-scene-motion="up" aria-labelledby="home-team-label">
-            <p class="home-team-signature__label" id="home-team-label">Una squadra, cinque sguardi coordinati</p>
+            <p class="home-team-signature__label" id="home-team-label">Cinque professionisti nello stesso percorso</p>
             <ul>
                 <li><strong>Infermiera</strong><span>Prime cure e sicurezza</span></li>
                 <li><strong>Ostetrica</strong><span>Gravidanza e puerperio</span></li>
@@ -230,7 +230,7 @@
             <p class="eyebrow">Come lavoro</p>
             <h2 id="home-method-title">Dai dubbi a un passo che puoi usare nella vita reale.</h2>
             <ol class="home-method-sequence" data-home-focus="method-line">
-                <li><span>01</span><strong>Ascolto</strong><small>Partiamo da età, dubbi, routine e da ciò che avete già provato.</small></li>
+                <li><span>01</span><strong>Ascolto</strong><small>Partiamo da età, dubbi, routine e da ciò che hai già provato.</small></li>
                 <li><span>02</span><strong>Mettiamo ordine</strong><small>Chiariamo segnali, gesti e motivazioni.</small></li>
                 <li><span>03</span><strong>Scegliamo il passo</strong><small>Poche indicazioni, in un ordine possibile.</small></li>
             </ol>
@@ -239,7 +239,7 @@
         <div class="home-method-outcome" data-scene-motion="right">
             <p class="home-method-outcome__number" aria-hidden="true">04</p>
             <p class="eyebrow">Strumenti che restano</p>
-            <h2>Quando le indicazioni diventano sicurezza nel quotidiano.</h2>
+            <h2>Indicazioni che puoi usare anche a casa.</h2>
             <figure class="home-testimonial-featured">
                 <blockquote>“Gli incontri ci hanno aiutato a superare molte delle nostre ansie, fornendoci strumenti concreti per gestire i primi giorni a casa con il bambino.”</blockquote>
                 <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>

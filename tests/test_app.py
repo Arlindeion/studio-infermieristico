@@ -610,6 +610,102 @@ def test_css_core_e_modulo_homepage(client):
     assert 'css/stile.css' not in resp.text
 
 
+@pytest.mark.parametrize(
+    ('route', 'mode', 'has_progress'),
+    [
+        ('/chi-sono', 'narrative', True),
+        ('/faq', 'narrative', True),
+        ('/iscrizione-corsi', 'narrative', True),
+        ('/consulenze-online', 'narrative', True),
+        ('/prestazioni-infermieristiche', 'narrative', True),
+        ('/prenota', 'operational', False),
+        ('/prenota-call-sonno', 'operational', False),
+        ('/iscrizione-corsi/interesse', 'operational', False),
+        ('/conferma', 'outcome', False),
+        ('/iscrizione-accompagnamento/conferma', 'outcome', False),
+        ('/iscrizione-corsi/interesse/conferma', 'outcome', False),
+    ],
+)
+def test_pagine_interne_usano_regia_coerente_senza_snap(client, route, mode, has_progress):
+    resp = client.get(route)
+
+    assert resp.status_code == 200
+    assert f'internal-page internal-page--{mode}' in resp.text
+    assert f'data-internal-page="{mode}"' in resp.text
+    assert 'css/internal-pages.css' in resp.text
+    assert 'js/internal-page-motion.js' in resp.text
+    assert ('data-internal-progress' in resp.text) is has_progress
+    assert 'css/homepage.css' not in resp.text
+    assert 'js/home-scroll-motion.js' not in resp.text
+
+
+def test_regia_pagine_interne_non_entra_in_homepage_o_admin(client):
+    homepage = client.get('/')
+    login = client.get('/admin/login')
+
+    for resp in (homepage, login):
+        assert 'css/internal-pages.css' not in resp.text
+        assert 'js/internal-page-motion.js' not in resp.text
+        assert 'data-internal-page=' not in resp.text
+
+
+def test_transizione_controllata_collega_le_pagine_ed_e_reversibile(client):
+    homepage = client.get('/')
+    root = Path(app_module.__file__).resolve().parent
+    base_stylesheet = (root / 'static' / 'css' / 'base.css').read_text()
+    transition_stylesheet = (root / 'static' / 'css' / 'page-transitions.css').read_text()
+    transition_script = (root / 'static' / 'js' / 'page-transitions.js').read_text()
+
+    assert homepage.status_code == 200
+    assert 'css/page-transitions.css' in homepage.text
+    assert 'js/page-transitions.js' in homepage.text
+    assert '@view-transition' not in base_stylesheet
+    assert '@media (min-width: 1024px) and (min-height: 640px)' in base_stylesheet
+    assert '.site-header.is-scrolled .site-header__inner' in base_stylesheet
+    assert 'height: 76px' in base_stylesheet
+    assert 'prefers-reduced-motion: no-preference' in transition_stylesheet
+    assert 'page-transition-enter-forward' in transition_stylesheet
+    assert 'page-transition-enter-backward' in transition_stylesheet
+    assert 'page-seam-forward' in transition_stylesheet
+    assert 'transform: translateX(100vw)' in transition_stylesheet
+    assert 'transform: translateX(-100vw)' in transition_stylesheet
+    assert 'clip-path: inset(0 0 0 100%)' in transition_stylesheet
+    assert 'clip-path: inset(0)' in transition_stylesheet
+    assert 'page-transition-preview--forward' in transition_stylesheet
+    assert 'page-transition-preview--backward' in transition_stylesheet
+    assert 'page-transition-preview__frame' in transition_stylesheet
+    assert 'page-home-progress-reveal' in transition_stylesheet
+    assert "frame.setAttribute('sandbox', 'allow-same-origin')" in transition_script
+    assert 'visibility: hidden !important' in transition_script
+    assert 'height: 100svh !important' not in transition_script
+    assert "parallaxStage?.classList.add('is-parallax-ready')" in transition_script
+    assert "frame.addEventListener('load', checkReadiness" in transition_script
+    assert 'scrollPreviewToDestination' in transition_script
+    assert 'previewLoadTimeout = 1800' in transition_script
+    assert 'navigateWithFallback' in transition_script
+    assert "root.classList.add('page-transition-arrived')" in transition_script
+    assert 'previewedNavigation\n        ? null' in transition_script
+    assert "classList.contains('page-transition-arrived')" in (root / 'static' / 'js' / 'internal-page-motion.js').read_text()
+    assert "returningHome ? 'backward' : 'forward'" in transition_script
+    assert "event.persisted" in transition_script
+    assert "destination.origin !== window.location.origin" in transition_script
+    assert 'exitDuration' not in transition_script
+
+
+def test_cta_sonno_homepage_apre_direttamente_le_tre_formule(client):
+    homepage = client.get('/')
+
+    assert homepage.status_code == 200
+    assert 'href="/consulenze-online#formule"' in homepage.text
+    assert 'data-conversion="home_pilastro_sonno"' in homepage.text
+
+
+def test_bozza_dopo_la_nascita_non_e_pubblica(client):
+    resp = client.get('/dopo-la-nascita')
+
+    assert resp.status_code == 404
+
+
 def test_homepage_usa_scene_singole_e_parallax_circoscritto(client):
     homepage = client.get('/')
     consultation = client.get('/consulenze-online')
@@ -714,6 +810,30 @@ def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
     for path in course_paths:
         assert directory_html.count(f'href="{path}"') == 3
     assert directory_html.count('class="course-directory-media"') == 4
+    assert 'Scopri il corso' in directory_html
+    assert "Scopri l'open day" in directory_html
+    assert 'Scopri i laboratori' in directory_html
+    assert '>Richiedi iscrizione<' not in directory_html
+
+
+def test_testi_pubblici_mantengono_il_tu_senza_passare_al_voi(client):
+    routes = ['/', '/chi-sono', '/consulenze-online', '/prenota-call-sonno']
+
+    for route in routes:
+        resp = client.get(route)
+        assert resp.status_code == 200
+        for plural_form in ('vostra', 'vostre', 'vostro', 'vostri'):
+            assert re.search(rf'\b{plural_form}\b', resp.text, re.IGNORECASE) is None
+
+    chi_sono = client.get('/chi-sono')
+    assert 'Ti aiuto a leggere la situazione della tua famiglia' in chi_sono.text
+    assert 'la sicurezza e la vita di ogni giorno' in chi_sono.text
+    assert 'Da dove vuoi iniziare?' in chi_sono.text
+    assert 'data-conversion="chi_sono_corsi"' in chi_sono.text
+    assert 'data-conversion="chi_sono_sonno"' in chi_sono.text
+    assert 'data-conversion="chi_sono_prestazioni"' in chi_sono.text
+    assert chi_sono.text.index('chi_sono_corsi') < chi_sono.text.index('chi_sono_sonno')
+    assert chi_sono.text.index('chi_sono_sonno') < chi_sono.text.index('chi_sono_prestazioni')
 
 
 def test_css_admin_caricato_nel_login(client):
@@ -769,6 +889,11 @@ def _csrf_prenota(client):
 def _csrf_iscrizione(client, corso_tipo):
     import re
     resp = client.get(f'/iscrizione-corsi/{corso_tipo}')
+    return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
+
+
+def _csrf_course_interest(client):
+    resp = client.get('/iscrizione-corsi/interesse')
     return re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
 
 
@@ -1105,6 +1230,77 @@ def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
         assert iscrizione.tipo_richiesta == 'ricontatto'
         assert iscrizione.posti == 0
         assert iscrizione.extra_dict()['richiesta_prossime_date'] is True
+
+
+def test_modulo_interesse_corsi_raccoglie_temi_senza_dati_da_iscrizione(client):
+    resp = client.get('/iscrizione-corsi/interesse')
+
+    assert resp.status_code == 200
+    assert '<h1>Quale corso ti interessa?</h1>' in resp.text
+    assert 'Disostruzione pediatrica e tagli sicuri' in resp.text
+    assert '>BLSD<' in resp.text
+    assert '>Accompagnamento alla nascita<' in resp.text
+    assert "Laboratori per l&#39;infanzia" in resp.text
+    assert '>Gioco e sviluppo<' in resp.text
+    assert 'name="codice_fiscale"' not in resp.text
+    assert 'name="consenso_privacy"' in resp.text
+    assert 'data-conversion="course_interest_submit"' in resp.text
+
+
+def test_modulo_interesse_corsi_salva_ricontatto_senza_occupare_posti(client):
+    token = _csrf_course_interest(client)
+
+    resp = client.post('/iscrizione-corsi/interesse', data={
+        'nome': 'Giulia Bianchi',
+        'telefono': '3331234567',
+        'email': 'giulia@example.com',
+        'tematica': 'gioco-sviluppo',
+        'note': 'Preferenza per il sabato mattina.',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 302
+    assert resp.headers['Location'] == '/iscrizione-corsi/interesse/conferma'
+    with flask_app.app_context():
+        interesse = IscrizioneCorso.query.one()
+        assert interesse.corso_id is None
+        assert interesse.corso_tipo == 'laboratorio-infanzia'
+        assert interesse.corso_titolo == 'Gioco e sviluppo'
+        assert interesse.codice_fiscale == ''
+        assert interesse.tipo_richiesta == 'ricontatto'
+        assert interesse.posti == 0
+        assert interesse.consenso_privacy is True
+        assert interesse.note == 'Preferenza per il sabato mattina.'
+        assert interesse.extra_dict()['tematica_interesse'] == 'gioco-sviluppo'
+        assert interesse.persona.codice_fiscale is None
+
+
+def test_modulo_interesse_corsi_rifiuta_tematica_non_prevista(client):
+    token = _csrf_course_interest(client)
+
+    resp = client.post('/iscrizione-corsi/interesse', data={
+        'nome': 'Giulia Bianchi',
+        'telefono': '3331234567',
+        'tematica': 'corso-non-previsto',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 200
+    assert 'Seleziona il corso o la tematica che ti interessa.' in resp.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
+
+
+def test_conferma_interesse_corsi_chiarisce_che_non_e_iscrizione(client):
+    resp = client.get('/iscrizione-corsi/interesse/conferma')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1') == 1
+    assert 'Potrai valutarla prima di decidere se richiedere l’iscrizione.' in resp.text
+    assert '<meta name="robots" content="noindex,nofollow">' in resp.text
+    assert 'data-conversion="course_interest_confirmation_home"' in resp.text
 
 
 def test_accompagnamento_senza_date_collega_callout_a_modulo_ricontatto(client):
@@ -1503,6 +1699,30 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert iscrizione.consenso_immagini is True
         assert PersonaCorso.query.count() == 1
         assert PresenzaAccompagnamento.query.count() == 9
+
+
+def test_percorso_accompagnamento_chiuso_offre_un_contatto_utilizzabile(client):
+    slug, percorso_id = _crea_percorso_accompagnamento(slug='percorso-chiuso-test')
+    with flask_app.app_context():
+        percorso = db.session.get(PercorsoAccompagnamento, percorso_id)
+        percorso.stato = 'Chiuso'
+        db.session.commit()
+
+    resp = client.get(f'/iscrizione-accompagnamento/{slug}')
+
+    assert resp.status_code == 200
+    assert 'Iscrizioni non disponibili' in resp.text
+    assert 'href="tel:3806317175"' in resp.text
+    assert 'data-conversion="birth_private_closed_phone"' in resp.text
+
+
+def test_conferma_accompagnamento_offre_il_ritorno_alla_home(client):
+    resp = client.get('/iscrizione-accompagnamento/conferma')
+
+    assert resp.status_code == 200
+    assert resp.text.count('<h1>') == 1
+    assert 'data-conversion="birth_private_confirmation_home"' in resp.text
+    assert '>Torna alla homepage<' in resp.text
 
 
 def test_admin_gestisce_percorso_accompagnamento_e_export_pdf(client):
@@ -1905,7 +2125,9 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
     assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
-    assert 'Arrivate preparati ai momenti che contano.' in resp.text
+    assert 'Sapere cosa fare nei momenti che contano.' in resp.text
+    assert 'In studio a Montesilvano oppure online.' in resp.text
+    assert 'In studio oppure online, in tutta Italia.' not in resp.text
     assert 'data-conversion="home_hero_corsi"' in resp.text
     assert 'data-conversion="home_hero_call_sonno"' in resp.text
     assert resp.text.count('Scegli l’orario della call') == 2
@@ -1924,7 +2146,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'Scegli il prossimo passo, in base a ciò che ti serve adesso.' in resp.text
     assert 'home-birth-shell' in resp.text
     assert 'class="home-team-signature"' in resp.text
-    assert 'Una squadra, cinque sguardi coordinati' in resp.text
+    assert 'Cinque professionisti nello stesso percorso' in resp.text
     assert 'class="home-method-sequence"' in resp.text
     assert resp.text.count('class="home-testimonial-featured"') == 1
     assert 'class="home-testimonial-featured"' in resp.text
@@ -1938,6 +2160,7 @@ def test_homepage_senza_date_mostra_un_ricontatto_compatto(client):
     assert 'data-home-scene-link="date"' not in resp.text
     assert 'Nuove date in preparazione.' in resp.text
     assert 'data-conversion="home_date_interesse"' in resp.text
+    assert 'href="/iscrizione-corsi/interesse"' in resp.text
     assert 'id="cal-griglia"' not in resp.text
     assert 'id="corsi-data"' not in resp.text
     assert resp.text.count('data-home-scene=') == 7
@@ -2036,6 +2259,11 @@ def test_homepage_usa_staffetta_scontornata_e_profondita_solo_con_movimento_atti
     assert "root.classList.toggle('home-footer-visible', footerIsVisible)" in script
     assert 'html.home-scroll-snap.home-footer-scroll' in stylesheet
     assert '.home-scroll-story-ready.home-footer-visible .home-scene-nav' in stylesheet
+    assert 'home-scene-nav-arrive' in stylesheet
+    assert 'home-scene-nav-stitch' in stylesheet
+    assert 'home-scene-nav-chapter' in stylesheet
+    assert 'home-scene-nav-current' in stylesheet
+    assert '.home-scene-nav__chapter:nth-child(3)' in stylesheet
     assert '.home-scroll-snap .page-homepage .site-footer' not in stylesheet
 
 
@@ -2052,6 +2280,13 @@ def test_consulenza_online_e_verticale_sul_sonno(client):
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
     assert 'Consulenza del sonno infantile · 0-12 mesi' in resp.text
+    assert 'Infermiera e consulente del sonno infantile' in resp.text
+    assert 'La consulenza affronta anche il sonno sicuro e la SIDS?' in resp.text
+    assert 'riduzione del rischio di SIDS' in resp.text
+    assert 'https://www.salute.gov.it/new/it/tema/salute-del-bambino-e-delladolescente/sids/' in resp.text
+    assert 'con attenzione a SIDS e sonno sicuro' in resp.text
+    assert '127 ore' not in resp.text
+    assert 'Master universitario' not in resp.text
     assert 'Consulenza mirata' in resp.text
     assert 'Percorso sonno personalizzato' in resp.text
     assert 'spannolinamento' not in resp.text.lower()

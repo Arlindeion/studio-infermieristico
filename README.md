@@ -13,7 +13,7 @@ Il contesto dell'attività, l'identità e le priorità non sono duplicati in que
 - APScheduler e integrazione Google Calendar
 - Jinja2, CSS e JavaScript vanilla
 - pytest
-- Node.js, usato solo dal test comportamentale del menu senza dipendenze npm
+- Node.js, usato dai test comportamentali del menu e delle transizioni senza dipendenze npm
 
 ## Avvio locale
 
@@ -164,7 +164,7 @@ docs/                  memoria strategica, funzionale e visiva
 migrazione_*.py        migrazioni SQLite una tantum
 ```
 
-I fogli di stile sono separati per responsabilità: `tokens.css`, `base.css` e `components.css` costituiscono il nucleo condiviso; `homepage.css`, `consulenza.css` e `admin.css` vengono caricati soltanto dove servono. Evitare `@import` e nuove sezioni versionate in coda ai file.
+I fogli di stile sono separati per responsabilità: `tokens.css`, `base.css` e `components.css` costituiscono il nucleo condiviso; `page-transitions.css` gestisce i passaggi tra route, `internal-pages.css` la regia comune delle pagine interne e i moduli come `homepage.css`, `consulenza.css` e `admin.css` vengono caricati soltanto dove servono. Evitare `@import` e nuove sezioni versionate in coda ai file.
 
 ## Area amministrativa
 

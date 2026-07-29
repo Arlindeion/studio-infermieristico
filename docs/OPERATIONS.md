@@ -1,6 +1,6 @@
 # Operatività tecnica
 
-Ultimo aggiornamento: 17 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Architettura
 
@@ -16,6 +16,14 @@ Ultimo aggiornamento: 17 luglio 2026.
 - Google Calendar come collante con Arzamed.
 
 Non introdurre framework frontend, SQL grezzo o dipendenze non necessarie.
+
+Il redesign corrente resta interamente nel rendering Flask/Jinja e negli asset
+CSS e JavaScript statici. Snap della homepage, movimento delle pagine interne,
+feed Behold e transizioni orizzontali non richiedono un processo applicativo,
+un servizio 3D o un piano Render aggiuntivo. L'anteprima della transizione
+richiede una seconda risposta HTML per i clic interni idonei, con un incremento
+contenuto di richieste e banda; se non è pronta entro il timeout, il link apre
+comunque la pagina normalmente.
 
 ## Ambienti
 
@@ -174,7 +182,7 @@ Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.m
 - Corsi: `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 - Percorsi nascita: `Bozza`, `Aperto`, `Chiuso`, `Concluso`.
 
-Lo stato `Da ricontattare` è previsto dalla roadmap quando serve distinguere richieste senza data, ma va aggiunto soltanto verificando modello, interfaccia, email e test.
+Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in admin come `Da ricontattare`; non è uno stato aggiuntivo. Conservano il normale stato iniziale `Nuova`, occupano zero posti e proseguono poi negli stati corso già elencati. Il modulo unico della homepage registra anche la tematica scelta senza richiedere i dati amministrativi di un'iscrizione.
 
 ## Google Calendar e Arzamed
 

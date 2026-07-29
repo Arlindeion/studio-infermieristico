@@ -377,6 +377,7 @@
 }
 
 .sleep-offers {
+    scroll-margin-top: 5.5rem;
     padding-bottom: clamp(3.8rem, 6vw, 5.4rem);
     padding-top: clamp(3.8rem, 6vw, 5.4rem);
 }

@@ -1,0 +1,748 @@
+/* Shared visual language for public internal pages */
+
+.internal-page {
+    --internal-content: 1180px;
+    --internal-measure: 720px;
+    background: var(--carta);
+}
+
+.internal-page main {
+    min-height: 58vh;
+    overflow: clip;
+    position: relative;
+}
+
+.internal-page main h1,
+.internal-page main h2,
+.internal-page main h3 {
+    text-wrap: balance;
+}
+
+.internal-page main p,
+.internal-page main li {
+    text-wrap: pretty;
+}
+
+.internal-reading-progress {
+    --internal-progress: 0;
+    background: var(--verde-scuro-a10);
+    bottom: -1px;
+    display: block;
+    height: 3px;
+    left: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+}
+
+.internal-reading-progress::after {
+    background: var(--rosso-cuore);
+    content: '';
+    inset: 0;
+    position: absolute;
+    transform: scaleX(var(--internal-progress));
+    transform-origin: left center;
+    will-change: transform;
+}
+
+.internal-page .pagina-interna {
+    max-width: var(--internal-content);
+    padding: clamp(3.6rem, 7vw, 6.8rem) clamp(1.25rem, 4vw, 2.5rem) clamp(5rem, 9vw, 8rem);
+}
+
+.internal-page .pagina-interna > h1,
+.internal-page .pagina-interna > .eyebrow + h1 {
+    font-size: clamp(2.85rem, 6vw, 5.35rem);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+    max-width: 15ch;
+}
+
+.internal-page .pagina-interna > .sottotitolo {
+    color: var(--verde-scuro-a72);
+    font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+    line-height: 1.65;
+    max-width: var(--internal-measure);
+}
+
+.internal-page--narrative .pagina-interna > h1::after,
+.internal-page--narrative .pagina-interna > .eyebrow + h1::after {
+    background: var(--rosso-cuore);
+    content: '';
+    display: block;
+    height: 4px;
+    margin-top: clamp(1.25rem, 3vw, 2rem);
+    width: clamp(64px, 8vw, 110px);
+}
+
+.internal-page .btn,
+.internal-page .link-azione {
+    transition-duration: 260ms;
+}
+
+.internal-page .btn {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 48px;
+}
+
+.internal-page .sticky-prenota {
+    transition:
+        opacity 240ms ease,
+        transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 240ms ease;
+}
+
+.internal-page .sticky-prenota.is-context-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(100%);
+    visibility: hidden;
+}
+
+/* One restrained entrance system, with natural scrolling preserved. */
+.internal-motion-ready [data-internal-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+    transition:
+        opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.internal-motion-ready [data-internal-reveal='hero'] {
+    transform: translate3d(0, 18px, 0);
+}
+
+.internal-motion-ready [data-internal-reveal].is-internal-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+/* Chi sono: portrait-led editorial profile, not a card layout. */
+.page-chi-siamo .pagina-interna > h1 {
+    margin-bottom: clamp(2.5rem, 6vw, 5rem);
+}
+
+.page-chi-siamo .chi-siamo-contenuto {
+    align-items: start;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 6rem);
+    grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
+    margin-bottom: clamp(4.5rem, 8vw, 7rem);
+}
+
+.page-chi-siamo .profilo {
+    position: sticky;
+    text-align: left;
+    top: 112px;
+}
+
+.page-chi-siamo .profilo::before {
+    background: var(--verde-brand);
+    border-radius: 22% 11% 19% 9% / 12% 18% 10% 20%;
+    content: '';
+    inset: 18px -16px 82px 18px;
+    position: absolute;
+    transform: rotate(1.4deg);
+    z-index: -1;
+}
+
+.page-chi-siamo .profilo-foto {
+    aspect-ratio: 4 / 5.25;
+    border-radius: 18% 8% 16% 7% / 9% 16% 8% 18%;
+    height: min(64vh, 660px);
+    margin: 0 0 1.4rem;
+    object-position: center 42%;
+    width: 100%;
+}
+
+.page-chi-siamo .profilo h2 {
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+    margin-bottom: 0.25rem;
+}
+
+.page-chi-siamo .qualifica {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.page-chi-siamo .bio {
+    max-width: 690px;
+    padding-top: clamp(0rem, 4vw, 3.5rem);
+}
+
+.page-chi-siamo .bio p {
+    color: var(--verde-scuro-a82);
+    font-size: 1.04rem;
+    line-height: 1.82;
+}
+
+.page-chi-siamo .bio p:first-child {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: clamp(1.45rem, 2.4vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.35;
+    margin-bottom: 1.6rem;
+}
+
+.page-chi-siamo .valori > h2 {
+    font-size: clamp(2.25rem, 4vw, 3.7rem);
+    letter-spacing: -0.045em;
+    margin-bottom: 1.6rem;
+}
+
+.page-chi-siamo .valori .card-grid {
+    border-top: 3px solid var(--rosso-cuore);
+    gap: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0;
+}
+
+.page-chi-siamo .valori .card {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.8rem 1.4rem 2.2rem 0;
+    text-align: left;
+}
+
+.page-chi-siamo .valori .card + .card {
+    border-left: 1px solid var(--verde-scuro-a16);
+    padding-left: 1.4rem;
+}
+
+.page-chi-siamo .valori .card::before {
+    display: none;
+}
+
+.page-chi-siamo .valori .card:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.page-chi-siamo .valori .card h3 {
+    font-size: 1.2rem;
+}
+
+.page-chi-siamo .valori .card p {
+    color: var(--verde-scuro-a72);
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+.page-chi-siamo .profile-next-step {
+    align-items: center;
+    background: var(--verde-brand);
+    border-radius: 28px 8px 28px 8px;
+    display: grid;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+    margin-top: clamp(4rem, 8vw, 7rem);
+    padding: clamp(1.8rem, 5vw, 3.4rem);
+}
+
+.page-chi-siamo .profile-next-step__copy h2 {
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    letter-spacing: -0.045em;
+    line-height: 1.04;
+    margin-bottom: 1rem;
+}
+
+.page-chi-siamo .profile-next-step__copy > p:last-child {
+    color: var(--verde-scuro-a82);
+    font-size: 1.04rem;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 58ch;
+}
+
+.page-chi-siamo .profile-next-step__actions {
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.page-chi-siamo .profile-next-step__actions .btn {
+    width: 100%;
+}
+
+.page-chi-siamo .profile-next-step__actions .link-azione {
+    align-self: flex-start;
+    margin-top: 0.35rem;
+}
+
+/* FAQ: questions read as an editorial index instead of a card grid. */
+.page-faq .faq-page {
+    max-width: var(--internal-content);
+}
+
+.page-faq .faq-page > h1 {
+    max-width: 13ch;
+}
+
+.page-faq .faq-list {
+    border-top: 3px solid var(--rosso-cuore);
+    display: block;
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.page-faq .faq-item {
+    align-items: start;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    gap: 1.2rem clamp(2rem, 6vw, 6rem);
+    grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1.28fr);
+    padding: clamp(1.8rem, 4vw, 3rem) 0;
+}
+
+.page-faq .faq-item::before {
+    display: none;
+}
+
+.page-faq .faq-item h2 {
+    font-size: clamp(1.35rem, 2.5vw, 2rem);
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.page-faq .faq-item > p,
+.page-faq .faq-item > .faq-map,
+.page-faq .faq-item > .link-azione {
+    grid-column: 2;
+}
+
+.page-faq .faq-item p {
+    color: var(--verde-scuro-a82);
+    font-size: 1.02rem;
+    margin: 0;
+}
+
+.page-faq .faq-map {
+    border-radius: 18px;
+    height: 230px;
+    margin: 0.25rem 0;
+}
+
+.page-faq .faq-cta {
+    background: var(--verde-brand);
+    border: 0;
+    border-radius: 26px 8px 26px 8px;
+    box-shadow: none;
+    margin-top: clamp(3rem, 7vw, 5.5rem);
+    padding: clamp(1.6rem, 4vw, 2.6rem);
+}
+
+/* Course directory: preserve comparison, remove the administrative table feel. */
+.page-iscrizione-corsi .pagina-interna > h1 {
+    max-width: 14ch;
+}
+
+.page-iscrizione-corsi .course-overview-strip {
+    background: transparent;
+    border: 0;
+    border-top: 3px solid var(--rosso-cuore);
+    box-shadow: none;
+    margin: clamp(2.5rem, 6vw, 4.5rem) 0;
+}
+
+.page-iscrizione-corsi .course-overview-strip article {
+    background: transparent;
+    border-color: var(--verde-scuro-a16);
+    padding: 1.3rem 1.5rem 1.5rem 0;
+}
+
+.page-iscrizione-corsi .course-directory {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.page-iscrizione-corsi .course-directory-row {
+    background: transparent;
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-left: 0;
+    gap: clamp(1.2rem, 3vw, 2.4rem);
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr) auto;
+    min-height: 190px;
+    padding: 1.4rem 0;
+}
+
+.page-iscrizione-corsi .course-directory-row:first-of-type {
+    border-top: 1px solid var(--verde-scuro-a16);
+}
+
+.page-iscrizione-corsi .course-directory-media,
+.page-iscrizione-corsi .course-directory-row img {
+    border-radius: 20px 7px 20px 7px;
+}
+
+.page-iscrizione-corsi .course-directory-row img {
+    height: 160px;
+    width: 100%;
+}
+
+.page-iscrizione-corsi .course-directory-copy h3 {
+    font-size: clamp(1.25rem, 2vw, 1.55rem);
+}
+
+/* Privacy: a readable legal document, not a stack of promotional cards. */
+.page-privacy .pagina-interna {
+    max-width: 1040px;
+}
+
+.page-privacy .pagina-interna > h1 {
+    max-width: 13ch;
+}
+
+.page-privacy .privacy-contenuto {
+    border-top: 3px solid var(--rosso-cuore);
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.page-privacy .privacy-blocco {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: clamp(1.8rem, 4vw, 2.8rem) 0;
+}
+
+.page-privacy .privacy-blocco h2 {
+    border: 0;
+    font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+    margin-bottom: 1rem;
+    padding: 0;
+}
+
+.page-privacy .privacy-blocco p,
+.page-privacy .privacy-blocco ul {
+    color: var(--verde-scuro-a82);
+    font-size: 1rem;
+    line-height: 1.78;
+    max-width: 820px;
+}
+
+/* Operational pages: quiet surfaces and explicit form hierarchy. */
+.internal-page--operational {
+    background:
+        linear-gradient(180deg, var(--verde-chiaro-a64), transparent 420px),
+        var(--carta);
+}
+
+.internal-page--operational main > section,
+.internal-page--operational .pagina-interna {
+    padding-top: clamp(3rem, 6vw, 5rem);
+}
+
+.internal-page--operational main h1 {
+    letter-spacing: -0.04em;
+}
+
+.internal-page--operational .form-prenotazione {
+    border: 1px solid var(--verde-scuro-a12);
+    border-radius: 24px 8px 24px 8px;
+    box-shadow: 0 24px 60px var(--verde-scuro-a10);
+}
+
+.internal-page--operational .form-prenotazione fieldset {
+    border-color: var(--verde-scuro-a16);
+}
+
+.internal-page--operational .form-gruppo input,
+.internal-page--operational .form-gruppo select,
+.internal-page--operational .form-gruppo textarea {
+    background: var(--carta-luminosa-a72);
+    border-color: var(--verde-scuro-a20);
+    min-height: 48px;
+}
+
+.internal-page--operational .form-gruppo textarea {
+    min-height: 118px;
+}
+
+/* Course interest: one direct operational step, with the follow-up made explicit. */
+.page-course-interest .course-interest-page {
+    max-width: 1120px;
+}
+
+.course-interest-layout {
+    align-items: start;
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5.5rem);
+    grid-template-columns: minmax(0, 0.78fr) minmax(480px, 1.22fr);
+    grid-template-rows: auto auto 1fr;
+    row-gap: 0.75rem;
+}
+
+.course-interest-intro {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.course-interest-intro h1 {
+    font-size: clamp(2.8rem, 5vw, 4.8rem);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+    margin: 0.65rem 0 1.4rem;
+}
+
+.course-interest-intro > p:not(.eyebrow) {
+    color: var(--verde-scuro-a72);
+    font-size: 1.08rem;
+    line-height: 1.65;
+    max-width: 34rem;
+}
+
+.course-interest-steps {
+    grid-column: 1;
+    grid-row: 2;
+    list-style: none;
+    margin: clamp(1rem, 3vw, 2rem) 0 0;
+    padding: 0;
+}
+
+.course-interest-steps li {
+    align-items: start;
+    border-top: 1px solid var(--verde-scuro-a16);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 1rem 0;
+}
+
+.course-interest-steps li > span {
+    color: var(--rosso-cuore);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.course-interest-steps p {
+    display: grid;
+    gap: 0.18rem;
+    margin: 0;
+}
+
+.course-interest-steps strong {
+    color: var(--verde-scuro);
+}
+
+.course-interest-steps small,
+.label-facoltativa {
+    color: var(--verde-scuro-a72);
+    font-weight: 400;
+}
+
+.course-interest-form {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    margin: 0;
+    max-width: none;
+}
+
+.course-interest-form .nota-form {
+    margin: 1rem 0 0;
+    text-align: center;
+}
+
+/* Confirmation pages: a calm, unambiguous endpoint. */
+.internal-page--outcome {
+    background:
+        linear-gradient(145deg, var(--verde-chiaro-a88), var(--carta) 62%);
+}
+
+.internal-page--outcome main {
+    align-items: center;
+    display: grid;
+    min-height: 70vh;
+}
+
+.internal-page--outcome main > section {
+    margin: 0 auto;
+    max-width: 760px;
+    padding: clamp(4rem, 8vw, 7rem) 1.25rem;
+    text-align: center;
+}
+
+.internal-page--outcome .conferma-box,
+.internal-page--outcome .sleep-confirmation {
+    background: var(--carta-luminosa-a82);
+    border: 1px solid var(--verde-scuro-a12);
+    border-radius: 28px 8px 28px 8px;
+    box-shadow: 0 28px 70px var(--verde-scuro-a12);
+    max-width: 680px;
+    padding: clamp(2.2rem, 6vw, 4.5rem);
+}
+
+.internal-page--outcome main h1,
+.internal-page--outcome main h2 {
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    letter-spacing: -0.045em;
+    line-height: 1.05;
+}
+
+@media (max-width: 820px) {
+    .course-interest-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .course-interest-intro {
+        grid-column: 1;
+        grid-row: auto;
+        padding-top: 0;
+    }
+
+    .course-interest-steps {
+        grid-column: 1;
+        grid-row: auto;
+        margin-top: 2rem;
+    }
+
+    .course-interest-form {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .page-chi-siamo .chi-siamo-contenuto {
+        grid-template-columns: 1fr;
+    }
+
+    .page-chi-siamo .profilo {
+        max-width: 520px;
+        position: relative;
+        top: auto;
+    }
+
+    .page-chi-siamo .profilo-foto {
+        height: min(72vh, 620px);
+    }
+
+    .page-chi-siamo .profile-next-step {
+        grid-template-columns: 1fr;
+    }
+
+    .page-faq .faq-item {
+        gap: 1rem;
+        grid-template-columns: 1fr;
+    }
+
+    .page-faq .faq-item h2,
+    .page-faq .faq-item > p,
+    .page-faq .faq-item > .faq-map,
+    .page-faq .faq-item > .link-azione {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .page-iscrizione-corsi .course-directory-row {
+        grid-template-columns: 170px minmax(0, 1fr);
+    }
+
+    .page-iscrizione-corsi .course-directory-row > .link-azione {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+}
+
+@media (max-width: 620px) {
+    .internal-page .pagina-interna {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .internal-page .pagina-interna > h1,
+    .internal-page .pagina-interna > .eyebrow + h1 {
+        font-size: clamp(2.4rem, 12vw, 3.5rem);
+    }
+
+    .page-chi-siamo .profilo::before {
+        inset: 14px -8px 76px 12px;
+    }
+
+    .page-chi-siamo .profilo-foto {
+        height: auto;
+    }
+
+    .page-chi-siamo .valori .card-grid {
+        display: block;
+    }
+
+    .page-chi-siamo .valori .card,
+    .page-chi-siamo .valori .card + .card {
+        border-left: 0;
+        padding: 1.4rem 0 1.6rem;
+    }
+
+    .page-chi-siamo .profile-next-step {
+        border-radius: 22px 7px 22px 7px;
+        padding: 1.5rem;
+    }
+
+    .page-faq .faq-cta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-iscrizione-corsi .course-overview-strip {
+        display: block;
+    }
+
+    .course-interest-form .form-riga {
+        display: block;
+    }
+
+    .page-iscrizione-corsi .course-overview-strip article {
+        border-bottom: 1px solid var(--verde-scuro-a16);
+        border-right: 0;
+        padding: 1.15rem 0;
+    }
+
+    .page-iscrizione-corsi .course-directory-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 1.3rem 0 1.6rem;
+    }
+
+    .page-iscrizione-corsi .course-directory-row img {
+        height: 220px;
+    }
+
+    .page-iscrizione-corsi .course-directory-row > .link-azione {
+        grid-column: 1;
+    }
+
+    .internal-page--operational .form-prenotazione {
+        border-radius: 18px 6px 18px 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .internal-reading-progress::after,
+    .internal-motion-ready [data-internal-reveal] {
+        transition: none;
+    }
+
+    .internal-motion-ready [data-internal-reveal] {
+        opacity: 1;
+        transform: none;
+    }
+}

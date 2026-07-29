@@ -26,13 +26,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
     {% set page_endpoint = request.endpoint or '' %}
+    {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy'] %}
+    {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest'] %}
+    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation'] %}
+    {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.9">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transitions.css') }}?v=1.8">
     {% if page_endpoint == 'homepage' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.5">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.4">
     {% elif page_endpoint == 'prima_della_nascita' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
     {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
@@ -43,6 +48,10 @@
     {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.3">
     {% endif %}
+    {% if internal_page_mode %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.4">
+    {% endif %}
+    <script src="{{ url_for('static', filename='js/page-transitions.js') }}?v=1.11"></script>
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -71,10 +80,10 @@
     }
     </script>
 </head>
-<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}">
+<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
 
 {% set current_endpoint = request.endpoint or '' %}
-{% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'dopo_la_nascita', 'conferma_iscrizione_corso'] %}
+{% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation'] %}
 {% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
 {% set nursing_active = current_endpoint in ['prestazioni', 'prenota', 'modifica_appuntamento', 'conferma'] %}
 
@@ -173,6 +182,9 @@
             </span>
         </button>
     </div>
+    {% if internal_page_mode == 'narrative' %}
+    <span class="internal-reading-progress" aria-hidden="true" data-internal-progress></span>
+    {% endif %}
 </header>
 
 <div class="mobile-nav" id="site-mobile-menu" aria-hidden="true" inert data-mobile-nav>
@@ -227,6 +239,9 @@
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
 <script src="{{ url_for('static', filename='js/conversion-tracking.js') }}" defer></script>
+{% if internal_page_mode %}
+<script src="{{ url_for('static', filename='js/internal-page-motion.js') }}?v=1.1" defer></script>
+{% endif %}
 {% if page_endpoint == 'prestazioni' %}
 <script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
 {% endif %}
