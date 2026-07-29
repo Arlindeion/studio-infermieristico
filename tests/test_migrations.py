@@ -71,10 +71,50 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'consenso_whatsapp' not in call_columns
     assert 'promemoria_whatsapp_24h_il' not in call_columns
     assert 'promemoria_whatsapp_2h_il' not in call_columns
+    appointment_columns = _column_names(database_path, 'appuntamento')
+    assert 'duration_minutes' in appointment_columns
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
     assert 'No new upgrade operations detected' in check.stdout + check.stderr
+
+
+def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):
+    database_path = tmp_path / 'pre_duration.sqlite'
+    env = _migration_env(database_path)
+
+    _run_flask(env, 'db', 'upgrade', '7f3c1a2d9e40')
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO appuntamento
+                (nome, telefono, email, servizio, data, ora, stato)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                'Persona Test',
+                '0000000000',
+                'test@example.invalid',
+                'Prestazione test',
+                '2099-01-01',
+                '10:00',
+                'In attesa',
+            ),
+        )
+        connection.commit()
+
+    _run_flask(env, 'db', 'upgrade')
+
+    with sqlite3.connect(database_path) as connection:
+        row = connection.execute(
+            'SELECT nome, duration_minutes FROM appuntamento'
+        ).fetchone()
+        revision = connection.execute(
+            'SELECT version_num FROM alembic_version'
+        ).fetchone()[0]
+
+    assert row == ('Persona Test', 30)
+    assert revision == '4d8b2c7a91e6'
 
 
 def test_baseline_adotta_schema_rappresentativo_senza_perdere_dati(tmp_path):
@@ -116,4 +156,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == '7f3c1a2d9e40'
+    assert revision == '4d8b2c7a91e6'

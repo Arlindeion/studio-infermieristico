@@ -29,7 +29,7 @@ except ImportError:  # Flask-Migrate è dichiarato in requirements, ma resta opz
     Migrate = None
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time as datetime_time, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
@@ -476,6 +476,8 @@ ORARI_DISPONIBILI = [
     '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
 ]
 DURATA_SLOT_MINUTI = 30
+APPOINTMENT_DURATION_MIN_MINUTES = 1
+APPOINTMENT_DURATION_MAX_MINUTES = 480
 DURATA_CORSO_DEFAULT_ORE = 2
 FESTIVI_FISSI = {
     (1, 1),    # Capodanno
@@ -532,6 +534,39 @@ def orario_prenotabile(data_str, ora):
         return False
 
     return True
+
+
+def parse_appointment_duration(value):
+    try:
+        duration_minutes = int(value)
+    except (TypeError, ValueError):
+        return None
+    if (
+        duration_minutes < APPOINTMENT_DURATION_MIN_MINUTES
+        or duration_minutes > APPOINTMENT_DURATION_MAX_MINUTES
+    ):
+        return None
+    return duration_minutes
+
+
+def is_appointment_interval_bookable(data_str, ora, duration_minutes):
+    if not orario_prenotabile(data_str, ora):
+        return False
+    try:
+        start, end = _intervallo_locale(data_str, ora, duration_minutes)
+    except (TypeError, ValueError):
+        return False
+
+    day = start.date()
+    if day.weekday() == 5:
+        closing_time = datetime.combine(day, datetime_time(12, 0), tzinfo=FUSO_ORARIO)
+        return end <= closing_time
+
+    if start.time() < datetime_time(14, 0):
+        closing_time = datetime.combine(day, datetime_time(13, 0), tzinfo=FUSO_ORARIO)
+    else:
+        closing_time = datetime.combine(day, datetime_time(19, 0), tzinfo=FUSO_ORARIO)
+    return end <= closing_time
 
 
 def orari_non_prenotabili_per_chiusura(data_str):
@@ -745,7 +780,9 @@ def _corpo_evento_da_appuntamento(appuntamento):
     ora, minuto = map(int, appuntamento.ora.split(':'))
     giorno = datetime.strptime(appuntamento.data, '%Y-%m-%d').date()
     inizio = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO).replace(hour=ora, minute=minuto)
-    fine = inizio + timedelta(minutes=DURATA_SLOT_MINUTI)
+    fine = inizio + timedelta(
+        minutes=appuntamento.duration_minutes or DURATA_SLOT_MINUTI
+    )
 
     return {
         'summary': f'{appuntamento.nome} {appuntamento.servizio}',
@@ -1210,6 +1247,11 @@ class Appuntamento(db.Model):
     servizio = db.Column(db.String(100), nullable=False)
     data = db.Column(db.String(20), nullable=False)
     ora = db.Column(db.String(10), nullable=False)
+    duration_minutes = db.Column(
+        db.Integer,
+        default=DURATA_SLOT_MINUTI,
+        nullable=False,
+    )
     note = db.Column(db.Text, nullable=True)
     stato = db.Column(db.String(20), default='In attesa')
     creato_il = db.Column(db.DateTime, default=datetime.now)
@@ -1468,7 +1510,11 @@ def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_a
     for appuntamento in appuntamenti_query.all():
         if _intervalli_si_sovrappongono(
             intervallo_richiesto,
-            _intervallo_locale(appuntamento.data, appuntamento.ora, DURATA_SLOT_MINUTI),
+            _intervallo_locale(
+                appuntamento.data,
+                appuntamento.ora,
+                appuntamento.duration_minutes or DURATA_SLOT_MINUTI,
+            ),
         ):
             return True
 
@@ -1979,7 +2025,8 @@ def invia_email_conferma(appuntamento):
                 f'il tuo appuntamento è stato confermato.\n\n'
                 f'Servizio: {appuntamento.servizio}\n'
                 f'Data:     {appuntamento.data}\n'
-                f'Ora:      {appuntamento.ora}\n\n'
+                f'Ora:      {appuntamento.ora}\n'
+                f'Durata:   {appuntamento.duration_minutes} minuti\n\n'
                 f'Per qualsiasi necessità puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
                 f'S.C. Studio Infermieristico'
@@ -2006,7 +2053,8 @@ def invia_email_spostamento(appuntamento):
                 f'il tuo appuntamento è stato spostato. Qui trovi i nuovi dettagli:\n\n'
                 f'Servizio:     {appuntamento.servizio}\n'
                 f'Nuova data:   {appuntamento.data}\n'
-                f'Nuovo orario: {appuntamento.ora}\n\n'
+                f'Nuovo orario: {appuntamento.ora}\n'
+                f'Durata:       {appuntamento.duration_minutes} minuti\n\n'
                 f'Se hai domande o devi chiedere un’altra modifica, '
                 f'puoi contattarmi al 3806317175.\n\n'
                 f'A presto,\n'
@@ -3717,6 +3765,48 @@ def aggiorna_stato(id, stato):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
     appuntamento = db.get_or_404(Appuntamento, id)
+
+    if stato == 'Confermato':
+        duration_minutes = parse_appointment_duration(
+            request.form.get('duration_minutes')
+        )
+        if duration_minutes is None:
+            flash(
+                'Indica una durata valida, da 1 a 480 minuti.',
+                'error',
+            )
+            return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
+        if not is_appointment_interval_bookable(
+            appuntamento.data,
+            appuntamento.ora,
+            duration_minutes,
+        ):
+            flash(
+                'La durata scelta supera l’orario di apertura dello studio.',
+                'error',
+            )
+            return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
+        unavailable_in_database = slot_occupato_db(
+            appuntamento.data,
+            appuntamento.ora,
+            duration_minutes,
+            ignore_appuntamento_id=appuntamento.id,
+        )
+        unavailable_in_calendar = intervallo_occupato_da_calendario(
+            appuntamento.data,
+            appuntamento.ora,
+            duration_minutes,
+            ignore_google_event_id=appuntamento.google_event_id,
+        )
+        if unavailable_in_database or unavailable_in_calendar:
+            flash(
+                'La durata scelta si sovrappone a un altro impegno. '
+                'Modifica l’appuntamento prima di confermarlo.',
+                'error',
+            )
+            return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
+        appuntamento.duration_minutes = duration_minutes
+
     appuntamento.stato = stato
     db.session.commit()
     if stato == 'Confermato':
@@ -3743,37 +3833,62 @@ def modifica_appuntamento(id):
 
         nuova_data = request.form.get('data', '').strip()
         nuova_ora = request.form.get('ora', '').strip()
+        duration_minutes = parse_appointment_duration(
+            request.form.get('duration_minutes')
+        )
         oggi = date.today().strftime('%Y-%m-%d')
 
-        if not nuova_data or not nuova_ora:
-            flash('Data e ora sono obbligatorie.', 'error')
+        if not nuova_data or not nuova_ora or duration_minutes is None:
+            flash(
+                'Data, ora e una durata valida da 1 a 480 minuti sono obbligatorie.',
+                'error',
+            )
             return render_template('modifica_appuntamento.html', a=appuntamento)
         if nuova_data < oggi:
             flash('Non puoi spostare un appuntamento a una data nel passato.', 'error')
             return render_template('modifica_appuntamento.html', a=appuntamento)
-        if not orario_prenotabile(nuova_data, nuova_ora):
-            flash('Lo studio è chiuso nella data o nell\'orario selezionato. Scegli un altro appuntamento.', 'error')
+        if not is_appointment_interval_bookable(
+            nuova_data,
+            nuova_ora,
+            duration_minutes,
+        ):
+            flash(
+                'Lo studio è chiuso durante l’intervallo selezionato. '
+                'Scegli un altro orario o una durata diversa.',
+                'error',
+            )
             return render_template('modifica_appuntamento.html', a=appuntamento)
 
         gia_occupato_db = slot_occupato_db(
             nuova_data,
             nuova_ora,
-            DURATA_SLOT_MINUTI,
+            duration_minutes,
             ignore_appuntamento_id=appuntamento.id,
         )
-        orari_occupati_calendario = orari_occupati_da_calendario(nuova_data)
-        if nuova_data == appuntamento.data:
-            orari_occupati_calendario.discard(appuntamento.ora)
-        gia_occupato_calendario = nuova_ora in orari_occupati_calendario
+        gia_occupato_calendario = intervallo_occupato_da_calendario(
+            nuova_data,
+            nuova_ora,
+            duration_minutes,
+            ignore_google_event_id=appuntamento.google_event_id,
+        )
         if gia_occupato_db or gia_occupato_calendario:
-            flash('Questo orario non è più disponibile. Scegline un altro.', 'error')
+            flash(
+                'L’intervallo selezionato non è più disponibile. '
+                'Scegli un altro orario o una durata diversa.',
+                'error',
+            )
             return render_template('modifica_appuntamento.html', a=appuntamento)
 
+        was_pending = appuntamento.stato == 'In attesa'
         appuntamento.data = nuova_data
         appuntamento.ora = nuova_ora
+        appuntamento.duration_minutes = duration_minutes
         appuntamento.stato = 'Confermato'
         db.session.commit()
-        invia_email_spostamento(appuntamento)
+        if was_pending:
+            invia_email_conferma(appuntamento)
+        else:
+            invia_email_spostamento(appuntamento)
         if not crea_o_aggiorna_evento_calendario(appuntamento):
             flash('Appuntamento modificato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
         return redirect(url_for('admin', filtro='in_attesa'))

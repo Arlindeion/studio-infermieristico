@@ -287,8 +287,17 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
 - Lettura: `GOOGLE_CALENDAR_ICS_URL` permette di conoscere impegni e chiusure segnati sul calendario sincronizzato da Arzamed.
 - Cache: controllata da `CALENDARIO_CACHE_SECONDI`.
 - Scrittura: un account di servizio crea o aggiorna eventi quando appuntamenti o corsi vengono confermati; le call sonno vengono invece inserite subito come provvisorie per bloccare lo slot anche in Arzamed.
+- Gli eventi creati in Arzamed espongono su Google Calendar inizio e fine
+  effettivi, che il sito usa integralmente per rilevare i conflitti. Una
+  richiesta sanitaria dal sito blocca inizialmente 30 minuti; prima di
+  confermarla l'admin deve scegliere la durata effettiva, da 1 a 480 minuti. Il
+  valore viene salvato in `Appuntamento.duration_minutes` e
+  determina conflitti, disponibilità e fine dell'evento Calendar.
 - L'account di servizio deve avere sul calendario soltanto i permessi necessari.
-- Un conflitto con un evento Calendar deve generare un alert, non impedire in assoluto l'inserimento admin.
+- Un conflitto con un evento Calendar impedisce la conferma di quell'intervallo,
+  ma non elimina la richiesta: l'admin riceve un avviso e può modificarla. Un
+  errore secondario durante la successiva scrittura Calendar non annulla invece
+  la conferma già salvata.
 
 ## Errori parziali
 
@@ -323,9 +332,9 @@ successivi non ne dipendono.
 ## Database e migrazioni
 
 La baseline Alembic `56dda7f5137f` crea l'intero schema; la revisione corrente è
-`7f3c1a2d9e40`: le revisioni successive aggiungono qualificazione, UTM e stato
-dei promemoria email alla call sonno e rimuovono i campi del precedente
-promemoria WhatsApp. Un nuovo
+`4d8b2c7a91e6`: le revisioni successive aggiungono qualificazione, UTM e stato
+dei promemoria email alla call sonno, rimuovono i campi del precedente
+promemoria WhatsApp e aggiungono la durata effettiva agli appuntamenti. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:
 
 ```bash
