@@ -532,10 +532,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-064 — Staging stabile su main con deploy manuali
 
 - Data: 2026-07-29.
-- Stato: approvata nel codice; da integrare e sincronizzare su Render.
+- Stato: implementata nel codice e sincronizzata su Render il 2026-07-30.
 - Decisione: fare seguire al Blueprint e al Web Service di staging il branch `main`, mantenendo `autoDeployTrigger` disattivato. Il branch identifica la linea stabile del progetto; il commit effettivamente distribuito continua a essere scelto e verificato prima di ogni deploy manuale.
 - Motivo: i branch di lavorazione precedenti non devono restare configurazione permanente dell'ambiente condiviso e non devono creare divergenza tra pannello Render e Blueprint.
-- Conseguenze: l'integrazione del file non avvia un deploy automatico. Dopo il merge occorre sincronizzare il Blueprint o aggiornare il branch del servizio a `main`, senza modificare piani, dominio, integrazioni o segreti.
+- Conseguenze: Blueprint e Web Service puntano a `main`, con Auto Sync e auto-deploy disattivati. L'approvazione della modifica di branch nel Blueprint ha comunque avviato un deploy del commit `e4fea38`; l'esecuzione è stata annullata e il deploy live è rimasto `8a4ad84`. Le sincronizzazioni Blueprint vanno quindi trattate come operazioni capaci di avviare un deploy anche quando i nuovi commit non lo fanno automaticamente. L'allineamento non ha modificato piani, dominio, integrazioni o segreti.
 - Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## D-065 — L'ultima disponibilità può accogliere una coppia
