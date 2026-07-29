@@ -230,6 +230,26 @@
     text-align: left;
 }
 
+.birth-course__testimonial {
+    border-left: 5px solid var(--rosso-cuore);
+    margin: clamp(3.5rem, 8vw, 6.5rem) auto 0;
+    max-width: 900px;
+    padding: 0.75rem 0 0.75rem clamp(1.2rem, 3vw, 2.4rem);
+}
+
+.birth-course__testimonial blockquote {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+    line-height: 1.45;
+}
+
+.birth-course__testimonial figcaption {
+    color: var(--grigio);
+    font-size: 0.78rem;
+    margin-top: 0.8rem;
+}
+
 .birth-course__cta h2 {
     max-width: 18ch;
 }

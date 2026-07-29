@@ -172,7 +172,7 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-024 — Sistema editoriale delle schede in homepage
 
 - Data: 2026-07-16.
-- Stato: approvata.
+- Stato: superata dalla D-037 il 2026-07-28 per il redesign a scene singole.
 - Decisione: estendere alla homepage il linguaggio contemporaneo dell'header attraverso schede asimmetriche, tab funzionali, superfici carta e salvia chiaro, ombre contenute e fotografie reali con ritagli morbidi. Le schede non devono essere tutte equivalenti: corsi resta il pannello più ampio e con CTA piena, sonno mantiene un trattamento secondario, prestazioni resta una fascia compatta.
 - Motivo: aumentare riconoscibilità, profondità e qualità percepita senza trasformare la homepage in un catalogo di componenti ripetuti.
 - Conseguenze: il corso di accompagnamento alla nascita usa una grande scheda verde chiaro separata dall'header salvia e un pannello carta autonomo per i cinque professionisti; metodo e testimonianze distinguono sequenza e prova sociale; calendario, Instagram e CTA finali condividono geometrie e bordi senza manipolare il rendering interno dei servizi esterni. La linea rossa segnala priorità o relazione soltanto nei punti funzionali.
@@ -285,6 +285,132 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: evitare la complessità operativa, tecnica e autorizzativa della WhatsApp Business Platform per una funzione coperta in modo adeguato dall'email.
 - Conseguenze: il modulo non richiede un consenso WhatsApp; configurazione, template, credenziali, codice di invio e campi database della precedente automazione vengono rimossi. Non occorrono più Coexistence, un secondo numero o un provider WhatsApp per gestire i promemoria.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `OPERATIONS.md`, `templates/prenota_call_sonno.html`, `app.py`.
+
+## D-037 — Regia scroll della homepage differenziata per dispositivo
+
+- Data: 2026-07-28.
+- Stato: approvata; ritmo desktop aggiornato dalla D-044, guida laterale dalla D-045, livelli hero dalla D-046 e numero di scene dalla D-048 il 2026-07-29.
+- Decisione: trattare la homepage come una sequenza di otto scene autonome: apertura, corsi, sonno, date, nascita, metodo, attività e contatti. Quando lo snap è attivo, ogni scena e il footer occupano esattamente lo spazio visibile sotto l'header e non richiedono né consentono uno scorrimento interno. Corsi e sonno hanno due scene editoriali distinte, con priorità visiva ai corsi. La linea rossa laterale indica la scena attiva. Il parallax fotografico resta circoscritto all'apertura.
+- Motivo: far corrispondere ogni arresto dello scroll a un solo argomento e a una sola schermata, eliminando l'ambiguità di uno snap che conteneva sezioni più alte del viewport.
+- Conseguenze: snap e guida laterale si attivano soltanto da 1024 px di larghezza e 640 px di altezza, con movimento non ridotto. Tra 640 e 840 px la composizione riduce spazi e dimensioni fotografiche per conservare una scena per schermata; sotto una delle due soglie, con `prefers-reduced-motion` o senza JavaScript, la homepage torna a essere una pagina continua e tutti i contenuti restano visibili. Il footer costituisce una schermata conclusiva autonoma. I livelli fotografici definitivi della hero sono descritti nella D-046.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-038 — Passaggio di luce tra gli organi della homepage
+
+- Data: 2026-07-28.
+- Stato: superata dalla D-039 il 2026-07-28.
+- Decisione: collegare le prime tre scene con quattro accensioni puntuali sugli organi reali nelle fotografie: cuore in mano nella hero, cuore e cistifellea sulla parete nella scena corsi, cistifellea in mano nella scena sonno. Su desktop un impulso percorre la linea rossa della guida laterale quando cambia la scena; su mobile resta soltanto l'accensione locale. L'effetto si attiva una volta all'arrivo, senza oscillazioni, particelle o cicli continui.
+- Motivo: trasformare gli organi all'uncinetto in un filo narrativo riconoscibile e proprio dello studio, mantenendo il movimento legato al contenuto invece di aggiungere una decorazione generica.
+- Conseguenze: dopo il confronto dei 143 originali disponibili restano i tre scatti correnti, perché formano la sequenza più chiara. Con `prefers-reduced-motion` l'evidenziazione è statica e la linea non viaggia; il significato e la navigazione non dipendono dall'animazione.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-039 — Filo materico continuo come regia della homepage
+
+- Data: 2026-07-28.
+- Stato: superata dalla D-040 il 2026-07-28.
+- Decisione: sostituire il punto luce con un unico filo rosso materico che nasce dal cuore della hero e segue lo scroll. I raccordi compaiono soltanto durante il passaggio fra scene e si cancellano in senso inverso, così i testi non vengono attraversati. Sono escluse figure simboliche o decorative: il filo compie soltanto gesti fisici, con un giro incompleto attorno a ciascun organo e una curva morbida fra cuore e cistifellea nella scena corsi. Il filo passa davanti e dietro agli organi tramite maschere SVG. L'header reagisce alla scena e la navigazione laterale usa etichette e brevi tratti, senza una seconda linea continua.
+- Motivo: rendere percepibile un movimento che attraversa le scene e trasformare il manufatto all'uncinetto in una regia propria dello studio, invece di applicare un'animazione locale trasferibile a qualunque fotografia.
+- Conseguenze: il prototipo usa SVG, CSS e JavaScript vanilla, senza Three.js o nuove dipendenze. Il filo digitale combina trefolo irregolare, ombra stretta, variazioni tonali e fibre spezzate; la micro-apertura dura circa mezzo secondo e viene mostrata una volta per sessione. Su mobile il filo termina dopo le prime tre scene; con movimento ridotto le figure sono statiche e lo snap viene disattivato. Per la massima fedeltà materica serviranno comunque fotografie macro del filo reale. Prima di estendere il sistema alle altre cinque scene vanno validati ritmo, spessore, forme e resa del materiale.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-040 — Staffetta degli organi e profondità fotografica
+
+- Data: 2026-07-28.
+- Stato: ripristinata e rifinita dalla D-043 il 2026-07-29.
+- Decisione: rimuovere integralmente il filo dalla homepage. Nei passaggi hero-corsi e corsi-sonno un ritaglio fotografico dell'organo parte dalla posizione reale nella scena uscente, segue una traiettoria breve e confluisce nella posizione reale della scena entrante, con dissolvenza fra i due scatti. Dalla scena sonno in poi il passaggio usa una profondità fotografica più sobria: la scena uscente arretra e perde leggermente fuoco mentre quella entrante torna alla scala naturale. All'arresto dello snap non resta alcun livello sovrapposto.
+- Motivo: conservare gli organi all'uncinetto come elemento distintivo, assegnando al movimento una destinazione evidente e rimuovendo segni grafici che interferivano con fotografie e testi.
+- Conseguenze: l'effetto usa CSS e JavaScript vanilla e ritaglia dinamicamente le fotografie già presenti, senza duplicare asset. La staffetta è riservata al desktop con snap; mobile mantiene lo scroll libero e il movimento ridotto disattiva sia staffetta sia profondità. Il percorso deve funzionare nello stesso modo anche tornando allo snap precedente.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-041 — Snap desktop con ritmo coreografico
+
+- Data: 2026-07-29.
+- Stato: superata dalla D-042 il 2026-07-29.
+- Decisione: sostituire la durata non controllabile dello snap nativo con una regia JavaScript limitata alla homepage desktop. Rotella, trackpad, tastiera e navigazione laterale avanzano fra le scene con accelerazione e frenata morbide; un passaggio singolo dura circa 1,05 secondi, mentre i salti fra scene lontane sono limitati a 1,38 secondi. Durante il tragitto lo snap CSS viene sospeso e riattivato soltanto sul punto di arresto esatto.
+- Motivo: lasciare il tempo di leggere la staffetta degli organi e la profondità fotografica, evitando sia l'arresto brusco deciso dal browser sia una navigazione lenta e vischiosa.
+- Conseguenze: un gesto produce un solo avanzamento di scena e gli ulteriori impulsi vengono assorbiti fino al termine del passaggio. Mobile conserva lo scroll nativo libero; `prefers-reduced-motion` disattiva sia la regia sia lo snap. Link, pulsanti e campi mantengono il comportamento da tastiera previsto.
+- Collegamenti: `DECISIONS.md` D-037 e D-040, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-042 — Staffetta tipografica tra le prime scene
+
+- Data: 2026-07-29.
+- Stato: superata dalla D-043 il 2026-07-29.
+- Decisione: usare le parole dei titoli come unico passaggio animato tra le prime quattro scene. `fare` diventa `preparati`, `contano` diventa `insieme` e `insieme` confluisce nel primo giorno cliccabile del calendario. Se non esistono corsi programmati, l'ultimo passaggio termina sulla parola `data` dello stato vuoto. Durante il movimento la parola originale lascia il posto a un livello tipografico temporaneo che cambia posizione, dimensione e testo, poi torna a essere contenuto reale nella scena successiva.
+- Motivo: collegare le scene attraverso il tono editoriale dello studio senza sovrapporre fotografie ritagliate, sfocature o segni grafici ai contenuti.
+- Conseguenze: lo snap torna nativo e non intercetta rotella, trackpad o tastiera. La staffetta compare soltanto durante lo scorrimento desktop e scompare agli arresti; mobile e movimento ridotto mantengono testi normali e nessun livello volante. Il titolo dei corsi diventa `Arrivare preparati ai momenti che contano.` per dare alle due parole una funzione naturale nella frase.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`, `static/js/calendario.js`.
+
+## D-043 — Ripristino del sistema ibrido con organi scontornati
+
+- Data: 2026-07-29.
+- Stato: approvata; ritmo aggiornato dalla D-044 il 2026-07-29.
+- Decisione: ripristinare la staffetta fotografica della D-040 e rimuovere integralmente la staffetta tipografica. Il cuore e la cistifellea non viaggiano più dentro medaglioni o ritagli circolari: ogni inquadratura usa una sagoma dedicata che segue il profilo del manufatto. Il ritaglio mantiene i pixel della fotografia originale e usa soltanto un'ombra aderente al contorno. Dalla scena sonno in poi resta la profondità fotografica della D-040.
+- Motivo: mantenere gli organi all'uncinetto come firma visiva senza mostrare il fondo bianco della fotografia dentro una forma estranea all'oggetto.
+- Conseguenze: le sagome sono definite nel codice con `clip-path` separati per cuore e cistifellea nelle rispettive fotografie. Non servono nuovi asset o immagini generate. La staffetta è riservata al desktop e scompare agli arresti. Mobile e movimento ridotto non mostrano né staffetta né profondità.
+- Collegamenti: `DECISIONS.md` D-040 e D-042, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-044 — Ritmo coreografico calibrato sul sistema ibrido
+
+- Data: 2026-07-29.
+- Stato: implementata; resa da validare.
+- Decisione: rallentare i passaggi fra gli snap desktop con una durata di 0,85 secondi e una curva sinusoidale continua. Un gesto di rotella, trackpad o tastiera avanza di una sola scena; gli impulsi residui vengono assorbiti fino all'arresto. I salti richiesti dalla navigazione laterale restano più brevi di 1,15 secondi anche quando attraversano più scene.
+- Motivo: rendere leggibile la traiettoria degli organi e dare respiro ai passaggi di profondità senza riproporre la sensazione vischiosa del precedente prototipo da 1,05 secondi.
+- Conseguenze: durante il tragitto lo snap CSS viene sospeso e riattivato sul punto di arresto esatto. Scroll, staffetta e profondità condividono un solo ciclo di rendering; geometrie fotografiche e punti di arresto vengono misurati prima del passaggio, evitando ricalcoli di layout durante l'animazione. Gli organi seguono direttamente la curva dello snap, con dissolvenza estesa fra le due fotografie e ridimensionamento affidato a trasformazioni composite anziché a variazioni di larghezza e altezza. Mobile conserva lo scroll libero; `prefers-reduced-motion` mantiene il comportamento nativo e disattiva gli effetti. Link, pulsanti e campi non vengono intercettati dalla navigazione da tastiera.
+- Collegamenti: `DECISIONS.md` D-037, D-041 e D-043, `ROADMAP.md`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-045 — Guida laterale organizzata per capitoli
+
+- Data: 2026-07-29.
+- Stato: implementata; resa da validare.
+- Decisione: organizzare la navigazione laterale della homepage in tre capitoli: `Orientarsi` per apertura, corsi, sonno e date; `Conoscere` per nascita, metodo e attività; `Scegliere` per la scena finale. Corsi e sonno mantengono tacche più evidenti anche quando non sono attivi. Il nome della scena corrente fa parte della riga della guida, senza un riquadro sospeso.
+- Motivo: rendere visibile la gerarchia del racconto e impedire che otto indicatori equivalenti attribuiscano lo stesso peso ai due pilastri commerciali, alle prove di fiducia e alla scelta finale.
+- Conseguenze: il capitolo corrente viene aggiornato insieme alla scena; hover e focus continuano a mostrare il nome di ogni destinazione. La guida resta disponibile soltanto nel layout desktop con snap e non modifica lo scroll libero mobile.
+- Collegamenti: `DECISIONS.md` D-037, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
+
+## D-046 — Livelli fotografici definitivi della hero
+
+- Data: 2026-07-29.
+- Stato: implementata; resa da validare.
+- Decisione: mantenere composizione e intensità del parallax della hero, sostituendo il fondale prototipale e la sagoma SVG con due livelli ricavati dall'originale `SELENE-16.jpg` a 6000×4000 px. Il fondale conserva colore e grana della parete dello scatto; il primo piano usa una maschera fotografica per-pixel di Selene.
+- Motivo: evitare che il parallax faccia percepire Selene come una figura ritagliata e conservare i dettagli irregolari di capelli e spalle che un tracciato geometrico non può seguire.
+- Conseguenze: il fallback resta la fotografia completa a 1920×1280; con JavaScript attivo vengono caricati un JPEG di fondale e un WebP trasparente della stessa misura. Non cambiano testi, proporzioni, intensità del movimento o comportamento mobile. L'originale ad alta risoluzione resta fuori dal repository.
+- Collegamenti: `DECISIONS.md` D-037, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`.
+
+## D-047 — Credenziali fuori dalla scena corsi
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: rimuovere dalla scena corsi la fascia con `Infermiera OPI Pescara`, `Attività pratiche` e `In presenza`. Formato e luogo diventano l'intestazione `Corsi pratici in presenza · Montesilvano`; l'iscrizione OPI resta verificabile nei contenuti dedicati al profilo professionale, senza essere presentata come elemento distintivo dell'offerta.
+- Motivo: l'iscrizione all'Ordine è una credenziale necessaria della professione, non un beneficio differenziante; pratica e luogo erano già comunicati dalla fotografia e dai testi. La fascia duplicava informazioni e assumeva l'aspetto di una tabella amministrativa.
+- Conseguenze: la scena corsi contiene una sola gerarchia formata da fotografia, intestazione, titolo, descrizione, corsi e azione. Non viene introdotto un tratto rosso sostitutivo privo di funzione; lo spazio recuperato migliora il respiro della schermata anche sui laptop compatti.
+- Collegamenti: `BRAND_SYSTEM.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `static/css/homepage.css`.
+
+## D-048 — Scene editoriali adattive e movimento legato al contenuto
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: organizzare la scena corsi in due famiglie, `Sicurezza` e `Nascita e crescita`, senza trasformare i quattro collegamenti in schede equivalenti. La scena Date viene renderizzata, inclusa nella guida e caricata con il relativo JavaScript soltanto quando esistono date future non annullate; negli altri casi la raccolta di interesse conclude la scena corsi. La squadra del percorso nascita diventa una firma continua lungo un solo asse. Metodo e prova vengono riuniti nella sequenza `Ascolto` → `Mettiamo ordine` → `Scegliamo il passo` → `Strumenti che restano`, con una sola testimonianza completa in homepage.
+- Motivo: ridurre l'effetto catalogo e amministrativo, mantenere una schermata per snap e fare in modo che ogni elemento della homepage contribuisca al racconto invece di occupare spazio per completezza formale.
+- Conseguenze: la homepage contiene sette scene quando il calendario è vuoto e otto quando sono disponibili date. Dopo la staffetta degli organi, ogni transizione usa lo stesso principio di scala, fuoco e completamento progressivo applicato al contenuto della scena: bordo del calendario, fotografia del team, linea del metodo, feed delle attività e separazione delle due scelte finali. Mobile mantiene composizione completa e scroll libero; il movimento ridotto mostra immediatamente ogni elemento nello stato finale. Il secondo feedback del percorso nascita viene conservato nella pagina dedicata al corso.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `templates/homepage.html`, `templates/prima_della_nascita.html`, `static/css/homepage.css`, `static/css/accompagnamento.css`, `static/js/home-scroll-motion.js`.
+
+## D-049 — Feed Instagram vivo e senza cornice concorrente
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: mostrare automaticamente gli ultimi sei post Instagram con il layout flessibile di Behold: tre colonne quadrate su desktop e due colonne in rapporto 4:5 su mobile. I contenuti hanno angoli al 20%, overlay `#7C9A7E`, nessun bordo e aprono la galleria interna. La cornice verde, l'ombra e gli angoli asimmetrici del contenitore del sito vengono rimossi.
+- Motivo: il feed deve raccontare la realtà aggiornata dello studio. I ritagli molto arrotondati sono già il gesto visivo caratterizzante; una seconda sagoma attorno all'intera griglia ne indeboliva la lettura.
+- Conseguenze: il sito non forza dimensioni o trasformazioni interne del widget e mantiene soltanto il contenitore necessario al movimento della scena. Aggiornamenti e ordine dei post restano gestiti da Behold; la scena conserva titolo, contesto e collegamento al profilo Instagram.
+- Collegamenti: `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`.
+
+## D-050 — Scelta finale e footer come epilogo naturale
+
+- Data: 2026-07-29.
+- Stato: approvata.
+- Decisione: trasformare l'ultimo snap in due campi asimmetrici, con circa tre quinti dello spazio destinati ai corsi e due quinti alla consulenza del sonno. Ogni campo contiene una frase concreta e una sola azione; un ritaglio reale degli organi dalla fotografia dei corsi chiude il racconto visivo. Le prestazioni infermieristiche diventano una riga secondaria sotto le due scelte. Il footer non è più un punto di snap, mantiene altezza naturale e fa scomparire la guida laterale quando entra nella finestra.
+- Motivo: evitare che la chiusura ripeta semplicemente la hero, rispettare la gerarchia commerciale e impedire che informazioni legali e recapiti occupino un'intera schermata vuota.
+- Conseguenze: lo snap desktop termina sulla scelta finale e il successivo gesto di scorrimento entra nel footer con comportamento nativo. Su mobile il testo precede le fotografie nei due pilastri, le scelte si impilano, la galleria Instagram resta su due colonne e il footer conserva il flusso naturale. La linea rossa segnala soltanto l'inizio dei tre capitoli del racconto mobile.
+- Collegamenti: `BRAND_SYSTEM.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `templates/homepage.html`, `static/css/homepage.css`, `static/js/home-scroll-motion.js`.
 
 ## Modello per nuove decisioni
 

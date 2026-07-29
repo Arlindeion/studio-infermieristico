@@ -38,15 +38,14 @@ Le pagine di conferma devono spiegare cosa è stato registrato e cosa succede do
 Ordine da mantenere salvo decisione esplicita:
 
 1. Hero con Selene, una promessa e massimo due CTA: `Scopri i corsi` e `Scegli l’orario della call`.
-2. Prova di fiducia: ruolo sanitario, OPI, attività reali.
-3. Due pilastri: corsi in presenza e consulenza del sonno.
-4. Prossime date disponibili.
-5. Corso di accompagnamento alla nascita con cinque professionisti.
-6. Metodo di Selene.
-7. Testimonianze reali autorizzate.
-8. Feed Instagram come prova secondaria delle attività reali, con collegamento diretto al profilo.
-9. Prestazioni infermieristiche in fascia secondaria.
-10. CTA finale coerente con i due pilastri.
+2. Corsi in presenza, organizzati nelle famiglie `Sicurezza` e `Nascita e crescita`.
+3. Consulenza del sonno.
+4. Prossime date, in una scena autonoma soltanto quando il calendario contiene date future non annullate; altrimenti la raccolta di interesse chiude la scena corsi.
+5. Corso di accompagnamento alla nascita con fotografia e firma continua dei cinque professionisti.
+6. Metodo di Selene e una testimonianza reale autorizzata, riuniti nella stessa sequenza.
+7. Feed Instagram come prova secondaria delle attività reali, con collegamento diretto al profilo.
+8. Scelta finale asimmetrica: corsi come percorso dominante e consulenza del sonno come secondo pilastro.
+9. Prestazioni infermieristiche in una riga secondaria prima del footer naturale.
 
 La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel hero e nella sezione immediatamente successiva.
 

@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 21 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Scopo
 
@@ -17,7 +17,9 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
 - Firma della hero: `Selene Campetta · infermiera e consulente del sonno`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.
 - Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
-- Introduzione ai pilastri della homepage: `Partite da ciò che serve oggi alla vostra famiglia.`
+- Titolo della scena corsi in homepage: `Arrivate preparati ai momenti che contano.`
+- Titolo della scena sonno in homepage: `Leggiamo insieme risvegli, sonnellini e addormentamento.`
+- Titolo della scena metodo in homepage: `Dai dubbi a un passo che puoi usare nella vita reale.` La sequenza approvata è `Ascolto` → `Mettiamo ordine` → `Scegliamo il passo` → `Strumenti che restano`.
 - Percezione desiderata: Selene è una professionista sanitaria competente e vicina, non un brand impersonale.
 - Voce: usare la prima persona singolare quando Selene parla alle famiglie, descrive il proprio metodo o anticipa un contatto; mantenere `Selene Campetta` e la terza persona per biografia, credenziali, metadati, testi legali e informazioni istituzionali.
 - Corsi: apprendimento pratico, segnali da osservare, gesti da allenare e date disponibili.
@@ -30,7 +32,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - Sintesi campagna sonno: `Capire prima di cambiare.`
 - Corso nascita: visione a 360 gradi con infermiera, ostetrica, psicologa, osteopata e nutrizionista.
 - BLSD: investimento concreto nella sicurezza degli ambienti; corso di 5 ore con teoria ed esercitazioni pratiche su manichino, rivolto a cittadini, associazioni, aziende e gruppi.
-- Instagram in homepage: attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri.
+- Instagram in homepage: gli ultimi sei post mostrano automaticamente attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri. Il feed usa una griglia Behold a tre colonne su desktop e due su mobile; il clic apre la galleria interna.
 - Prestazioni infermieristiche: il listino pubblico è diviso in `Terapie e somministrazioni`, `Medicazioni`, `Controlli e diagnostica` e `Altre prestazioni`, con tariffe riferite allo studio e variazioni comunicate prima della conferma. La sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
 
 ## Naming approvato
@@ -69,6 +71,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 ## Testimonianze
 
 - Fonte disponibile: feedback spontanei del corso di accompagnamento alla nascita.
+- In homepage usare una sola testimonianza completa come quarto passaggio della sequenza del metodo. Il secondo feedback approvato resta nella pagina del corso di accompagnamento alla nascita.
 - Consulenza del sonno: non sono ancora disponibili testimonianze dirette autorizzate.
 - Pubblicazione: solo dopo autorizzazione, eventualmente in forma anonima.
 - Regola editoriale: si possono correggere refusi minimi, ma non alterare significato, tono o risultato dichiarato.
@@ -96,10 +99,12 @@ I KPI, i costi obiettivo e l'obiettivo di raccolta delle testimonianze sono docu
 
 | File | Dimensioni | Uso corrente | Stato |
 |---|---:|---|---|
-| `static/img/selene-hero-home.jpg` | 1920×1280 | Hero homepage, Open Graph e dati strutturati; PDF pilota | Approvata come immagine principale provvisoria |
+| `static/img/selene-hero-home.jpg` | 1920×1280 | Fallback della hero homepage, Open Graph e dati strutturati; PDF pilota | Approvata; deriva dall'originale `SELENE-16.jpg` conservato fuori dal repository |
+| `static/img/selene-hero-home-background.jpg` | 1920×1280 | Fondale fotografico del parallax della homepage | Approvato; parete ricostruita campionando colore e grana dall'originale `SELENE-16.jpg` |
+| `static/img/selene-hero-home-subject.webp` | 1920×1280 | Livello trasparente di Selene nel parallax della homepage | Approvato; maschera per-pixel ricavata dall'originale per conservare capelli e profilo delle spalle |
 | `static/img/selene-chi-sono.jpg` | 1066×1600 | Pagina Chi sono; PDF pilota | In uso |
 | `static/img/selene-consulenze.jpg` | 1280×1920 | Homepage e landing sonno | In uso |
-| `static/img/selene-corsi.jpg` | 1280×1920 | Homepage, corsi e prima della nascita | In uso |
+| `static/img/selene-corsi.jpg` | 1280×1920 | Homepage, corsi, prima della nascita e dettaglio fotografico della scelta finale | In uso |
 | `static/img/corso-accompagnamento-nascita-professionisti.jpg` | 1536×2048 | Homepage e pagina del corso di accompagnamento alla nascita | In uso; conservare fuori dal repository le autorizzazioni dei soggetti ritratti |
 | `static/img/logo-farmacia-russo.png` | 360×100 | Banner della collaborazione nella pagina del corso di accompagnamento alla nascita | In uso; PNG originale con sfondo trasparente e collegamento al sito della farmacia |
 | `static/img/selene-dopo-nascita.jpg` | 1280×1920 | Dopo la nascita e disostruzione nell'elenco corsi | In uso; verificare se è la scelta più specifica per disostruzione |
@@ -118,6 +123,12 @@ I KPI, i costi obiettivo e l'obiettivo di raccolta delle testimonianze sono docu
 | `static/img/consulenza-sonno-neonato.jpg` | 1536×1024 | Sezione metodo della landing sonno | In uso; ritaglio panoramico centrato su neonato e contatto con l'adulto |
 | `static/img/logo.png` | 1024×1024 | Logo chiaro, favicon e materiali | In uso; nome normalizzato per i filesystem Linux case-sensitive |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
+
+### Sequenza fotografica della homepage
+
+Il 28 luglio 2026 sono stati confrontati i 143 originali della cartella esterna `Scrivania/sito/foto_sito/Highlights`. Per le prime tre scene restano in uso `selene-hero-home.jpg`, `selene-corsi.jpg` e `selene-consulenze.jpg`: costruiscono la sequenza più leggibile tra cuore in mano, organi sulla parete e cistifellea in mano. Nei primi due passaggi il prototipo ricava dalle fotografie correnti i ritagli degli organi e li porta dalla posizione della scena uscente a quella della scena entrante.
+
+I ritagli sono scontornati nel browser con sagome diverse per ogni fotografia. Non vengono creati duplicati raster e il cuore conserva vasi, proporzioni e trama dell'originale. Il fondale e il livello trasparente della hero sono stati finalizzati dall'originale `SELENE-16.jpg` come descritto nell'inventario. La scelta finale riprende un dettaglio della parete di organi da `selene-corsi.jpg`, senza creare un ulteriore asset o duplicare la figura intera di Selene.
 
 ## Immagini presenti ma non assegnate
 

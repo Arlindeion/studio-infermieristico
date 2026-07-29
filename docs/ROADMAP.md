@@ -1,6 +1,6 @@
 # Roadmap
 
-Stato aggiornato al 21 luglio 2026. Il checkpoint interno è il 15 settembre 2026 e richiede sia un sito tecnicamente pronto e sicuro sia una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica.
+Stato aggiornato al 29 luglio 2026. Il checkpoint interno è il 15 settembre 2026 e richiede sia un sito tecnicamente pronto e sicuro sia una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica.
 
 ## Gate interno del 15 settembre
 
@@ -21,7 +21,8 @@ La sola finalizzazione grafica non basta. Se un requisito P0 resta aperto, il si
 
 - Identità principale definita: salvia dello studio, tipografia, linea rossa e fotografia reale.
 - Header salvia responsive con testo scuro, gerarchia corsi/sonno verificata e footer verde profondo.
-- Homepage riorganizzata intorno a corsi e consulenza del sonno, con schede editoriali differenziate, priorità visiva ai corsi, sezione nascita separata dall'header, calendario accessibile e stato vuoto orientato al ricontatto.
+- Homepage ridisegnata come racconto a scene singole, con corsi e consulenza del sonno in due schermate distinte e priorità visiva ai corsi. I quattro corsi sono raccolti nelle famiglie `Sicurezza` e `Nascita e crescita`; quando non esistono date future non annullate la raccolta di interesse chiude la scena corsi e la scena Date scompare. La scena nascita usa una firma continua per i cinque professionisti; metodo e testimonianza formano un'unica sequenza. L'iscrizione OPI resta nei contenuti professionali dedicati e non viene trattata come beneficio commerciale.
+- Regia scroll della homepage estesa a sette scene, oppure otto quando esistono date: ogni snap desktop occupa una sola schermata senza scroll interno; sotto 1024×640 px, su mobile e con movimento ridotto lo scorrimento resta libero. I laptop tra 640 e 840 px di altezza usano una composizione verticale più compatta. Il filo e la staffetta tipografica sono stati rimossi. Il sistema ibrido collega le prime tre scene con cuore e cistifellea scontornati; dalla scena sonno in poi i passaggi condividono scala, fuoco e un completamento legato al contenuto: fotografia del team, linea del metodo, feed attività e scelte finali. Su desktop ogni passaggio dura 0,85 secondi con arresto esatto sullo snap; gli impulsi del trackpad non possono saltare una scena. La guida laterale si adatta alle scene presenti e le raggruppa nei capitoli `Orientarsi`, `Conoscere` e `Scegliere`. Header reattivo e navigazione di scena restano attivi. Il parallax della hero usa livelli definitivi ricavati dall'originale `SELENE-16.jpg`, con fondale fotografico e maschera per-pixel di capelli e spalle.
 - Landing `call-first` sul sonno infantile 0-12 mesi, con gerarchia responsive, prezzi leggibili e call gratuita come azione dominante.
 - Prenotazione breve della call sonno con slot provvisorio, controllo incrociato database/Calendar, gestione admin ed email di conferma.
 - Questionario sonno privato sul sito, inviabile solo dopo la call e la scelta della formula.

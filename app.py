@@ -2204,7 +2204,11 @@ if (
 
 @app.route('/')
 def homepage():
-    corsi = Corso.query.order_by(Corso.data).all()
+    oggi = date.today().isoformat()
+    corsi = Corso.query.filter(
+        Corso.data >= oggi,
+        Corso.stato != 'Annullato',
+    ).order_by(Corso.data, Corso.ora).all()
     return render_template('homepage.html', corsi=corsi)
 
 

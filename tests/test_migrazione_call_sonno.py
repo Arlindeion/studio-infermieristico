@@ -39,17 +39,26 @@ def test_ensure_schema_updates_an_existing_call_table_without_losing_rows():
         }
         row = conn.execute(
             """
-            SELECT consenso_privacy, stato, creato_il, aggiornato_il
+            SELECT consenso_privacy, stato, creato_il, aggiornato_il,
+                   presa_visione_offerta, conferma_ambito
             FROM call_sonno
             """
         ).fetchone()
 
         assert 'consenso_privacy' in columns
         assert 'token_questionario' in columns
+        assert 'ruolo_richiedente' in columns
+        assert 'durata_difficolta' in columns
+        assert 'obiettivo_call' in columns
+        assert 'promemoria_email_24h_il' in columns
+        assert 'promemoria_email_2h_il' in columns
+        assert {'utm_source', 'utm_medium', 'utm_campaign', 'utm_content'} <= columns
         assert row[0] == 0
         assert row[1] == 'In attesa'
         assert row[2] is not None
         assert row[3] is not None
+        assert row[4] == 0
+        assert row[5] == 0
         assert conn.execute('SELECT COUNT(*) FROM call_sonno').fetchone()[0] == 1
     finally:
         conn.close()

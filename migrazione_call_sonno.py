@@ -19,12 +19,23 @@ CALL_SONNO_CORE_COLUMNS = {
 
 CALL_SONNO_ADDITIVE_COLUMNS = {
     'difficolta_altro': 'VARCHAR(300)',
+    'ruolo_richiedente': 'VARCHAR(60)',
+    'durata_difficolta': 'VARCHAR(60)',
+    'obiettivo_call': 'VARCHAR(300)',
+    'presa_visione_offerta': 'BOOLEAN DEFAULT 0 NOT NULL',
+    'conferma_ambito': 'BOOLEAN DEFAULT 0 NOT NULL',
     'consenso_privacy': 'BOOLEAN DEFAULT 0 NOT NULL',
     'stato': "VARCHAR(20) DEFAULT 'In attesa' NOT NULL",
     'google_event_id': 'VARCHAR(255)',
     'formula_scelta': 'VARCHAR(30)',
     'token_questionario': 'VARCHAR(96)',
     'questionario_inviato_il': 'DATETIME',
+    'promemoria_email_24h_il': 'DATETIME',
+    'promemoria_email_2h_il': 'DATETIME',
+    'utm_source': 'VARCHAR(100)',
+    'utm_medium': 'VARCHAR(100)',
+    'utm_campaign': 'VARCHAR(100)',
+    'utm_content': 'VARCHAR(100)',
     'creato_il': 'DATETIME',
     'aggiornato_il': 'DATETIME',
 }

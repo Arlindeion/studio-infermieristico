@@ -604,9 +604,45 @@ def test_css_core_e_modulo_homepage(client):
     assert 'css/base.css' in resp.text
     assert 'css/components.css' in resp.text
     assert 'css/homepage.css' in resp.text
+    assert 'js/home-scroll-motion.js' in resp.text
     assert 'css/consulenza.css' not in resp.text
     assert 'css/admin.css' not in resp.text
     assert 'css/stile.css' not in resp.text
+
+
+def test_homepage_usa_scene_singole_e_parallax_circoscritto(client):
+    homepage = client.get('/')
+    consultation = client.get('/consulenze-online')
+    booking = client.get('/prenota')
+    admin = client.get('/admin/login')
+
+    assert 'data-home-parallax' in homepage.text
+    assert 'selene-hero-home-background.jpg' in homepage.text
+    assert 'selene-hero-home-subject.webp' in homepage.text
+    assert 'home-hero-subject-clip' not in homepage.text
+    assert 'data-home-parallax-foreground' in homepage.text
+    assert homepage.text.count('data-home-scene=') == 7
+    assert 'data-home-scene-nav' in homepage.text
+    assert homepage.text.count('data-home-scene-chapter') == 3
+    assert 'role="group" aria-label="Orientarsi"' in homepage.text
+    assert 'role="group" aria-label="Conoscere"' in homepage.text
+    assert 'role="group" aria-label="Scegliere"' in homepage.text
+    assert 'data-home-scene-link="corsi"' in homepage.text
+    assert 'data-home-scene-link="sonno"' in homepage.text
+    assert homepage.text.count('home-scene-nav__link--pillar') == 2
+    assert 'class="home-trust"' not in homepage.text
+    assert 'Infermiera OPI Pescara' not in homepage.text
+    assert 'Corsi pratici in presenza · Montesilvano' in homepage.text
+    assert 'data-home-scene-link="date"' not in homepage.text
+    assert 'class="home-course-families"' in homepage.text
+    assert homepage.text.count('data-home-handoff-anchor=') == 4
+    assert 'data-word-relay-anchor' not in homepage.text
+    assert 'data-home-thread' not in homepage.text
+    assert 'data-home-object-handoff' not in homepage.text
+    assert 'data-home-scene-pulse' not in homepage.text
+    assert 'js/scroll-echo.js' not in consultation.text
+    assert 'js/home-scroll-motion.js' not in booking.text
+    assert 'js/home-scroll-motion.js' not in admin.text
 
 
 def test_css_rgba_letterali_solo_nei_token():
@@ -795,6 +831,7 @@ def test_pagina_accompagnamento_presenta_percorso_ed_equipe(client):
     assert 'logo-farmacia-russo.png' in resp.text
     assert 'href="https://farmaciarussodomenico.it/"' in resp.text
     assert 'aria-label="Visita il sito della Farmacia Russo"' in resp.text
+    assert 'Molto formativo grazie alle esperienze pratiche condivise dai professionisti' in resp.text
     assert resp.text.count('<h1>') == 1
 
 
@@ -1868,6 +1905,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
     assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
+    assert 'Arrivate preparati ai momenti che contano.' in resp.text
     assert 'data-conversion="home_hero_corsi"' in resp.text
     assert 'data-conversion="home_hero_call_sonno"' in resp.text
     assert resp.text.count('Scegli l’orario della call') == 2
@@ -1878,10 +1916,17 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
     assert 'class="btn-prenota"' not in resp.text
     assert '<behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>' in resp.text
     assert 'behold-widget.js' in resp.text
-    assert resp.text.index('class="home-instagram"') < resp.text.index('class="home-clinical-band"')
-    assert resp.text.index('class="home-clinical-band"') < resp.text.index('class="home-final-cta"')
-    assert 'class="home-birth-shell"' in resp.text
-    assert 'class="home-professionals-label"' in resp.text
+    assert resp.text.index('class="home-instagram"') < resp.text.index('class="home-final-cta"')
+    assert resp.text.index('class="home-final-cta"') < resp.text.index('class="home-clinical-band"')
+    assert 'class="home-final-choice home-final-choice--courses"' in resp.text
+    assert 'class="home-final-choice home-final-choice--sleep"' in resp.text
+    assert 'class="home-final-detail"' in resp.text
+    assert 'Scegli il prossimo passo, in base a ciò che ti serve adesso.' in resp.text
+    assert 'home-birth-shell' in resp.text
+    assert 'class="home-team-signature"' in resp.text
+    assert 'Una squadra, cinque sguardi coordinati' in resp.text
+    assert 'class="home-method-sequence"' in resp.text
+    assert resp.text.count('class="home-testimonial-featured"') == 1
     assert 'class="home-testimonial-featured"' in resp.text
 
 
@@ -1889,10 +1934,13 @@ def test_homepage_senza_date_mostra_un_ricontatto_compatto(client):
     resp = client.get('/')
 
     assert resp.status_code == 200
-    assert 'home-dates home-dates--empty' in resp.text
-    assert 'Le prossime date stanno arrivando.' in resp.text
+    assert 'data-home-scene="date"' not in resp.text
+    assert 'data-home-scene-link="date"' not in resp.text
+    assert 'Nuove date in preparazione.' in resp.text
     assert 'data-conversion="home_date_interesse"' in resp.text
     assert 'id="cal-griglia"' not in resp.text
+    assert 'id="corsi-data"' not in resp.text
+    assert resp.text.count('data-home-scene=') == 7
 
 
 def test_homepage_con_date_mostra_il_calendario_accessibile(client):
@@ -1901,9 +1949,23 @@ def test_homepage_con_date_mostra_il_calendario_accessibile(client):
     resp = client.get('/')
 
     assert resp.status_code == 200
-    assert 'home-dates--empty' not in resp.text
+    assert 'data-home-scene="date"' in resp.text
+    assert 'data-home-scene-link="date"' in resp.text
     assert 'id="cal-griglia"' in resp.text
     assert 'id="cal-dettaglio" role="status" aria-live="polite"' in resp.text
+    assert 'id="corsi-data"' in resp.text
+    assert resp.text.count('data-home-scene=') == 8
+
+
+def test_homepage_ignora_le_date_passate_nella_regia(client):
+    _crea_data_corso('disostruzione-pediatrica', data='2020-01-10')
+
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'data-home-scene="date"' not in resp.text
+    assert 'data-home-scene-link="date"' not in resp.text
+    assert 'data-conversion="home_date_interesse"' in resp.text
 
 
 def test_calendario_homepage_usa_controlli_accessibili():
@@ -1925,6 +1987,63 @@ def test_homepage_non_forza_il_layout_del_widget_instagram():
     assert 'transform:' not in regola_widget.group(1)
     assert 'width:' not in regola_widget.group(1)
     assert 'height:' not in regola_widget.group(1)
+
+
+def test_homepage_usa_staffetta_scontornata_e_profondita_solo_con_movimento_attivo():
+    root = Path(app_module.__file__).resolve().parent
+    script = (root / 'static' / 'js' / 'home-scroll-motion.js').read_text()
+    stylesheet = (root / 'static' / 'css' / 'homepage.css').read_text()
+
+    assert "{ from: 'hero-heart', fromScene: 0, to: 'courses-heart', toScene: 1 }" in script
+    assert "{ from: 'courses-gallbladder', fromScene: 1, to: 'sleep-gallbladder', toScene: 2 }" in script
+    assert "'hero-heart': 'url(\"#home-clip-heart-hero\")'" in script
+    assert "'courses-heart': 'url(\"#home-clip-heart-courses\")'" in script
+    assert 'clipPathUnits="objectBoundingBox"' in (root / 'templates' / 'homepage.html').read_text()
+    assert 'element.style.clipPath = snapshot.clipPath' in script
+    assert 'const progress = rawProgress' in script
+    assert 'const visibility = Math.sin(Math.PI * progress)' in script
+    assert 'const crossfade = smoothstep(0.3, 0.7, progress)' in script
+    assert 'handoffSource.style.transform = `scale(${format(size / source.size)})`' in script
+    assert 'handoffElement.style.height' not in script
+    assert 'handoffElement.style.width' not in script
+    assert 'will-change: opacity, transform' in stylesheet
+    assert 'if (depthStates[index] === state) return' in script
+    assert 'if (nextStyleKey === parallaxStyleKey) return' in script
+    assert 'const renderDepth = () =>' in script
+    assert "scene.style.setProperty('--home-focus-progress', focusProgress)" in script
+    assert "window.matchMedia('(prefers-reduced-motion: reduce)')" in script
+    assert "window.addEventListener('scroll', scheduleUpdate, { passive: true })" in script
+    assert 'home-object-handoff:not(.is-visible)' in stylesheet
+    assert 'drop-shadow(0 8px 9px var(--verde-scuro-a10))' in stylesheet
+    assert 'home-depth-ready' in stylesheet
+    assert 'const SNAP_TRAVEL_DURATION = 850' in script
+    assert 'const easeInOutSine = (progress) =>' in script
+    assert 'let handoffSnapshots = new Map()' in script
+    assert 'const sceneChapters = Array.from' in script
+    assert "chapter.classList.toggle('is-current', containsCurrentScene)" in script
+    assert 'const measureAnchorSnapshot = (name) =>' in script
+    assert 'const position = (sceneStops[index] - window.scrollY) / stageHeight' in script
+    assert 'if (snapIsAnimating) return' in script
+    assert 'window.scrollTo(0, startPosition + (distance * easeInOutSine(progress)));\n                update();' in script
+    assert "window.addEventListener('wheel', onWheel, { passive: false })" in script
+    assert "root.classList.add('home-snap-is-animating')" in script
+    assert 'html.home-scroll-snap.home-snap-is-animating' in stylesheet
+    assert 'snapStops = [...sceneStops]' in script
+    assert 'snapStops.push' not in script
+    assert 'const isLeavingFinalScene' in script
+    assert "root.classList.add('home-footer-scroll')" in script
+    assert 'const enterFooter = () =>' in script
+    assert "root.classList.toggle('home-footer-visible', footerIsVisible)" in script
+    assert 'html.home-scroll-snap.home-footer-scroll' in stylesheet
+    assert '.home-scroll-story-ready.home-footer-visible .home-scene-nav' in stylesheet
+    assert '.home-scroll-snap .page-homepage .site-footer' not in stylesheet
+
+
+def test_homepage_mantiene_logo_rettangolare_e_filo_header_condivisi():
+    stylesheet = (Path(app_module.__file__).resolve().parent / 'static' / 'css' / 'homepage.css').read_text()
+
+    assert '.page-homepage .site-brand__mark' not in stylesheet
+    assert '.page-homepage .site-nav__thread' not in stylesheet
 
 
 def test_consulenza_online_e_verticale_sul_sonno(client):
