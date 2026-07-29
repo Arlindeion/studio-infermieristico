@@ -3,13 +3,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const preferencesButton = document.getElementById('cookie-preferences');
     const measurementId = analyticsMeta ? analyticsMeta.content.trim() : '';
     const storageKey = 'sc_analytics_consent';
+    const deniedConsent = {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied'
+    };
 
     if (!measurementId) {
         return;
     }
 
+    function readChoice() {
+        try {
+            return localStorage.getItem(storageKey);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function storeChoice(choice) {
+        try {
+            localStorage.setItem(storageKey, choice);
+        } catch (error) {
+            // La scelta resta valida per la pagina corrente anche quando il
+            // browser impedisce l'accesso allo storage.
+        }
+    }
+
+    function updateConsent(analyticsStorage) {
+        if (typeof window.gtag !== 'function') {
+            return;
+        }
+        window.gtag('consent', 'update', {
+            ...deniedConsent,
+            analytics_storage: analyticsStorage
+        });
+    }
+
+    function removeAnalyticsCookies() {
+        document.cookie.split(';').forEach(function(cookie) {
+            const name = cookie.split('=')[0].trim();
+            if (!/^_ga(?:_|$)|^_gid$|^_gat(?:_|$)/.test(name)) {
+                return;
+            }
+            document.cookie = name + '=; Max-Age=0; path=/; SameSite=Lax';
+        });
+    }
+
     function loadGoogleAnalytics() {
         if (window.gtag) {
+            updateConsent('granted');
             return;
         }
 
@@ -17,12 +61,14 @@ document.addEventListener('DOMContentLoaded', function() {
         window.gtag = function() {
             window.dataLayer.push(arguments);
         };
+        window.gtag('consent', 'default', deniedConsent);
 
         const script = document.createElement('script');
         script.async = true;
         script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
         document.head.appendChild(script);
 
+        updateConsent('granted');
         window.gtag('js', new Date());
         window.gtag('config', measurementId, {
             anonymize_ip: true
@@ -37,11 +83,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveChoice(choice) {
-        localStorage.setItem(storageKey, choice);
+        storeChoice(choice);
         removeBanner();
 
         if (choice === 'accepted') {
             loadGoogleAnalytics();
+        } else {
+            updateConsent('denied');
+            removeAnalyticsCookies();
         }
     }
 
@@ -81,11 +130,11 @@ document.addEventListener('DOMContentLoaded', function() {
         preferencesButton.addEventListener('click', showBanner);
     }
 
-    const savedChoice = localStorage.getItem(storageKey);
+    const savedChoice = readChoice();
 
     if (savedChoice === 'accepted') {
         loadGoogleAnalytics();
-    } else if (!savedChoice) {
+    } else if (savedChoice !== 'rejected') {
         showBanner();
     }
 });

@@ -520,6 +520,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: la conferma viene rifiutata se la durata manca, non è compresa tra 1 e 480 minuti, supera l'orario di apertura o si sovrappone a richieste, call, corsi o eventi Calendar. Le righe esistenti ricevono 30 minuti tramite migrazione; ogni modifica successiva può aggiornare la durata e l'evento collegato. Il 29 luglio il flusso ha superato i test automatici e il controllo dell'admin a 1440×900 e 390×844 px; durante il collaudo è stata corretta anche la precedenza CSS che nascondeva le card appuntamento su mobile.
 - Collegamenti: `app.py`, `templates/admin.html`, `templates/modifica_appuntamento.html`, `migrations/versions/4d8b2c7a91e6_durata_effettiva_appuntamento.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-063 — Revoca Analytics effettiva
+
+- Data: 2026-07-29.
+- Stato: implementata; validazione legale ancora necessaria.
+- Decisione: non caricare GA4 prima dell'accettazione esplicita. Una scelta rifiutata o revocata deve impostare a `denied` le categorie Analytics e Ads, impedire nuovi eventi di conversione e far scadere soltanto i cookie riconducibili a Google Analytics. La presenza di `window.gtag` non equivale al consenso: ogni evento di conversione verifica anche la scelta salvata.
+- Motivo: la revoca deve produrre un effetto tecnico immediato nella pagina corrente e non soltanto impedire il caricamento nelle visite successive.
+- Conseguenze: `GOOGLE_ANALYTICS_ID` resta assente dagli ambienti operativi fino alla validazione professionale; la suite JavaScript verifica assenza di richieste prima del consenso, accettazione, rifiuto, valori salvati non validi, revoca e conservazione dei cookie non Analytics.
+- Collegamenti: `static/js/analytics-consent.js`, `static/js/conversion-tracking.js`, `tests/js/analytics-consent.test.js`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

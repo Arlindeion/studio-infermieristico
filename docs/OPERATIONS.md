@@ -237,13 +237,26 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | secret file `google-service-account.json` | JSON caricato dal pannello, disponibile in `/etc/secrets/` |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-service-account.json` |
 | `PUBLIC_BASE_URL` | origine HTTPS definitiva, senza percorso, per esempio `https://scstudioinfermieristico.it` |
-| `GOOGLE_ANALYTICS_ID` | facoltativo finché consenso e GA4 non sono validati |
+| `GOOGLE_ANALYTICS_ID` | facoltativo finché informativa, consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
 
 `MAIL_USE_TLS` e `MAIL_USE_SSL` non possono essere entrambe attive. Sessione,
 admin e Basic Auth devono usare segreti diversi. Il comando
 `flask --app app validate-config` verifica la presenza e la coerenza senza
 mostrare i valori.
+
+### Consenso Analytics
+
+Lasciare `GOOGLE_ANALYTICS_ID` non configurato finché l'informativa e la
+configurazione GA4 non sono state validate. Quando l'ID è presente, lo script
+esterno di Google non viene richiesto prima dell'accettazione. L'accettazione
+parte da Consent Mode negato e concede soltanto `analytics_storage`; il rifiuto
+o la revoca ripristinano tutte le categorie Analytics/Ads a `denied`, bloccano
+gli eventi di conversione e fanno scadere i cookie `_ga*`, `_gid` e `_gat*`
+del dominio. Gli altri cookie applicativi non vengono rimossi.
+
+GA4 e Meta restano disattivati negli ambienti operativi fino alla validazione
+professionale e al collaudo esplicito del comportamento sul dominio definitivo.
 
 In produzione non esistono fallback Gmail per server SMTP o destinatario
 amministrativo: ogni valore deve essere configurato esplicitamente. Canonical,

@@ -234,7 +234,11 @@ Le CTA principali devono avere `data-conversion`. Distinguere almeno:
 - prestazioni;
 - aziende/gruppi.
 
-`static/js/conversion-tracking.js` invia eventi solo dopo il consenso e quando GA4 è disponibile. Prima di una campagna verificare la coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto.
+`static/js/conversion-tracking.js` invia eventi solo quando la scelta salvata è
+`accepted` e GA4 è disponibile. Il rifiuto o la revoca aggiornano Consent Mode a
+`denied`, interrompono gli eventi di conversione e rimuovono i cookie Analytics
+del dominio senza toccare gli altri cookie. Prima di una campagna verificare la
+coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto.
 
 ## Evoluzioni previste
 

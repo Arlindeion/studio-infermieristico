@@ -238,7 +238,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
-<script src="{{ url_for('static', filename='js/conversion-tracking.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/conversion-tracking.js') }}?v=1.1" defer></script>
 {% if internal_page_mode %}
 <script src="{{ url_for('static', filename='js/internal-page-motion.js') }}?v=1.1" defer></script>
 {% endif %}
@@ -246,7 +246,7 @@
 <script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
 {% endif %}
 {% if google_analytics_id %}
-<script src="{{ url_for('static', filename='js/analytics-consent.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>
 {% endif %}
 
     <main id="contenuto-principale" tabindex="-1">
