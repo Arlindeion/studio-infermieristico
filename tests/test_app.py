@@ -2301,6 +2301,212 @@ def google_calendar_scrittura_finto(app):
     app_module._servizio_calendario_cache = None
 
 
+def test_admin_completa_conferma_modifica_e_annullamento_call_sonno(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    data_iniziale = app_module.prima_data_call_disponibile()
+    data_modificata = data_iniziale + app_module.timedelta(days=1)
+    while not app_module._giorno_lavorativo_call(data_modificata):
+        data_modificata += app_module.timedelta(days=1)
+
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi',
+            telefono='3331234567',
+            email='anna@example.com',
+            eta_bambino_mesi=7,
+            difficolta_principale='Risvegli notturni frequenti',
+            ruolo_richiedente='Genitore con responsabilità genitoriale',
+            durata_difficolta='Da 1 a 3 mesi',
+            obiettivo_call='Capire il percorso.',
+            presa_visione_offerta=True,
+            conferma_ambito=True,
+            consenso_privacy=True,
+            data=data_iniziale.isoformat(),
+            ora='09:00',
+            stato='In attesa',
+        )
+        db.session.add(call)
+        db.session.commit()
+        call_id = call.id
+
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {
+        'id': 'evento-call-test'
+    }
+    csrf = _login_admin(client)
+    with patch.object(
+        app_module,
+        'invia_email_conferma_call_sonno',
+        return_value=True,
+    ):
+        conferma = client.post(
+            f'/admin/call-sonno/{call_id}/conferma',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+
+    assert conferma.status_code == 200
+    assert 'Call confermata e comunicazione inviata.' in conferma.text
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.stato == 'Confermata'
+        assert call.google_event_id == 'evento-call-test'
+
+    csrf = _csrf_admin(client)
+    with patch.object(
+        app_module,
+        'invia_email_conferma_call_sonno',
+        return_value=True,
+    ):
+        modifica = client.post(
+            f'/admin/call-sonno/{call_id}/modifica',
+            data={
+                'data': data_modificata.isoformat(),
+                'ora': '09:30',
+                '_csrf_token': csrf,
+            },
+            follow_redirects=True,
+        )
+
+    assert modifica.status_code == 200
+    assert 'Nuovo orario confermato e comunicato alla famiglia.' in modifica.text
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.data == data_modificata.isoformat()
+        assert call.ora == '09:30'
+        assert call.stato == 'Confermata'
+    mock_servizio.events.return_value.patch.assert_called()
+
+    csrf = _csrf_admin(client)
+    with patch.object(
+        app_module,
+        'invia_email_annullamento_call_sonno',
+        return_value=True,
+    ):
+        annulla = client.post(
+            f'/admin/call-sonno/{call_id}/annulla',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+
+    assert annulla.status_code == 200
+    assert 'Call annullata.' in annulla.text
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.stato == 'Annullata'
+        assert call.google_event_id is None
+    mock_servizio.events.return_value.delete.assert_called_with(
+        calendarId='finto@group.calendar.google.com',
+        eventId='evento-call-test',
+    )
+
+
+def test_admin_call_avvisa_se_email_fallisce_ma_calendar_riesce(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {
+        'id': 'evento-call-email-fallita'
+    }
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi',
+            telefono='3331234567',
+            email='anna@example.com',
+            eta_bambino_mesi=7,
+            difficolta_principale='Risvegli notturni frequenti',
+            ruolo_richiedente='Genitore con responsabilità genitoriale',
+            durata_difficolta='Da 1 a 3 mesi',
+            obiettivo_call='Capire il percorso.',
+            presa_visione_offerta=True,
+            conferma_ambito=True,
+            consenso_privacy=True,
+            data=app_module.prima_data_call_disponibile().isoformat(),
+            ora='09:00',
+            stato='In attesa',
+        )
+        db.session.add(call)
+        db.session.commit()
+        call_id = call.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post(
+            f'/admin/call-sonno/{call_id}/conferma',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == 200
+    assert 'Call confermata e Calendar aggiornato, ma l’email non è partita.' in resp.text
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.stato == 'Confermata'
+        assert call.google_event_id == 'evento-call-email-fallita'
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='CallSonno',
+            entita_id=call_id,
+        ).one()
+        assert evento.esito == 'errore'
+
+
+def test_admin_conclude_call_e_invita_al_questionario_privato(client):
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi',
+            telefono='3331234567',
+            email='anna@example.com',
+            eta_bambino_mesi=7,
+            difficolta_principale='Risvegli notturni frequenti',
+            ruolo_richiedente='Genitore con responsabilità genitoriale',
+            durata_difficolta='Da 1 a 3 mesi',
+            obiettivo_call='Capire il percorso.',
+            presa_visione_offerta=True,
+            conferma_ambito=True,
+            consenso_privacy=True,
+            data=app_module.prima_data_call_disponibile().isoformat(),
+            ora='09:00',
+            stato='Confermata',
+        )
+        db.session.add(call)
+        db.session.commit()
+        call_id = call.id
+
+    csrf = _login_admin(client)
+    with patch.object(
+        app_module,
+        'invia_email_questionario_sonno',
+        return_value=True,
+    ) as invio_questionario:
+        resp = client.post(
+            f'/admin/call-sonno/{call_id}/questionario',
+            data={
+                'formula_scelta': 'percorso',
+                '_csrf_token': csrf,
+            },
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == 200
+    assert 'Questionario privato inviato.' in resp.text
+    invio_questionario.assert_called_once()
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.stato == 'Conclusa'
+        assert call.formula_scelta == 'percorso'
+        assert call.token_questionario
+        assert call.questionario_inviato_il is not None
+        token = call.token_questionario
+
+    questionario = client.get(f'/questionario-sonno/{token}')
+    assert questionario.status_code == 200
+    assert '<meta name="robots" content="noindex,nofollow,noarchive">' in questionario.text
+
+
 def test_richieste_prestazioni_usano_trenta_minuti_prima_della_scelta_admin():
     assert app_module.DURATA_SLOT_MINUTI == 30
 
@@ -2514,7 +2720,56 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, g
 
     admin_resp = client.get('/admin')
     assert 'Registro eventi' in admin_resp.text
-    assert 'Google Calendar non è stato aggiornato' in admin_resp.text
+    assert 'email e Google Calendar non sono stati aggiornati' in admin_resp.text
+
+
+def test_admin_appuntamento_avvisa_se_email_fallisce_ma_calendar_riesce(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {
+        'id': 'evento-appuntamento-email-fallita'
+    }
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio='Lavaggio auricolare',
+            data='2026-09-01',
+            ora='10:00',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post(
+            f'/admin/aggiorna/{appuntamento_id}/Confermato',
+            data={
+                '_csrf_token': csrf,
+                'duration_minutes': '30',
+            },
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == 200
+    assert (
+        'Appuntamento confermato e Google Calendar aggiornato, '
+        'ma l’email non è partita.'
+    ) in resp.text
+    with flask_app.app_context():
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        assert appuntamento.stato == 'Confermato'
+        assert appuntamento.google_event_id == 'evento-appuntamento-email-fallita'
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento_id,
+        ).one()
+        assert evento.esito == 'errore'
 
 
 def test_annullamento_elimina_evento_da_calendario(client, google_calendar_scrittura_finto):
