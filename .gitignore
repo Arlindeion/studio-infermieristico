@@ -13,3 +13,7 @@ instance/
 sito-sc-studio-infermieristico-c02624e175e1.json
 *service-account*.json
 *google*service*.json
+backups/
+sc-studio-*.dump
+sc-studio-*.dump.enc
+sc-studio-*.dump.enc.sha256

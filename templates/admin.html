@@ -2,8 +2,16 @@
 {% block titolo %}Admin — Gestione{% endblock %}
 
 {% block contenuto %}
+{% macro admin_post_action(action, label, variant, confirmation='', current_filter='') -%}
+<form method="post" action="{{ action }}" class="admin-inline-action"{% if confirmation %} data-confirm="{{ confirmation }}"{% endif %}>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% if current_filter %}<input type="hidden" name="filtro" value="{{ current_filter }}">{% endif %}
+    <button type="submit" class="btn-azione {{ variant }}">{{ label }}</button>
+</form>
+{%- endmacro %}
 
 <section class="pagina-interna admin-page">
+    <h1 class="visually-hidden">Area amministrativa</h1>
 
     <div class="admin-topbar">
         <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
@@ -25,6 +33,12 @@
             <span>Prenotazioni sanitarie</span>
             {% if in_attesa_count > 0 %}
             <strong>{{ in_attesa_count }}</strong>
+            {% endif %}
+        </button>
+        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false">
+            <span>Call sonno</span>
+            {% if call_sonno_in_attesa_count > 0 %}
+            <strong>{{ call_sonno_in_attesa_count }}</strong>
             {% endif %}
         </button>
         <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false">
@@ -57,22 +71,22 @@
     <div class="admin-filtri">
     <a href="/admin?filtro=in_attesa"
        class="filtro-btn {% if filtro == 'in_attesa' %}attivo{% endif %}">
-        🔔 In attesa
+        In attesa
         {% if in_attesa_count > 0 %}
         <span class="badge-count">{{ in_attesa_count }}</span>
         {% endif %}
     </a>
     <a href="/admin?filtro=confermati"
        class="filtro-btn {% if filtro == 'confermati' %}attivo{% endif %}">
-        ✅ Confermati
+        Confermati
     </a>
     <a href="/admin?filtro=annullati"
        class="filtro-btn {% if filtro == 'annullati' %}attivo{% endif %}">
-        ❌ Annullati
+        Annullati
     </a>
     <a href="/admin?filtro=passati"
        class="filtro-btn {% if filtro == 'passati' %}attivo{% endif %}">
-        🕐 Passati
+        Passati
     </a>
 </div>
 
@@ -122,30 +136,14 @@
                 <td><span class="badge">{{ a.stato }}</span></td>
                 <td class="azioni">
                     {% if filtro == 'in_attesa' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Confermare l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di conferma.">
-                           Conferma
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di conferma.', filtro) }}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'confermati' %}
                         <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                        <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                           class="btn-azione rosso"
-                           data-confirm="Rimuovere l'appuntamento di {{ a.nome }} per il {{ a.data }} alle {{ a.ora }}? Verrà inviata una mail di avviso.">
-                           Rimuovi
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ ' per il ' ~ a.data ~ ' alle ' ~ a.ora ~ '? Verrà inviata una mail di avviso.', filtro) }}
                     {% elif filtro == 'annullati' %}
-                        <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                           class="btn-azione verde"
-                           data-confirm="Ripristinare l'appuntamento di {{ a.nome }}? Tornerà in stato In attesa.">
-                           Ripristina
-                        </a>
+                        {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '? Tornerà in stato In attesa.', filtro) }}
                     {% elif filtro == 'passati' %}
                         <span class="text-muted">Archiviato</span>
                     {% endif %}
@@ -174,30 +172,14 @@
             </div>
             <div class="card-admin-azioni">
                 {% if filtro == 'in_attesa' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/Confermato?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Confermare l'appuntamento di {{ a.nome }}?">
-                       Conferma
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Confermato'), 'Conferma', 'verde', "Confermare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'confermati' %}
                     <a href="/admin/modifica/{{ a.id }}" class="btn-azione blu">Modifica</a>
-                    <a href="/admin/aggiorna/{{ a.id }}/Annullato?token={{ csrf_token() }}"
-                       class="btn-azione rosso"
-                       data-confirm="Rimuovere l'appuntamento di {{ a.nome }}?">
-                       Rimuovi
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='Annullato'), 'Rimuovi', 'rosso', "Rimuovere l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'annullati' %}
-                    <a href="/admin/aggiorna/{{ a.id }}/In attesa?token={{ csrf_token() }}"
-                       class="btn-azione verde"
-                       data-confirm="Ripristinare l'appuntamento di {{ a.nome }}?">
-                       Ripristina
-                    </a>
+                    {{ admin_post_action(url_for('aggiorna_stato', id=a.id, stato='In attesa'), 'Ripristina', 'verde', "Ripristinare l'appuntamento di " ~ a.nome ~ '?', filtro) }}
                 {% elif filtro == 'passati' %}
                     <span class="text-muted">Archiviato</span>
                 {% endif %}
@@ -209,6 +191,53 @@
     <p class="nota nota-lg">Nessun appuntamento in questa categoria.</p>
     {% endif %}
 
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="call-sonno" id="admin-call-sonno">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Consulenza 0-12 mesi</p>
+            <h2>Call sul sonno</h2>
+        </div>
+        <span class="admin-total">{{ call_sonno|length }} richieste</span>
+    </div>
+    <p class="filtro-descrizione">Le nuove richieste bloccano subito lo slot. Conferma l’orario scelto oppure, dopo l’accordo telefonico, modificalo: il nuovo orario sarà già considerato accettato.</p>
+
+    {% if call_sonno %}
+    <div class="admin-table-wrap">
+        <table class="tabella-admin">
+            <thead><tr><th>Famiglia</th><th>Richiesta</th><th>Quando</th><th>Stato</th><th>Azioni</th></tr></thead>
+            <tbody>
+            {% for call in call_sonno %}
+            <tr class="stato-{{ call.stato|lower|replace(' ', '-') }}">
+                <td><strong class="admin-primary">{{ call.nome }}</strong><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
+                <td><strong class="admin-primary">{{ call.eta_bambino_mesi }} mesi</strong><span class="admin-secondary">{{ call.difficolta_altro or call.difficolta_principale }}</span></td>
+                <td><strong class="admin-primary">{{ call.data }}</strong><span class="admin-secondary">ore {{ call.ora }} · call 20 min · blocco 30 min</span></td>
+                <td><span class="badge">{{ call.stato }}</span>{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
+                <td class="azioni admin-call-actions">
+                    {% if call.questionario %}<a class="btn-azione blu" href="{{ url_for('visualizza_questionario_sonno_admin', id=call.id) }}">Leggi questionario</a>{% endif %}
+                    {% if call.stato == 'In attesa' %}
+                    <form method="post" action="{{ url_for('conferma_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Conferma</button></form>
+                    {% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}<a class="btn-azione blu" href="{{ url_for('modifica_call_sonno_admin', id=call.id) }}">Modifica dopo accordo</a>{% endif %}
+                    {% if call.stato not in ['Annullata', 'Conclusa'] %}
+                    <form method="post" action="{{ url_for('annulla_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>
+                    {% endif %}
+                    {% if call.stato in ['Confermata', 'Conclusa'] and not call.questionario %}
+                    <form class="admin-questionnaire-send" method="post" action="{{ url_for('invia_questionario_sonno_admin', id=call.id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <label for="formula-{{ call.id }}">Dopo la call</label>
+                        <select id="formula-{{ call.id }}" name="formula_scelta" required><option value="">Formula concordata</option>{% for valore, etichetta in formule_sonno.items() %}<option value="{{ valore }}" {% if call.formula_scelta == valore %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}</select>
+                        <button class="btn-azione verde" type="submit">{% if call.questionario_inviato_il %}Reinvia questionario{% else %}Invia questionario{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}<p class="nota nota-lg">Nessuna call sul sonno ricevuta.</p>{% endif %}
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="eventi" id="admin-eventi">
@@ -379,8 +408,8 @@
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Corso o laboratorio *</label>
-                        <select name="corso_id" required>
+                        <label for="manual-course-id">Corso o laboratorio *</label>
+                        <select name="corso_id" id="manual-course-id" required>
                             <option value="">Seleziona corso</option>
                             {% for c in corsi %}
                             <option value="{{ c.id }}" {% if corso_filtro_attivo and corso_filtro_attivo.id == c.id %}selected{% endif %}>
@@ -390,7 +419,7 @@
                         </select>
                     </div>
                     <div class="form-gruppo">
-                        <label>Richiama dalla rubrica</label>
+                        <label for="persona-corso-select">Richiama dalla rubrica</label>
                         <select name="persona_id" id="persona-corso-select">
                             <option value="">Nuova persona/famiglia</option>
                             {% for p in persone_corsi %}
@@ -410,41 +439,41 @@
 
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Nome genitore/adulto *</label>
+                        <label for="persona-corso-nome">Nome genitore/adulto *</label>
                         <input type="text" name="nome" id="persona-corso-nome" placeholder="Es. Mario Rossi">
                     </div>
                     <div class="form-gruppo">
-                        <label>Telefono *</label>
+                        <label for="persona-corso-telefono">Telefono *</label>
                         <input type="tel" name="telefono" id="persona-corso-telefono" placeholder="Es. 3331234567">
                     </div>
                 </div>
 
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Email</label>
+                        <label for="persona-corso-email">Email</label>
                         <input type="email" name="email" id="persona-corso-email" placeholder="nome@email.it">
                     </div>
                     <div class="form-gruppo">
-                        <label>Codice fiscale</label>
+                        <label for="persona-corso-codice-fiscale">Codice fiscale</label>
                         <input type="text" name="codice_fiscale" id="persona-corso-codice-fiscale" placeholder="Facoltativo">
                     </div>
                 </div>
 
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Nome bambino</label>
+                        <label for="persona-corso-nome-bambino">Nome bambino</label>
                         <input type="text" name="nome_bambino" id="persona-corso-nome-bambino" placeholder="Es. Luca">
                     </div>
                     <div class="form-gruppo">
-                        <label>Età bambino</label>
+                        <label for="persona-corso-eta-bambino">Età bambino</label>
                         <input type="text" name="eta_bambino" id="persona-corso-eta-bambino" placeholder="Es. 8 mesi, 3 anni">
                     </div>
                 </div>
 
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Flusso</label>
-                        <select name="tipo_richiesta">
+                        <label for="manual-request-type">Flusso</label>
+                        <select name="tipo_richiesta" id="manual-request-type">
                             <option value="iscrizione_effettiva">Iscrizione effettiva</option>
                             <option value="richiesta_iscrizione">Richiesta iscrizione</option>
                             <option value="open_day">Open day</option>
@@ -452,8 +481,8 @@
                         </select>
                     </div>
                     <div class="form-gruppo">
-                        <label>Stato</label>
-                        <select name="stato">
+                        <label for="manual-request-status">Stato</label>
+                        <select name="stato" id="manual-request-status">
                             <option value="Confermato">Confermato</option>
                             <option value="Nuova">Nuova</option>
                             <option value="Contattato">Contattato</option>
@@ -461,25 +490,25 @@
                         </select>
                     </div>
                     <div class="form-gruppo">
-                        <label>Posti conteggiati</label>
-                        <input type="number" name="posti" min="0" step="1" value="1">
+                        <label for="manual-seats">Posti conteggiati</label>
+                        <input type="number" name="posti" id="manual-seats" min="0" step="1" value="1">
                     </div>
                 </div>
 
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Partecipazione</label>
-                        <input type="text" name="partecipazione" placeholder="Es. Iscrizione individuale, Coppia, Bambino/a">
+                        <label for="manual-participation">Partecipazione</label>
+                        <input type="text" name="partecipazione" id="manual-participation" placeholder="Es. Iscrizione individuale, Coppia, Bambino/a">
                     </div>
                     <div class="form-gruppo">
-                        <label>Note iscrizione</label>
-                        <input type="text" name="note" placeholder="Note legate a questo corso">
+                        <label for="manual-enrollment-notes">Note iscrizione</label>
+                        <input type="text" name="note" id="manual-enrollment-notes" placeholder="Note legate a questo corso">
                     </div>
                 </div>
 
                 <div class="form-gruppo">
-                    <label>Note rubrica</label>
-                    <textarea name="note_persona" rows="2" placeholder="Informazioni utili da ritrovare anche nelle prossime iscrizioni"></textarea>
+                    <label for="manual-contact-notes">Note rubrica</label>
+                    <textarea name="note_persona" id="manual-contact-notes" rows="2" placeholder="Informazioni utili da ritrovare anche nelle prossime iscrizioni"></textarea>
                 </div>
 
                 <div class="manual-consensi">
@@ -544,36 +573,36 @@
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Titolo *</label>
-                        <input type="text" name="titolo" value="Iscrizione al corso" required>
+                        <label for="birth-path-title">Titolo *</label>
+                        <input type="text" name="titolo" id="birth-path-title" value="Iscrizione al corso" required>
                     </div>
                     <div class="form-gruppo">
-                        <label>Link privato</label>
-                        <input type="text" name="slug" placeholder="es. accompagnamento-marzo-2027">
+                        <label for="birth-path-slug">Link privato</label>
+                        <input type="text" name="slug" id="birth-path-slug" placeholder="es. accompagnamento-marzo-2027">
                     </div>
                 </div>
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Capienza coppie</label>
-                        <input type="number" name="capienza_coppie" min="1" step="1" placeholder="Es. 8">
+                        <label for="birth-path-capacity">Capienza coppie</label>
+                        <input type="number" name="capienza_coppie" id="birth-path-capacity" min="1" step="1" placeholder="Es. 8">
                     </div>
                     <div class="form-gruppo">
-                        <label>Stato</label>
-                        <select name="stato">
+                        <label for="birth-path-status">Stato</label>
+                        <select name="stato" id="birth-path-status">
                             {% for stato in stati_percorso_accompagnamento %}
                             <option value="{{ stato }}" {% if stato == 'Aperto' %}selected{% endif %}>{{ stato }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="form-gruppo">
-                        <label>Contatti</label>
-                        <input type="text" name="contatti" value="3806317175">
+                        <label for="birth-path-contact">Contatti</label>
+                        <input type="text" name="contatti" id="birth-path-contact" value="3806317175">
                     </div>
                 </div>
                 <div class="form-riga">
                     <div class="form-gruppo">
-                        <label>Descrizione interna</label>
-                        <input type="text" name="descrizione" placeholder="Es. Edizione primavera">
+                        <label for="birth-path-description">Descrizione interna</label>
+                        <input type="text" name="descrizione" id="birth-path-description" placeholder="Es. Edizione primavera">
                     </div>
                 </div>
                 <button type="submit" class="btn">Crea edizione</button>
@@ -604,7 +633,7 @@
                     <div><strong>{{ item.posti_liberi if item.posti_liberi is not none else '—' }}</strong><span>posti liberi</span></div>
                 </div>
 
-                <p class="private-link-copy">{{ request.host_url.rstrip('/') }}{{ url_for('iscrizione_accompagnamento_privata', slug=percorso.slug) }}</p>
+                <p class="private-link-copy">{{ public_url(url_for('iscrizione_accompagnamento_privata', slug=percorso.slug)) }}</p>
 
                 <details class="birth-path-details" open>
                     <summary>Calendario incontri</summary>
@@ -626,22 +655,22 @@
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <div class="form-riga">
                             <div class="form-gruppo">
-                                <label>N.</label>
-                                <input type="number" name="numero" min="1" max="9" step="1" value="{{ item.incontri_count + 1 if item.incontri_count < 9 else 9 }}" required>
+                                <label for="meeting-number-{{ percorso.id }}">N.</label>
+                                <input type="number" name="numero" id="meeting-number-{{ percorso.id }}" min="1" max="9" step="1" value="{{ item.incontri_count + 1 if item.incontri_count < 9 else 9 }}" required>
                             </div>
                             <div class="form-gruppo">
-                                <label>Data *</label>
-                                <input type="date" name="data" required>
+                                <label for="meeting-date-{{ percorso.id }}">Data *</label>
+                                <input type="date" name="data" id="meeting-date-{{ percorso.id }}" required>
                             </div>
                             <div class="form-gruppo">
-                                <label>Ora</label>
-                                <input type="time" name="ora">
+                                <label for="meeting-time-{{ percorso.id }}">Ora</label>
+                                <input type="time" name="ora" id="meeting-time-{{ percorso.id }}">
                             </div>
                         </div>
                         <div class="form-riga">
                             <div class="form-gruppo">
-                                <label>Professionista *</label>
-                                <select name="professionista" required>
+                                <label for="meeting-professional-{{ percorso.id }}">Professionista *</label>
+                                <select name="professionista" id="meeting-professional-{{ percorso.id }}" required>
                                     <option value="">Seleziona</option>
                                     <option value="Infermiera">Infermiera</option>
                                     <option value="Ostetrica">Ostetrica</option>
@@ -651,14 +680,14 @@
                                 </select>
                             </div>
                             <div class="form-gruppo">
-                                <label>Tema *</label>
-                                <input type="text" name="tema" placeholder="Es. Rientro a casa, allattamento, postura..." required>
+                                <label for="meeting-topic-{{ percorso.id }}">Tema *</label>
+                                <input type="text" name="tema" id="meeting-topic-{{ percorso.id }}" placeholder="Es. Rientro a casa, allattamento, postura..." required>
                             </div>
                         </div>
                         <div class="form-riga">
                             <div class="form-gruppo">
-                                <label>Note</label>
-                                <input type="text" name="note" placeholder="Note interne sull'incontro">
+                                <label for="meeting-notes-{{ percorso.id }}">Note</label>
+                                <input type="text" name="note" id="meeting-notes-{{ percorso.id }}" placeholder="Note interne sull'incontro">
                             </div>
                         </div>
                         <button type="submit" class="btn-azione blu">Aggiungi incontro</button>
@@ -714,7 +743,7 @@
                                         {% for incontro in item.incontri %}
                                         {% set presenza = presenze_percorso.get(iscrizione.id ~ '-' ~ incontro.id) %}
                                         <td>
-                                            <select name="presenza_{{ iscrizione.id }}_{{ incontro.id }}">
+                                            <select name="presenza_{{ iscrizione.id }}_{{ incontro.id }}" aria-label="Presenza di {{ iscrizione.nome }} all'incontro {{ incontro.numero }}">
                                                 <option value="" {% if not presenza or presenza.presente is none %}selected{% endif %}>—</option>
                                                 <option value="presente" {% if presenza and presenza.presente is sameas true %}selected{% endif %}>P</option>
                                                 <option value="assente" {% if presenza and presenza.presente is sameas false %}selected{% endif %}>A</option>
@@ -821,9 +850,9 @@
                 </td>
                 <td><span class="badge">{{ i.stato }}</span></td>
                 <td class="azioni">
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                    <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
                 </td>
             </tr>
             {% endfor %}
@@ -857,9 +886,9 @@
                 {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
             </div>
             <div class="card-admin-azioni">
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Contattato?token={{ csrf_token() }}" class="btn-azione blu">Contattato</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Confermato?token={{ csrf_token() }}" class="btn-azione verde">Conferma</a>
-                <a href="/admin/iscrizione-corso/{{ i.id }}/Annullato?token={{ csrf_token() }}" class="btn-azione rosso">Annulla</a>
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
             </div>
         </div>
         {% endfor %}
@@ -885,7 +914,7 @@
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="form-riga">
                 <div class="form-gruppo">
-                    <label>Tipo corso *</label>
+                    <label for="tipo-corso-admin">Tipo corso *</label>
                     <select name="tipo" id="tipo-corso-admin" required>
                         <option value="">Seleziona tipo</option>
                         {% for valore, corso_tipo in corsi_admin_tipi.items() %}
@@ -898,28 +927,28 @@
                     </select>
                 </div>
                 <div class="form-gruppo">
-                    <label>Titolo corso *</label>
+                    <label for="titolo-corso-admin">Titolo corso *</label>
                     <input type="text" name="titolo" id="titolo-corso-admin" placeholder="Es. BLSD aziendale" required>
                 </div>
             </div>
             <div class="form-riga">
                 <div class="form-gruppo">
-                    <label>Durata *</label>
+                    <label for="durata-corso-admin">Durata *</label>
                     <input type="number" name="durata_ore" id="durata-corso-admin" min="0.5" max="12" step="0.5" value="2" required>
                 </div>
                 <div class="form-gruppo">
-                    <label>Capienza</label>
-                    <input type="number" name="capienza_massima" min="1" step="1" placeholder="Es. 12">
+                    <label for="course-capacity-admin">Capienza</label>
+                    <input type="number" name="capienza_massima" id="course-capacity-admin" min="1" step="1" placeholder="Es. 12">
                 </div>
                 <div class="form-gruppo">
-                    <label>Data *</label>
-                    <input type="date" name="data" required>
+                    <label for="course-date-admin">Data *</label>
+                    <input type="date" name="data" id="course-date-admin" required>
                 </div>
             </div>
             <div class="form-riga">
                 <div class="form-gruppo">
-                    <label>Stato corso</label>
-                    <select name="stato">
+                    <label for="course-status-admin">Stato corso</label>
+                    <select name="stato" id="course-status-admin">
                         <option value="Aperto">Aperto</option>
                         <option value="Completo">Completo</option>
                         <option value="Chiuso">Chiuso</option>
@@ -928,17 +957,17 @@
                     </select>
                 </div>
                 <div class="form-gruppo">
-                    <label>Ora</label>
-                    <input type="time" name="ora">
+                    <label for="course-time-admin">Ora</label>
+                    <input type="time" name="ora" id="course-time-admin">
                 </div>
                 <div class="form-gruppo">
-                    <label>Luogo</label>
-                    <input type="text" name="luogo" placeholder="Es. Milano, Fiera">
+                    <label for="course-place-admin">Luogo</label>
+                    <input type="text" name="luogo" id="course-place-admin" placeholder="Es. Milano, Fiera">
                 </div>
             </div>
             <div class="form-gruppo">
-                <label>Descrizione</label>
-                <textarea name="descrizione" rows="3" placeholder="Breve descrizione del corso..."></textarea>
+                <label for="course-description-admin">Descrizione</label>
+                <textarea name="descrizione" id="course-description-admin" rows="3" placeholder="Breve descrizione del corso..."></textarea>
             </div>
             <button type="submit" class="btn">Aggiungi corso</button>
         </form>
@@ -977,8 +1006,7 @@
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
-                    <a href="/admin/corso/elimina/{{ c.id }}?token={{ csrf_token() }}" class="btn-azione rosso"
-                       data-confirm="Eliminare questo corso?">Elimina</a>
+                    {{ admin_post_action(url_for('elimina_corso', id=c.id), 'Elimina', 'rosso', 'Eliminare questo corso?') }}
                 </td>
             </tr>
             {% endfor %}

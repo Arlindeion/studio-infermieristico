@@ -4,100 +4,177 @@
 
 {% block contenuto %}
 
-<section class="home-hero">
-    <div class="home-hero-copy">
-        <p class="eyebrow">Con Selene, infermiera per bambini e famiglie</p>
-        <h1>Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.</h1>
-        <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno 0–12 mesi, con Selene, per mettere ordine tra dubbi e consigli discordanti e trovare passi concreti adatti alla vostra quotidianità.</p>
-        <div class="home-hero-actions" aria-label="Azioni principali">
-            <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
-            <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20arrivo%20dalla%20homepage%20e%20vorrei%20richiedere%20la%20call%20gratuita%20per%20la%20consulenza%20del%20sonno." class="btn btn-linea" target="_blank" rel="noopener noreferrer" data-conversion="home_hero_call_sonno">Richiedi la call gratuita</a>
-        </div>
-        <p class="home-hero-note">La call dura 15 minuti e serve a capire se la consulenza è davvero il passo adatto.</p>
+<nav class="home-scene-nav" data-home-scene-nav aria-label="Sezioni della homepage">
+    <div class="home-scene-nav__chapter is-current" role="group" aria-label="Orientarsi" data-home-scene-chapter>
+        <span class="home-scene-nav__chapter-label" aria-hidden="true">Orientarsi</span>
+        <a class="home-scene-nav__link is-current" href="#home-intro" data-home-scene-link="intro" aria-current="location"><span>Inizio</span></a>
+        <a class="home-scene-nav__link home-scene-nav__link--pillar" href="#home-corsi" data-home-scene-link="corsi"><span>Corsi</span></a>
+        <a class="home-scene-nav__link home-scene-nav__link--pillar" href="#home-sonno" data-home-scene-link="sonno"><span>Sonno</span></a>
+        {% if corsi %}<a class="home-scene-nav__link" href="#calendario-corsi" data-home-scene-link="date"><span>Date</span></a>{% endif %}
     </div>
-    <div class="home-hero-media">
-        <img src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="Selene Campetta, infermiera, con un cuore anatomico lavorato a uncinetto">
-        <div class="home-hero-signature">
-            <span>Selene Campetta · infermiera</span>
-            <strong>Competenza sanitaria, parole semplici</strong>
+    <div class="home-scene-nav__chapter" role="group" aria-label="Conoscere" data-home-scene-chapter>
+        <span class="home-scene-nav__chapter-label" aria-hidden="true">Conoscere</span>
+        <a class="home-scene-nav__link" href="#home-nascita" data-home-scene-link="nascita"><span>Nascita</span></a>
+        <a class="home-scene-nav__link" href="#home-metodo" data-home-scene-link="metodo"><span>Metodo</span></a>
+        <a class="home-scene-nav__link" href="#home-attivita" data-home-scene-link="attivita"><span>Attività</span></a>
+    </div>
+    <div class="home-scene-nav__chapter" role="group" aria-label="Scegliere" data-home-scene-chapter>
+        <span class="home-scene-nav__chapter-label" aria-hidden="true">Scegliere</span>
+        <a class="home-scene-nav__link home-scene-nav__link--decision" href="#home-contatti" data-home-scene-link="contatti"><span>Scelta</span></a>
+    </div>
+</nav>
+
+<svg class="home-organ-clips" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+        <clipPath id="home-clip-heart-hero" clipPathUnits="objectBoundingBox">
+            <path d="M .3 .42 C .26 .49 .27 .6 .31 .69 C .35 .79 .43 .84 .51 .84 C .6 .83 .66 .75 .67 .65 C .69 .55 .65 .47 .59 .42 C .51 .37 .37 .37 .3 .42 Z"></path>
+            <path d="M .33 .34 C .32 .25 .31 .09 .34 .02 L .41 .02 C .45 .09 .45 .18 .44 .25 C .49 .2 .51 .09 .56 .06 C .61 .08 .63 .14 .61 .2 C .6 .27 .57 .31 .55 .35 Z"></path>
+            <ellipse cx=".17" cy=".36" rx=".07" ry=".065"></ellipse>
+            <ellipse cx=".49" cy=".3" rx=".065" ry=".08"></ellipse>
+            <path d="M .61 .36 C .66 .32 .71 .34 .72 .4 C .73 .45 .7 .49 .66 .49 L .61 .45 Z"></path>
+        </clipPath>
+        <clipPath id="home-clip-heart-courses" clipPathUnits="objectBoundingBox">
+            <path d="M .33 .4 C .29 .47 .29 .57 .33 .66 C .37 .74 .44 .78 .52 .78 C .6 .77 .66 .7 .67 .61 C .68 .52 .65 .45 .59 .4 C .51 .36 .4 .36 .33 .4 Z"></path>
+            <path d="M .38 .35 C .36 .27 .36 .12 .39 .06 L .46 .05 C .5 .11 .5 .19 .49 .25 C .54 .2 .56 .12 .61 .11 C .65 .13 .66 .18 .64 .24 C .63 .29 .6 .34 .57 .37 Z"></path>
+            <ellipse cx=".24" cy=".39" rx=".06" ry=".055"></ellipse>
+            <ellipse cx=".52" cy=".31" rx=".055" ry=".065"></ellipse>
+            <path d="M .6 .38 C .65 .35 .69 .37 .7 .42 C .71 .46 .68 .5 .65 .5 L .6 .46 Z"></path>
+        </clipPath>
+        <clipPath id="home-clip-gallbladder-courses" clipPathUnits="objectBoundingBox">
+            <path d="M .34 .36 C .26 .45 .23 .59 .26 .72 C .29 .86 .39 .94 .5 .95 C .61 .94 .69 .84 .72 .71 C .75 .58 .7 .45 .62 .37 C .55 .3 .42 .29 .34 .36 Z"></path>
+            <path d="M .46 .34 C .48 .24 .48 .13 .54 .05 C .59 0 .66 0 .73 .06 C .76 .1 .75 .16 .7 .19 C .65 .2 .62 .17 .59 .2 C .56 .24 .57 .3 .55 .36 Z"></path>
+        </clipPath>
+        <clipPath id="home-clip-gallbladder-sleep" clipPathUnits="objectBoundingBox">
+            <path d="M .27 .55 C .24 .67 .28 .8 .38 .87 C .48 .94 .62 .91 .7 .81 C .78 .72 .79 .58 .74 .48 C .69 .38 .58 .32 .47 .34 C .37 .36 .3 .44 .27 .55 Z"></path>
+            <path d="M .65 .42 C .72 .32 .79 .23 .88 .15 C .93 .1 .98 .05 1 .02 L 1 .14 C .95 .2 .9 .25 .85 .31 C .79 .38 .76 .45 .72 .51 Z"></path>
+        </clipPath>
+    </defs>
+</svg>
+
+<section class="home-parallax-stage" id="home-intro" data-home-parallax data-home-scene="intro" aria-labelledby="home-title">
+    <div class="home-scene-shell home-hero" data-home-parallax-hero>
+        <div class="home-hero-copy" data-home-parallax-copy>
+            <p class="eyebrow">Per genitori, bambini e chi se ne prende cura</p>
+            <h1 id="home-title">Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.</h1>
+            <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno da 0 a 12 mesi, in studio oppure online in tutta Italia. Partiamo dai dubbi che pesano di più e li trasformiamo in indicazioni da usare nella vita di ogni giorno.</p>
+            <div class="home-actions" aria-label="Azioni principali">
+                <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
+                <a href="{{ url_for('prenota_call_sonno') }}" class="btn btn-linea" data-conversion="home_hero_call_sonno">Scegli l’orario della call</a>
+            </div>
+            <p class="home-hero-note">La call dura circa 20 minuti e serve a capire se la consulenza è davvero il passo adatto.</p>
+        </div>
+
+        <div class="home-hero-media" data-home-parallax-media role="img" aria-label="Selene Campetta, infermiera e consulente del sonno infantile, con un cuore anatomico lavorato a uncinetto">
+            <img class="home-hero-photo-fallback" src="{{ url_for('static', filename='img/selene-hero-home.jpg') }}" alt="" width="1920" height="1280" fetchpriority="high">
+            <div class="home-hero-photo-layers" aria-hidden="true">
+                <div class="home-hero-photo-frame">
+                    <img class="home-hero-photo-background" src="{{ url_for('static', filename='img/selene-hero-home-background.jpg') }}" alt="" width="1920" height="1280">
+                </div>
+                <img class="home-hero-photo-subject" src="{{ url_for('static', filename='img/selene-hero-home-subject.webp') }}" alt="" width="1920" height="1280">
+            </div>
+            <span class="home-handoff-anchor" data-home-handoff-anchor="hero-heart" data-organ-source-x="1045" data-organ-source-y="840" data-organ-source-size="340" aria-hidden="true"></span>
+            <div class="home-hero-signature" data-home-parallax-signature>
+                <span>Selene Campetta · infermiera e consulente del sonno infantile</span>
+                <strong>Competenza sanitaria,<br>parole semplici</strong>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="home-trust" aria-label="Elementi di fiducia">
-    <div><strong>Infermiera iscritta all'Albo OPI di Pescara</strong><span>Competenza professionale riconoscibile</span></div>
-    <div><strong>Attività reali</strong><span>Pratica, date e posti disponibili</span></div>
-    <div><strong>5 professionisti</strong><span>Nel percorso di accompagnamento alla nascita</span></div>
-    <div><strong>Studio e online</strong><span>Montesilvano per i corsi, tutta Italia per il sonno</span></div>
+<section class="home-feature-scene home-courses-scene" id="home-corsi" data-home-parallax-foreground data-home-scene="corsi" aria-labelledby="home-courses-title">
+    <div class="home-scene-shell home-feature-shell">
+        <div class="home-feature-grid">
+            <figure class="home-feature-media home-feature-media--courses" data-scene-motion="left">
+                <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Selene durante le attività dedicate a bambini e famiglie" width="1280" height="1920" loading="lazy">
+                <span class="home-handoff-anchor" data-home-handoff-anchor="courses-heart" data-organ-source-x="520" data-organ-source-y="920" data-organ-source-size="230" aria-hidden="true"></span>
+                <span class="home-handoff-anchor" data-home-handoff-anchor="courses-gallbladder" data-organ-source-x="450" data-organ-source-y="570" data-organ-source-size="260" aria-hidden="true"></span>
+                <figcaption>Imparare insieme, provare davvero.</figcaption>
+            </figure>
+            <div class="home-feature-copy" data-scene-motion="right">
+                <p class="eyebrow">Corsi pratici in presenza · Montesilvano</p>
+                <h2 id="home-courses-title">Sapere cosa fare nei momenti che contano.</h2>
+                <p>Incontri concreti per fare domande, provare i gesti e capire quando è il momento di chiedere aiuto.</p>
+                <div class="home-course-families" aria-label="Famiglie di corsi">
+                    <section class="home-course-family" aria-labelledby="home-course-family-safety">
+                        <h3 id="home-course-family-safety">Sicurezza</h3>
+                        <ul>
+                            <li><a href="/iscrizione-corsi/disostruzione-pediatrica"><span>Disostruzione pediatrica</span><small>e tagli sicuri</small></a></li>
+                            <li><a href="/iscrizione-corsi/blsd"><span>BLSD</span><small>per persone, gruppi e aziende</small></a></li>
+                        </ul>
+                    </section>
+                    <section class="home-course-family" aria-labelledby="home-course-family-growth">
+                        <h3 id="home-course-family-growth">Nascita e crescita</h3>
+                        <ul>
+                            <li><a href="/iscrizione-corsi/accompagnamento-nascita"><span>Accompagnamento alla nascita</span><small>prima e dopo il parto</small></a></li>
+                            <li><a href="/iscrizione-corsi/laboratorio-infanzia"><span>Laboratori per l’infanzia</span><small>alimentazione, gioco e sviluppo</small></a></li>
+                        </ul>
+                    </section>
+                </div>
+                {% if corsi %}
+                <a href="/iscrizione-corsi" class="btn" data-conversion="home_pilastro_corsi">Guarda date e corsi</a>
+                {% else %}
+                <div class="home-courses-next-step">
+                    <span>Nuove date in preparazione.</span>
+                    <a href="{{ url_for('course_interest') }}" class="btn" data-conversion="home_date_interesse">Lascia il tuo interesse</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </section>
 
-<section class="home-pillars" id="percorsi-principali">
-    <header class="section-intro">
-        <p class="eyebrow">I due pilastri dello studio</p>
-        <h2>Partite da ciò che serve oggi alla vostra famiglia.</h2>
-        <p>Un corso per prepararvi, fare pratica e imparare a prevenire i rischi. Oppure una consulenza del sonno costruita intorno alla vostra quotidianità e ai ritmi del vostro bambino.</p>
-    </header>
-
-    <div class="home-pillar-grid">
-        <article class="home-pillar home-pillar-courses">
-            <div class="home-pillar-media">
-                <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="Selene durante le attività dedicate a bambini e famiglie">
-            </div>
-            <div class="home-pillar-copy">
-                <p class="home-pillar-label">In presenza · Pescara e provincia</p>
-                <h3>Corsi per arrivare preparati ai momenti importanti</h3>
-                <ul class="home-service-list">
-                    <li><a href="/iscrizione-corsi/disostruzione-pediatrica">Disostruzione pediatrica e tagli sicuri</a></li>
-                    <li><a href="/iscrizione-corsi/accompagnamento-nascita">Corso di accompagnamento alla nascita</a></li>
-                    <li><a href="/iscrizione-corsi/bls-d">BLSD per persone, gruppi e aziende</a></li>
-                    <li><a href="/iscrizione-corsi/laboratorio-infanzia">Laboratori alimentari, gioco e sviluppo</a></li>
-                </ul>
-                <a href="/iscrizione-corsi" class="link-azione" data-conversion="home_pilastro_corsi">Guarda date e corsi</a>
-            </div>
-        </article>
-
-        <article class="home-pillar home-pillar-sleep">
-            <div class="home-pillar-media">
-                <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Selene Campetta durante una consulenza per genitori">
-            </div>
-            <div class="home-pillar-copy">
-                <p class="home-pillar-label">In studio o online · 0-12 mesi</p>
-                <h3>Consulenza del sonno infantile</h3>
-                <p>Quando risvegli, addormentamento e sonnellini sono difficili da leggere, osserviamo il quadro completo e costruiamo cambiamenti graduali, senza metodi rigidi.</p>
+<section class="home-feature-scene home-sleep-scene" id="home-sonno" data-home-scene="sonno" aria-labelledby="home-sleep-title">
+    <div class="home-scene-shell home-feature-shell home-feature-shell--reverse">
+        <div class="home-feature-grid">
+            <div class="home-feature-copy" data-scene-motion="left">
+                <p class="eyebrow">Consulenza del sonno · 0–12 mesi</p>
+                <h2 id="home-sleep-title">Leggiamo insieme risvegli, sonnellini e addormentamento.</h2>
+                <p>Osserviamo il quadro completo e costruiamo cambiamenti graduali, adatti all’età del bambino e alla vita della tua famiglia, senza metodi rigidi.</p>
                 <ul class="home-proof-list">
-                    <li>Indicazioni adatte all'età e al contesto</li>
-                    <li>Attenzione al sonno sicuro</li>
-                    <li>Confini chiari con la valutazione pediatrica</li>
+                    <li><strong>Contesto</strong><span>Indicazioni adatte alla tua famiglia</span></li>
+                    <li><strong>Sicurezza</strong><span>Attenzione alle raccomandazioni sul sonno sicuro</span></li>
+                    <li><strong>Confini clinici</strong><span>Chiarezza su quando coinvolgere il pediatra</span></li>
                 </ul>
-                <a href="/consulenze-online" class="link-azione" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
+                <div class="home-actions">
+                    <a href="{{ url_for('consulenze_online') }}#formule" class="btn" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
+                    <a href="{{ url_for('prenota_call_sonno') }}" class="link-azione">Prima parliamone</a>
+                </div>
             </div>
-        </article>
+            <figure class="home-feature-media home-feature-media--sleep" data-scene-motion="right">
+                <img src="{{ url_for('static', filename='img/selene-consulenze.jpg') }}" alt="Selene Campetta durante una consulenza per genitori" width="1280" height="1920" loading="lazy">
+                <span class="home-handoff-anchor" data-home-handoff-anchor="sleep-gallbladder" data-organ-source-x="1085" data-organ-source-y="1350" data-organ-source-size="390" aria-hidden="true"></span>
+                <figcaption>In studio a Montesilvano oppure online.</figcaption>
+            </figure>
+        </div>
     </div>
 </section>
 
-<section class="home-dates" id="calendario-corsi">
-    <div class="home-dates-copy">
-        <p class="eyebrow">Prossime date</p>
-        <h2>Trova l'incontro giusto o lascia il tuo interesse.</h2>
-        <p>Le date create dallo studio compaiono qui. Se un corso è pieno o non trovi ancora il giorno adatto, il modulo conserva la richiesta e Selene ti ricontatta alla nuova apertura.</p>
-        <a href="/iscrizione-corsi" class="btn btn-secondaria" data-conversion="home_date_corsi">Vedi tutti i corsi</a>
-    </div>
-    <div class="calendario-wrapper">
-        <div class="cal-header">
-            <button class="cal-nav" id="btn-prec" type="button" aria-label="Mese precedente">&#8592;</button>
-            <h3 id="cal-titolo"></h3>
-            <button class="cal-nav" id="btn-succ" type="button" aria-label="Mese successivo">&#8594;</button>
+{% if corsi %}
+<section class="home-dates" id="calendario-corsi" data-home-scene="date" aria-labelledby="home-dates-title">
+    <div class="home-scene-shell home-dates-shell">
+        <div class="home-dates-copy" data-scene-motion="left">
+            <p class="eyebrow">Prossime date</p>
+            <h2 id="home-dates-title">Trova l’incontro giusto o lascia il tuo interesse.</h2>
+            <p>Se un corso è pieno o non trovi il giorno adatto, il modulo conserva la richiesta e ti ricontatterò alla nuova apertura.</p>
+            <a href="/iscrizione-corsi" class="btn btn-secondaria" data-conversion="home_date_corsi">Vedi tutti i corsi</a>
         </div>
-        <div class="cal-giorni-header">
-            <span>Lun</span><span>Mar</span><span>Mer</span>
-            <span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-        </div>
-        <div class="cal-griglia" id="cal-griglia"></div>
-        <div class="cal-dettaglio" id="cal-dettaglio" style="display:none;">
-            <h4 id="det-titolo"></h4>
-            <p id="det-ora"></p>
-            <p id="det-luogo"></p>
-            <p id="det-descrizione"></p>
+
+        <div class="calendario-wrapper" data-scene-motion="right" data-home-focus="calendar">
+            <div class="cal-header">
+                <button class="cal-nav" id="btn-prec" type="button" aria-label="Mese precedente">&#8592;</button>
+                <h3 id="cal-titolo"></h3>
+                <button class="cal-nav" id="btn-succ" type="button" aria-label="Mese successivo">&#8594;</button>
+            </div>
+            <div class="cal-giorni-header">
+                <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+            </div>
+            <div class="cal-griglia" id="cal-griglia"></div>
+            <div class="cal-dettaglio" id="cal-dettaglio" role="status" aria-live="polite" style="display:none;">
+                <h4 id="det-titolo"></h4>
+                <p id="det-ora"></p>
+                <p id="det-luogo"></p>
+                <p id="det-descrizione"></p>
+            </div>
         </div>
     </div>
 </section>
@@ -116,100 +193,117 @@
 ]
 </script>
 <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
+{% endif %}
 
-<section class="home-birth">
-    <div class="home-birth-copy">
-        <p class="eyebrow">Corso di accompagnamento alla nascita</p>
-        <h2>Nove incontri. Cinque professionisti. Una visione che continua anche a casa.</h2>
-        <p>Non è un insieme di lezioni isolate: il percorso mette in relazione gravidanza, parto, alimentazione, vissuti emotivi, corpo e prime cure del neonato.</p>
-        <div class="home-birth-actions">
-            <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="home_nascita_open_day">Scopri l'open day gratuito</a>
-            <span>Il corso completo viene presentato dopo l'open day.</span>
+<section class="home-birth" id="home-nascita" data-home-scene="nascita" aria-labelledby="home-birth-title">
+    <div class="home-scene-shell home-birth-shell">
+        <div class="home-birth-copy" data-scene-motion="left">
+            <p class="eyebrow">Corso di accompagnamento alla nascita</p>
+            <h2 id="home-birth-title">Nove incontri con cinque professionisti, prima e dopo la nascita.</h2>
+            <p>Il percorso affronta gravidanza, parto, alimentazione, vissuti emotivi, cambiamenti del corpo e prime cure del neonato.</p>
+            <div class="home-birth-actions">
+                <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="home_nascita_open_day">Scopri l’open day gratuito</a>
+                <span>Il corso completo viene presentato dopo l’open day.</span>
+            </div>
         </div>
-    </div>
-    <div class="home-professionals" aria-label="Professionisti del percorso nascita">
-        <div><strong>Infermiera</strong><span>Prime cure, sicurezza e rientro a casa</span></div>
-        <div><strong>Ostetrica</strong><span>Gravidanza, parto, puerperio e allattamento</span></div>
-        <div><strong>Psicologa</strong><span>Cambiamenti emotivi, coppia e nuove identità</span></div>
-        <div><strong>Osteopata</strong><span>Corpo, adattamenti e osservazione del neonato</span></div>
-        <div><strong>Nutrizionista</strong><span>Alimentazione in gravidanza e nel dopo nascita</span></div>
+
+        <figure class="home-birth-media" data-scene-motion="right" data-home-focus="team-photo">
+            <img src="{{ url_for('static', filename='img/corso-accompagnamento-nascita-professionisti.jpg') }}" alt="Selene Campetta insieme agli altri professionisti del corso di accompagnamento alla nascita" width="1536" height="2048" loading="lazy">
+        </figure>
+
+        <div class="home-team-signature" data-scene-motion="up" aria-labelledby="home-team-label">
+            <p class="home-team-signature__label" id="home-team-label">Cinque professionisti nello stesso percorso</p>
+            <ul>
+                <li><strong>Infermiera</strong><span>Prime cure e sicurezza</span></li>
+                <li><strong>Ostetrica</strong><span>Gravidanza e puerperio</span></li>
+                <li><strong>Psicologa</strong><span>Emozioni e coppia</span></li>
+                <li><strong>Osteopata</strong><span>Corpo e adattamenti</span></li>
+                <li><strong>Nutrizionista</strong><span>Prima e dopo la nascita</span></li>
+            </ul>
+        </div>
     </div>
 </section>
 
-<section class="home-method-proof">
-    <div class="home-method">
-        <p class="eyebrow">Il metodo di Selene</p>
-        <h2>Prima ascolto. Poi mettiamo in ordine ciò che puoi osservare e fare.</h2>
-        <div class="thread-steps">
-            <div>
-                <span>1</span>
-                <h3>Partiamo dalla vita reale</h3>
-                <p>Età del bambino, dubbi, routine, persone presenti e ciò che avete già provato.</p>
-            </div>
-            <div>
-                <span>2</span>
-                <h3>Traduciamo le informazioni</h3>
-                <p>Gesti, segnali e spiegazioni comprensibili, senza formule uguali per tutti.</p>
-            </div>
-            <div>
-                <span>3</span>
-                <h3>Definiamo il passo successivo</h3>
-                <p>Poche indicazioni ordinate e confini chiari su quando coinvolgere un altro professionista.</p>
-            </div>
+<section class="home-method-proof" id="home-metodo" data-home-scene="metodo" aria-labelledby="home-method-title">
+    <div class="home-scene-shell home-method-shell">
+        <div class="home-method" data-scene-motion="left">
+            <p class="eyebrow">Come lavoro</p>
+            <h2 id="home-method-title">Dai dubbi a un passo che puoi usare nella vita reale.</h2>
+            <ol class="home-method-sequence" data-home-focus="method-line">
+                <li><span>01</span><strong>Ascolto</strong><small>Partiamo da età, dubbi, routine e da ciò che hai già provato.</small></li>
+                <li><span>02</span><strong>Mettiamo ordine</strong><small>Chiariamo segnali, gesti e motivazioni.</small></li>
+                <li><span>03</span><strong>Scegliamo il passo</strong><small>Poche indicazioni, in un ordine possibile.</small></li>
+            </ol>
         </div>
-    </div>
 
-    <div class="home-testimonials">
-        <p class="eyebrow">Dalle famiglie del percorso nascita</p>
-        <h2>La competenza si riconosce anche da ciò che resta dopo.</h2>
-        <figure>
-            <blockquote>“Gli incontri ci hanno aiutato a superare molte delle nostre ansie, fornendoci strumenti concreti per gestire i primi giorni a casa con il bambino.”</blockquote>
-            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
-        </figure>
-        <figure>
-            <blockquote>“Molto formativo grazie alle esperienze pratiche condivise dai professionisti, in un clima leggero, coinvolgente e divertente.”</blockquote>
-            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
-        </figure>
-        <figure>
-            <blockquote>“Il percorso ci ha aiutato nella crescita di coppia e ora viviamo l'arrivo del nostro piccolo con più serenità e consapevolezza.”</blockquote>
-            <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
-        </figure>
+        <div class="home-method-outcome" data-scene-motion="right">
+            <p class="home-method-outcome__number" aria-hidden="true">04</p>
+            <p class="eyebrow">Strumenti che restano</p>
+            <h2>Indicazioni che puoi usare anche a casa.</h2>
+            <figure class="home-testimonial-featured">
+                <blockquote>“Gli incontri ci hanno aiutato a superare molte delle nostre ansie, fornendoci strumenti concreti per gestire i primi giorni a casa con il bambino.”</blockquote>
+                <figcaption>Testimonianza anonima · corso di accompagnamento alla nascita</figcaption>
+            </figure>
+        </div>
     </div>
 </section>
 
-<section class="home-instagram" aria-labelledby="home-instagram-title">
-    <header class="home-instagram-header">
-        <div>
+<section class="home-instagram" id="home-attivita" data-home-scene="attivita" aria-labelledby="home-instagram-title">
+    <div class="home-scene-shell home-instagram-shell">
+        <header class="home-instagram-header" data-scene-motion="left">
             <p class="eyebrow">Lo studio su Instagram</p>
-            <h2 id="home-instagram-title">Corsi, gesti e attività raccontati da vicino.</h2>
-        </div>
-        <div class="home-instagram-copy">
-            <p>Selene condivide momenti dei corsi, vita dello studio e indicazioni pratiche per bambini e famiglie.</p>
+            <h2 id="home-instagram-title">Uno sguardo ai corsi e alla vita dello studio.</h2>
+            <p>Momenti delle attività e indicazioni pratiche per bambini e famiglie.</p>
             <a href="https://www.instagram.com/sc.studioinfermieristico/" class="link-azione" target="_blank" rel="noopener noreferrer">Segui lo studio su Instagram</a>
+        </header>
+        <div class="home-instagram-feed" data-scene-motion="scale" data-home-focus="activity-grid" aria-label="Ultimi contenuti pubblicati su Instagram">
+            <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
         </div>
-    </header>
-    <div class="home-instagram-feed" aria-label="Ultimi contenuti pubblicati su Instagram">
-        <behold-widget feed-id="kyzqTRnF2F6aeX6HaeUS"></behold-widget>
     </div>
     <script src="{{ url_for('static', filename='js/behold-widget.js') }}" defer></script>
 </section>
 
-<section class="home-clinical-band">
-    <div>
-        <p class="eyebrow">Prestazioni infermieristiche</p>
-        <h2>Hai bisogno di una prestazione sanitaria?</h2>
-        <p>Iniezioni, medicazioni, monitoraggi e altre prestazioni mantengono un percorso di prenotazione separato, con conferma manuale dello studio.</p>
+<section class="home-closing-scene" id="home-contatti" data-home-scene="contatti" aria-labelledby="home-final-title">
+    <div class="home-scene-shell home-closing-shell">
+        <header class="home-closing-intro" data-scene-motion="up">
+            <p class="eyebrow">Da dove vuoi iniziare?</p>
+            <h2 id="home-final-title">Scegli il prossimo passo, in base a ciò che ti serve adesso.</h2>
+        </header>
+
+        <div class="home-final-cta" data-scene-motion="up" data-home-focus="final-choices">
+            <article class="home-final-choice home-final-choice--courses">
+                <div class="home-final-choice__copy">
+                    <p class="home-final-choice__kicker">In presenza · Montesilvano</p>
+                    <h3>Vuoi imparare gesti e strumenti da usare davvero?</h3>
+                    <p>Nei corsi osservi, provi e fai domande, con il tempo necessario per capire ogni passaggio.</p>
+                    <a href="/iscrizione-corsi" class="btn" data-conversion="home_finale_corsi">Scopri i corsi</a>
+                </div>
+                <figure class="home-final-detail" aria-hidden="true">
+                    <img src="{{ url_for('static', filename='img/selene-corsi.jpg') }}" alt="" width="1280" height="1920" loading="lazy">
+                </figure>
+            </article>
+
+            <article class="home-final-choice home-final-choice--sleep">
+                <div class="home-final-choice__copy">
+                    <p class="home-final-choice__kicker">Online in tutta Italia o in studio</p>
+                    <h3>Vuoi capire meglio il sonno del tuo bambino?</h3>
+                    <p>Una breve call aiuta a chiarire la difficoltà e a capire se la consulenza è il passo adatto.</p>
+                    <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="home_finale_call_sonno">Scegli l’orario della call</a>
+                </div>
+            </article>
+        </div>
+
+        <section class="home-clinical-band" data-scene-motion="up" aria-labelledby="home-clinical-title">
+            <div>
+                <p class="eyebrow">Prestazioni infermieristiche</p>
+                <h3 id="home-clinical-title">Cerchi una prestazione sanitaria?</h3>
+                <p>Invia la richiesta: lo studio verifica la disponibilità e conferma l’appuntamento.</p>
+            </div>
+            <a href="/prestazioni-infermieristiche" class="link-azione" data-conversion="home_prestazioni">Vai alle prestazioni</a>
+        </section>
     </div>
-    <a href="/prestazioni-infermieristiche" class="btn btn-secondaria" data-conversion="home_prestazioni">Vai alle prestazioni</a>
 </section>
 
-<section class="home-final-cta">
-    <p class="eyebrow">Da dove vuoi iniziare?</p>
-    <h2>Un corso se vuoi prepararti. Una call se il sonno è già diventato difficile da leggere.</h2>
-    <div class="home-hero-actions">
-        <a href="/iscrizione-corsi" class="btn" data-conversion="home_finale_corsi">Scopri i corsi</a>
-        <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20vorrei%20richiedere%20la%20call%20gratuita%20per%20capire%20se%20la%20consulenza%20del%20sonno%20è%20adatta%20alla%20mia%20famiglia." class="btn btn-linea" target="_blank" rel="noopener noreferrer" data-conversion="home_finale_call_sonno">Richiedi la call gratuita</a>
-    </div>
-</section>
+<script src="{{ url_for('static', filename='js/home-scroll-motion.js') }}?v=9.0" defer></script>
 
 {% endblock %}

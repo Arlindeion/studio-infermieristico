@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block titolo %}Chi Sono — Studio Infermieristico{% endblock %}
+{% block titolo %}Chi è Selene Campetta | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Conosci Selene Campetta, infermiera iscritta all'Albo OPI di Pescara, il suo metodo e il lavoro con bambini e famiglie a Montesilvano.{% endblock %}
 
 {% block contenuto %}
 
@@ -8,24 +9,24 @@
 
     <div class="chi-siamo-contenuto">
         <div class="profilo">
-            <img src="{{ url_for('static', filename='img/selene-chi-sono.jpg') }}" alt="Selene Campetta" class="profilo-foto">
-            <h3>Dott.ssa Selene Campetta</h3>
-            <p class="qualifica">Infermiera - Iscritta all'Albo OPI di Pescara</p>
+            <img src="{{ url_for('static', filename='img/selene-chi-sono.jpg') }}" alt="Selene Campetta" class="profilo-foto" width="1066" height="1600">
+            <h2>Dott.ssa Selene Campetta</h2>
+            <p class="qualifica">Infermiera · iscritta all'Albo OPI di Pescara</p>
         </div>
         <div class="bio">
             <p>Mi chiamo Selene Campetta, sono infermiera e mamma di due bambine.</p>
-            <p>Prima di aprire il mio studio, ho conosciuto da vicino cosa significa diventare genitore: la gioia immensa, l'amore che travolge, ma anche la stanchezza, i dubbi, le notti difficili e quella paura silenziosa di non sapere se si sta facendo la cosa giusta.</p>
-            <p>Ci sono momenti in cui anche le domande più semplici sembrano enormi. Il sonno che manca, lo svezzamento che spaventa, il ciuccio da togliere, lo spannolinamento che sembra lontanissimo, i pianti, l'alimentazione, le piccole paure quotidiane.</p>
-            <p>A volte non serve una risposta perfetta. Serve qualcuno che ti ascolti davvero, che non ti faccia sentire sbagliato e che ti dica: "Respira, facciamo un passo alla volta".</p>
+            <p>Prima di aprire lo studio sono diventata mamma. Ho conosciuto la stanchezza, i dubbi, le notti difficili e la paura di non sapere se stessi facendo la cosa giusta.</p>
+            <p>Ci sono momenti in cui anche le domande più semplici sembrano difficili da affrontare: il sonno che manca, lo svezzamento che preoccupa, il ciuccio da lasciare, lo spannolinamento che sembra ancora lontano, i pianti, l'alimentazione e le paure di ogni giorno.</p>
+            <p>A volte non serve avere subito tutte le risposte. Serve qualcuno che ti ascolti con attenzione, senza farti sentire sbagliato, e che ti aiuti ad affrontare una cosa alla volta.</p>
             <p>Da questo desiderio nasce S.C. Studio Infermieristico: uno spazio pensato per le famiglie, per i bambini e per tutti quei genitori che hanno bisogno di sentirsi accolti, capiti e accompagnati.</p>
-            <p>Qui puoi portare dubbi, domande, paure e stanchezza. Puoi parlare senza sentirti giudicato. Puoi trovare parole semplici, gesti concreti e un sostegno delicato nei passaggi più importanti della crescita: nascita, sonno, svezzamento, alimentazione, spannolinamento, ciuccio, prevenzione e cura quotidiana.</p>
-            <p>Non sono qui per dirti come "dovresti" essere genitore. Sono qui per camminare accanto a te, aiutarti a trovare la tua strada e ricordarti che non devi fare tutto da solo.</p>
-            <p>Perché prendersi cura di un bambino significa anche prendersi cura di chi lo ama ogni giorno.</p>
+            <p>Qui puoi portare dubbi, domande, paure e stanchezza. Puoi parlarne senza sentirti giudicato. Troverai parole chiare, gesti pratici e un sostegno attento nei passaggi importanti della crescita: nascita, sonno, svezzamento, alimentazione, spannolinamento, ciuccio, prevenzione e cura quotidiana.</p>
+            <p>Non esiste un'unica indicazione adatta a tutte le famiglie. Ti aiuto a leggere la situazione della tua famiglia e a scegliere azioni compatibili con l'età del bambino, la sicurezza e la vita di ogni giorno.</p>
+            <p>Prendersi cura di un bambino significa dedicare attenzione anche a chi lo ama e lo accompagna ogni giorno.</p>
         </div>
     </div>
 
     <div class="valori">
-        <h3>I miei valori</h3>
+        <h2>I miei valori</h2>
         <div class="card-grid">
             <div class="card">
                 <span class="valore-icona" aria-hidden="true">
@@ -37,7 +38,7 @@
                     </svg>
                 </span>
                 <h3>Professionalità</h3>
-                <p>Formazione continua e aggiornamento costante per garantire le migliori pratiche cliniche.</p>
+                <p>Continuo a formarmi e ad aggiornarmi per lavorare secondo pratiche cliniche affidabili e attuali.</p>
             </div>
             <div class="card">
                 <span class="valore-icona" aria-hidden="true">
@@ -47,7 +48,7 @@
                     </svg>
                 </span>
                 <h3>Empatia</h3>
-                <p>Ogni paziente è unico. Ascolto le tue esigenze per offrirti un'assistenza su misura.</p>
+                <p>Ogni persona ha esigenze diverse. Ti ascolto per offrirti un'assistenza adatta alla tua situazione.</p>
             </div>
             <div class="card">
                 <span class="valore-icona" aria-hidden="true">
@@ -58,10 +59,23 @@
                     </svg>
                 </span>
                 <h3>Riservatezza</h3>
-                <p>I tuoi dati e la tua salute sono trattati con la massima discrezione e nel rispetto del GDPR.</p>
+                <p>Tratto i dati personali e sanitari solo per le finalità indicate nell'informativa privacy e nel rispetto del GDPR.</p>
             </div>
         </div>
     </div>
+
+    <section class="profile-next-step" aria-labelledby="profile-next-step-title">
+        <div class="profile-next-step__copy">
+            <p class="eyebrow">Il prossimo passo</p>
+            <h2 id="profile-next-step-title">Da dove vuoi iniziare?</h2>
+            <p>Puoi partecipare a un corso pratico oppure capire se la consulenza del sonno è adatta alla tua famiglia.</p>
+        </div>
+        <div class="profile-next-step__actions" aria-label="Percorsi disponibili">
+            <a href="/iscrizione-corsi" class="btn" data-conversion="chi_sono_corsi">Scopri i corsi</a>
+            <a href="/consulenze-online" class="btn btn-linea" data-conversion="chi_sono_sonno">Scopri la consulenza del sonno</a>
+            <a href="/prestazioni-infermieristiche" class="link-azione" data-conversion="chi_sono_prestazioni">Cerchi una prestazione infermieristica?</a>
+        </div>
+    </section>
 
 </section>
 {% endblock %}

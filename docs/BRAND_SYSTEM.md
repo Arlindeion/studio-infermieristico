@@ -1,6 +1,6 @@
 # Identità visiva e verbale
 
-Ultimo aggiornamento: 16 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Idea guida
 
@@ -73,11 +73,11 @@ Prima di pubblicare immagini con partecipanti, soprattutto minori, verificare il
 - Titolo breve della scheda browser in homepage: `S.C. Studio Infermieristico`.
 - Nei contenuti per genitori parlare in prima persona quando è Selene a offrire il supporto.
 
-Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia usare la variante che resta leggibile con navigazione scura; nel footer profondo usare la variante chiara.
+Il logo deve mantenere spazio sufficiente intorno e contrasto con il fondo. Nell'header salvia il simbolo anatomico può usare il tratto bianco solo dentro un campo verde profondo compatto; non va usato bianco direttamente sul salvia. Il naming resta coerente con la navigazione scura; nel footer profondo usare la variante chiara.
 
 ## Header e footer
 
-- Header: fondo salvia identitario, logo e testi verde scuro.
+- Header: fondo salvia identitario, simbolo bianco in un campo verde profondo rettangolare, naming e testi verde scuro. Il collegamento corrente e l'hover usano il sottile segno rosso previsto dalla navigazione.
 - Footer: verde profondo e testo chiaro.
 - Le prestazioni infermieristiche restano nella navigazione, ma non diventano il pulsante dominante.
 - La navigazione deve mantenere chiari i due pilastri: corsi e consulenza del sonno.
@@ -93,6 +93,12 @@ La scelta del testo scuro nell'header è sia stilistica sia funzionale: crea con
 - Mantenere separate le responsabilità: fondamenta in `base.css`, componenti condivisi in `components.css`, homepage e consulenza nei rispettivi moduli e interfaccia gestionale in `admin.css`.
 - Il rosso è una firma, non un secondo colore dominante.
 - Le CTA devono essere brevi, specifiche e visivamente gerarchizzate.
+- La homepage è un racconto a scene: su desktop ogni arresto dello snap contiene una sola schermata, mentre sotto 1024×640 px, con movimento ridotto o senza JavaScript lo scroll resta libero. Corsi e sonno occupano scene distinte; i corsi restano il percorso dominante e le prestazioni una scelta secondaria.
+- Le prime tre scene sono collegate dalla staffetta fotografica degli organi all'uncinetto; dalla scena sonno in poi il movimento usa profondità e completamenti legati al contenuto. Il filo disegnato e la staffetta di parole non fanno parte del sistema approvato.
+- Le pagine interne condividono scala tipografica, ritagli, ritmo editoriale e linea rossa con la homepage, ma non usano lo snap. Pagine narrative, moduli ed esiti hanno regie diverse e mantengono lo scroll normale.
+- I passaggi tra pagine pubbliche dello stesso sito usano una transizione orizzontale: la pagina di destinazione arriva insieme al proprio bordo rosso, mentre l'header resta stabile. Il movimento non deve mai essere necessario per leggere o raggiungere il contenuto.
+- La sezione del corso di accompagnamento alla nascita usa un fondo chiaro distinto dal salvia identitario dell'header, così il contenuto non si fonde con la navigazione durante lo scroll.
+- Il feed Instagram mantiene il rendering nativo di Behold e mostra gli ultimi sei post: tre colonne quadrate su desktop, due colonne 4:5 su mobile, angoli al 20%, overlay `#7C9A7E`, nessun bordo e apertura nella galleria interna. Il sito non deve trasformarne internamente il contenuto con stili fragili.
 
 ## Tono di voce
 
@@ -132,6 +138,8 @@ Sito, social, PDF e locandine devono utilizzare:
 - lo stesso tono e gli stessi nomi dei servizi.
 
 Video generati possono sostenere la frequenza editoriale, ma non devono imitare testimonianze, risultati reali o situazioni cliniche. Devono restare chiaramente coerenti con il sistema visivo e non sostituire la presenza reale di Selene.
+
+La campagna iniziale sulla consulenza del sonno usa lo stesso sistema della landing e non crea un'identità parallela. Un eventuale targeting geografico ridotto per ragioni di spesa non modifica il tono nazionale dell'offerta né l'intera fascia 0-12 mesi; ogni creatività può però concentrarsi su una sola difficoltà osservabile.
 
 ## Controlli minimi
 

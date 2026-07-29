@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titolo %}Questionario sonno di {{ call.nome }} — Admin{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna admin-page admin-questionnaire-page">
+    <p class="admin-eyebrow">{{ formula }} · compilato il {{ call.questionario.compilato_il.strftime('%d/%m/%Y alle %H:%M') }}</p>
+    <h1>Questionario sonno di {{ call.nome }}</h1>
+    <div class="admin-questionnaire-summary">
+        <p><strong>Contatti</strong><br>{{ call.email }} · {{ call.telefono }}</p>
+        <p><strong>Richiesta iniziale</strong><br>{{ call.eta_bambino_mesi }} mesi · {{ call.difficolta_altro or call.difficolta_principale }}</p>
+    </div>
+    <dl class="admin-questionnaire-answers">
+        {% for etichetta, risposta in risposte %}
+        <div><dt>{{ etichetta }}</dt><dd>{{ risposta }}</dd></div>
+        {% endfor %}
+    </dl>
+    <p><a class="btn-azione blu" href="{{ url_for('admin') }}#admin-call-sonno">Torna alle call sonno</a></p>
+</section>
+{% endblock %}

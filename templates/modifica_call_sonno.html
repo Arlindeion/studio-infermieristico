@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titolo %}Modifica call sonno — Admin{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna admin-page">
+    <p class="admin-eyebrow">Accordo già preso al telefono</p>
+    <h1>Modifica e conferma la call di {{ call.nome }}</h1>
+    <p>Il nuovo orario verrà salvato come già accettato dalla famiglia e comunicato via email.</p>
+    {% with messages = get_flashed_messages() %}{% if messages %}<div class="admin-flash admin-flash-error">{{ messages[0] }}</div>{% endif %}{% endwith %}
+    <form method="post" class="form-prenotazione">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <div class="form-riga">
+            <div class="form-gruppo"><label for="data">Data *</label><input id="data" name="data" type="date" value="{{ call.data }}" required></div>
+            <div class="form-gruppo"><label for="ora">Ora *</label><select id="ora" name="ora" required>{% for orario in orari_call %}<option value="{{ orario }}" {% if call.ora == orario %}selected{% endif %}>{{ orario }}</option>{% endfor %}</select></div>
+        </div>
+        <button class="btn" type="submit">Salva e invia conferma</button>
+        <a class="btn-azione blu" href="{{ url_for('admin') }}#admin-call-sonno">Annulla</a>
+    </form>
+</section>
+{% endblock %}

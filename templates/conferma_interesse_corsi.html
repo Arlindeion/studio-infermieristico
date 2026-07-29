@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titolo %}Interesse ricevuto | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}La richiesta di ricontatto per i prossimi corsi è stata ricevuta.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        <span class="conferma-icona" aria-hidden="true">✓</span>
+        <p class="eyebrow">Richiesta ricevuta</p>
+        <h1>Terrò presente il tuo interesse.</h1>
+        <p>Ti ricontatterò quando sarà disponibile una nuova data per la tematica che hai scelto.</p>
+        <p>Potrai valutarla prima di decidere se richiedere l’iscrizione.</p>
+        <a href="/" class="btn" data-conversion="course_interest_confirmation_home">Torna alla homepage</a>
+    </div>
+</section>
+{% endblock %}

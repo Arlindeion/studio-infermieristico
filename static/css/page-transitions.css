@@ -1,0 +1,153 @@
+/* La pagina successiva copre quella corrente; il bordo rosso è la loro giunzione. */
+@media (prefers-reduced-motion: no-preference) {
+    html.page-transition-previewing,
+    html.page-transition-active {
+        overflow: hidden;
+    }
+
+    .page-transition-preview {
+        background: var(--sfondo);
+        bottom: 0;
+        contain: strict;
+        left: 0;
+        pointer-events: none;
+        position: fixed;
+        right: 0;
+        top: 0;
+        transition: transform var(--page-transition-duration, 620ms) cubic-bezier(0.65, 0, 0.35, 1);
+        will-change: transform;
+        z-index: 999;
+    }
+
+    .page-transition-preview::after {
+        background: var(--rosso-cuore);
+        bottom: 0;
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        top: var(--page-transition-header-height, 0);
+        width: 3px;
+        z-index: 2;
+    }
+
+    .page-transition-preview--forward {
+        box-shadow: -18px 0 34px var(--verde-scuro-a14);
+        transform: translate3d(100%, 0, 0);
+    }
+
+    .page-transition-preview--forward::after {
+        left: 0;
+    }
+
+    .page-transition-preview--backward {
+        box-shadow: 18px 0 34px var(--verde-scuro-a14);
+        transform: translate3d(-100%, 0, 0);
+    }
+
+    .page-transition-preview--backward::after {
+        right: 0;
+    }
+
+    .page-transition-preview.is-running {
+        transform: translate3d(0, 0, 0);
+    }
+
+    .page-transition-preview__frame {
+        background: var(--sfondo);
+        border: 0;
+        display: block;
+        height: 100%;
+        pointer-events: none;
+        width: 100%;
+    }
+
+    html.page-transition-arrived .page-homepage .site-nav.has-thread .site-nav__thread {
+        animation: page-home-progress-reveal 500ms 40ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* Entrata di riserva per cronologia e caricamenti non completati in tempo. */
+    html.page-transition-active::after {
+        background: var(--rosso-cuore);
+        bottom: 0;
+        content: '';
+        pointer-events: none;
+        position: fixed;
+        top: 0;
+        width: 3px;
+        z-index: 999;
+    }
+
+    html.page-transition-active body > main,
+    html.page-transition-active body > .site-footer {
+        will-change: transform;
+    }
+
+    html.page-transition-enter-forward::after {
+        box-shadow: 18px 0 34px var(--verde-scuro-a14);
+        right: 0;
+    }
+
+    html.page-transition-enter-backward::after {
+        box-shadow: -18px 0 34px var(--verde-scuro-a14);
+        left: 0;
+    }
+
+    html.page-transition-enter-forward body > main,
+    html.page-transition-enter-forward body > .site-footer {
+        transform: translateX(100vw);
+    }
+
+    html.page-transition-enter-backward body > main,
+    html.page-transition-enter-backward body > .site-footer {
+        transform: translateX(-100vw);
+    }
+
+    html.page-transition-enter-forward.page-transition-running::after {
+        animation: page-seam-forward 480ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    }
+
+    html.page-transition-enter-backward.page-transition-running::after {
+        animation: page-seam-backward 480ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    }
+
+    html.page-transition-enter-forward.page-transition-running body > main,
+    html.page-transition-enter-forward.page-transition-running body > .site-footer {
+        animation: page-content-in-forward 480ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    }
+
+    html.page-transition-enter-backward.page-transition-running body > main,
+    html.page-transition-enter-backward.page-transition-running body > .site-footer {
+        animation: page-content-in-backward 480ms cubic-bezier(0.65, 0, 0.35, 1) both;
+    }
+}
+
+@keyframes page-home-progress-reveal {
+    from {
+        clip-path: inset(0 0 0 100%);
+        opacity: 0;
+    }
+    to {
+        clip-path: inset(0);
+        opacity: 1;
+    }
+}
+
+@keyframes page-seam-forward {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100vw + 3px)); }
+}
+
+@keyframes page-seam-backward {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100vw - 3px)); }
+}
+
+@keyframes page-content-in-forward {
+    from { transform: translateX(100vw); }
+    to { transform: translateX(0); }
+}
+
+@keyframes page-content-in-backward {
+    from { transform: translateX(-100vw); }
+    to { transform: translateX(0); }
+}

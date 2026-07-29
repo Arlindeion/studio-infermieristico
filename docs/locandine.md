@@ -1,6 +1,6 @@
 # Istruzioni per locandine e materiali commerciali
 
-Ultimo aggiornamento: 13 luglio 2026.
+Ultimo aggiornamento: 29 luglio 2026.
 
 ## Scopo di questo documento
 
@@ -96,7 +96,7 @@ L'offerta breve non deve far apparire inutile il percorso principale.
 
 ### Clienti che già conoscono Selene
 
-Non sprecare la prima schermata con una presentazione generica o una fotografia puramente identitaria. Per il PDF con le due opzioni sonno è stata approvata la versione senza la fotografia iniziale con il cuore in mano.
+Non sprecare la prima schermata con una presentazione generica o una fotografia puramente identitaria. Per il PDF comparativo delle tre formule sonno è stata approvata la versione senza la fotografia iniziale con il cuore in mano.
 
 La riconoscibilità deve restare attraverso logo, palette, tipografia, tono e firma rossa.
 
@@ -141,7 +141,7 @@ Se il software non permette questi font, usare un'alternativa soltanto dopo aver
 - Non deformarlo, ricolorarlo liberamente o inserirlo su un fondo che ne riduce il contrasto.
 - Lasciare spazio libero intorno.
 - Non usare il logo come decorazione ripetuta.
-- Verificare il nome effettivo del file: il repository registra ancora `logo.PNG`, mentre alcuni riferimenti applicativi usano `logo.png`.
+- Usare `static/img/logo.png` come file principale; il nome è normalizzato per i filesystem Linux case-sensitive. `static/img/logo_black.png` resta disponibile per il login e i materiali PDF.
 
 ### Firma rossa
 
@@ -226,7 +226,7 @@ Evitare:
 
 Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
-- `Richiedi la call gratuita`
+- `Scegli l’orario della call`
 - `Iscrizione individuale`
 - `Scopri le prossime date`
 - `Prenota`
@@ -234,14 +234,26 @@ Ogni materiale deve avere una sola CTA primaria. Esempi approvati:
 
 WhatsApp è adatto a:
 
-- call sonno nella fase pilota;
-- famiglie già interessate o indecise;
+- famiglie indecise sulla call sonno;
 - aziende e gruppi;
 - persone che non trovano una data.
 
 Quando esiste un modulo specifico, usare il modulo come CTA. Recuperare sempre URL, telefono e contatti dalle fonti correnti del sito; non riscriverli a memoria.
 
 Nei PDF rendere link, indirizzo email e numero di telefono cliccabili quando tecnicamente possibile.
+
+### Campagna iniziale sulla consulenza del sonno
+
+Il test dura tre mesi e promuove la consulenza del sonno 0-12 mesi. Per ogni annuncio, video o contenuto sponsorizzato:
+
+- partire da una sola difficoltà osservabile, non dal tema generico del sonno;
+- mantenere `Scegli l’orario della call` come CTA primaria verso la landing e il calendario;
+- usare l'identità dello studio e la presenza reale di Selene, senza creare un sottobrand;
+- non inventare testimonianze, casi o risultati: le prove specifiche del servizio saranno aggiunte solo quando reali e autorizzate;
+- non restringere la promessa alla sola area geografica dell'annuncio: il servizio resta nazionale e online;
+- trattare un eventuale targeting su Abruzzo e regioni confinanti come scelta di distribuzione legata al budget.
+
+Il primo test è nazionale su Meta/Instagram: massimo 200 €, verifica dopo 100 €, due angoli iniziali (`risvegli frequenti` e `addormentamento con forte supporto`) e arresto/rallentamento a 10 call prenotate nella settimana. Consultare `PROJECT_BRIEF.md` e `DECISIONS.md` prima di produrre la serie definitiva.
 
 ## Prezzi
 
@@ -259,16 +271,26 @@ Naming:
 
 - `Consulenza del sonno` o `Consulenza sonno`;
 - fascia attuale: 0-12 mesi;
+- ruolo pubblico pertinente: `infermiera e consulente del sonno infantile`;
 - non mescolare ciuccio, spannolinamento e consulenze generiche nella stessa offerta.
 
-Le due formule hanno funzioni differenti:
+Il Master in Management documenta il profilo generale ma non è una
+specializzazione sul sonno. Non usare le 127 ore come leva nella landing o
+negli annunci. La SIDS può essere nominata soltanto nel contesto del sonno
+sicuro e della riduzione del rischio, con una fonte sanitaria affidabile e senza
+promettere prevenzione.
+
+Le tre formule hanno funzioni differenti:
 
 - `Consulenza mirata` — 75 €, dedicata a una singola difficoltà circoscritta;
 - `Percorso sonno personalizzato` — 180 €, proposta principale quando più aspetti si influenzano tra loro.
+- `Percorso sonno con affiancamento` — 320 €, stesso percorso con 60 giorni di WhatsApp entro i confini pubblicati.
 
 La formula breve deve apparire appropriata a casi limitati, non come versione scontata del percorso.
 
-La call conoscitiva gratuita di circa 15 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+La call conoscitiva gratuita di circa 20 minuti precede l'eventuale pagamento e serve a capire se il servizio è adatto.
+
+I prezzi sono visibili prima della prenotazione. Non usare `premium` come nome pubblico: l'affiancamento descrive il valore senza introdurre un registro estraneo al brand.
 
 Inserire in modo leggibile, senza tono difensivo:
 

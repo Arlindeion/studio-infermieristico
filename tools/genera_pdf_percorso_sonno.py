@@ -149,8 +149,8 @@ def page_one(c):
     c.setFont("Helvetica-Bold", 8.2)
     c.drawString(42, H - 22, "S.C. STUDIO INFERMIERISTICO")
 
-    pill(c, "Percorso pilota · 6 posti", 18, H - photo_height - 27, 125, HEART_RED, white)
-    pill(c, "0-12 mesi · in studio", W - 130, H - photo_height - 27, 112, MIST, DEEP_GREEN)
+    pill(c, "Percorso personalizzato", 18, H - photo_height - 27, 125, HEART_RED, white)
+    pill(c, "0-12 mesi · online", W - 130, H - photo_height - 27, 112, MIST, DEEP_GREEN)
 
     x = 18
     y = H - photo_height - 54
@@ -188,14 +188,14 @@ def page_one(c):
     c.drawString(card_x + 13, card_y + 38, "180 €")
     c.setFillColor(MUTED)
     c.setFont("Helvetica", 8.2)
-    c.drawString(card_x + 105, card_y + 52, "Diario · incontro · indicazioni")
-    c.drawString(card_x + 105, card_y + 39, "scritte · verifica · supporto")
+    c.drawString(card_x + 105, card_y + 52, "Tre call · diario · analisi")
+    c.drawString(card_x + 105, card_y + 39, "circa 60 giorni · massimo 75")
     c.setFillColor(SAGE)
     c.roundRect(card_x + 105, card_y + 12, card_w - 118, 17, 8.5, fill=1, stroke=0)
     c.setFillColor(DEEP_GREEN)
     c.setFont("Helvetica-Bold", 7.5)
     c.drawCentredString(card_x + 105 + (card_w - 118) / 2, card_y + 17.5,
-                        "CHIAMATA GRATUITA · 15 MINUTI")
+                        "CHIAMATA GRATUITA · CIRCA 20 MINUTI")
 
     draw_button(c, 18, 25, W - 36, "Parla con Selene su WhatsApp", WHATSAPP_URL)
     c.setFillColor(HexColor("#BFD0C6"))
@@ -220,10 +220,10 @@ def page_two(c):
     col_w = W - 36
     y = H - 89
     steps = [
-        ("1", "Osserviamo", "Questionario iniziale e diario del sonno di 5 giorni."),
-        ("2", "Ci incontriamo", "75 minuti in studio per leggere insieme ritmi, risvegli e routine."),
-        ("3", "Costruiamo", "Indicazioni personalizzate scritte, sostenibili e attente al sonno sicuro."),
-        ("4", "Verifichiamo", "Incontro di verifica di 30 minuti dopo 7-10 giorni e supporto WhatsApp per 7 giorni."),
+        ("1", "Osserviamo", "Raccogliamo le informazioni iniziali e il diario del sonno."),
+        ("2", "Ci incontriamo", "Prima call da 60-75 minuti per leggere ritmi, risvegli e routine."),
+        ("3", "Verifichiamo", "Seconda call orientativamente dopo 30 giorni."),
+        ("4", "Concludiamo", "Terza call entro 75 giorni dall'avvio, salvo indisponibilità di Selene."),
     ]
     for number, title, body in steps:
         c.setFillColor(SOFT_RED)
@@ -264,10 +264,10 @@ def page_two(c):
     c.drawString(108, profile_y + 76, "Selene Campetta")
     c.setFillColor(HEART_RED)
     c.setFont("Helvetica-Bold", 7.4)
-    c.drawString(108, profile_y + 61, "INFERMIERA · ALBO OPI PESCARA")
+    c.drawString(108, profile_y + 61, "INFERMIERA · MASTER IN COORDINAMENTO")
     draw_wrapped(
         c,
-        "Ti accompagno con osservazione, ascolto e attenzione alla sicurezza, "
+        "Ti accompagno online con osservazione, ascolto e attenzione alla sicurezza, "
         "rispettando il bambino e gli equilibri della famiglia.",
         108,
         profile_y + 43,
@@ -310,7 +310,7 @@ def build():
     register_fonts()
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(OUTPUT), pagesize=PAGE, pageCompression=1)
-    c.setTitle("Percorso sonno pilota - S.C. Studio Infermieristico")
+    c.setTitle("Percorso sonno personalizzato - S.C. Studio Infermieristico")
     c.setAuthor("S.C. Studio Infermieristico - Selene Campetta")
     c.setSubject("Anteprima del percorso sonno personalizzato 0-12 mesi")
     page_one(c)
