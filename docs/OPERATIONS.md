@@ -68,10 +68,15 @@ partire da un commit già verificato.
 Il 30 luglio 2026 il Blueprint dello staging è stato disconnesso per revocare
 un Sync Hook considerato non più affidabile. La disconnessione non ha eliminato
 né modificato Web Service e PostgreSQL: il servizio resta collegato a `main`,
-con deploy manuali, ed esegue il commit live `8a4ad84`. Prima di ricollegare
-`render.yaml` occorre scegliere una finestra di deploy controllata, verificare
-il piano proposto e considerare la prima sincronizzazione capace di avviare un
-deploy.
+con deploy manuali. Nella stessa data il database è stato portato alla revisione
+Alembic `4d8b2c7a91e6`; un successivo tentativo di avvio del vecchio commit
+`8a4ad84`, che non conteneva quella revisione, è fallito senza modificare i dati.
+Il deploy manuale del `main` verificato `148ec36` ha riallineato codice e schema:
+migrazione, bootstrap, Gunicorn e health check sono riusciti e `/healthz` ha
+risposto `200`. Non eseguire rollback a commit che non contengono la revisione
+registrata nel database. Prima di ricollegare `render.yaml` occorre scegliere
+una finestra di deploy controllata, verificare il piano proposto e considerare
+la prima sincronizzazione capace di avviare un deploy.
 
 All'avvio Render esegue nell'ordine `flask db upgrade`, il comando sicuro
 `bootstrap-admin` e infine Gunicorn. I comandi preparatori disabilitano lo
@@ -106,12 +111,14 @@ caricato direttamente come secret file con nome
 `/etc/secrets/google-calendar-service-account.json`. Nessun valore segreto va
 inserito nel repository.
 
-Il repository non registra la creazione effettiva dell'account di servizio:
-al 30 luglio 2026 documenta soltanto la procedura prevista. L'account Google
-dello studio deve creare o controllare il progetto Cloud, abilitare Google
-Calendar API e creare un'identità tecnica dedicata. Il calendario operativo
-sincronizzato con Arzamed va condiviso con tale identità usando il permesso di
-modifica degli eventi, senza concedere la gestione della condivisione.
+Il 30 luglio 2026 sono stati verificati dal pannello Google il progetto Cloud,
+Google Calendar API abilitata, l'identità tecnica dedicata e la relativa chiave.
+Il calendario operativo dello studio è condiviso con tale identità usando il
+permesso di modifica degli eventi, senza gestione della condivisione; resta non
+pubblico. Arzamed usa lo stesso account Google e mostra attivo il modulo di
+sincronizzazione esterna. Il file JSON locale è escluso da Git, non tracciato e
+leggibile soltanto dal proprietario; il suo contenuto non è stato aperto né
+registrato nella documentazione.
 
 ### Gate delle risorse di produzione separate
 
