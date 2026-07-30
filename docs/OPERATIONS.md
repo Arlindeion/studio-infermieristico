@@ -261,7 +261,7 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `MAIL_USERNAME` | casella completa `info@scstudioinfermieristico.it` |
 | `MAIL_PASSWORD` | segreto SMTP inserito nel pannello |
 | `MAIL_DEFAULT_SENDER` | `S.C. Studio Infermieristico <info@scstudioinfermieristico.it>` |
-| `MAIL_ADMIN_RECIPIENT` | indirizzo interno scelto dall'attività |
+| `MAIL_ADMIN_RECIPIENT` | `info@scstudioinfermieristico.it`, definito in D-068 |
 | `GOOGLE_CALENDAR_ID` | identificativo del calendario operativo |
 | secret file `google-calendar-service-account.json` | JSON caricato dal pannello, disponibile in `/etc/secrets/` |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | `/etc/secrets/google-calendar-service-account.json` |

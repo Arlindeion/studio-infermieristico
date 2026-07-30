@@ -565,6 +565,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: l'account Google dello studio resta proprietario del calendario; l'app usa un'identità tecnica separata con accesso limitato agli eventi del solo calendario operativo. La lettura API espande le ricorrenze, conserva una cache per giorno e riusa la copia scaduta in caso di errore. La verifica documentale non ha trovato evidenza che l'account di servizio sia già stato generato o condiviso: prima del collaudo reale occorre completare e verificare questi passaggi senza inserire il JSON nel repository.
 - Collegamenti: `app.py`, `config.py`, `render.production.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-068 — La casella Zimbra riceve gli avvisi amministrativi
+
+- Data: 2026-07-30.
+- Stato: approvata dall'attività; da configurare nella preproduzione privata.
+- Decisione: usare `info@scstudioinfermieristico.it` come valore di `MAIL_ADMIN_RECIPIENT`, oltre che come casella mittente approvata.
+- Motivo: le notifiche operative del sito devono arrivare nella casella ufficiale già presidiata e collaudata, senza introdurre un secondo indirizzo o inoltri non necessari.
+- Conseguenze: nuove prenotazioni, richieste di call, iscrizioni e ricontatti inviano l'avviso interno alla casella Zimbra dello studio. Il valore viene inserito soltanto nell'ambiente autorizzato; non abilita invii nello staging gratuito e non modifica `MAIL_SUPPRESS_SEND`.
+- Collegamenti: `OPERATIONS.md`, `config.py`, `app.py`, `render.production.yaml`.
+
 ## Modello per nuove decisioni
 
 ```markdown
