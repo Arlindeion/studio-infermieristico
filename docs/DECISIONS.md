@@ -574,6 +574,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: nuove prenotazioni, richieste di call, iscrizioni e ricontatti inviano l'avviso interno alla casella Zimbra dello studio. Il valore viene inserito soltanto nell'ambiente autorizzato; non abilita invii nello staging gratuito e non modifica `MAIL_SUPPRESS_SEND`.
 - Collegamenti: `OPERATIONS.md`, `config.py`, `app.py`, `render.production.yaml`.
 
+## D-069 — I tre post fissati occupano gli slot editoriali ordinari
+
+- Data: 2026-08-03.
+- Stato: approvata.
+- Decisione: distribuire i tre post destinati al fissaggio in tre normali slot editoriali prima del lancio: **Inizia da qui** nella settimana 10-16 agosto, **Corsi pratici a Montesilvano** nella settimana 17-23 agosto e **Consulenza sonno 0-12 mesi online** nella settimana 24-30 agosto. Il 3 settembre si controllano e si fissano definitivamente i tre post. Ciascuno sostituisce il carosello o la fotografia editoriale della settimana e non si aggiunge alla frequenza prevista.
+- Motivo: preparare il profilo senza introdurre un quarto contenuto settimanale e senza concentrare tre pubblicazioni istituzionali nello stesso periodo.
+- Conseguenze: nelle tre settimane la cadenza resta di due video più il post strategico; il piano marketing registra date e controllo finale, mentre il sistema del creator applica la stessa regola ai calendari futuri.
+- Collegamenti: `MARKETING_PLAN.md`, `reels-creator-system/README.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

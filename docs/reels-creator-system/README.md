@@ -188,4 +188,3 @@ Riferimenti tecnici da ricontrollare quando le piattaforme cambiano:
 
 - [Instagram, specifiche dei Reel](https://www.facebook.com/help/instagram/1038071743007909)
 - [TikTok, buone pratiche creative](https://ads.tiktok.com/help/article/creative-best-practices)
-
