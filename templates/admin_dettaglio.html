@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block titolo %}{{ nome_entita }} · Admin{% endblock %}
+{% block contenuto %}
+<main class="pagina-interna admin-page admin-detail-page">
+    <div class="admin-detail-topbar">
+        <a class="admin-back" href="{{ url_for('admin') }}">← Torna all’agenda</a>
+        <span class="admin-kicker">{{ tipo }}</span>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}<div class="admin-flash-stack" role="status">{% for category, message in messages %}<p class="admin-flash admin-flash-{{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% endwith %}
+
+    <header class="admin-detail-header">
+        <div>
+            <h1>{{ nome_entita }}</h1>
+            <p>
+                {% if entita.telefono %}<a href="tel:{{ entita.telefono }}">{{ entita.telefono }}</a>{% endif %}
+                {% if entita.email %} · <a href="mailto:{{ entita.email }}">{{ entita.email }}</a>{% endif %}
+            </p>
+        </div>
+        <div class="admin-detail-statuses">
+            {% if entita.stato %}<span class="badge">{{ entita.stato }}</span>{% endif %}
+            {% if entita.sincronizzazione %}<span class="sync-chip sync-{{ entita.sincronizzazione }}">{{ entita.sincronizzazione|replace('_', ' ') }}</span>{% endif %}
+        </div>
+    </header>
+
+    <div class="admin-detail-grid">
+        <section class="admin-surface admin-detail-main">
+            <h2>Dati della pratica</h2>
+            <dl class="admin-facts">
+                {% if entita.servizio %}<div><dt>Prestazione</dt><dd>{{ entita.servizio }}</dd></div>{% endif %}
+                {% if entita.corso_titolo %}<div><dt>Corso</dt><dd>{{ entita.corso_titolo }}</dd></div>{% endif %}
+                {% if tipo == 'RichiestaAzienda' %}
+                <div><dt>Organizzazione</dt><dd>{{ entita.organizzazione }}</dd></div>
+                <div><dt>Referente</dt><dd>{{ entita.referente }}</dd></div>
+                <div><dt>Tipo</dt><dd>{{ entita.tipo_organizzazione }}</dd></div>
+                <div><dt>Formazione</dt><dd>{{ formazione_azienda_tipi.get(entita.corso_tipo, 'Da valutare') }}</dd></div>
+                <div><dt>Partecipanti stimati</dt><dd>{{ entita.partecipanti_stimati or 'Da definire' }}</dd></div>
+                <div><dt>Sede e periodo</dt><dd>{{ entita.sede_preferita }} · {{ entita.periodo_preferito or 'periodo da definire' }}</dd></div>
+                {% endif %}
+                {% if entita.data %}<div><dt>Data</dt><dd>{{ entita.data }}{% if entita.ora %} alle {{ entita.ora }}{% endif %}</dd></div>{% endif %}
+                {% if entita.duration_minutes %}<div><dt>Durata</dt><dd>{{ entita.duration_minutes }} minuti</dd></div>{% endif %}
+                {% if entita.data_corso %}<div><dt>Edizione</dt><dd>{{ entita.data_corso }}</dd></div>{% endif %}
+                {% if entita.partecipazione %}<div><dt>Partecipazione</dt><dd>{{ entita.partecipazione }}</dd></div>{% endif %}
+                {% if entita.posti_richiesti %}<div><dt>Posti richiesti</dt><dd>{{ entita.posti_richiesti }}</dd></div>{% endif %}
+                {% if entita.scadenza_gestione %}<div><dt>Prossima azione entro</dt><dd>{{ entita.scadenza_gestione.strftime('%d/%m/%Y %H:%M') }}</dd></div>{% endif %}
+                {% if entita.note %}<div class="admin-fact-wide"><dt>Note iniziali</dt><dd>{{ entita.note }}</dd></div>{% endif %}
+            </dl>
+
+            {% if tipo == 'Appuntamento' %}
+            {% if entita.stato == 'In attesa' %}
+            <form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato', id=entita.id, stato='Confermato') }}" data-confirm="Confermare l’appuntamento e inviare l’email?">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="duration_minutes" value="{{ entita.duration_minutes or 30 }}">
+                <button class="btn-azione verde" type="submit">Conferma</button>
+            </form>
+            {% endif %}
+            <form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato', id=entita.id, stato='Concluso') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-azione verde" type="submit">Segna concluso</button>
+            </form>
+            <form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato', id=entita.id, stato='Assente') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-azione blu" type="submit">Segna assente</button>
+            </form>
+            <a class="btn-azione blu" href="{{ url_for('modifica_appuntamento', id=entita.id) }}">Modifica appuntamento</a>
+            <form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato', id=entita.id, stato='Annullato') }}" data-confirm="Annullare l’appuntamento e inviare l’avviso?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>
+            {% elif tipo == 'CallSonno' %}
+                {% if entita.stato == 'In attesa' %}<form class="admin-state-form" method="post" action="{{ url_for('conferma_call_sonno_admin', id=entita.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Conferma call</button></form>{% endif %}
+                {% if entita.stato not in ['Annullata', 'Conclusa'] %}<a class="btn-azione blu" href="{{ url_for('modifica_call_sonno_admin', id=entita.id) }}">Modifica orario</a><form class="admin-state-form" method="post" action="{{ url_for('annulla_call_sonno_admin', id=entita.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>{% endif %}
+            {% elif tipo == 'IscrizioneCorso' %}
+                {% for stato, classe in [('Contattato', 'blu'), ('Confermato', 'verde'), ('Annullato', 'rosso')] %}<form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato_iscrizione_corso', id=entita.id, stato=stato) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione {{ classe }}" type="submit">{{ stato }}</button></form>{% endfor %}
+            {% elif tipo == 'RichiestaAzienda' %}
+                <form class="admin-form-grid admin-company-state" method="post" action="{{ url_for('aggiorna_stato_richiesta_azienda', id=entita.id) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <label>Stato<select name="stato">{% for stato in stati_richiesta_azienda %}<option {% if entita.stato == stato %}selected{% endif %}>{{ stato }}</option>{% endfor %}</select></label>
+                    <label>Prossima azione entro<input type="datetime-local" name="scadenza"></label>
+                    <button class="btn-azione verde" type="submit">Aggiorna e programma</button>
+                </form>
+            {% elif tipo == 'BloccoAgenda' and not entita.archiviato_il %}
+                <form method="post" action="{{ url_for('archivia_blocco_admin', id=entita.id) }}" data-confirm="Archiviare il blocco e rimuoverlo da Calendar?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Archivia blocco</button></form>
+            {% endif %}
+        </section>
+
+        <aside class="admin-surface admin-next-action">
+            <p class="admin-eyebrow">Lavorazione</p>
+            <h2>Registra la prossima azione</h2>
+            <form method="post" action="{{ url_for('azione_rapida_admin', tipo=tipo, entita_id=entita.id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="quick-deadline">Nuova scadenza</label>
+                <input id="quick-deadline" type="datetime-local" name="scadenza">
+                <div class="admin-quick-actions">
+                    <button name="azione" value="chiamato" type="submit">Chiamato</button>
+                    <button name="azione" value="nessuna_risposta" type="submit">Nessuna risposta</button>
+                    <button name="azione" value="richiamare" type="submit">Da richiamare</button>
+                    <button name="azione" value="chiuso" type="submit">Chiudi gestione</button>
+                </div>
+            </form>
+        </aside>
+    </div>
+
+    {% if tipo != 'RichiestaAzienda' %}
+    <section class="admin-surface admin-person-history">
+        <p class="admin-eyebrow">Collegamento manuale</p>
+        <h2>Persona e storico</h2>
+        {% if tipo in ['Appuntamento', 'CallSonno'] %}
+        <form class="admin-form-grid" method="post" action="{{ url_for('collega_persona_admin', tipo=tipo, entita_id=entita.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Persona<select name="persona_id" required><option value="">Seleziona</option>{% for persona in persone_disponibili %}<option value="{{ persona.id }}" {% if persona_collegata and persona_collegata.id == persona.id %}selected{% endif %}>{{ persona.nome }} · {{ persona.telefono }}</option>{% endfor %}</select></label>
+            <button class="btn-azione verde" type="submit">Collega pratica</button>
+        </form>
+        {% endif %}
+        {% if persona_collegata %}<p>Collegata a <strong>{{ persona_collegata.nome }}</strong>.</p><div class="admin-history-links">{% for voce in storico_persona %}<a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}"><span>{{ voce.tipo }}</span><strong>{{ voce.titolo }}</strong><small>{{ voce.data }}</small></a>{% else %}<p>Nessun’altra pratica collegata.</p>{% endfor %}</div>{% else %}<p>Nessuna persona collegata: telefono ed email non producono unione automatica.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if difformita and entita.sincronizzazione in ['difforme', 'eliminato_esternamente'] %}
+    <section class="admin-surface admin-sync-diff">
+        <div class="admin-section-heading"><div><p class="admin-eyebrow">Conflitto Calendar</p><h2>Confronto esatto</h2></div><span class="sync-chip sync-difforme">Conferma richiesta</span></div>
+        <table class="tabella-admin"><thead><tr><th>Campo</th><th>Dati del sito</th><th>Google Calendar</th></tr></thead><tbody>
+            {% for campo, valori in difformita.items() %}<tr><td>{{ campo }}</td><td>{{ valori.sito }}</td><td>{{ valori.calendar }}</td></tr>{% endfor %}
+        </tbody></table>
+        <form method="post" action="{{ url_for('forza_calendar_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="Sovrascrivere l’evento Calendar con i dati mostrati nella colonna Sito?">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-azione rosso" type="submit">Sovrascrivi Calendar con i dati del sito</button>
+        </form>
+    </section>
+    {% endif %}
+
+    {% if tipo in ['Appuntamento', 'CallSonno'] %}
+    <section class="admin-surface">
+        <p class="admin-eyebrow">Nuovo orario</p>
+        <h2>Proponi uno slot via email</h2>
+        <p class="filtro-descrizione">Il link dura 48 ore e ricontrolla la disponibilità al momento dell’accettazione.</p>
+        <form class="admin-form-grid" method="post" action="{{ url_for('proponi_slot_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="Inviare questa proposta al destinatario indicato?">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="conferma_invio" value="1">
+            <label>Data proposta<input type="date" name="data_proposta" required></label>
+            <label>Ora<input type="time" name="ora_proposta" required></label>
+            <label>Durata minuti<input type="number" name="durata_minuti" value="{{ entita.duration_minutes or 30 }}" min="1" max="480" required></label>
+            <label class="admin-form-wide">Oggetto email<input type="text" name="oggetto_email" value="Proposta di nuovo orario"></label>
+            <label class="admin-form-wide">Testo email<textarea name="corpo_email" rows="6" placeholder="Lascia vuoto per usare il testo predefinito con il link di accettazione."></textarea></label>
+            <button class="btn" type="submit">Controlla e invia</button>
+        </form>
+    </section>
+    {% endif %}
+
+    {% if tipo == 'RichiestaAzienda' %}
+    <div class="admin-detail-grid admin-company-workflow">
+        <section class="admin-surface">
+            <p class="admin-eyebrow">Proposta tracciata</p>
+            <h2>Invia la proposta</h2>
+            <p class="filtro-descrizione">Il testo parte soltanto dopo la conferma e viene conservato integralmente nel registro email.</p>
+            <form class="admin-form-stack" method="post" action="{{ url_for('invia_proposta_azienda_admin', id=entita.id) }}" data-confirm="Inviare questa proposta a {{ entita.email }}?">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="conferma_invio" value="1">
+                <label>Oggetto<input name="oggetto_email" value="Proposta corso · {{ entita.organizzazione }}" required></label>
+                <label>Testo<textarea name="corpo_email" rows="10" required>Buongiorno {{ entita.referente }},
+
+a seguito del nostro confronto trovi qui la proposta per {{ entita.organizzazione }}.
+
+[Inserisci contenuti, sede, data, numero di partecipanti e condizioni concordate]
+
+Resto disponibile per eventuali chiarimenti.
+
+S.C. Studio Infermieristico</textarea></label>
+                <label>Ricontatto entro<input type="datetime-local" name="scadenza" required></label>
+                <button class="btn" type="submit">Invia e programma ricontatto</button>
+            </form>
+        </section>
+        <section class="admin-surface">
+            <p class="admin-eyebrow">Agenda e Calendar</p>
+            <h2>{% if entita.corso_generato %}Corso riservato creato{% else %}Crea il corso riservato{% endif %}</h2>
+            {% if entita.corso_generato %}
+            <p><a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='Corso', entita_id=entita.corso_generato.id) }}">Apri {{ entita.corso_generato.titolo }}</a></p>
+            {% else %}
+            <form class="admin-form-stack" method="post" action="{{ url_for('crea_corso_da_richiesta_azienda', id=entita.id) }}" data-confirm="Creare un corso privato e sincronizzarlo con Calendar?">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label>Tipologia<select name="tipo" required>{% for valore, dati in corsi_admin_tipi.items() %}<option value="{{ valore }}" {% if entita.corso_tipo == valore %}selected{% endif %}>{{ dati.label }}</option>{% endfor %}</select></label>
+                <label>Titolo<input name="titolo" value="{{ formazione_azienda_tipi.get(entita.corso_tipo, 'Corso') }} · {{ entita.organizzazione }}" required></label>
+                <div class="admin-form-grid"><label>Data<input type="date" name="data" required></label><label>Ora<input type="time" name="ora" required></label></div>
+                <div class="admin-form-grid"><label>Durata ore<input type="number" name="durata_ore" min="0.5" max="12" step="0.5" value="{{ corsi_admin_tipi.get(entita.corso_tipo, {}).get('durata_ore', 2) }}" required></label><label>Partecipanti<input type="number" name="capienza_massima" min="1" max="500" value="{{ entita.partecipanti_stimati or '' }}" required></label></div>
+                <label>Luogo<input name="luogo" value="{{ entita.sede_preferita }}" required></label>
+                <button class="btn" type="submit">Crea corso privato</button>
+            </form>
+            {% endif %}
+        </section>
+    </div>
+    {% endif %}
+    {% if tipo == 'Corso' %}
+    <section class="admin-surface">
+        <p class="admin-eyebrow">Edizione e partecipanti</p>
+        <h2>Modifica corso</h2>
+        <form class="admin-form-grid" method="post" action="{{ url_for('modifica_corso_admin', id=entita.id) }}" data-confirm="Confermare le modifiche? Se cambiano data, ora, luogo o titolo, verrà inviata una comunicazione ai destinatari elencati.">
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Titolo<input name="titolo" value="{{ entita.titolo }}" required></label>
+            <label>Data<input type="date" name="data" value="{{ entita.data }}" required></label>
+            <label>Ora<input type="time" name="ora" value="{{ entita.ora or '' }}"></label>
+            <label>Luogo<input name="luogo" value="{{ entita.luogo or '' }}"></label>
+            <label>Durata ore<input type="number" name="durata_ore" min="0.5" max="12" step="0.5" value="{{ entita.durata_ore }}"></label>
+            <label>Capienza nominale<input type="number" name="capienza_massima" min="1" value="{{ entita.capienza_massima or '' }}"></label>
+            <label>Stato<select name="stato">{% for stato in ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso'] %}<option {% if entita.stato == stato %}selected{% endif %}>{{ stato }}</option>{% endfor %}</select></label>
+            <label class="admin-form-wide">Descrizione<textarea name="descrizione" rows="3">{{ entita.descrizione or '' }}</textarea></label>
+            <div class="admin-form-wide admin-recipient-preview"><strong>Destinatari aggiornamento ({{ iscrizioni_corso|selectattr('email')|list|length }})</strong><p>{% for iscrizione in iscrizioni_corso if iscrizione.email and iscrizione.stato not in ['Annullato', 'Lista attesa'] %}{{ iscrizione.nome }} &lt;{{ iscrizione.email }}&gt;{% if not loop.last %}; {% endif %}{% else %}Nessun destinatario attivo.{% endfor %}</p><label><input type="checkbox" name="conferma_notifiche" value="1"> Confermo destinatari e invio</label></div>
+            <button class="btn" type="submit">Salva corso e sincronizza</button>
+        </form>
+        <div class="admin-export-actions"><a class="btn-azione blu" href="{{ url_for('esporta_corso_csv', id=entita.id) }}">Esporta CSV</a><a class="btn-azione blu" href="{{ url_for('esporta_corso_pdf', id=entita.id) }}">Esporta PDF</a></div>
+    </section>
+    <div class="admin-detail-grid">
+        <section class="admin-surface"><h2>Duplica edizione</h2><form class="admin-form-stack" method="post" action="{{ url_for('duplica_corso_admin', id=entita.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Nuova data<input type="date" name="data" required></label><label>Ora<input type="time" name="ora" value="{{ entita.ora or '' }}"></label><button class="btn-azione verde" type="submit">Duplica senza iscritti</button></form></section>
+        <section class="admin-surface"><h2>Unisci in un’altra edizione</h2><form class="admin-form-stack" method="post" action="{{ url_for('unisci_corso_admin', id=entita.id) }}" data-confirm="Spostare tutte le iscrizioni e archiviare questa edizione?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Destinazione<select name="corso_destinazione_id" required><option value="">Seleziona</option>{% for corso in corsi_disponibili if corso.id != entita.id %}<option value="{{ corso.id }}">{{ corso.titolo }} · {{ corso.data }}</option>{% endfor %}</select></label><button class="btn-azione rosso" type="submit">Unisci e archivia questa edizione</button></form></section>
+    </div>
+    {% endif %}
+
+    {% if tipo == 'IscrizioneCorso' %}
+    <section class="admin-surface"><p class="admin-eyebrow">Cambio edizione</p><h2>Sposta partecipante</h2><form class="admin-form-grid" method="post" action="{{ url_for('sposta_iscrizione_corso_admin', id=entita.id) }}" data-confirm="Spostare questa iscrizione nella nuova edizione?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Nuova edizione<select name="corso_destinazione_id" required><option value="">Seleziona</option>{% for corso in corsi_disponibili if corso.id != entita.corso_id %}<option value="{{ corso.id }}">{{ corso.titolo }} · {{ corso.data }}</option>{% endfor %}</select></label><button class="btn-azione verde" type="submit">Sposta</button></form></section>
+    {% endif %}
+
+    {% if duplicati %}
+    <section class="admin-surface admin-duplicate-warning"><h2>Possibili duplicati</h2><p>Telefono o email coincidono, ma le schede non sono state unite automaticamente.</p>{% for duplicato in duplicati %}<p><strong>{{ duplicato.nome }}</strong> · {{ duplicato.telefono }} · {{ duplicato.email or 'email non indicata' }}</p>{% endfor %}</section>
+    {% endif %}
+
+    <div class="admin-detail-grid">
+        <section class="admin-surface">
+            <h2>Note cronologiche</h2>
+            <form method="post" action="{{ url_for('aggiungi_nota_admin', tipo=tipo, entita_id=entita.id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <textarea name="testo" rows="3" maxlength="4000" required></textarea>
+                <button class="btn-azione verde" type="submit">Aggiungi nota</button>
+            </form>
+            <ol class="admin-timeline">{% for nota in note_admin %}<li><time>{{ nota.creata_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ nota.testo }}</p></li>{% else %}<li>Nessuna nota operativa.</li>{% endfor %}</ol>
+        </section>
+        <section class="admin-surface">
+            <h2>Email collegate</h2>
+            <ol class="admin-timeline">{% for messaggio in email_admin %}<li><time>{{ messaggio.creata_il.strftime('%d/%m/%Y %H:%M') }}</time><p><strong>{{ messaggio.oggetto }}</strong><br>{{ messaggio.destinatario }} · {{ messaggio.stato }}</p>{% if messaggio.stato == 'fallita' %}<form method="post" action="{{ url_for('reinvia_email_admin', id=messaggio.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione blu" type="submit">Reinvia copia esatta</button></form>{% endif %}</li>{% else %}<li>Nessuna email registrata.</li>{% endfor %}</ol>
+        </section>
+    </div>
+
+    <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
+</main>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}"></script>
+{% endblock %}

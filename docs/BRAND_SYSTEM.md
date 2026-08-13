@@ -1,6 +1,6 @@
 # Identità visiva e verbale
 
-Ultimo aggiornamento: 29 luglio 2026.
+Ultimo aggiornamento: 13 agosto 2026.
 
 ## Idea guida
 
@@ -33,6 +33,8 @@ Sul salvia `#B1BBA5` utilizzare testo `#304438`, non bianco. Il bianco è riserv
 Non introdurre verdi smeraldo, bosco, turchese o “sanitari” freddi come dominanti. Non aggiungere nuovi colori prima di verificare i token già esistenti.
 
 Le varianti semitrasparenti sono centralizzate in `tokens.css` con la convenzione `--famiglia-aXX`, dove `XX` indica l'opacità percentuale. Gradienti, bordi e ombre nei moduli applicativi devono richiamare queste variabili invece di dichiarare direttamente nuovi valori `rgba()`.
+
+L'overlay `#7C9A7E` approvato nella D-049 è un'eccezione limitata alla configurazione del feed esterno Behold. Non è un token della palette del sito e non va riutilizzato per componenti, fondi o CTA.
 
 ## Tipografia
 

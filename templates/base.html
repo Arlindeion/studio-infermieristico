@@ -26,9 +26,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
     {% set page_endpoint = request.endpoint or '' %}
-    {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy'] %}
-    {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest'] %}
-    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'not_found', 'server_error'] %}
+    {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'da_dove_parto'] %}
+    {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
+    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.9">
@@ -45,8 +45,11 @@
     {% elif page_endpoint in ['prestazioni', 'prenota'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.4">
     {% endif %}
-    {% if page_endpoint in ['admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.4">
+    {% if page_endpoint in ['admin', 'dettaglio_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.6">
+    {% endif %}
+    {% if page_endpoint in ['da_dove_parto', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.0">
     {% endif %}
     {% if internal_page_mode %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.4">
@@ -83,7 +86,7 @@
 <body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
 
 {% set current_endpoint = request.endpoint or '' %}
-{% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation'] %}
+{% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
 {% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
 {% set nursing_active = current_endpoint in ['prestazioni', 'prenota', 'modifica_appuntamento', 'conferma'] %}
 
@@ -134,6 +137,7 @@
                             Scopri tutti i corsi
                             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
                         </a>
+                        <a href="{{ url_for('richiesta_azienda') }}" data-conversion="header_aziende">Richiedi un corso per azienda o gruppo</a>
                     </div>
                     <div class="course-menu__links">
                         <a href="/iscrizione-corsi/disostruzione-pediatrica">
@@ -172,6 +176,7 @@
                 <span>infermieristiche</span>
             </a>
             <a href="/faq" class="site-nav__link{% if current_endpoint == 'faq' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'faq' %} data-nav-current aria-current="page"{% endif %}>FAQ</a>
+            <a href="{{ url_for('da_dove_parto') }}" class="site-nav__link{% if current_endpoint == 'da_dove_parto' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'da_dove_parto' %} data-nav-current aria-current="page"{% endif %}>Da dove parto?</a>
         </nav>
 
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-mobile-menu" aria-label="Apri il menu" data-menu-toggle>
@@ -228,6 +233,8 @@
             <a href="/chi-sono"{% if current_endpoint == 'chi_siamo' %} aria-current="page"{% endif %}>Chi sono</a>
             <a href="/prestazioni-infermieristiche"{% if nursing_active %} aria-current="page"{% endif %}>Prestazioni infermieristiche</a>
             <a href="/faq"{% if current_endpoint == 'faq' %} aria-current="page"{% endif %}>Domande frequenti</a>
+            <a href="{{ url_for('da_dove_parto') }}"{% if current_endpoint == 'da_dove_parto' %} aria-current="page"{% endif %}>Da dove parto?</a>
+            <a href="{{ url_for('richiesta_azienda') }}"{% if current_endpoint in ['richiesta_azienda', 'richiesta_azienda_conferma'] %} aria-current="page"{% endif %}>Corsi per aziende e gruppi</a>
         </div>
 
         <div class="mobile-nav__contact">
@@ -244,6 +251,9 @@
 {% endif %}
 {% if page_endpoint == 'prestazioni' %}
 <script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
+{% endif %}
+{% if page_endpoint == 'da_dove_parto' %}
+<script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.0" defer></script>
 {% endif %}
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>
@@ -265,7 +275,7 @@
             </div>
             <div>
                 <strong>Percorsi</strong>
-                <p><a href="/iscrizione-corsi">Corsi in presenza</a><br><a href="/consulenze-online">Consulenza del sonno</a><br><a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a></p>
+                <p><a href="{{ url_for('da_dove_parto') }}">Da dove parto?</a><br><a href="/iscrizione-corsi">Corsi in presenza</a><br><a href="{{ url_for('richiesta_azienda') }}">Aziende e gruppi</a><br><a href="/consulenze-online">Consulenza del sonno</a><br><a href="/prestazioni-infermieristiche">Prestazioni infermieristiche</a></p>
             </div>
             <div>
                 <strong>Seguimi</strong>

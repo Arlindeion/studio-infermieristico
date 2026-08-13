@@ -1,6 +1,8 @@
 # Sistema generale per contenuti Instagram e TikTok
 
-Ultimo aggiornamento: 3 agosto 2026.
+Ultimo aggiornamento: 4 agosto 2026.
+
+> Stato operativo dal 13 agosto 2026: lavorare su Instagram. TikTok è accantonato fino a nuova decisione; le istruzioni dedicate restano archivio metodologico e non generano consegne correnti.
 
 ## Scopo
 
@@ -17,6 +19,8 @@ Per preparare una nuova settimana:
 5. registrare i risultati in [`MEASUREMENT.md`](MEASUREMENT.md) o in una sua copia datata.
 
 Il pacchetto della settimana 3-9 agosto 2026 è in [`../reels-2026-08-03/README.md`](../reels-2026-08-03/README.md).
+
+Stato verificato il 4 agosto: il Reel Instagram sui risvegli del 3 agosto è `Pubblicato`; la variante TikTok risultava `Programmato`. Al 13 agosto l'esito TikTok non è documentato. URL e orari effettivi vengono registrati nella scheda di misurazione, senza inventare i dati mancanti.
 
 ## Priorità commerciali
 
@@ -150,6 +154,8 @@ Gli orari del calendario sono ipotesi di test. Gli Insights del profilo e il fus
 - registro fonti compilato
 
 Il master pulito non contiene CTA di piattaforma, musica o watermark. Conserva il parlato approvato e può essere valutato in seguito per nuovi montaggi. La sua presenza non autorizza l'uso pubblicitario.
+
+Il suffisso `_v01` è obbligatorio nelle nuove consegne e aumenta solo quando cambia il file consegnato. Un file già pubblicato con una convenzione precedente non viene rinominato: resta archiviato come eccezione storica e viene collegato al relativo registro di pubblicazione.
 
 ## Contenuti pubblicitari
 

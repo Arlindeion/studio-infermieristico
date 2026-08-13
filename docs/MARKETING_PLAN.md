@@ -1,12 +1,12 @@
 # Piano marketing operativo
 
-Ultimo aggiornamento: 3 agosto 2026.
+Ultimo aggiornamento: 4 agosto 2026.
 
 ## Executive Summary
 
 - **Il marketing deve sostenere due percorsi distinti.** I corsi in presenza sono l'offerta già validata e la priorità commerciale locale; la consulenza del sonno 0-12 mesi è il servizio da validare online a livello nazionale. Le prestazioni infermieristiche restano sempre accessibili, ma non diventano il centro della comunicazione.
 - **La scoperta organica esiste già, la conversione non è ancora dimostrata.** Nell'ultima fotografia Instagram disponibile, il 74% delle visualizzazioni proviene da non follower e le visite al profilo equivalgono a circa l'8,2% degli account raggiunti. Mancano però la data esatta della rilevazione, i clic al sito, i contatti e le prenotazioni attribuite: prima del lancio serve una nuova baseline completa.
-- **Il sito deve essere il centro del sistema.** Instagram e TikTok creano scoperta e fiducia; Google intercetta l'intenzione locale; il sito spiega l'offerta, separa i flussi e registra la conversione. WhatsApp rimane secondario e contestuale.
+- **Il sito deve essere il centro del sistema.** Instagram crea scoperta e fiducia; Google intercetta l'intenzione locale; il sito spiega l'offerta, separa i flussi e registra la conversione. TikTok è accantonato dal 13 agosto 2026 fino a nuova decisione. WhatsApp rimane secondario e contestuale.
 - **Il lancio non coincide con una data pubblica già promessa.** Il riferimento corretto è il checkpoint interno del 15 settembre 2026: sito sicuro e collaudato più prima campagna Meta pronta e misurabile. Nessuna campagna parte finché privacy, consenso, flussi reali e capacità operativa non sono verificati.
 
 ## 1. Scopo e fonti di verità
@@ -154,7 +154,7 @@ Sintesi possibile:
 |---|---|---|---|
 | Sito | Fonte informativa e centro di conversione | Portare al flusso specifico | Ridurre tutto a una pagina-link generica |
 | Instagram | Scoperta, fiducia e prova delle attività reali | Portare al sito | Trasformare ogni contenuto in vendita diretta |
-| TikTok | Test organico di aperture e linguaggi video | Portare alla landing pertinente | Ricevere parte del primo budget Meta o essere una copia identica di Instagram |
+| TikTok | **Sospeso dal 13 agosto 2026** | Nessuna azione fino a nuova decisione | Essere trattato come gate o consegna corrente |
 | Profilo dell'attività su Google | Intercettare intenzione locale su Search e Maps | Pagina corso, servizi o prenotazione diretta | Portare a social, link abbreviati o WhatsApp al posto dell'azione |
 | WhatsApp | Conversazione contestuale | Chiarire dubbi specifici | Diventare widget globale o sistema di prenotazione |
 | Email | Conferme e promemoria; in futuro relazione con consenso | Completare il flusso | Diventare newsletter prima di processo e consenso |
@@ -372,6 +372,8 @@ Obiettivo: essere trovabili quando esiste un bisogno concreto, non generare doma
 
 Le date sono finestre interne e non costituiscono una promessa pubblica.
 
+> Stato corrente: TikTok è accantonato fino a data da destinarsi. Le righe TikTok del calendario 3-9 agosto restano evidenze storiche di una pianificazione superata, non attività da recuperare.
+
 ### 3-9 agosto — baseline e decisioni mancanti
 
 - eseguire il calendario editoriale approvato con un Reel sul sonno, un Reel sulla disostruzione e un carosello su ruolo e confini;
@@ -386,14 +388,14 @@ Le date sono finestre interne e non costituiscono una promessa pubblica.
 
 Il pacchetto esecutivo per il creator, con script, calendario, prompt, montaggio e checklist, è in [`reels-2026-08-03/README.md`](reels-2026-08-03/README.md). Applica il [`sistema generale`](reels-creator-system/README.md) per tutto ciò che il pacchetto settimanale non specifica. Per questa settimana sono approvati:
 
-| Data | Canale | Contenuto | Orario |
-|---|---|---|---:|
-| 3 agosto | Instagram | Reel sui risvegli | 19:00 |
-| 4 agosto | TikTok | Video sui risvegli | 22:00 |
-| 5 agosto | Instagram | Reel sulla disostruzione | 12:00 |
-| 6 agosto | TikTok | Video sulla disostruzione | 13:00 |
-| 7 agosto | Instagram | Carosello sui confini professionali | 21:00 |
-| 8 agosto | TikTok | Caso pratico sui confini | 17:00 |
+| Data | Canale | Contenuto | Orario | Stato al 4 agosto |
+|---|---|---|---:|---|
+| 3 agosto | Instagram | Reel sui risvegli | 19:00 | **Pubblicato**; URL e orario effettivo da registrare |
+| 4 agosto | TikTok | Video sui risvegli | 22:00 | **Programmato al 4 agosto**; esito non documentato |
+| 5 agosto | Instagram | Reel sulla disostruzione | 12:00 | Girati disponibili; consegna finale da verificare |
+| 6 agosto | TikTok | Video sulla disostruzione | 13:00 | Girati disponibili; variante finale da verificare |
+| 7 agosto | Instagram | Carosello sui confini professionali | 21:00 | Materiale finale non individuato |
+| 8 agosto | TikTok | Caso pratico sui confini | 17:00 | Materiale finale non individuato |
 
 Le versioni Instagram e TikTok condividono il girato, ma non la chiusura: Instagram rimanda alle Stories, TikTok ai commenti. Entrambe hanno sottotitoli completi. Il Reel sul sonno deve essere consegnato anche come master pulito senza CTA, musica o watermark, così può essere valutato in seguito come creatività della campagna Meta.
 
@@ -481,7 +483,9 @@ Registrare nello stesso giorno:
 - revisione mensile di contenuti, canali e carico di lavoro;
 - revisione completa al termine dei tre mesi del test sonno.
 
-## 12. Stato reale al 2 agosto 2026
+## 12. Fotografia documentata al 2 agosto 2026
+
+Questa sezione è uno snapshot storico, non una conferma dello stato corrente dei sistemi esterni.
 
 ### Già disponibile
 
@@ -543,7 +547,7 @@ Registrare nello stesso giorno:
 - [ ] I sottotitoli sono corretti e leggibili senza audio.
 - [ ] Non compaiono promesse, diagnosi, colpa o allarmismo.
 - [ ] Le testimonianze sono autentiche, autorizzate e attribuite al servizio corretto.
-- [ ] TikTok riceve adattamenti, non copie identiche automatiche.
+- [x] TikTok è escluso dai gate e dal calendario corrente fino a nuova decisione.
 
 ### Sito e conversione
 

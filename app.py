@@ -1,5 +1,8 @@
 import logging
+import calendar as calendar_module
 import click
+import csv
+import io
 import json
 import re
 from urllib.parse import urlsplit
@@ -199,6 +202,7 @@ SERVIZI_VALIDI = list(dict.fromkeys(SERVIZI_PRENOTABILI + [
 ]))
 
 STATI_VALIDI = ['Confermato', 'Annullato', 'In attesa']
+STATI_APPUNTAMENTO_ADMIN = ['In attesa', 'Confermato', 'Concluso', 'Assente', 'Annullato']
 STATI_CALL_SONNO_VALIDI = ['In attesa', 'Confermata', 'Annullata', 'Conclusa']
 FORMULE_SONNO = {
     'mirata': 'Consulenza mirata',
@@ -263,9 +267,31 @@ ORARI_CALL_SONNO = [
     for ora in [8, 9, 10, 11, 12, 15, 16, 17, 18]
     for minuto in [0, 30]
 ]
-STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Annullato']
+STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Lista attesa', 'Invitato', 'Annullato']
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
+STATI_RICHIESTA_AZIENDA = [
+    'Nuova',
+    'Contattata',
+    'Qualificata',
+    'Proposta inviata',
+    'Confermata',
+    'Chiusa',
+]
+TIPI_ORGANIZZAZIONE = [
+    'Azienda',
+    'Associazione',
+    'Scuola o servizio educativo',
+    'Gruppo privato',
+    'Altro',
+]
+SEDI_AZIENDA = [
+    'Presso lo studio',
+    'Presso l’organizzazione',
+    'Da valutare insieme',
+]
+MESI_ITALIANI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
+GIORNI_SETTIMANA_BREVI = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 TIPI_RICHIESTA_CORSO = {
     'richiesta_iscrizione': 'Richiesta iscrizione',
@@ -295,6 +321,12 @@ CORSI_ADMIN_TIPI = {
         'titolo': "Laboratorio per l'infanzia",
         'durata_ore': 2,
     },
+}
+
+FORMAZIONE_AZIENDA_TIPI = {
+    'bls-d': 'BLSD',
+    'disostruzione-pediatrica': 'Disostruzione pediatrica e tagli sicuri',
+    'altro': 'Altro corso o progetto da valutare',
 }
 
 CORSI_ISCRIVIBILI = {
@@ -821,6 +853,11 @@ def _corpo_evento_da_appuntamento(appuntamento):
         ),
         'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
         'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+        'extendedProperties': {'private': {
+            'studioSource': 'sito-admin',
+            'studioEntity': 'Appuntamento',
+            'studioEntityId': str(appuntamento.id),
+        }},
     }
 
 
@@ -832,6 +869,11 @@ def _corpo_evento_da_corso(corso):
     corpo = {
         'summary': f'Corso: {corso.titolo}',
         'description': f'{descrizione}\n\n(Corso inserito dall\'area admin del sito web)',
+        'extendedProperties': {'private': {
+            'studioSource': 'sito-admin',
+            'studioEntity': 'Corso',
+            'studioEntityId': str(corso.id),
+        }},
     }
     if corso.luogo:
         corpo['location'] = corso.luogo
@@ -869,6 +911,7 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
     if not calendar_id:
+        appuntamento.sincronizzazione = 'errore'
         logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
         registra_evento(
             'google_calendar',
@@ -879,6 +922,7 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
         )
         return False
     if servizio is None:
+        appuntamento.sincronizzazione = 'errore'
         registra_evento(
             'google_calendar',
             'errore',
@@ -918,9 +962,13 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
                 appuntamento.id,
                 {'google_event_id': appuntamento.google_event_id},
             )
+        appuntamento.sincronizzazione = 'sincronizzato'
+        appuntamento.difformita_calendario = None
+        db.session.commit()
         _invalida_cache_calendario()
         return True
     except HttpError as e:
+        appuntamento.sincronizzazione = 'errore'
         logger.error(f'>>> Errore nella scrittura su Google Calendar per appuntamento {appuntamento.id}: {e}', exc_info=True)
         registra_evento(
             'google_calendar',
@@ -931,6 +979,7 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
             {'errore': str(e)},
         )
     except Exception as e:
+        appuntamento.sincronizzazione = 'errore'
         logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar: {e}', exc_info=True)
         registra_evento(
             'google_calendar',
@@ -958,6 +1007,11 @@ def _corpo_evento_da_call_sonno(call):
         'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
         'status': 'tentative' if in_attesa else 'confirmed',
         'transparency': 'opaque',
+        'extendedProperties': {'private': {
+            'studioSource': 'sito-admin',
+            'studioEntity': 'CallSonno',
+            'studioEntityId': str(call.id),
+        }},
     }
 
 
@@ -966,6 +1020,7 @@ def crea_o_aggiorna_evento_calendario_call_sonno(call):
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
     if not calendar_id or servizio is None:
+        call.sincronizzazione = 'errore'
         registra_evento(
             'google_calendar',
             'avviso',
@@ -986,6 +1041,9 @@ def crea_o_aggiorna_evento_calendario_call_sonno(call):
             evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
             call.google_event_id = evento.get('id')
             db.session.commit()
+        call.sincronizzazione = 'sincronizzato'
+        call.difformita_calendario = None
+        db.session.commit()
         _invalida_cache_calendario()
         registra_evento(
             'google_calendar',
@@ -997,6 +1055,7 @@ def crea_o_aggiorna_evento_calendario_call_sonno(call):
         )
         return True
     except Exception as errore:
+        call.sincronizzazione = 'errore'
         logger.error(f'>>> Errore Calendar per call sonno {call.id}: {errore}', exc_info=True)
         registra_evento(
             'google_calendar',
@@ -1048,6 +1107,7 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
     if not calendar_id:
+        corso.sincronizzazione = 'errore'
         logger.warning('>>> Scrittura Google Calendar non configurata: GOOGLE_CALENDAR_ID mancante.')
         registra_evento(
             'google_calendar',
@@ -1058,6 +1118,7 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
         )
         return False
     if servizio is None:
+        corso.sincronizzazione = 'errore'
         registra_evento(
             'google_calendar',
             'errore',
@@ -1097,9 +1158,12 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
                 corso.id,
                 {'google_event_id': corso.google_event_id},
             )
+        corso.sincronizzazione = 'sincronizzato'
+        db.session.commit()
         _invalida_cache_calendario()
         return True
     except HttpError as e:
+        corso.sincronizzazione = 'errore'
         logger.error(f'>>> Errore nella scrittura su Google Calendar per corso {corso.id}: {e}', exc_info=True)
         registra_evento(
             'google_calendar',
@@ -1110,6 +1174,7 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
             {'errore': str(e)},
         )
     except Exception as e:
+        corso.sincronizzazione = 'errore'
         logger.error(f'>>> Errore imprevisto nella scrittura su Google Calendar per corso: {e}', exc_info=True)
         registra_evento(
             'google_calendar',
@@ -1258,9 +1323,108 @@ def elimina_evento_calendario_corso(corso):
 
     if eliminato:
         corso.google_event_id = None
+        corso.sincronizzazione = 'non_collegato'
         db.session.commit()
         _invalida_cache_calendario()
     return eliminato
+
+
+def _corpo_evento_da_incontro(incontro):
+    durata = 120
+    inizio, fine = _intervallo_locale(incontro.data, incontro.ora or '09:00', durata)
+    return {
+        'summary': f'{incontro.percorso.titolo} · {incontro.numero}/9 · {incontro.tema}',
+        'description': (
+            f'Professionista: {incontro.professionista}\n'
+            f'Note: {incontro.note or "Nessuna"}\n'
+            '(Incontro inserito dall’area admin del sito web)'
+        ),
+        'location': incontro.luogo or 'Studio infermieristico',
+        'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
+        'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+        'extendedProperties': {'private': {
+            'studioSource': 'sito-admin',
+            'studioEntity': 'IncontroAccompagnamento',
+            'studioEntityId': str(incontro.id),
+        }},
+    }
+
+
+def _corpo_evento_da_blocco(blocco):
+    inizio, fine = _intervallo_locale(blocco.data, blocco.ora, blocco.durata_minuti)
+    return {
+        'summary': f'Blocco studio: {blocco.titolo}',
+        'description': blocco.note or 'Pausa o chiusura inserita dall’area admin.',
+        'start': {'dateTime': inizio.isoformat(), 'timeZone': 'Europe/Rome'},
+        'end': {'dateTime': fine.isoformat(), 'timeZone': 'Europe/Rome'},
+        'transparency': 'opaque',
+        'extendedProperties': {'private': {
+            'studioSource': 'sito-admin',
+            'studioEntity': 'BloccoAgenda',
+            'studioEntityId': str(blocco.id),
+        }},
+    }
+
+
+def _sincronizza_evento_generico(entita, tipo, corpo):
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        entita.sincronizzazione = 'errore'
+        db.session.commit()
+        registra_evento('google_calendar', 'errore', f'{tipo} salvato, ma Calendar non è disponibile.', tipo, entita.id)
+        return False
+    try:
+        if entita.google_event_id:
+            servizio.events().patch(calendarId=calendar_id, eventId=entita.google_event_id, body=corpo).execute()
+        else:
+            evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            entita.google_event_id = evento.get('id')
+        entita.sincronizzazione = 'sincronizzato'
+        db.session.commit()
+        _invalida_cache_calendario()
+        registra_evento('google_calendar', 'successo', f'{tipo} sincronizzato su Google Calendar.', tipo, entita.id, {'google_event_id': entita.google_event_id})
+        return True
+    except Exception as errore:
+        entita.sincronizzazione = 'errore'
+        db.session.commit()
+        registra_evento('google_calendar', 'errore', f'Errore Calendar durante la sincronizzazione di {tipo}.', tipo, entita.id, {'errore': str(errore)})
+        return False
+
+
+def crea_o_aggiorna_evento_calendario_incontro(incontro):
+    return _sincronizza_evento_generico(incontro, 'IncontroAccompagnamento', _corpo_evento_da_incontro(incontro))
+
+
+def crea_o_aggiorna_evento_calendario_blocco(blocco):
+    return _sincronizza_evento_generico(blocco, 'BloccoAgenda', _corpo_evento_da_blocco(blocco))
+
+
+def elimina_evento_calendario_generico(entita, tipo):
+    if not entita.google_event_id:
+        entita.sincronizzazione = 'non_collegato'
+        db.session.commit()
+        return True
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        entita.sincronizzazione = 'errore'
+        db.session.commit()
+        registra_evento('google_calendar', 'errore', f'{tipo} archiviato, ma l’evento Calendar non è stato rimosso.', tipo, entita.id)
+        return False
+    try:
+        servizio.events().delete(calendarId=calendar_id, eventId=entita.google_event_id).execute()
+    except HttpError as errore:
+        if getattr(errore, 'status_code', None) not in (404, 410):
+            entita.sincronizzazione = 'errore'
+            db.session.commit()
+            registra_evento('google_calendar', 'errore', f'Errore eliminazione Calendar di {tipo}.', tipo, entita.id, {'errore': str(errore)})
+            return False
+    entita.google_event_id = None
+    entita.sincronizzazione = 'non_collegato'
+    db.session.commit()
+    _invalida_cache_calendario()
+    return True
 
 
 # ─── MODELLI DATABASE ───
@@ -1291,6 +1455,11 @@ class Appuntamento(db.Model):
     # confermato (None se non ancora confermato, o se la scrittura su
     # Google Calendar non è configurata/è fallita).
     google_event_id = db.Column(db.String(255), nullable=True)
+    scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
+    sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
+    difformita_calendario = db.Column(db.Text, nullable=True)
+    creato_da_admin = db.Column(db.Boolean, default=False, nullable=False)
+    archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class CallSonno(db.Model):
@@ -1322,6 +1491,10 @@ class CallSonno(db.Model):
     utm_content = db.Column(db.String(100), nullable=True)
     creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
     aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
+    sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
+    difformita_calendario = db.Column(db.Text, nullable=True)
+    archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class QuestionarioSonno(db.Model):
@@ -1356,6 +1529,8 @@ class Corso(db.Model):
     stato = db.Column(db.String(20), default='Aperto', nullable=False)
     creato_il = db.Column(db.DateTime, default=datetime.now)
     google_event_id = db.Column(db.String(255), nullable=True)
+    sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
+    archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class PersonaCorso(db.Model):
@@ -1394,6 +1569,9 @@ class IncontroAccompagnamento(db.Model):
     luogo = db.Column(db.String(200), nullable=True)
     note = db.Column(db.Text, nullable=True)
     creato_il = db.Column(db.DateTime, default=datetime.now)
+    google_event_id = db.Column(db.String(255), nullable=True)
+    sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
+    archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
     percorso = db.relationship('PercorsoAccompagnamento', backref=db.backref('incontri', lazy=True, cascade='all, delete-orphan'))
 
 
@@ -1418,6 +1596,13 @@ class IscrizioneCorso(db.Model):
     consenso_immagini = db.Column(db.Boolean, default=False, nullable=False)
     stato = db.Column(db.String(20), default='Nuova', nullable=False)
     creato_il = db.Column(db.DateTime, default=datetime.now)
+    scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
+    posti_richiesti = db.Column(db.Integer, default=1, nullable=False)
+    token_lista_attesa = db.Column(db.String(96), unique=True, nullable=True, index=True)
+    invito_lista_attesa_il = db.Column(db.DateTime, nullable=True)
+    scadenza_invito_lista_attesa = db.Column(db.DateTime, nullable=True, index=True)
+    superamento_capienza_motivo = db.Column(db.Text, nullable=True)
+    archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
     corso = db.relationship('Corso', backref=db.backref('iscrizioni', lazy=True))
     persona = db.relationship('PersonaCorso', backref=db.backref('iscrizioni', lazy=True))
     percorso_accompagnamento = db.relationship(
@@ -1432,6 +1617,32 @@ class IscrizioneCorso(db.Model):
             return json.loads(self.dati_extra)
         except json.JSONDecodeError:
             return {}
+
+
+class RichiestaAzienda(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    organizzazione = db.Column(db.String(160), nullable=False, index=True)
+    referente = db.Column(db.String(100), nullable=False, index=True)
+    telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=False, index=True)
+    tipo_organizzazione = db.Column(db.String(60), nullable=False)
+    corso_tipo = db.Column(db.String(80), nullable=False, index=True)
+    partecipanti_stimati = db.Column(db.Integer, nullable=True)
+    sede_preferita = db.Column(db.String(60), nullable=False)
+    periodo_preferito = db.Column(db.String(160), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
+    stato = db.Column(db.String(30), default='Nuova', nullable=False, index=True)
+    scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
+    corso_generato_id = db.Column(db.Integer, db.ForeignKey('corso.id'), nullable=True, index=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
+    corso_generato = db.relationship(
+        'Corso',
+        foreign_keys=[corso_generato_id],
+        backref=db.backref('richiesta_azienda_origine', uselist=False),
+    )
 
 
 class PresenzaAccompagnamento(db.Model):
@@ -1454,6 +1665,8 @@ class RegistroEvento(db.Model):
     entita_id = db.Column(db.Integer, nullable=True, index=True)
     dettagli = db.Column(db.Text, nullable=True)
     creato_il = db.Column(db.DateTime, default=datetime.now, index=True)
+    risolto_il = db.Column(db.DateTime, nullable=True, index=True)
+    nota_risoluzione = db.Column(db.Text, nullable=True)
 
     def dettagli_dict(self):
         if not self.dettagli:
@@ -1462,6 +1675,88 @@ class RegistroEvento(db.Model):
             return json.loads(self.dettagli)
         except json.JSONDecodeError:
             return {}
+
+
+class AttivitaAdmin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titolo = db.Column(db.String(180), nullable=False)
+    stato = db.Column(db.String(20), default='Aperta', nullable=False, index=True)
+    scadenza = db.Column(db.DateTime, nullable=False, index=True)
+    entita_tipo = db.Column(db.String(40), nullable=True, index=True)
+    entita_id = db.Column(db.Integer, nullable=True, index=True)
+    note = db.Column(db.Text, nullable=True)
+    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+
+class NotaAdmin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    entita_tipo = db.Column(db.String(40), nullable=False, index=True)
+    entita_id = db.Column(db.Integer, nullable=False, index=True)
+    testo = db.Column(db.Text, nullable=False)
+    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+
+class EmailOperativa(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    entita_tipo = db.Column(db.String(40), nullable=True, index=True)
+    entita_id = db.Column(db.Integer, nullable=True, index=True)
+    destinatario = db.Column(db.String(255), nullable=False)
+    oggetto = db.Column(db.String(255), nullable=False)
+    corpo = db.Column(db.Text, nullable=False)
+    stato = db.Column(db.String(20), nullable=False, index=True)
+    errore = db.Column(db.Text, nullable=True)
+    inviata_il = db.Column(db.DateTime, nullable=True, index=True)
+    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    scade_il = db.Column(db.DateTime, nullable=False, index=True)
+
+
+class PropostaSlot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(96), unique=True, nullable=False, index=True)
+    entita_tipo = db.Column(db.String(40), nullable=False, index=True)
+    entita_id = db.Column(db.Integer, nullable=False, index=True)
+    data_proposta = db.Column(db.String(20), nullable=False)
+    ora_proposta = db.Column(db.String(10), nullable=False)
+    durata_minuti = db.Column(db.Integer, nullable=False, default=30)
+    stato = db.Column(db.String(20), nullable=False, default='Inviata', index=True)
+    scade_il = db.Column(db.DateTime, nullable=False, index=True)
+    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    accettata_il = db.Column(db.DateTime, nullable=True)
+
+
+class BloccoAgenda(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    titolo = db.Column(db.String(160), nullable=False)
+    data = db.Column(db.String(20), nullable=False, index=True)
+    ora = db.Column(db.String(10), nullable=False)
+    durata_minuti = db.Column(db.Integer, nullable=False, default=30)
+    note = db.Column(db.Text, nullable=True)
+    google_event_id = db.Column(db.String(255), nullable=True)
+    sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+    archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
+
+
+class RegistroModifica(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    azione = db.Column(db.String(80), nullable=False, index=True)
+    entita_tipo = db.Column(db.String(40), nullable=False, index=True)
+    entita_id = db.Column(db.Integer, nullable=False, index=True)
+    dettagli = db.Column(db.Text, nullable=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+
+
+class CollegamentoPersona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=False, index=True)
+    entita_tipo = db.Column(db.String(40), nullable=False, index=True)
+    entita_id = db.Column(db.Integer, nullable=False, index=True)
+    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    persona = db.relationship('PersonaCorso', backref=db.backref('collegamenti_pratiche', lazy=True))
+    __table_args__ = (db.UniqueConstraint('entita_tipo', 'entita_id', name='uq_collegamento_persona_pratica'),)
 
 
 def registra_evento(categoria, esito, messaggio, entita_tipo=None, entita_id=None, dettagli=None):
@@ -1482,6 +1777,418 @@ def registra_evento(categoria, esito, messaggio, entita_tipo=None, entita_id=Non
         db.session.rollback()
         logger.error(f'>>> Impossibile registrare evento operativo: {errore}', exc_info=True)
         return None
+
+
+def registra_modifica(azione, entita_tipo, entita_id, dettagli=None):
+    """Conserva una traccia append-only delle operazioni amministrative."""
+    admin_id = current_user.id if current_user.is_authenticated else None
+    record = RegistroModifica(
+        azione=azione,
+        entita_tipo=entita_tipo,
+        entita_id=entita_id,
+        dettagli=json.dumps(dettagli, ensure_ascii=False) if dettagli else None,
+        admin_id=admin_id,
+    )
+    db.session.add(record)
+    db.session.commit()
+    return record
+
+
+def prossima_scadenza_lavorativa(adesso=None):
+    """Restituisce le 18 del primo giorno lavorativo successivo."""
+    riferimento = adesso or datetime.now()
+    candidato = riferimento.date() + timedelta(days=1)
+    while candidato.weekday() >= 6 or is_festivo(candidato):
+        candidato += timedelta(days=1)
+    return datetime.combine(candidato, datetime_time(hour=18))
+
+
+def _scadenza_da_form(valore, fallback=None):
+    if valore:
+        try:
+            return datetime.fromisoformat(valore)
+        except ValueError:
+            pass
+    return fallback or prossima_scadenza_lavorativa()
+
+
+def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
+    """Invia via SMTP e conserva per 24 mesi la copia esatta collegata alla pratica."""
+    destinatario = ', '.join(str(destinatario or '') for destinatario in (msg.recipients or []))
+    record = EmailOperativa(
+        entita_tipo=entita_tipo,
+        entita_id=entita_id,
+        destinatario=destinatario,
+        oggetto=msg.subject or '',
+        corpo=msg.body or '',
+        stato='in_preparazione',
+        scade_il=datetime.now() + timedelta(days=730),
+    )
+    db.session.add(record)
+    db.session.commit()
+    try:
+        mail.send(msg)
+        record.stato = 'soppressa' if app.config.get('MAIL_SUPPRESS_SEND') else 'inviata'
+        record.inviata_il = datetime.now()
+        db.session.commit()
+        return True
+    except Exception as errore:
+        record.stato = 'fallita'
+        record.errore = str(errore)
+        db.session.commit()
+        raise
+
+
+def elimina_email_scadute(adesso=None):
+    """Applica la conservazione di 24 mesi senza toccare le pratiche collegate."""
+    limite = adesso or datetime.now()
+    eliminate = EmailOperativa.query.filter(EmailOperativa.scade_il <= limite).delete(
+        synchronize_session=False
+    )
+    if eliminate:
+        db.session.commit()
+    return eliminate
+
+
+def genera_promemoria_richieste(adesso=None):
+    """Trasforma le scadenze superate in attività visibili, senza sbloccare lo slot."""
+    limite = adesso or datetime.now()
+    create = 0
+    gruppi = [
+        ('Appuntamento', Appuntamento.query.filter(Appuntamento.stato == 'In attesa', Appuntamento.scadenza_gestione <= limite, Appuntamento.archiviato_il.is_(None)).all()),
+        ('CallSonno', CallSonno.query.filter(CallSonno.stato == 'In attesa', CallSonno.scadenza_gestione <= limite, CallSonno.archiviata_il.is_(None)).all()),
+        ('IscrizioneCorso', IscrizioneCorso.query.filter(IscrizioneCorso.stato.in_(['Nuova', 'Contattato']), IscrizioneCorso.scadenza_gestione <= limite, IscrizioneCorso.archiviata_il.is_(None)).all()),
+        ('RichiestaAzienda', RichiestaAzienda.query.filter(RichiestaAzienda.stato.notin_(['Confermata', 'Chiusa']), RichiestaAzienda.scadenza_gestione <= limite, RichiestaAzienda.archiviata_il.is_(None)).all()),
+    ]
+    for tipo, elementi in gruppi:
+        for entita in elementi:
+            esistente = AttivitaAdmin.query.filter_by(
+                stato='Aperta',
+                entita_tipo=tipo,
+                entita_id=entita.id,
+            ).first()
+            if esistente:
+                continue
+            db.session.add(AttivitaAdmin(
+                titolo=f'Richiesta scaduta · {_nome_entita_admin(tipo, entita)}',
+                scadenza=limite,
+                entita_tipo=tipo,
+                entita_id=entita.id,
+                note='Promemoria automatico: la pratica resta bloccante finché non viene gestita.',
+            ))
+            create += 1
+    if create:
+        db.session.commit()
+    return create
+
+
+def _entita_admin(tipo, entita_id):
+    modelli = {
+        'Appuntamento': Appuntamento,
+        'CallSonno': CallSonno,
+        'IscrizioneCorso': IscrizioneCorso,
+        'Corso': Corso,
+        'IncontroAccompagnamento': IncontroAccompagnamento,
+        'BloccoAgenda': BloccoAgenda,
+        'RichiestaAzienda': RichiestaAzienda,
+    }
+    modello = modelli.get(tipo)
+    return db.session.get(modello, entita_id) if modello else None
+
+
+def _nome_entita_admin(tipo, entita):
+    if tipo in {'Appuntamento', 'CallSonno', 'IscrizioneCorso'}:
+        return entita.nome
+    if tipo == 'RichiestaAzienda':
+        return f'{entita.organizzazione} · {entita.referente}'
+    if tipo in {'Corso', 'BloccoAgenda'}:
+        return entita.titolo
+    if tipo == 'IncontroAccompagnamento':
+        return f'Incontro {entita.numero}: {entita.tema}'
+    return tipo
+
+
+def _modelli_sincronizzabili():
+    return [
+        ('Appuntamento', Appuntamento, lambda elemento: elemento.stato == 'Confermato' and elemento.archiviato_il is None, _corpo_evento_da_appuntamento),
+        ('CallSonno', CallSonno, lambda elemento: elemento.stato in {'In attesa', 'Confermata'} and elemento.archiviata_il is None, _corpo_evento_da_call_sonno),
+        ('Corso', Corso, lambda elemento: elemento.stato != 'Annullato' and elemento.archiviato_il is None, _corpo_evento_da_corso),
+        ('IncontroAccompagnamento', IncontroAccompagnamento, lambda elemento: elemento.archiviato_il is None, _corpo_evento_da_incontro),
+        ('BloccoAgenda', BloccoAgenda, lambda elemento: elemento.archiviato_il is None, _corpo_evento_da_blocco),
+    ]
+
+
+def _valore_evento_google(corpo, campo):
+    valore = (corpo.get(campo) or {}).get('dateTime') or (corpo.get(campo) or {}).get('date')
+    if not valore:
+        return None
+    if 'T' not in valore:
+        return valore
+    istante = _datetime_evento_google(valore, (corpo.get(campo) or {}).get('timeZone'))
+    return istante.isoformat(timespec='minutes') if istante else None
+
+
+def _differenze_evento(desiderato, remoto):
+    differenze = {}
+    confronti = {
+        'titolo': (desiderato.get('summary') or '', remoto.get('summary') or ''),
+        'inizio': (_valore_evento_google(desiderato, 'start'), _valore_evento_google(remoto, 'start')),
+        'fine': (_valore_evento_google(desiderato, 'end'), _valore_evento_google(remoto, 'end')),
+    }
+    for campo, (locale, calendar) in confronti.items():
+        if locale != calendar:
+            differenze[campo] = {'sito': locale, 'calendar': calendar}
+    return differenze
+
+
+def _registra_anomalia_sync(tipo, entita_id, messaggio, dettagli=None):
+    esistente = RegistroEvento.query.filter_by(
+        categoria='riconciliazione_calendar',
+        entita_tipo=tipo,
+        entita_id=entita_id,
+        risolto_il=None,
+    ).first()
+    if esistente:
+        esistente.messaggio = messaggio
+        esistente.dettagli = json.dumps(dettagli, ensure_ascii=False) if dettagli else None
+        db.session.commit()
+        return esistente
+    evento = registra_evento(
+        'riconciliazione_calendar',
+        'errore',
+        messaggio,
+        tipo,
+        entita_id,
+        dettagli,
+    )
+    destinatario = app.config.get('MAIL_ADMIN_RECIPIENT')
+    if evento and destinatario:
+        msg = Message(
+            subject=f'Errore critico Calendar · {tipo} #{entita_id}',
+            recipients=[destinatario],
+            body=(f'{messaggio}\n\nPratica: {tipo} #{entita_id}\n'
+                  'Apri l’area admin, verifica il confronto e scegli se riscrivere Calendar.'),
+        )
+        try:
+            _invia_email_tracciata(msg, tipo, entita_id)
+        except Exception as errore:
+            logger.error('>>> Notifica email errore critico non inviata (%s).', type(errore).__name__)
+    return evento
+
+
+def _chiudi_anomalie_sync(tipo, entita_id):
+    RegistroEvento.query.filter_by(
+        categoria='riconciliazione_calendar',
+        entita_tipo=tipo,
+        entita_id=entita_id,
+        risolto_il=None,
+    ).update({
+        'risolto_il': datetime.now(),
+        'nota_risoluzione': 'Riconciliazione successiva senza differenze.',
+    })
+
+
+def riconcilia_calendario():
+    """Confronta DB e Calendar senza applicare modifiche esterne al DB."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    risultato = {'controllati': 0, 'difformi': 0, 'mancanti': 0, 'errore': None}
+    if not calendar_id or servizio is None:
+        risultato['errore'] = 'Google Calendar non disponibile.'
+        return risultato
+
+    for tipo, modello, deve_esistere, corpo_builder in _modelli_sincronizzabili():
+        for entita in modello.query.all():
+            if not deve_esistere(entita):
+                continue
+            if not entita.google_event_id:
+                entita.sincronizzazione = 'mancante'
+                if hasattr(entita, 'difformita_calendario'):
+                    entita.difformita_calendario = json.dumps({'evento': {'sito': 'richiesto', 'calendar': 'mancante'}}, ensure_ascii=False)
+                db.session.commit()
+                _registra_anomalia_sync(tipo, entita.id, 'Pratica attiva senza evento collegato su Google Calendar.')
+                risultato['mancanti'] += 1
+                continue
+            risultato['controllati'] += 1
+            try:
+                remoto = servizio.events().get(
+                    calendarId=calendar_id,
+                    eventId=entita.google_event_id,
+                ).execute()
+            except HttpError as errore:
+                status = getattr(getattr(errore, 'resp', None), 'status', None) or getattr(errore, 'status_code', None)
+                if status in (404, 410):
+                    entita.sincronizzazione = 'eliminato_esternamente'
+                    if hasattr(entita, 'difformita_calendario'):
+                        entita.difformita_calendario = json.dumps({'evento': {'sito': 'presente', 'calendar': 'eliminato'}}, ensure_ascii=False)
+                    db.session.commit()
+                    _registra_anomalia_sync(tipo, entita.id, 'Evento collegato eliminato da Google Calendar.', {'google_event_id': entita.google_event_id})
+                    risultato['mancanti'] += 1
+                    continue
+                risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
+                registra_evento('google_calendar', 'errore', 'Riconciliazione Calendar interrotta da un errore API.', tipo, entita.id, {'errore': str(errore)})
+                continue
+            except Exception as errore:
+                risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
+                registra_evento('google_calendar', 'errore', 'Riconciliazione Calendar interrotta.', tipo, entita.id, {'errore': str(errore)})
+                continue
+
+            differenze = _differenze_evento(corpo_builder(entita), remoto)
+            if differenze:
+                entita.sincronizzazione = 'difforme'
+                if hasattr(entita, 'difformita_calendario'):
+                    entita.difformita_calendario = json.dumps(differenze, ensure_ascii=False)
+                db.session.commit()
+                _registra_anomalia_sync(tipo, entita.id, 'Evento Calendar modificato esternamente: serve conferma.', differenze)
+                risultato['difformi'] += 1
+            else:
+                entita.sincronizzazione = 'sincronizzato'
+                if hasattr(entita, 'difformita_calendario'):
+                    entita.difformita_calendario = None
+                _chiudi_anomalie_sync(tipo, entita.id)
+                db.session.commit()
+    return risultato
+
+
+def _eventi_calendar_esterni(data_inizio, data_fine):
+    """Mostra titolo e orario degli eventi non creati dal sito, senza importarli."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        return []
+    collegati = {
+        entita.google_event_id
+        for _, modello, _, _ in _modelli_sincronizzabili()
+        for entita in modello.query.filter(modello.google_event_id.isnot(None)).all()
+    }
+    inizio = datetime.combine(data_inizio, datetime.min.time(), tzinfo=FUSO_ORARIO)
+    fine = datetime.combine(data_fine + timedelta(days=1), datetime.min.time(), tzinfo=FUSO_ORARIO)
+    try:
+        risposta = servizio.events().list(
+            calendarId=calendar_id,
+            timeMin=inizio.isoformat(),
+            timeMax=fine.isoformat(),
+            singleEvents=True,
+            showDeleted=False,
+            orderBy='startTime',
+            maxResults=2500,
+        ).execute()
+    except Exception:
+        logger.warning('>>> Agenda esterna non disponibile.', exc_info=True)
+        return []
+    eventi = []
+    for evento in risposta.get('items', []):
+        if evento.get('id') in collegati or evento.get('status') == 'cancelled':
+            continue
+        intervallo = _intervallo_da_evento_google(evento)
+        if not intervallo:
+            continue
+        eventi.append({
+            'tipo': 'Esterno',
+            'id': evento.get('id'),
+            'titolo': evento.get('summary') or 'Impegno esterno',
+            'inizio': intervallo[0],
+            'fine': intervallo[1],
+            'stato': 'Calendar / Arzamed',
+            'sincronizzazione': 'esterno',
+            'url': None,
+        })
+    return eventi
+
+
+def _agenda_operativa(data_inizio, data_fine):
+    limite_inizio = data_inizio.isoformat()
+    limite_fine = data_fine.isoformat()
+    eventi = []
+
+    def aggiungi(tipo, entita, titolo, data_str, ora, durata, stato, sync, endpoint=None, dettagli=None, note=None):
+        if not ora:
+            ora = '09:00'
+        inizio, fine = _intervallo_locale(data_str, ora, durata)
+        eventi.append({
+            'tipo': tipo,
+            'id': entita.id,
+            'titolo': titolo,
+            'inizio': inizio,
+            'fine': fine,
+            'stato': stato,
+            'sincronizzazione': sync,
+            'url': url_for(endpoint, tipo=tipo, entita_id=entita.id) if endpoint else None,
+            'dettagli': [
+                (etichetta, valore)
+                for etichetta, valore in (dettagli or [])
+                if valore not in (None, '')
+            ],
+            'note': note,
+        })
+
+    for elemento in Appuntamento.query.filter(Appuntamento.data.between(limite_inizio, limite_fine), Appuntamento.stato != 'Annullato', Appuntamento.archiviato_il.is_(None)).all():
+        aggiungi(
+            'Appuntamento', elemento, f'{elemento.nome} · {elemento.servizio}',
+            elemento.data, elemento.ora, elemento.duration_minutes or 30,
+            elemento.stato, elemento.sincronizzazione, 'dettaglio_admin',
+            dettagli=[
+                ('Prestazione', elemento.servizio),
+                ('Persona', elemento.nome),
+                ('Telefono', elemento.telefono),
+                ('Email', elemento.email),
+            ],
+            note=elemento.note,
+        )
+    for elemento in CallSonno.query.filter(CallSonno.data.between(limite_inizio, limite_fine), CallSonno.stato != 'Annullata', CallSonno.archiviata_il.is_(None)).all():
+        aggiungi(
+            'CallSonno', elemento, f'{elemento.nome} · call sonno',
+            elemento.data, elemento.ora, BLOCCO_CALL_SONNO_MINUTI,
+            elemento.stato, elemento.sincronizzazione, 'dettaglio_admin',
+            dettagli=[
+                ('Prestazione', 'Call sonno'),
+                ('Persona', elemento.nome),
+                ('Età bambino', f'{elemento.eta_bambino_mesi} mesi'),
+                ('Difficoltà', elemento.difficolta_principale),
+                ('Da quanto', elemento.durata_difficolta),
+                ('Obiettivo', elemento.obiettivo_call),
+                ('Formula', elemento.formula_scelta),
+                ('Ruolo', elemento.ruolo_richiedente),
+                ('Telefono', elemento.telefono),
+                ('Email', elemento.email),
+            ],
+            note=elemento.difficolta_altro,
+        )
+    for elemento in Corso.query.filter(Corso.data.between(limite_inizio, limite_fine), Corso.stato != 'Annullato', Corso.archiviato_il.is_(None)).all():
+        aggiungi(
+            'Corso', elemento, elemento.titolo, elemento.data, elemento.ora,
+            int((elemento.durata_ore or 2) * 60), elemento.stato,
+            elemento.sincronizzazione, 'dettaglio_admin',
+            dettagli=[
+                ('Tipologia', CORSI_ADMIN_TIPI.get(elemento.tipo, {}).get('label', elemento.tipo)),
+                ('Luogo', elemento.luogo),
+                ('Capienza', f'{elemento.capienza_massima} persone' if elemento.capienza_massima else None),
+            ],
+            note=elemento.descrizione,
+        )
+    for elemento in IncontroAccompagnamento.query.filter(IncontroAccompagnamento.data.between(limite_inizio, limite_fine), IncontroAccompagnamento.archiviato_il.is_(None)).all():
+        aggiungi(
+            'IncontroAccompagnamento', elemento,
+            f'{elemento.percorso.titolo} · {elemento.tema}', elemento.data,
+            elemento.ora, 120, 'Programmato', elemento.sincronizzazione,
+            'dettaglio_admin',
+            dettagli=[
+                ('Percorso', elemento.percorso.titolo),
+                ('Tema', elemento.tema),
+                ('Professionista', elemento.professionista),
+                ('Luogo', elemento.luogo),
+            ],
+            note=elemento.note,
+        )
+    for elemento in BloccoAgenda.query.filter(BloccoAgenda.data.between(limite_inizio, limite_fine), BloccoAgenda.archiviato_il.is_(None)).all():
+        aggiungi(
+            'BloccoAgenda', elemento, elemento.titolo, elemento.data,
+            elemento.ora, elemento.durata_minuti, 'Blocco',
+            elemento.sincronizzazione, 'dettaglio_admin',
+            note=elemento.note,
+        )
+    eventi.extend(_eventi_calendar_esterni(data_inizio, data_fine))
+    return sorted(eventi, key=lambda elemento: elemento['inizio'])
 
 
 @login_manager.user_loader
@@ -1536,6 +2243,7 @@ def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_a
     appuntamenti_query = Appuntamento.query.filter(
         Appuntamento.data == data_str,
         Appuntamento.stato != 'Annullato',
+        Appuntamento.archiviato_il.is_(None),
     )
     if ignore_appuntamento_id is not None:
         appuntamenti_query = appuntamenti_query.filter(Appuntamento.id != ignore_appuntamento_id)
@@ -1553,6 +2261,7 @@ def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_a
     call_query = CallSonno.query.filter(
         CallSonno.data == data_str,
         CallSonno.stato != 'Annullata',
+        CallSonno.archiviata_il.is_(None),
     )
     if ignore_call_id is not None:
         call_query = call_query.filter(CallSonno.id != ignore_call_id)
@@ -1571,6 +2280,17 @@ def slot_occupato_db(data_str, ora, durata_minuti, ignore_call_id=None, ignore_a
         if _intervalli_si_sovrappongono(
             intervallo_richiesto,
             _intervallo_locale(corso.data, corso.ora, durata),
+        ):
+            return True
+
+    blocchi = BloccoAgenda.query.filter(
+        BloccoAgenda.data == data_str,
+        BloccoAgenda.archiviato_il.is_(None),
+    ).all()
+    for blocco in blocchi:
+        if _intervalli_si_sovrappongono(
+            intervallo_richiesto,
+            _intervallo_locale(blocco.data, blocco.ora, blocco.durata_minuti),
         ):
             return True
     return False
@@ -1897,7 +2617,7 @@ def invia_email_ricezione_call_sonno(call):
                 f'S.C. Studio Infermieristico'
             ),
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email ricezione call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -1921,7 +2641,7 @@ def invia_email_alert_call_sonno(call):
                 f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
             ),
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email alert call sonno non inviata allo studio.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -1965,7 +2685,7 @@ def invia_email_conferma_call_sonno(call, modificata=False):
             calendario.to_ical(),
             disposition='attachment',
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email conferma call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -1974,7 +2694,7 @@ def invia_email_conferma_call_sonno(call, modificata=False):
 
 def invia_email_annullamento_call_sonno(call):
     try:
-        mail.send(Message(
+        msg = Message(
             subject='Call sonno annullata - S.C. Studio Infermieristico',
             recipients=[call.email],
             body=(
@@ -1982,7 +2702,8 @@ def invia_email_annullamento_call_sonno(call):
                 f'è stata annullata. Per fissare un nuovo momento puoi contattarmi al 3806317175.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
-        ))
+        )
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email annullamento call sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -1993,7 +2714,7 @@ def invia_email_questionario_sonno(call):
     try:
         link = public_url(url_for('questionario_sonno', token=call.token_questionario))
         formula = FORMULE_SONNO.get(call.formula_scelta, 'percorso scelto')
-        mail.send(Message(
+        msg = Message(
             subject='Il questionario per iniziare il percorso sul sonno',
             recipients=[call.email],
             body=(
@@ -2003,7 +2724,8 @@ def invia_email_questionario_sonno(call):
                 f'Il collegamento è personale: non inoltrarlo. Se hai dubbi, scrivimi su WhatsApp.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
-        ))
+        )
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email questionario sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
@@ -2019,7 +2741,7 @@ def invia_email_promemoria_call_sonno(call, ore_prima):
             if call_url
             else 'Trovi le modalità di collegamento nell’email di conferma.\n\n'
         )
-        mail.send(Message(
+        msg = Message(
             subject='Promemoria appuntamento - S.C. Studio Infermieristico',
             recipients=[call.email],
             body=(
@@ -2030,7 +2752,8 @@ def invia_email_promemoria_call_sonno(call, ore_prima):
                 f'Se non puoi partecipare, avvisaci appena possibile.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
-        ))
+        )
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
     except Exception as errore:
         registra_evento(
@@ -2063,7 +2786,7 @@ def invia_email_conferma(appuntamento):
                 f'S.C. Studio Infermieristico'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
         logger.info('>>> Email conferma inviata con successo!')
         return True
     except Exception as e:
@@ -2092,7 +2815,7 @@ def invia_email_spostamento(appuntamento):
                 f'S.C. Studio Infermieristico'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
         logger.info('>>> Email spostamento inviata con successo!')
         return True
     except Exception as e:
@@ -2120,7 +2843,7 @@ def invia_email_annullamento(appuntamento):
                 f'S.C. Studio Infermieristico'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
         logger.info('>>> Email annullamento inviata con successo!')
         return True
     except Exception as e:
@@ -2148,7 +2871,7 @@ def invia_email_nuova_prenotazione(appuntamento):
                 f'Accedi all\'area admin per gestire la prenotazione.'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
         logger.info('>>> Email alert inviata con successo!')
         return True
     except Exception as e:
@@ -2188,13 +2911,64 @@ def invia_email_nuova_iscrizione(iscrizione):
                 f'Accedi all\'area admin per gestire la richiesta.'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
         logger.info('>>> Email alert iscrizione corso inviata con successo!')
         return True
     except Exception as e:
         logger.error('>>> Errore invio email alert corso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert iscrizione corso non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
+
+
+def invia_email_richiesta_azienda(richiesta):
+    """Conferma la ricezione e avvisa lo studio senza bloccare il salvataggio."""
+    corso_label = CORSI_ADMIN_TIPI.get(richiesta.corso_tipo, {}).get('label', 'Formazione da definire')
+    riuscite = 0
+    messaggi = [
+        Message(
+            subject='Richiesta corso ricevuta',
+            recipients=[richiesta.email],
+            body=(
+                f'Buongiorno {richiesta.referente},\n\n'
+                f'ho ricevuto la richiesta per {richiesta.organizzazione}. '
+                'Verificherò obiettivo, sede, numero di partecipanti e periodo prima di formulare una proposta.\n\n'
+                'L’invio non conferma ancora data, disponibilità o preventivo. '
+                'Ti ricontatterò entro il prossimo giorno lavorativo.\n\n'
+                'S.C. Studio Infermieristico'
+            ),
+        ),
+    ]
+    if app.config.get('MAIL_ADMIN_RECIPIENT'):
+        messaggi.append(Message(
+            subject=f'Nuova richiesta azienda · {richiesta.organizzazione}',
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
+            body=(
+                'Nuova richiesta dedicata ad azienda o gruppo.\n\n'
+                f'Organizzazione: {richiesta.organizzazione}\n'
+                f'Referente: {richiesta.referente}\n'
+                f'Telefono: {richiesta.telefono}\n'
+                f'Email: {richiesta.email}\n'
+                f'Corso: {corso_label}\n'
+                f'Partecipanti stimati: {richiesta.partecipanti_stimati or "Da definire"}\n'
+                f'Sede: {richiesta.sede_preferita}\n'
+                f'Periodo: {richiesta.periodo_preferito or "Da definire"}\n\n'
+                'Apri la richiesta nell’area admin per registrare la prossima azione.'
+            ),
+        ))
+    for messaggio in messaggi:
+        try:
+            _invia_email_tracciata(messaggio, 'RichiestaAzienda', richiesta.id)
+            riuscite += 1
+        except Exception as errore:
+            registra_evento(
+                'email',
+                'errore',
+                'Email relativa alla richiesta azienda non inviata.',
+                'RichiestaAzienda',
+                richiesta.id,
+                {'errore': str(errore)},
+            )
+    return riuscite == len(messaggi)
 
 
 def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
@@ -2219,7 +2993,7 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
                 f'S.C. Studio Infermieristico'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
         logger.info('>>> Email conferma percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
@@ -2244,7 +3018,7 @@ def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
                 f'Accedi all\'area admin per vedere i dettagli.'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
         logger.info('>>> Email alert percorso accompagnamento inviata con successo!')
         return True
     except Exception as e:
@@ -2272,7 +3046,7 @@ def invia_email_ricordo_24h(appuntamento):
                 f'S.C. Studio Infermieristico'
             )
         )
-        mail.send(msg)
+        _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
         logger.info('>>> Email ricordo 24h inviata con successo!')
         return True
     except Exception as e:
@@ -2371,6 +3145,21 @@ def esegui_promemoria_call_sonno_con_contesto():
     with app.app_context():
         controlla_e_invia_promemoria_call_sonno()
 
+
+def esegui_riconciliazione_con_contesto():
+    with app.app_context():
+        riconcilia_calendario()
+
+
+def esegui_manutenzione_admin_con_contesto():
+    with app.app_context():
+        elimina_email_scadute()
+
+
+def esegui_promemoria_richieste_con_contesto():
+    with app.app_context():
+        genera_promemoria_richieste()
+
 # Pianifica il controllo dei promemoria per eseguirlo ogni ora.
 #
 # Protezioni:
@@ -2403,7 +3192,37 @@ if (
         name='Controllo promemoria call sonno 24h e 2h',
         replace_existing=True,
     )
+    scheduler.add_job(
+        func=esegui_promemoria_richieste_con_contesto,
+        trigger='interval',
+        hours=1,
+        id='promemoria_richieste_job',
+        name='Promemoria richieste operative scadute',
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        func=esegui_riconciliazione_con_contesto,
+        trigger='interval',
+        hours=1,
+        id='riconciliazione_calendar_job',
+        name='Riconciliazione oraria Google Calendar',
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        func=esegui_manutenzione_admin_con_contesto,
+        trigger='interval',
+        days=1,
+        id='manutenzione_admin_job',
+        name='Pulizia email operative oltre 24 mesi',
+        replace_existing=True,
+    )
     scheduler.start()
+
+@app.route('/da-dove-parto')
+def da_dove_parto():
+    """Orientamento non clinico verso i flussi pubblici già approvati."""
+    return render_template('da_dove_parto.html')
+
 
 
 # ─── PAGINE SITO ───
@@ -2413,7 +3232,7 @@ def homepage():
     oggi = date.today().isoformat()
     corsi = Corso.query.filter(
         Corso.data >= oggi,
-        Corso.stato != 'Annullato',
+        Corso.stato == 'Aperto',
     ).order_by(Corso.data, Corso.ora).all()
     return render_template('homepage.html', corsi=corsi)
 
@@ -2487,7 +3306,8 @@ def _tipo_richiesta_da_corso(corso_tipo, corso_id):
 def _posti_attivi_corso(corso_id):
     iscrizioni = IscrizioneCorso.query.filter(
         IscrizioneCorso.corso_id == corso_id,
-        IscrizioneCorso.stato != 'Annullato',
+        IscrizioneCorso.stato.notin_(['Annullato', 'Lista attesa', 'Invitato']),
+        IscrizioneCorso.archiviata_il.is_(None),
     ).all()
     return sum(
         iscrizione.posti
@@ -2503,29 +3323,48 @@ def _posti_liberi_corso(corso):
     return max(corso.capienza_massima - _posti_attivi_corso(corso.id), 0)
 
 
+def _corso_accetta_prenotazione_online(corso, posti_richiesti=1):
+    """Applica il limite online: si prenota solo se prima restano posti.
+
+    Una coppia può occupare l'ultimo posto nominale e portare l'edizione a
+    capienza + 1. Quando la capienza nominale è già raggiunta, il sito chiude.
+    """
+    if corso.capienza_massima is None:
+        return True
+    occupati = _posti_attivi_corso(corso.id)
+    return occupati < corso.capienza_massima and occupati + posti_richiesti <= corso.capienza_massima + 1
+
+
 def _corso_ha_posti(corso):
-    posti_liberi = _posti_liberi_corso(corso)
-    return posti_liberi is None or posti_liberi > 0
+    return _corso_accetta_prenotazione_online(corso, 1)
 
 
 def _label_tipo_richiesta(tipo_richiesta):
     return TIPI_RICHIESTA_CORSO.get(tipo_richiesta, tipo_richiesta or 'Richiesta')
 
 
-def _persona_corso_da_contatti(telefono='', email=''):
-    email_normalizzata = (email or '').strip().lower()
-    telefono_normalizzato = _normalizza_telefono(telefono)
-
-    if email_normalizzata:
-        persona = PersonaCorso.query.filter(db.func.lower(PersonaCorso.email) == email_normalizzata).first()
+def _persona_corso_da_contatti(telefono='', email='', codice_fiscale=''):
+    codice_normalizzato = re.sub(r'\s+', '', codice_fiscale or '').upper()
+    if codice_normalizzato:
+        persona = PersonaCorso.query.filter(
+            db.func.upper(PersonaCorso.codice_fiscale) == codice_normalizzato
+        ).first()
         if persona:
             return persona
-
-    if telefono_normalizzato:
-        for persona in PersonaCorso.query.filter(PersonaCorso.telefono.isnot(None)).all():
-            if _normalizza_telefono(persona.telefono) == telefono_normalizzato:
-                return persona
     return None
+
+
+def _possibili_duplicati_persona(persona):
+    """Segnala corrispondenze deboli senza unire automaticamente le pratiche."""
+    duplicati = []
+    email = (persona.email or '').strip().lower()
+    telefono = _normalizza_telefono(persona.telefono)
+    for candidata in PersonaCorso.query.filter(PersonaCorso.id != persona.id).all():
+        stessa_email = email and (candidata.email or '').strip().lower() == email
+        stesso_telefono = telefono and _normalizza_telefono(candidata.telefono) == telefono
+        if stessa_email or stesso_telefono:
+            duplicati.append(candidata)
+    return duplicati
 
 
 def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fiscale='',
@@ -2552,7 +3391,11 @@ def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fisc
 
 def _trova_o_crea_persona_corso(nome, telefono, email='', codice_fiscale='',
                                 nome_bambino='', eta_bambino='', note=''):
-    persona = _persona_corso_da_contatti(telefono=telefono, email=email)
+    persona = _persona_corso_da_contatti(
+        telefono=telefono,
+        email=email,
+        codice_fiscale=codice_fiscale,
+    )
     if persona:
         return _aggiorna_persona_corso(
             persona,
@@ -2596,7 +3439,10 @@ def _slug_unico_percorso(base_slug):
 
 
 def _incontri_percorso(percorso):
-    return sorted(percorso.incontri, key=lambda incontro: (incontro.numero or 0, incontro.data or '', incontro.ora or ''))
+    return sorted(
+        [incontro for incontro in percorso.incontri if incontro.archiviato_il is None],
+        key=lambda incontro: (incontro.numero or 0, incontro.data or '', incontro.ora or ''),
+    )
 
 
 def _iscrizioni_percorso(percorso):
@@ -2743,10 +3589,14 @@ def _opzioni_date_corso(corso_tipo):
         {
             'value': str(corso.id),
             'corso_id': corso.id,
-            'label': _etichetta_data_corso(corso),
+            'label': (
+                _etichetta_data_corso(corso)
+                if _corso_ha_posti(corso)
+                else f'{_etichetta_data_corso(corso)} · lista d’attesa'
+            ),
+            'posti_disponibili': _corso_ha_posti(corso),
         }
         for corso in corsi
-        if _corso_ha_posti(corso)
     ]
 
 
@@ -2770,6 +3620,101 @@ def _render_iscrizione_con_errore(corso_tipo, messaggio):
         corso=_corso_iscrivibile_con_date(corso_tipo),
         form_data=request.form
     )
+
+
+def _render_richiesta_azienda_error(messaggio):
+    flash(messaggio, 'error')
+    return render_template(
+        'richiesta_azienda.html',
+        tipi_organizzazione=TIPI_ORGANIZZAZIONE,
+        corsi_azienda=FORMAZIONE_AZIENDA_TIPI,
+        sedi_azienda=SEDI_AZIENDA,
+        form_data=request.form,
+    )
+
+
+@app.route('/aziende-e-gruppi', methods=['GET', 'POST'])
+@limiter.limit('5 per minute')
+def richiesta_azienda():
+    """Raccoglie richieste organizzative senza usare il modulo individuale."""
+    if request.method == 'POST':
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            return _render_richiesta_azienda_error('Richiesta non valida. Riprova.')
+
+        organizzazione = request.form.get('organizzazione', '').strip()
+        referente = request.form.get('referente', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        tipo_organizzazione = request.form.get('tipo_organizzazione', '').strip()
+        corso_tipo = request.form.get('corso_tipo', '').strip()
+        sede_preferita = request.form.get('sede_preferita', '').strip()
+        periodo_preferito = request.form.get('periodo_preferito', '').strip()
+        note = request.form.get('note', '').strip()
+        partecipanti_raw = request.form.get('partecipanti_stimati', '').strip()
+        partecipanti = int(partecipanti_raw) if partecipanti_raw.isdigit() else None
+
+        if not organizzazione or len(organizzazione) > 160:
+            return _render_richiesta_azienda_error('Inserisci il nome dell’azienda o del gruppo.')
+        if not referente or len(referente) > 100:
+            return _render_richiesta_azienda_error('Inserisci il nome del referente.')
+        if not _telefono_valido(telefono):
+            return _render_richiesta_azienda_error('Inserisci un numero di telefono valido.')
+        if not _email_valida(email):
+            return _render_richiesta_azienda_error('Inserisci un indirizzo email valido.')
+        if tipo_organizzazione not in TIPI_ORGANIZZAZIONE:
+            return _render_richiesta_azienda_error('Seleziona il tipo di organizzazione.')
+        if corso_tipo not in FORMAZIONE_AZIENDA_TIPI:
+            return _render_richiesta_azienda_error('Seleziona il corso o il progetto da valutare.')
+        if sede_preferita not in SEDI_AZIENDA:
+            return _render_richiesta_azienda_error('Seleziona una preferenza per la sede.')
+        if partecipanti_raw and (partecipanti is None or not 2 <= partecipanti <= 500):
+            return _render_richiesta_azienda_error('Indica un numero stimato di partecipanti tra 2 e 500.')
+        if len(periodo_preferito) > 160 or len(note) > 2000:
+            return _render_richiesta_azienda_error('Riduci la lunghezza del periodo o delle note.')
+        if not _checkbox_checked('consenso_privacy'):
+            return _render_richiesta_azienda_error('Devi autorizzare il trattamento dei dati personali.')
+
+        scadenza = prossima_scadenza_lavorativa()
+        nuova = RichiestaAzienda(
+            organizzazione=organizzazione,
+            referente=referente,
+            telefono=telefono,
+            email=email,
+            tipo_organizzazione=tipo_organizzazione,
+            corso_tipo=corso_tipo,
+            partecipanti_stimati=partecipanti,
+            sede_preferita=sede_preferita,
+            periodo_preferito=periodo_preferito,
+            note=note,
+            consenso_privacy=True,
+            scadenza_gestione=scadenza,
+        )
+        db.session.add(nuova)
+        db.session.flush()
+        db.session.add(AttivitaAdmin(
+            titolo=f'Qualificare richiesta · {organizzazione}',
+            scadenza=scadenza,
+            entita_tipo='RichiestaAzienda',
+            entita_id=nuova.id,
+            note='Verificare obiettivo, partecipanti, sede e periodo prima della proposta.',
+        ))
+        db.session.commit()
+        invia_email_richiesta_azienda(nuova)
+        return redirect(url_for('richiesta_azienda_conferma'))
+
+    return render_template(
+        'richiesta_azienda.html',
+        tipi_organizzazione=TIPI_ORGANIZZAZIONE,
+        corsi_azienda=FORMAZIONE_AZIENDA_TIPI,
+        sedi_azienda=SEDI_AZIENDA,
+        form_data={},
+    )
+
+
+@app.route('/aziende-e-gruppi/conferma')
+def richiesta_azienda_conferma():
+    return render_template('conferma_richiesta_azienda.html')
 
 
 def _render_course_interest_error(message):
@@ -2835,6 +3780,8 @@ def course_interest():
             posti=0,
             consenso_privacy=privacy_consent,
             consenso_immagini=False,
+            scadenza_gestione=prossima_scadenza_lavorativa(),
+            posti_richiesti=0,
         )
         db.session.add(interest)
         db.session.commit()
@@ -3008,18 +3955,19 @@ def iscrizione_corso(corso_tipo):
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.')
 
         posti_richiesti = 0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione)
+        in_lista_attesa = False
         if corso_id:
             corso_selezionato = Corso.query.filter_by(id=corso_id).with_for_update().first()
-            if (
-                not corso_selezionato
-                or corso_selezionato.stato != 'Aperto'
-                or not _corso_ha_posti(corso_selezionato)
-            ):
+            if not corso_selezionato or corso_selezionato.stato != 'Aperto':
                 db.session.rollback()
                 return _render_iscrizione_con_errore(
                     corso_tipo,
-                    'La data scelta non ha più posti sufficienti. Seleziona la prossima data disponibile.'
+                    'La data scelta non è più aperta. Seleziona un’altra edizione.'
                 )
+            in_lista_attesa = not _corso_accetta_prenotazione_online(
+                corso_selezionato,
+                posti_richiesti,
+            )
 
         persona = _trova_o_crea_persona_corso(
             nome=nome,
@@ -3044,13 +3992,19 @@ def iscrizione_corso(corso_tipo):
             note=request.form.get('note', '').strip(),
             dati_extra=json.dumps(extra, ensure_ascii=False),
             tipo_richiesta=tipo_richiesta,
-            posti=posti_richiesti,
+            posti=0 if in_lista_attesa else posti_richiesti,
+            posti_richiesti=posti_richiesti,
+            scadenza_gestione=prossima_scadenza_lavorativa(),
             consenso_privacy=consenso_privacy,
             consenso_immagini=consenso_immagini,
+            stato='Lista attesa' if in_lista_attesa else 'Nuova',
+            token_lista_attesa=secrets.token_urlsafe(48) if in_lista_attesa else None,
         )
         db.session.add(iscrizione)
         db.session.commit()
         invia_email_nuova_iscrizione(iscrizione)
+        if in_lista_attesa:
+            return redirect(url_for('conferma_iscrizione_corso', lista_attesa='1'))
         return redirect(url_for('conferma_iscrizione_corso'))
 
     return render_template(
@@ -3069,7 +4023,10 @@ def iscrizione_corsi():
 
 @app.route('/iscrizione-corsi/conferma')
 def conferma_iscrizione_corso():
-    return render_template('conferma_iscrizione_corso.html')
+    return render_template(
+        'conferma_iscrizione_corso.html',
+        lista_attesa=request.args.get('lista_attesa') == '1',
+    )
 
 
 def _render_accompagnamento_privato(percorso, messaggio=None):
@@ -3299,6 +4256,7 @@ def prenota_call_sonno():
             consenso_privacy=True,
             data=data_scelta,
             ora=ora,
+            scadenza_gestione=prossima_scadenza_lavorativa(),
             **utm,
         )
         db.session.add(nuova_call)
@@ -3398,7 +4356,8 @@ def _panoramica_corsi(corsi):
     panoramica = []
     for corso in corsi:
         iscrizioni_corso = iscrizioni_per_corso.get(corso.id, [])
-        attive = [i for i in iscrizioni_corso if i.stato != 'Annullato']
+        attive = [i for i in iscrizioni_corso if i.stato not in {'Annullato', 'Lista attesa', 'Invitato'} and i.archiviata_il is None]
+        lista_attesa = [i for i in iscrizioni_corso if i.stato in {'Lista attesa', 'Invitato'}]
         confermate = [i for i in attive if i.stato == 'Confermato']
         open_day = [i for i in attive if i.tipo_richiesta == 'open_day']
         effettive = [i for i in attive if i.tipo_richiesta == 'iscrizione_effettiva']
@@ -3416,6 +4375,7 @@ def _panoramica_corsi(corsi):
             'corso': corso,
             'iscrizioni': iscrizioni_corso,
             'attive_count': len(attive),
+            'lista_attesa_count': len(lista_attesa),
             'confermate_count': len(confermate),
             'open_day_count': len(open_day),
             'effettive_count': len(effettive),
@@ -3530,7 +4490,8 @@ def prenota():
             servizio=servizio,
             data=data_scelta,
             ora=ora,
-            note=note
+            note=note,
+            scadenza_gestione=prossima_scadenza_lavorativa(),
         )
         db.session.add(nuovo)
         db.session.commit()
@@ -3567,7 +4528,8 @@ def login():
         password = request.form['password']
         utente = Admin.query.filter_by(username=username).first()
         if utente and check_password_hash(utente.password, password):
-            login_user(utente, remember=True)
+            login_user(utente, remember=False)
+            session.permanent = True
             next_page = request.args.get('next')
             if is_safe_redirect_target(next_page):
                 return redirect(next_page)
@@ -3592,16 +4554,130 @@ def admin():
     oggi = date.today().strftime('%Y-%m-%d')
     filtro = request.args.get('filtro', 'in_attesa')
 
-    # Pulizia degli appuntamenti annullati vecchi (>30 giorni)
-    trenta_giorni_fa = datetime.today() - timedelta(days=30)
-    vecchi = Appuntamento.query.filter(
-        Appuntamento.stato == 'Annullato',
-        Appuntamento.creato_il < trenta_giorni_fa
-    ).all()
-    for v in vecchi:
-        db.session.delete(v)
+    # Gli appuntamenti confermati già trascorsi diventano conclusi; lo stato
+    # resta sempre correggibile dalla scheda pratica.
+    adesso_locale = datetime.now(FUSO_ORARIO)
+    for elemento in Appuntamento.query.filter_by(stato='Confermato').all():
+        try:
+            fine = _intervallo_locale(
+                elemento.data,
+                elemento.ora,
+                elemento.duration_minutes or DURATA_SLOT_MINUTI,
+            )[1]
+        except (TypeError, ValueError):
+            continue
+        if fine < adesso_locale:
+            elemento.stato = 'Concluso'
+            db.session.add(RegistroModifica(
+                azione='stato_automatico',
+                entita_tipo='Appuntamento',
+                entita_id=elemento.id,
+                dettagli=json.dumps(
+                    {'da': 'Confermato', 'a': 'Concluso'},
+                    ensure_ascii=False,
+                ),
+                admin_id=current_user.id,
+            ))
     db.session.commit()
 
+    vista_agenda = request.args.get('vista', 'giorno')
+    if vista_agenda not in {'giorno', 'settimana', 'mese'}:
+        vista_agenda = 'giorno'
+    mese_richiesto = request.args.get('mese', '').strip()
+    try:
+        if vista_agenda == 'mese' and mese_richiesto:
+            data_agenda = datetime.strptime(mese_richiesto, '%Y-%m').date().replace(day=1)
+        else:
+            data_agenda = datetime.strptime(request.args.get('data', oggi), '%Y-%m-%d').date()
+    except ValueError:
+        data_agenda = date.today()
+    if vista_agenda == 'mese':
+        inizio_agenda = data_agenda.replace(day=1)
+        ultimo_giorno = calendar_module.monthrange(inizio_agenda.year, inizio_agenda.month)[1]
+        fine_agenda = inizio_agenda.replace(day=ultimo_giorno)
+        agenda_precedente = (inizio_agenda - timedelta(days=1)).replace(day=1)
+        agenda_successiva = (fine_agenda + timedelta(days=1)).replace(day=1)
+    else:
+        inizio_agenda = data_agenda
+        fine_agenda = data_agenda + timedelta(days=6 if vista_agenda == 'settimana' else 0)
+        passo = 7 if vista_agenda == 'settimana' else 1
+        agenda_precedente = inizio_agenda - timedelta(days=passo)
+        agenda_successiva = inizio_agenda + timedelta(days=passo)
+    agenda = _agenda_operativa(inizio_agenda, fine_agenda)
+    agenda_per_giorno = defaultdict(list)
+    for evento_agenda in agenda:
+        agenda_per_giorno[evento_agenda['inizio'].date()].append(evento_agenda)
+    calendario_mese = []
+    if vista_agenda == 'mese':
+        for settimana in calendar_module.Calendar(firstweekday=0).monthdatescalendar(
+            inizio_agenda.year,
+            inizio_agenda.month,
+        ):
+            calendario_mese.append([
+                {
+                    'data': giorno,
+                    'nel_mese': giorno.month == inizio_agenda.month,
+                    'oggi': giorno == date.today(),
+                    'eventi': agenda_per_giorno.get(giorno, []),
+                }
+                for giorno in settimana
+
+            ])
+    etichetta_mese = f'{MESI_ITALIANI[inizio_agenda.month - 1]} {inizio_agenda.year}'
+    richieste_admin = []
+    for elemento in Appuntamento.query.filter(Appuntamento.stato == 'In attesa', Appuntamento.archiviato_il.is_(None)).all():
+        richieste_admin.append({'tipo': 'Appuntamento', 'id': elemento.id, 'nome': elemento.nome, 'oggetto': elemento.servizio, 'scadenza': elemento.scadenza_gestione, 'stato': elemento.stato})
+    for elemento in CallSonno.query.filter(CallSonno.stato == 'In attesa', CallSonno.archiviata_il.is_(None)).all():
+        richieste_admin.append({'tipo': 'CallSonno', 'id': elemento.id, 'nome': elemento.nome, 'oggetto': 'Call sonno', 'scadenza': elemento.scadenza_gestione, 'stato': elemento.stato})
+    filtro_tipo_richieste = request.args.get('tipo_corso', '').strip()
+    iscrizioni_richieste_query = IscrizioneCorso.query.filter(IscrizioneCorso.stato.in_(['Nuova', 'Contattato', 'Lista attesa', 'Invitato']), IscrizioneCorso.archiviata_il.is_(None))
+    if filtro_tipo_richieste in CORSI_ADMIN_TIPI:
+        iscrizioni_richieste_query = iscrizioni_richieste_query.filter(IscrizioneCorso.corso_tipo == filtro_tipo_richieste)
+    for elemento in iscrizioni_richieste_query.all():
+        richieste_admin.append({'tipo': 'IscrizioneCorso', 'id': elemento.id, 'nome': elemento.nome, 'oggetto': elemento.corso_titolo, 'scadenza': elemento.scadenza_gestione, 'stato': elemento.stato})
+    richieste_azienda = RichiestaAzienda.query.filter(
+        RichiestaAzienda.archiviata_il.is_(None),
+    ).order_by(RichiestaAzienda.creato_il.desc()).all()
+    for elemento in richieste_azienda:
+        if elemento.stato not in {'Confermata', 'Chiusa'}:
+            richieste_admin.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'oggetto': FORMAZIONE_AZIENDA_TIPI.get(elemento.corso_tipo, 'Progetto da valutare'), 'scadenza': elemento.scadenza_gestione, 'stato': elemento.stato})
+
+    richieste_admin.sort(key=lambda elemento: elemento['scadenza'] or datetime.max)
+    for elemento in richieste_admin:
+        elemento['urgente'] = bool(elemento['scadenza'] and elemento['scadenza'] < datetime.now())
+
+    attivita_admin = AttivitaAdmin.query.filter(AttivitaAdmin.stato != 'Chiusa').order_by(AttivitaAdmin.scadenza).all()
+    errori_aperti = RegistroEvento.query.filter(
+        RegistroEvento.esito.in_(['errore', 'avviso']),
+        RegistroEvento.risolto_il.is_(None),
+    ).order_by(RegistroEvento.creato_il.desc()).all()
+    fine_settimana = (date.today() + timedelta(days=7)).isoformat()
+    corsi_settimana = Corso.query.filter(
+        Corso.data.between(oggi, fine_settimana),
+        Corso.stato != 'Annullato',
+        Corso.archiviato_il.is_(None),
+    ).all()
+    posti_corsi_settimana = sum(_posti_attivi_corso(corso.id) for corso in corsi_settimana)
+    capienza_corsi_settimana = sum(corso.capienza_massima or 0 for corso in corsi_settimana)
+    funnel_sonno = {
+        'in_attesa': CallSonno.query.filter_by(stato='In attesa').count(),
+        'confermate': CallSonno.query.filter_by(stato='Confermata').count(),
+        'concluse': CallSonno.query.filter_by(stato='Conclusa').count(),
+    }
+
+    ricerca = request.args.get('q', '').strip()
+    risultati_ricerca = []
+    if ricerca:
+        criterio = f'%{ricerca}%'
+        for elemento in Appuntamento.query.filter(db.or_(Appuntamento.nome.ilike(criterio), Appuntamento.telefono.ilike(criterio), Appuntamento.email.ilike(criterio))).limit(20):
+            risultati_ricerca.append({'tipo': 'Appuntamento', 'id': elemento.id, 'nome': elemento.nome, 'dettaglio': f'{elemento.telefono} · {elemento.servizio}'})
+        for elemento in CallSonno.query.filter(db.or_(CallSonno.nome.ilike(criterio), CallSonno.telefono.ilike(criterio), CallSonno.email.ilike(criterio))).limit(20):
+            risultati_ricerca.append({'tipo': 'CallSonno', 'id': elemento.id, 'nome': elemento.nome, 'dettaglio': f'{elemento.telefono} · call sonno'})
+        for elemento in IscrizioneCorso.query.filter(db.or_(IscrizioneCorso.nome.ilike(criterio), IscrizioneCorso.telefono.ilike(criterio), IscrizioneCorso.email.ilike(criterio), IscrizioneCorso.codice_fiscale.ilike(criterio))).limit(20):
+            risultati_ricerca.append({'tipo': 'IscrizioneCorso', 'id': elemento.id, 'nome': elemento.nome, 'dettaglio': f'{elemento.telefono} · {elemento.corso_titolo}'})
+
+        for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
+            risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
     # Query gli appuntamenti in base al filtro
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
@@ -3687,6 +4763,34 @@ def admin():
         RegistroEvento.creato_il >= datetime.now() - timedelta(days=7)
     ).count()
     return render_template('admin.html',
+                           agenda_per_giorno=dict(agenda_per_giorno),
+                           inizio_agenda=inizio_agenda,
+                           fine_agenda=fine_agenda,
+                           agenda_precedente=agenda_precedente,
+                           agenda_successiva=agenda_successiva,
+                           calendario_mese=calendario_mese,
+                           etichetta_mese=etichetta_mese,
+                           giorni_settimana_brevi=GIORNI_SETTIMANA_BREVI,
+                           richieste_azienda=richieste_azienda,
+                           oggi_admin=date.today(),
+                           formazione_azienda_tipi=FORMAZIONE_AZIENDA_TIPI,
+                           richieste_azienda_aperte_count=sum(1 for elemento in richieste_azienda if elemento.stato not in {'Confermata', 'Chiusa'}),
+                           adesso_admin=datetime.now(),
+                           vista_agenda=vista_agenda,
+                           richieste_admin=richieste_admin,
+                           richieste_urgenti_count=sum(1 for elemento in richieste_admin if elemento['urgente']),
+                           richieste_nuove_count=len(richieste_admin),
+                           attivita_admin=attivita_admin,
+                           errori_aperti=errori_aperti,
+                           ricerca=ricerca,
+                           risultati_ricerca=risultati_ricerca,
+                           calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
+                           mail_soppressa=bool(app.config.get('MAIL_SUPPRESS_SEND')),
+                           eventi_oggi_count=sum(len(eventi) for giorno, eventi in agenda_per_giorno.items() if giorno == date.today()),
+                           corsi_settimana_count=len(corsi_settimana),
+                           posti_corsi_settimana=posti_corsi_settimana,
+                           capienza_corsi_settimana=capienza_corsi_settimana,
+                           funnel_sonno=funnel_sonno,
                            appuntamenti=appuntamenti,
                            corsi=corsi,
                            panoramica_corsi=panoramica_corsi,
@@ -3718,6 +4822,635 @@ def admin():
 def _csrf_admin_valido():
     token = request.form.get('_csrf_token')
     return bool(token and token == session.get('_csrf_token'))
+
+
+def _url_dettaglio_admin(tipo, entita_id):
+    return url_for('dettaglio_admin', tipo=tipo, entita_id=entita_id)
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>')
+@login_required
+def dettaglio_admin(tipo, entita_id):
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    note = NotaAdmin.query.filter_by(entita_tipo=tipo, entita_id=entita_id).order_by(NotaAdmin.creata_il.desc()).all()
+    email = EmailOperativa.query.filter_by(entita_tipo=tipo, entita_id=entita_id).order_by(EmailOperativa.creata_il.desc()).all()
+    modifiche = RegistroModifica.query.filter_by(entita_tipo=tipo, entita_id=entita_id).order_by(RegistroModifica.creato_il.desc()).all()
+    difformita = {}
+    if getattr(entita, 'difformita_calendario', None):
+        try:
+            difformita = json.loads(entita.difformita_calendario)
+        except json.JSONDecodeError:
+            difformita = {'dettaglio': entita.difformita_calendario}
+    duplicati = _possibili_duplicati_persona(entita.persona) if tipo == 'IscrizioneCorso' and entita.persona else []
+    corsi_disponibili = Corso.query.filter(Corso.archiviato_il.is_(None)).order_by(Corso.data).all()
+    collegamento_persona = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
+    persona_collegata = entita.persona if tipo == 'IscrizioneCorso' else (collegamento_persona.persona if collegamento_persona else None)
+    storico_persona = []
+    if persona_collegata:
+        storico_persona.extend([{'tipo': 'IscrizioneCorso', 'id': i.id, 'titolo': i.corso_titolo, 'data': i.data_corso or ''} for i in persona_collegata.iscrizioni])
+        for collegamento in persona_collegata.collegamenti_pratiche:
+            pratica = _entita_admin(collegamento.entita_tipo, collegamento.entita_id)
+            if pratica:
+                storico_persona.append({'tipo': collegamento.entita_tipo, 'id': pratica.id, 'titolo': _nome_entita_admin(collegamento.entita_tipo, pratica), 'data': getattr(pratica, 'data', '')})
+    iscrizioni_corso = (
+        IscrizioneCorso.query.filter_by(corso_id=entita.id).order_by(IscrizioneCorso.nome).all()
+        if tipo == 'Corso'
+        else []
+    )
+    return render_template(
+        'admin_dettaglio.html',
+        tipo=tipo,
+        entita=entita,
+        nome_entita=_nome_entita_admin(tipo, entita),
+        note_admin=note,
+        email_admin=email,
+        modifiche_admin=modifiche,
+        difformita=difformita,
+        duplicati=duplicati,
+        corsi_disponibili=corsi_disponibili,
+        iscrizioni_corso=iscrizioni_corso,
+        persone_disponibili=PersonaCorso.query.order_by(PersonaCorso.nome).all(),
+        persona_collegata=persona_collegata,
+        storico_persona=storico_persona,
+        stati_appuntamento=STATI_APPUNTAMENTO_ADMIN,
+        stati_richiesta_azienda=STATI_RICHIESTA_AZIENDA,
+        corsi_admin_tipi=CORSI_ADMIN_TIPI,
+        formazione_azienda_tipi=FORMAZIONE_AZIENDA_TIPI,
+    )
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>/nota', methods=['POST'])
+@login_required
+def aggiungi_nota_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or _entita_admin(tipo, entita_id) is None:
+        abort(400)
+    testo = request.form.get('testo', '').strip()
+    if not testo or len(testo) > 4000:
+        flash('Inserisci una nota da 1 a 4000 caratteri.', 'error')
+    else:
+        db.session.add(NotaAdmin(entita_tipo=tipo, entita_id=entita_id, testo=testo))
+        db.session.commit()
+        registra_modifica('nota_aggiunta', tipo, entita_id)
+        flash('Nota aggiunta.', 'success')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>/collega-persona', methods=['POST'])
+@login_required
+def collega_persona_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+        abort(400)
+    if _entita_admin(tipo, entita_id) is None:
+        abort(404)
+    persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int))
+    if not persona:
+        flash('Seleziona una persona valida.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    collegamento = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
+    if collegamento:
+        collegamento.persona = persona
+    else:
+        db.session.add(CollegamentoPersona(persona=persona, entita_tipo=tipo, entita_id=entita_id))
+    db.session.commit()
+    registra_modifica('collegamento_persona', tipo, entita_id, {'persona_id': persona.id})
+    flash('Pratica collegata manualmente alla persona.', 'success')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>/azione', methods=['POST'])
+@login_required
+def azione_rapida_admin(tipo, entita_id):
+    if not _csrf_admin_valido():
+        abort(400)
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    azione = request.form.get('azione', '')
+    etichette = {
+        'chiamato': 'Contatto telefonico effettuato.',
+        'nessuna_risposta': 'Tentativo di contatto senza risposta.',
+        'richiamare': 'Da richiamare.',
+        'chiuso': 'Gestione della richiesta chiusa.',
+    }
+    if azione not in etichette:
+        abort(400)
+    db.session.add(NotaAdmin(entita_tipo=tipo, entita_id=entita_id, testo=etichette[azione]))
+    scadenza = _scadenza_da_form(request.form.get('scadenza'), prossima_scadenza_lavorativa())
+    if hasattr(entita, 'scadenza_gestione'):
+        entita.scadenza_gestione = None if azione == 'chiuso' else scadenza
+    if tipo == 'RichiestaAzienda' and azione == 'chiuso':
+        entita.stato = 'Chiusa'
+        _sostituisci_attivita_azienda(entita)
+
+    if azione == 'richiamare':
+        db.session.add(AttivitaAdmin(
+            titolo=f'Richiamare {_nome_entita_admin(tipo, entita)}',
+            scadenza=scadenza,
+            entita_tipo=tipo,
+            entita_id=entita_id,
+        ))
+    db.session.commit()
+    registra_modifica(azione, tipo, entita_id, {'scadenza': scadenza.isoformat() if azione != 'chiuso' else None})
+    flash('Azione registrata.', 'success')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+def _sostituisci_attivita_azienda(richiesta, titolo=None, scadenza=None, note=None):
+    AttivitaAdmin.query.filter_by(
+        entita_tipo='RichiestaAzienda',
+        entita_id=richiesta.id,
+        stato='Aperta',
+    ).update({'stato': 'Chiusa', 'aggiornata_il': datetime.now()})
+    if titolo:
+        db.session.add(AttivitaAdmin(
+            titolo=titolo,
+            scadenza=scadenza or prossima_scadenza_lavorativa(),
+            entita_tipo='RichiestaAzienda',
+            entita_id=richiesta.id,
+            note=note,
+        ))
+
+
+@app.route('/admin/azienda/<int:id>/stato', methods=['POST'])
+@login_required
+def aggiorna_stato_richiesta_azienda(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    richiesta = db.get_or_404(RichiestaAzienda, id)
+    nuovo_stato = request.form.get('stato', '').strip()
+    if nuovo_stato not in STATI_RICHIESTA_AZIENDA:
+        abort(400)
+    scadenza = _scadenza_da_form(request.form.get('scadenza'))
+    prossime_azioni = {
+        'Nuova': 'Qualificare richiesta',
+        'Contattata': 'Completare la qualificazione',
+        'Qualificata': 'Preparare proposta',
+        'Proposta inviata': 'Verificare esito proposta',
+        'Confermata': 'Programmare il corso riservato',
+    }
+    stato_precedente = richiesta.stato
+    richiesta.stato = nuovo_stato
+    richiesta.scadenza_gestione = None if nuovo_stato == 'Chiusa' else scadenza
+    titolo = prossime_azioni.get(nuovo_stato)
+    if nuovo_stato == 'Confermata' and richiesta.corso_generato_id:
+        titolo = None
+    _sostituisci_attivita_azienda(
+        richiesta,
+        f'{titolo} · {richiesta.organizzazione}' if titolo else None,
+        scadenza,
+    )
+    db.session.commit()
+    registra_modifica('cambio_stato', 'RichiestaAzienda', richiesta.id, {'da': stato_precedente, 'a': nuovo_stato})
+    flash('Stato e prossima attività aggiornati.', 'success')
+    return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+
+
+@app.route('/admin/azienda/<int:id>/invia-proposta', methods=['POST'])
+@login_required
+def invia_proposta_azienda_admin(id):
+    if not _csrf_admin_valido() or request.form.get('conferma_invio') != '1':
+        abort(400)
+    richiesta = db.get_or_404(RichiestaAzienda, id)
+    oggetto = request.form.get('oggetto_email', '').strip()
+    corpo = request.form.get('corpo_email', '').strip()
+    if not oggetto or len(oggetto) > 255 or not corpo or len(corpo) > 10000:
+        flash('Inserisci oggetto e testo della proposta.', 'error')
+        return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+    try:
+        _invia_email_tracciata(
+            Message(subject=oggetto, recipients=[richiesta.email], body=corpo),
+            'RichiestaAzienda',
+            richiesta.id,
+        )
+        richiesta.stato = 'Proposta inviata'
+        richiesta.scadenza_gestione = _scadenza_da_form(request.form.get('scadenza'))
+        _sostituisci_attivita_azienda(
+            richiesta,
+            f'Verificare esito proposta · {richiesta.organizzazione}',
+            richiesta.scadenza_gestione,
+        )
+        db.session.commit()
+        registra_modifica('proposta_inviata', 'RichiestaAzienda', richiesta.id, {'oggetto': oggetto})
+        flash('Proposta inviata e ricontatto programmato.', 'success')
+    except Exception:
+        flash('La proposta non è partita. Il testo è conservato nel registro email.', 'error')
+    return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+
+
+@app.route('/admin/azienda/<int:id>/crea-corso', methods=['POST'])
+@login_required
+def crea_corso_da_richiesta_azienda(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    richiesta = db.get_or_404(RichiestaAzienda, id)
+    if richiesta.corso_generato_id:
+        flash('Questa richiesta è già collegata a un corso.', 'error')
+        return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+    tipo = request.form.get('tipo', '').strip()
+    titolo = request.form.get('titolo', '').strip()
+    data_corso = request.form.get('data', '').strip()
+    ora = request.form.get('ora', '').strip()
+    luogo = request.form.get('luogo', '').strip()
+    try:
+        durata_ore = float(request.form.get('durata_ore', ''))
+        capienza = int(request.form.get('capienza_massima', ''))
+        giorno = datetime.strptime(data_corso, '%Y-%m-%d').date()
+        datetime.strptime(ora, '%H:%M')
+    except (TypeError, ValueError):
+        durata_ore, capienza, giorno = 0, 0, None
+    if tipo not in CORSI_ADMIN_TIPI or not titolo or len(titolo) > 200:
+        flash('Seleziona una tipologia e inserisci un titolo valido.', 'error')
+        return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+    if giorno is None or giorno < date.today() or not 0.5 <= durata_ore <= 12 or not 1 <= capienza <= 500 or not luogo:
+        flash('Controlla data, ora, durata, capienza e luogo del corso.', 'error')
+        return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
+    corso = Corso(
+        titolo=titolo,
+        tipo=tipo,
+        descrizione=f'Edizione riservata a {richiesta.organizzazione}.',
+        data=data_corso,
+        ora=ora,
+        luogo=luogo,
+        durata_ore=durata_ore,
+        capienza_massima=capienza,
+        stato='Chiuso',
+    )
+    db.session.add(corso)
+    db.session.flush()
+    richiesta.corso_generato_id = corso.id
+    richiesta.stato = 'Confermata'
+    richiesta.scadenza_gestione = None
+    _sostituisci_attivita_azienda(richiesta)
+    db.session.commit()
+    calendar_ok = crea_o_aggiorna_evento_calendario_corso(corso)
+    registra_modifica('conversione_in_corso', 'RichiestaAzienda', richiesta.id, {'corso_id': corso.id})
+    flash(
+        'Corso riservato creato e collegato.' if calendar_ok else 'Corso riservato creato; Calendar richiede verifica.',
+        'success' if calendar_ok else 'error',
+    )
+    return redirect(_url_dettaglio_admin('Corso', corso.id))
+
+
+@app.route('/admin/appuntamento/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_appuntamento_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int)) if request.form.get('persona_id') else None
+    nome = request.form.get('nome', '').strip() or (persona.nome if persona else '')
+    telefono = request.form.get('telefono', '').strip() or (persona.telefono if persona else '')
+    email = request.form.get('email', '').strip() or (persona.email if persona else '')
+    servizio = request.form.get('servizio', '').strip()
+    data_str = request.form.get('data', '').strip()
+    ora = request.form.get('ora', '').strip()
+    durata = parse_appointment_duration(request.form.get('duration_minutes'))
+    if not nome or not _telefono_valido(telefono) or not email or not _email_valida(email) or not servizio or not data_str or not ora or durata is None:
+        flash('Completa i dati dell’appuntamento con contatti, data, ora e durata validi.', 'error')
+        return redirect(url_for('admin') + '#admin-agenda')
+    if slot_occupato_db(data_str, ora, durata) or intervallo_occupato_da_calendario(data_str, ora, durata):
+        flash('L’intervallo scelto è occupato. Verifica agenda e Calendar.', 'error')
+        return redirect(url_for('admin') + '#admin-agenda')
+    appuntamento = Appuntamento(
+        nome=nome,
+        telefono=telefono,
+        email=email,
+        servizio=servizio,
+        data=data_str,
+        ora=ora,
+        duration_minutes=durata,
+        note=request.form.get('note', '').strip(),
+        stato='In attesa',
+        scadenza_gestione=_scadenza_da_form(request.form.get('scadenza_gestione')),
+        creato_da_admin=True,
+        sincronizzazione='non_collegato',
+    )
+    db.session.add(appuntamento)
+    db.session.commit()
+    registra_modifica('creazione_admin', 'Appuntamento', appuntamento.id)
+    flash('Appuntamento creato in attesa di conferma.', 'success')
+    return redirect(_url_dettaglio_admin('Appuntamento', appuntamento.id))
+
+
+@app.route('/admin/blocco/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_blocco_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    durata = parse_appointment_duration(request.form.get('durata_minuti'))
+    blocco = BloccoAgenda(
+        titolo=request.form.get('titolo', '').strip() or 'Pausa studio',
+        data=request.form.get('data', '').strip(),
+        ora=request.form.get('ora', '').strip(),
+        durata_minuti=durata or 30,
+        note=request.form.get('note', '').strip(),
+    )
+    try:
+        _intervallo_locale(blocco.data, blocco.ora, blocco.durata_minuti)
+    except (TypeError, ValueError):
+        flash('Inserisci data, ora e durata valide.', 'error')
+        return redirect(url_for('admin') + '#admin-agenda')
+    db.session.add(blocco)
+    db.session.commit()
+    registra_modifica('creazione', 'BloccoAgenda', blocco.id)
+    sincronizzato = crea_o_aggiorna_evento_calendario_blocco(blocco)
+    flash('Blocco aggiunto all’agenda.' if sincronizzato else 'Blocco salvato; sincronizzazione Calendar da verificare.', 'success' if sincronizzato else 'error')
+    return redirect(url_for('admin', data=blocco.data) + '#admin-agenda')
+
+
+@app.route('/admin/blocco/<int:id>/archivia', methods=['POST'])
+@login_required
+def archivia_blocco_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    blocco = db.get_or_404(BloccoAgenda, id)
+    blocco.archiviato_il = datetime.now()
+    db.session.commit()
+    elimina_evento_calendario_generico(blocco, 'BloccoAgenda')
+    registra_modifica('archiviazione', 'BloccoAgenda', blocco.id)
+    flash('Blocco archiviato.', 'success')
+    return redirect(url_for('admin') + '#admin-agenda')
+
+
+@app.route('/admin/attivita/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_attivita_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    titolo = request.form.get('titolo', '').strip()
+    if not titolo:
+        flash('Inserisci il titolo dell’attività.', 'error')
+        return redirect(url_for('admin') + '#admin-attivita')
+    attivita = AttivitaAdmin(
+        titolo=titolo,
+        scadenza=_scadenza_da_form(request.form.get('scadenza')),
+        note=request.form.get('note', '').strip(),
+    )
+    db.session.add(attivita)
+    db.session.commit()
+    registra_modifica('creazione', 'AttivitaAdmin', attivita.id)
+    return redirect(url_for('admin') + '#admin-attivita')
+
+
+@app.route('/admin/attivita/<int:id>/chiudi', methods=['POST'])
+@login_required
+def chiudi_attivita_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    attivita = db.get_or_404(AttivitaAdmin, id)
+    attivita.stato = 'Chiusa'
+    db.session.commit()
+    registra_modifica('chiusura', 'AttivitaAdmin', attivita.id)
+    return redirect(url_for('admin') + '#admin-attivita')
+
+
+@app.route('/admin/errore/<int:id>/risolvi', methods=['POST'])
+@login_required
+def risolvi_errore_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    evento = db.get_or_404(RegistroEvento, id)
+    nota = request.form.get('nota_risoluzione', '').strip()
+    if not nota:
+        flash('La nota di risoluzione è obbligatoria.', 'error')
+        return redirect(url_for('admin') + '#admin-errori')
+    evento.risolto_il = datetime.now()
+    evento.nota_risoluzione = nota
+    db.session.commit()
+    registra_modifica('risoluzione_errore', 'RegistroEvento', evento.id)
+    return redirect(url_for('admin') + '#admin-errori')
+
+
+def _sincronizza_entita_admin(tipo, entita):
+    if tipo == 'Appuntamento':
+        return crea_o_aggiorna_evento_calendario(entita)
+    if tipo == 'CallSonno':
+        return crea_o_aggiorna_evento_calendario_call_sonno(entita)
+    if tipo == 'Corso':
+        return crea_o_aggiorna_evento_calendario_corso(entita)
+    if tipo == 'IncontroAccompagnamento':
+        return crea_o_aggiorna_evento_calendario_incontro(entita)
+    if tipo == 'BloccoAgenda':
+        return crea_o_aggiorna_evento_calendario_blocco(entita)
+    return False
+
+
+@app.route('/admin/calendar/riconcilia', methods=['POST'])
+@login_required
+def riconcilia_calendario_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    risultato = riconcilia_calendario()
+    if risultato['errore']:
+        flash(risultato['errore'], 'error')
+    else:
+        flash(f"Controllati {risultato['controllati']} eventi: {risultato['difformi']} difformi, {risultato['mancanti']} mancanti.", 'success')
+    return redirect(url_for('admin') + '#admin-errori')
+
+
+@app.route('/admin/calendar/sincronizza', methods=['POST'])
+@login_required
+def sincronizza_selezionati_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    selezionati = request.form.getlist('elementi')
+    riusciti = 0
+    for valore in selezionati:
+        try:
+            tipo, id_str = valore.split(':', 1)
+            entita = _entita_admin(tipo, int(id_str))
+        except (ValueError, TypeError):
+            continue
+        if entita and _sincronizza_entita_admin(tipo, entita):
+            riusciti += 1
+            registra_modifica('forza_sincronizzazione', tipo, entita.id)
+    flash(f'Sincronizzati {riusciti} elementi su {len(selezionati)} selezionati.', 'success' if riusciti == len(selezionati) else 'error')
+    return redirect(url_for('admin') + '#admin-errori')
+
+
+@app.route('/admin/calendar/forza/<tipo>/<int:entita_id>', methods=['POST'])
+@login_required
+def forza_calendar_admin(tipo, entita_id):
+    if not _csrf_admin_valido():
+        abort(400)
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    riuscito = _sincronizza_entita_admin(tipo, entita)
+    registra_modifica('sovrascrittura_calendar', tipo, entita_id, {'esito': riuscito})
+    flash('Dati del sito riscritti su Calendar.' if riuscito else 'Scrittura Calendar fallita.', 'success' if riuscito else 'error')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/email/<int:id>/reinvia', methods=['POST'])
+@login_required
+def reinvia_email_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    precedente = db.get_or_404(EmailOperativa, id)
+    if precedente.stato != 'fallita':
+        abort(400)
+    msg = Message(subject=precedente.oggetto, recipients=[precedente.destinatario], body=precedente.corpo)
+    try:
+        _invia_email_tracciata(msg, precedente.entita_tipo, precedente.entita_id)
+        flash('Email reinviata.', 'success')
+    except Exception:
+        flash('Nuovo invio fallito. Controlla il registro errori.', 'error')
+    return redirect(_url_dettaglio_admin(precedente.entita_tipo, precedente.entita_id))
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>/proponi-slot', methods=['POST'])
+@login_required
+def proponi_slot_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+        abort(400)
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    data_proposta = request.form.get('data_proposta', '').strip()
+    ora_proposta = request.form.get('ora_proposta', '').strip()
+    durata = parse_appointment_duration(request.form.get('durata_minuti'))
+    try:
+        _intervallo_locale(data_proposta, ora_proposta, durata)
+    except (TypeError, ValueError):
+        flash('Data, ora o durata della proposta non valide.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    token = secrets.token_urlsafe(48)
+    proposta = PropostaSlot(
+        token=token,
+        entita_tipo=tipo,
+        entita_id=entita_id,
+        data_proposta=data_proposta,
+        ora_proposta=ora_proposta,
+        durata_minuti=durata,
+        scade_il=datetime.now() + timedelta(hours=48),
+    )
+    db.session.add(proposta)
+    db.session.commit()
+    link = public_url(url_for('accetta_proposta_slot', token=token))
+    corpo_default = (
+        f'Buongiorno {entita.nome},\n\n'
+        f'le proponiamo {data_proposta} alle {ora_proposta}. '
+        f'Può accettare entro 48 ore da questo link:\n{link}\n\n'
+        'Studio infermieristico'
+    )
+    corpo = request.form.get('corpo_email', '').strip() or corpo_default
+    oggetto = request.form.get('oggetto_email', '').strip() or 'Proposta di nuovo orario'
+    if request.form.get('conferma_invio') != '1':
+        abort(400)
+    msg = Message(subject=oggetto, recipients=[entita.email], body=corpo)
+    try:
+        _invia_email_tracciata(msg, tipo, entita_id)
+        flash('Proposta inviata. Lo slot verrà ricontrollato al momento dell’accettazione.', 'success')
+    except Exception:
+        flash('Proposta salvata, ma l’email non è partita.', 'error')
+    registra_modifica('proposta_slot', tipo, entita_id, {'data': data_proposta, 'ora': ora_proposta, 'scade_il': proposta.scade_il.isoformat()})
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/proposta-slot/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def accetta_proposta_slot(token):
+    proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
+    entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
+    valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > datetime.now())
+    if request.method == 'POST' and valida:
+        ignore_call = entita.id if proposta.entita_tipo == 'CallSonno' else None
+        ignore_appuntamento = entita.id if proposta.entita_tipo == 'Appuntamento' else None
+        occupato = slot_occupato_db(
+            proposta.data_proposta,
+            proposta.ora_proposta,
+            proposta.durata_minuti,
+            ignore_call_id=ignore_call,
+            ignore_appuntamento_id=ignore_appuntamento,
+        ) or intervallo_occupato_da_calendario(
+            proposta.data_proposta,
+            proposta.ora_proposta,
+            proposta.durata_minuti,
+            ignore_google_event_id=entita.google_event_id,
+        )
+        if occupato:
+            proposta.stato = 'Non disponibile'
+            db.session.commit()
+            return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=False, occupato=True)
+        entita.data = proposta.data_proposta
+        entita.ora = proposta.ora_proposta
+        if proposta.entita_tipo == 'Appuntamento':
+            entita.duration_minutes = proposta.durata_minuti
+            entita.stato = 'Confermato'
+        else:
+            entita.stato = 'Confermata'
+        proposta.stato = 'Accettata'
+        proposta.accettata_il = datetime.now()
+        db.session.commit()
+        _sincronizza_entita_admin(proposta.entita_tipo, entita)
+        if proposta.entita_tipo == 'Appuntamento':
+            invia_email_conferma(entita)
+        else:
+            invia_email_conferma_call_sonno(entita)
+        return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=False, accettata=True)
+    return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=valida)
+
+
+def _invita_prossimo_lista_attesa(corso):
+    candidato = IscrizioneCorso.query.filter_by(
+        corso_id=corso.id,
+        stato='Lista attesa',
+    ).order_by(IscrizioneCorso.creato_il).first()
+    if not candidato or not _corso_accetta_prenotazione_online(corso, candidato.posti_richiesti or 1):
+        return None
+    candidato.stato = 'Invitato'
+    candidato.token_lista_attesa = candidato.token_lista_attesa or secrets.token_urlsafe(48)
+    candidato.invito_lista_attesa_il = datetime.now()
+    candidato.scadenza_invito_lista_attesa = datetime.now() + timedelta(hours=24)
+    db.session.commit()
+    if candidato.email:
+        link = public_url(url_for('accetta_invito_lista_attesa', token=candidato.token_lista_attesa))
+        msg = Message(
+            subject=f'Posto disponibile · {corso.titolo}',
+            recipients=[candidato.email],
+            body=(
+                f'Buongiorno {candidato.nome},\n\nsi è liberato un posto per {corso.titolo} '
+                f'({_etichetta_data_corso(corso)}). Puoi accettare entro 24 ore:\n{link}\n\n'
+                'Studio infermieristico'
+            ),
+        )
+        try:
+            _invia_email_tracciata(msg, 'IscrizioneCorso', candidato.id)
+        except Exception:
+            registra_evento('email', 'errore', 'Invito lista d’attesa non inviato.', 'IscrizioneCorso', candidato.id)
+    else:
+        db.session.add(AttivitaAdmin(
+            titolo=f'Contattare {candidato.nome}: posto disponibile in {corso.titolo}',
+            scadenza=candidato.scadenza_invito_lista_attesa,
+            entita_tipo='IscrizioneCorso',
+            entita_id=candidato.id,
+        ))
+        db.session.commit()
+    return candidato
+
+
+@app.route('/lista-attesa/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def accetta_invito_lista_attesa(token):
+    iscrizione = IscrizioneCorso.query.filter_by(token_lista_attesa=token).first_or_404()
+    corso = iscrizione.corso
+    valida = bool(
+        corso
+        and iscrizione.stato == 'Invitato'
+        and iscrizione.scadenza_invito_lista_attesa
+        and iscrizione.scadenza_invito_lista_attesa > datetime.now()
+        and _corso_accetta_prenotazione_online(corso, iscrizione.posti_richiesti or 1)
+    )
+    if request.method == 'POST' and valida:
+        iscrizione.stato = 'Nuova'
+        iscrizione.posti = iscrizione.posti_richiesti or 1
+        iscrizione.scadenza_gestione = prossima_scadenza_lavorativa()
+        db.session.commit()
+        invia_email_nuova_iscrizione(iscrizione)
+        return render_template('accetta_lista_attesa.html', iscrizione=iscrizione, corso=corso, valida=False, accettata=True)
+    return render_template('accetta_lista_attesa.html', iscrizione=iscrizione, corso=corso, valida=valida)
 
 
 @app.route('/admin/call-sonno/<int:id>/conferma', methods=['POST'])
@@ -3883,7 +5616,7 @@ def invia_questionario_sonno_admin(id):
 @app.route('/admin/aggiorna/<int:id>/<stato>', methods=['POST'])
 @login_required
 def aggiorna_stato(id, stato):
-    if stato not in STATI_VALIDI:
+    if stato not in STATI_APPUNTAMENTO_ADMIN:
         abort(400)
     # Il token resta riutilizzabile nella stessa pagina admin, dove sono
     # disponibili più azioni POST prima del successivo caricamento.
@@ -3936,6 +5669,7 @@ def aggiorna_stato(id, stato):
 
     appuntamento.stato = stato
     db.session.commit()
+    registra_modifica('cambio_stato', 'Appuntamento', appuntamento.id, {'stato': stato})
     if stato == 'Confermato':
         email_inviata = invia_email_conferma(appuntamento)
         calendar_aggiornato = crea_o_aggiorna_evento_calendario(appuntamento)
@@ -4166,7 +5900,62 @@ def aggiungi_incontro_accompagnamento(id):
     for iscrizione in _iscrizioni_percorso(percorso):
         db.session.add(PresenzaAccompagnamento(iscrizione=iscrizione, incontro=incontro))
     db.session.commit()
-    flash('Incontro aggiunto al percorso.', 'success')
+    sincronizzato = crea_o_aggiorna_evento_calendario_incontro(incontro)
+    registra_modifica('creazione', 'IncontroAccompagnamento', incontro.id)
+    flash('Incontro aggiunto e sincronizzato.' if sincronizzato else 'Incontro aggiunto; sincronizzazione Calendar da verificare.', 'success' if sincronizzato else 'error')
+    return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+
+@app.route('/admin/incontro-accompagnamento/<int:id>/modifica', methods=['POST'])
+@login_required
+def modifica_incontro_accompagnamento(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    incontro = db.get_or_404(IncontroAccompagnamento, id)
+    destinatari = [i for i in _iscrizioni_percorso(incontro.percorso) if i.email]
+    if destinatari and request.form.get('conferma_notifiche') != '1':
+        flash(f'Conferma l’invio dell’aggiornamento ai {len(destinatari)} partecipanti.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+    precedente = {'data': incontro.data, 'ora': incontro.ora, 'tema': incontro.tema, 'professionista': incontro.professionista}
+    incontro.data = request.form.get('data', '').strip()
+    incontro.ora = request.form.get('ora', '').strip()
+    incontro.tema = request.form.get('tema', '').strip()
+    incontro.professionista = request.form.get('professionista', '').strip()
+    incontro.note = request.form.get('note', '').strip()
+    if not incontro.data or not incontro.tema or not incontro.professionista:
+        db.session.rollback()
+        flash('Data, tema e professionista sono obbligatori.', 'error')
+        return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+    db.session.commit()
+    crea_o_aggiorna_evento_calendario_incontro(incontro)
+    registra_modifica('modifica', 'IncontroAccompagnamento', incontro.id, {'prima': precedente, 'dopo': {'data': incontro.data, 'ora': incontro.ora, 'tema': incontro.tema, 'professionista': incontro.professionista}})
+    if destinatari:
+        for iscrizione in destinatari:
+            msg = Message(
+                subject=f'Aggiornamento incontro · {incontro.percorso.titolo}',
+                recipients=[iscrizione.email],
+                body=(f'Buongiorno {iscrizione.nome},\n\nl’incontro {incontro.numero} è stato aggiornato: '
+                      f'{incontro.data} alle {incontro.ora or "orario da definire"}, tema “{incontro.tema}”.\n\nStudio infermieristico'),
+            )
+            try:
+                _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
+            except Exception:
+                registra_evento('email', 'errore', 'Aggiornamento incontro non inviato a un partecipante.', 'IscrizioneCorso', iscrizione.id)
+    flash('Incontro aggiornato.', 'success')
+    return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
+
+
+@app.route('/admin/incontro-accompagnamento/<int:id>/archivia', methods=['POST'])
+@login_required
+def archivia_incontro_accompagnamento(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    incontro = db.get_or_404(IncontroAccompagnamento, id)
+    incontro.archiviato_il = datetime.now()
+    db.session.commit()
+    elimina_evento_calendario_generico(incontro, 'IncontroAccompagnamento')
+    registra_modifica('archiviazione', 'IncontroAccompagnamento', incontro.id)
+    flash('Incontro archiviato; lo storico delle presenze resta conservato.', 'success')
     return redirect(url_for('admin') + '#admin-percorsi-accompagnamento')
 
 
@@ -4342,6 +6131,15 @@ def aggiungi_iscrizione_corso_manuale():
     if tipo_richiesta == 'ricontatto':
         posti = 0
 
+    oltre_limite_online = bool(
+        corso.capienza_massima is not None
+        and _posti_attivi_corso(corso.id) + posti > corso.capienza_massima + 1
+    )
+    motivo_superamento = request.form.get('superamento_capienza_motivo', '').strip()
+    if oltre_limite_online and (request.form.get('conferma_superamento_capienza') != '1' or not motivo_superamento):
+        flash('L’admin può superare il limite online, ma deve confermare l’eccezione e indicarne il motivo.', 'error')
+        return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
+
     extra = {
         'inserimento_admin': True,
         'nome_bambino': nome_bambino,
@@ -4367,6 +6165,9 @@ def aggiungi_iscrizione_corso_manuale():
         consenso_privacy=_checkbox_checked('consenso_privacy'),
         consenso_immagini=_checkbox_checked('consenso_immagini'),
         stato=stato,
+        posti_richiesti=posti,
+        scadenza_gestione=prossima_scadenza_lavorativa() if stato in {'Nuova', 'Contattato'} else None,
+        superamento_capienza_motivo=motivo_superamento or None,
     )
     db.session.add(iscrizione)
     db.session.commit()
@@ -4382,19 +6183,165 @@ def elimina_corso(id):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     corso = db.get_or_404(Corso, id)
-    iscrizioni_attive = IscrizioneCorso.query.filter(
-        IscrizioneCorso.corso_id == corso.id,
-        IscrizioneCorso.stato != 'Annullato'
-    ).count()
-    if iscrizioni_attive:
-        flash('Non puoi eliminare un corso con iscrizioni attive. Annulla prima le iscrizioni o chiudi il corso.', 'error')
-        return redirect(url_for('admin') + '#admin-corsi')
-    if not elimina_evento_calendario_corso(corso):
-        flash('Il corso non è stato eliminato perché Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
-        return redirect(url_for('admin') + '#admin-corsi')
-    db.session.delete(corso)
+    corso.archiviato_il = datetime.now()
+    corso.stato = 'Annullato'
     db.session.commit()
-    return redirect(url_for('admin'))
+    calendar_ok = elimina_evento_calendario_corso(corso)
+    registra_modifica('archiviazione', 'Corso', corso.id)
+    flash('Corso archiviato; iscrizioni e storico restano conservati.' if calendar_ok else 'Corso archiviato, ma Calendar richiede verifica.', 'success' if calendar_ok else 'error')
+    return redirect(url_for('admin') + '#admin-corsi')
+
+
+@app.route('/admin/corso/<int:id>/modifica', methods=['POST'])
+@login_required
+def modifica_corso_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    corso = db.get_or_404(Corso, id)
+    precedente = {campo: getattr(corso, campo) for campo in ['titolo', 'data', 'ora', 'luogo', 'durata_ore', 'capienza_massima', 'stato']}
+    corso.titolo = request.form.get('titolo', '').strip()
+    corso.data = request.form.get('data', '').strip()
+    corso.ora = request.form.get('ora', '').strip()
+    corso.luogo = request.form.get('luogo', '').strip()
+    corso.descrizione = request.form.get('descrizione', '').strip()
+    corso.durata_ore = _durata_corso_da_form(request.form.get('durata_ore', ''), corso.tipo)
+    capienza = request.form.get('capienza_massima', type=int)
+    corso.capienza_massima = capienza if capienza and capienza > 0 else None
+    stato = request.form.get('stato', corso.stato)
+    corso.stato = stato if stato in STATI_CORSO_VALIDI else corso.stato
+    if not corso.titolo or not corso.data:
+        db.session.rollback()
+        flash('Titolo e data del corso sono obbligatori.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    dopo = {campo: getattr(corso, campo) for campo in precedente}
+    modifiche_organizzative = any(precedente[campo] != dopo[campo] for campo in ['titolo', 'data', 'ora', 'luogo'])
+    destinatari = IscrizioneCorso.query.filter(
+        IscrizioneCorso.corso_id == corso.id,
+        IscrizioneCorso.stato.notin_(['Annullato', 'Lista attesa']),
+        IscrizioneCorso.email != '',
+    ).all()
+    if modifiche_organizzative and destinatari and request.form.get('conferma_notifiche') != '1':
+        db.session.rollback()
+        flash(f'Conferma l’invio dell’aggiornamento ai {len(destinatari)} destinatari mostrati.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    db.session.commit()
+    calendar_ok = crea_o_aggiorna_evento_calendario_corso(corso)
+    registra_modifica('modifica', 'Corso', corso.id, {'prima': precedente, 'dopo': dopo})
+    if modifiche_organizzative:
+        for iscrizione in destinatari:
+            msg = Message(
+                subject=f'Aggiornamento · {corso.titolo}',
+                recipients=[iscrizione.email],
+                body=(f'Buongiorno {iscrizione.nome},\n\ni dettagli del corso sono stati aggiornati: '
+                      f'{_etichetta_data_corso(corso)}.\n\nStudio infermieristico'),
+            )
+            try:
+                _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
+            except Exception:
+                registra_evento('email', 'errore', 'Aggiornamento corso non inviato a un partecipante.', 'IscrizioneCorso', iscrizione.id)
+    flash('Corso aggiornato.' if calendar_ok else 'Corso aggiornato; sincronizzazione Calendar da verificare.', 'success' if calendar_ok else 'error')
+    return redirect(url_for('admin') + '#admin-corsi')
+
+
+@app.route('/admin/corso/<int:id>/duplica', methods=['POST'])
+@login_required
+def duplica_corso_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    origine = db.get_or_404(Corso, id)
+    nuova_data = request.form.get('data', '').strip()
+    if not nuova_data:
+        flash('Indica la data della nuova edizione.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    duplicato = Corso(
+        titolo=origine.titolo,
+        tipo=origine.tipo,
+        descrizione=origine.descrizione,
+        data=nuova_data,
+        ora=request.form.get('ora', '').strip() or origine.ora,
+        luogo=origine.luogo,
+        durata_ore=origine.durata_ore,
+        capienza_massima=origine.capienza_massima,
+        stato='Aperto',
+    )
+    db.session.add(duplicato)
+    db.session.commit()
+    crea_o_aggiorna_evento_calendario_corso(duplicato)
+    registra_modifica('duplicazione', 'Corso', duplicato.id, {'origine_id': origine.id})
+    flash('Nuova edizione duplicata senza iscritti.', 'success')
+    return redirect(url_for('admin', corso_id=duplicato.id) + '#admin-corsi')
+
+
+@app.route('/admin/corso/<int:id>/unisci', methods=['POST'])
+@login_required
+def unisci_corso_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    origine = db.get_or_404(Corso, id)
+    destinazione = db.session.get(Corso, request.form.get('corso_destinazione_id', type=int))
+    if not destinazione or destinazione.id == origine.id:
+        flash('Seleziona un’edizione di destinazione diversa.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
+    iscrizioni = IscrizioneCorso.query.filter_by(corso_id=origine.id).all()
+    for iscrizione in iscrizioni:
+        iscrizione.corso = destinazione
+        iscrizione.corso_tipo = destinazione.tipo or iscrizione.corso_tipo
+        iscrizione.corso_titolo = destinazione.titolo
+        iscrizione.data_corso = _etichetta_data_corso(destinazione)
+    origine.archiviato_il = datetime.now()
+    origine.stato = 'Annullato'
+    db.session.commit()
+    elimina_evento_calendario_corso(origine)
+    registra_modifica('fusione_edizioni', 'Corso', destinazione.id, {'origine_id': origine.id, 'iscrizioni_spostate': len(iscrizioni)})
+    flash(f'Edizioni unite: spostate {len(iscrizioni)} iscrizioni.', 'success')
+    return redirect(url_for('admin', corso_id=destinazione.id) + '#admin-corsi')
+
+
+@app.route('/admin/iscrizione-corso/<int:id>/sposta', methods=['POST'])
+@login_required
+def sposta_iscrizione_corso_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    iscrizione = db.get_or_404(IscrizioneCorso, id)
+    destinazione = db.session.get(Corso, request.form.get('corso_destinazione_id', type=int))
+    if not destinazione:
+        abort(400)
+    origine_id = iscrizione.corso_id
+    iscrizione.corso = destinazione
+    iscrizione.corso_tipo = destinazione.tipo or iscrizione.corso_tipo
+    iscrizione.corso_titolo = destinazione.titolo
+    iscrizione.data_corso = _etichetta_data_corso(destinazione)
+    db.session.commit()
+    registra_modifica('spostamento_edizione', 'IscrizioneCorso', iscrizione.id, {'origine_id': origine_id, 'destinazione_id': destinazione.id})
+    if origine_id:
+        origine = db.session.get(Corso, origine_id)
+        if origine:
+            _invita_prossimo_lista_attesa(origine)
+    flash('Partecipante spostato alla nuova edizione.', 'success')
+    return redirect(_url_dettaglio_admin('IscrizioneCorso', iscrizione.id))
+
+
+@app.route('/admin/corso/<int:id>/export.csv')
+@login_required
+def esporta_corso_csv(id):
+    corso = db.get_or_404(Corso, id)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(['nome', 'telefono', 'email', 'codice_fiscale', 'partecipazione', 'posti', 'stato', 'note'])
+    for iscrizione in IscrizioneCorso.query.filter_by(corso_id=corso.id).order_by(IscrizioneCorso.nome):
+        writer.writerow([iscrizione.nome, iscrizione.telefono, iscrizione.email, iscrizione.codice_fiscale, iscrizione.partecipazione, iscrizione.posti, iscrizione.stato, iscrizione.note])
+    return Response(buffer.getvalue(), mimetype='text/csv; charset=utf-8', headers={'Content-Disposition': f'attachment; filename="corso-{corso.id}-iscritti.csv"'})
+
+
+@app.route('/admin/corso/<int:id>/export.pdf')
+@login_required
+def esporta_corso_pdf(id):
+    corso = db.get_or_404(Corso, id)
+    iscrizioni = IscrizioneCorso.query.filter_by(corso_id=corso.id).order_by(IscrizioneCorso.nome).all()
+    righe = [f'Corso: {corso.titolo}', f'Data: {_etichetta_data_corso(corso)}', f'Capienza nominale: {corso.capienza_massima or "non impostata"}', '', 'Partecipanti:']
+    righe.extend([f'- {i.nome} | {i.telefono} | {i.email or "email non indicata"} | posti {i.posti} | {i.stato}' for i in iscrizioni] or ['Nessuna iscrizione.'])
+    pdf = _crea_pdf_testuale(f'Iscritti - {corso.titolo}', righe)
+    return Response(pdf, mimetype='application/pdf', headers={'Content-Disposition': f'attachment; filename="corso-{corso.id}-iscritti.pdf"'})
 
 
 @app.route('/admin/iscrizione-corso/<int:id>/<stato>', methods=['POST'])
@@ -4407,8 +6354,14 @@ def aggiorna_stato_iscrizione_corso(id, stato):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     iscrizione = db.get_or_404(IscrizioneCorso, id)
+    stato_precedente = iscrizione.stato
     iscrizione.stato = stato
+    if stato not in {'Lista attesa', 'Invitato'} and iscrizione.posti == 0:
+        iscrizione.posti = iscrizione.posti_richiesti or 1
     db.session.commit()
+    registra_modifica('cambio_stato', 'IscrizioneCorso', iscrizione.id, {'da': stato_precedente, 'a': stato})
+    if stato == 'Annullato' and iscrizione.corso:
+        _invita_prossimo_lista_attesa(iscrizione.corso)
     return redirect(url_for('admin'))
 
 

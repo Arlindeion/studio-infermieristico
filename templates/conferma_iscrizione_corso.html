@@ -7,9 +7,15 @@
 <section class="pagina-interna testo-centro">
     <div class="conferma-box">
         <span class="conferma-icona" aria-hidden="true">✓</span>
+        {% if lista_attesa %}
+        <h1>Richiesta in lista d’attesa</h1>
+        <p>La data scelta ha raggiunto la capienza prevista. La tua richiesta è stata inserita in lista d’attesa.</p>
+        <p>Se si libera un posto riceverai un invito con 24 ore per accettare.</p>
+        {% else %}
         <h1>Richiesta inviata</h1>
         <p>Grazie, ho ricevuto la tua richiesta di iscrizione.</p>
         <p>Ti contatterò per confermare la disponibilità e comunicarti i dettagli organizzativi.</p>
+        {% endif %}
         <a href="/" class="btn">Torna alla homepage</a>
     </div>
 </section>

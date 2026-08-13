@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titolo %}Da dove parto? · S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Un breve percorso guidato per orientarti tra corsi, consulenza del sonno e prestazioni infermieristiche, senza raccogliere dati personali.{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna orientation-page" data-orientation-quiz>
+    <div class="orientation-heading">
+        <p class="eyebrow">Orientamento in due passaggi</p>
+        <h1>Da dove parto?</h1>
+        <p class="sottotitolo">Scegli il contesto più vicino a ciò che cerchi. Non è una valutazione clinica e le risposte non vengono salvate né inviate.</p>
+    </div>
+
+    <div class="orientation-shell">
+        <div class="orientation-progress" aria-hidden="true"><span data-quiz-progress></span></div>
+        <p class="orientation-step-count" data-quiz-step-count>Passaggio 1 di 2</p>
+
+        <section class="orientation-question is-active" data-quiz-step="start" aria-labelledby="quiz-question-start">
+            <h2 id="quiz-question-start" tabindex="-1">Per chi stai cercando?</h2>
+            <div class="orientation-options">
+                <button type="button" data-quiz-next="famiglia"><span>Famiglia o caregiver</span><small>Per un bambino o per chi se ne prende cura</small></button>
+                <button type="button" data-quiz-result="nascita"><span>Gravidanza e nascita</span><small>Per prepararsi insieme prima dell’arrivo</small></button>
+                <button type="button" data-quiz-result="prestazioni"><span>Per me</span><small>Per una prestazione infermieristica in studio</small></button>
+                <button type="button" data-quiz-result="azienda"><span>Azienda o gruppo</span><small>Per organizzare una formazione riservata</small></button>
+            </div>
+        </section>
+
+        <section class="orientation-question" data-quiz-step="famiglia" aria-labelledby="quiz-question-family" hidden>
+            <h2 id="quiz-question-family" tabindex="-1">Qual è il bisogno più vicino a questo momento?</h2>
+            <div class="orientation-options">
+                <button type="button" data-quiz-result="sicurezza"><span>Sicurezza e primo intervento</span><small>Disostruzione pediatrica, tagli sicuri o BLSD</small></button>
+                <button type="button" data-quiz-result="sonno"><span>Sonno 0–12 mesi</span><small>Risvegli, sonnellini e addormentamento</small></button>
+                <button type="button" data-quiz-result="laboratori"><span>Attività con bambine e bambini</span><small>Laboratori alimentari, gioco e sviluppo</small></button>
+                <button type="button" data-quiz-result="dubbi"><span>Non riesco ancora a scegliere</span><small>Confronta i percorsi e i contatti disponibili</small></button>
+            </div>
+            <button class="orientation-back" type="button" data-quiz-back>← Torna indietro</button>
+        </section>
+
+        <section class="orientation-result" data-quiz-result-panel aria-live="polite" hidden>
+            <p class="eyebrow">Il punto di partenza suggerito</p>
+            <h2 data-result-title></h2>
+            <p data-result-copy></p>
+            <a class="btn" href="#" data-result-link>Apri il percorso</a>
+            <button class="orientation-reset" type="button" data-quiz-reset>Ricomincia</button>
+        </section>
+    </div>
+
+    <noscript>
+        <div class="orientation-noscript">
+            <h2>Percorsi disponibili</h2>
+            <p>Il quiz richiede JavaScript, ma puoi accedere direttamente a <a href="{{ url_for('iscrizione_corsi') }}">corsi</a>, <a href="{{ url_for('consulenze_online') }}">consulenza del sonno</a>, <a href="{{ url_for('prestazioni') }}">prestazioni infermieristiche</a> o <a href="{{ url_for('richiesta_azienda') }}">formazione per aziende e gruppi</a>.</p>
+        </div>
+    </noscript>
+
+    <aside class="orientation-alternatives" aria-labelledby="alternative-title">
+        <p class="eyebrow">Puoi sempre scegliere tu</p>
+        <h2 id="alternative-title">Tutti gli ingressi restano disponibili.</h2>
+        <div>
+            <a href="{{ url_for('iscrizione_corsi') }}"><strong>Corsi</strong><span>In presenza, con attività pratiche</span></a>
+            <a href="{{ url_for('consulenze_online') }}"><strong>Sonno 0–12 mesi</strong><span>Primo confronto online</span></a>
+            <a href="{{ url_for('prestazioni') }}"><strong>Prestazioni</strong><span>Assistenza infermieristica in studio</span></a>
+            <a href="{{ url_for('richiesta_azienda') }}"><strong>Aziende e gruppi</strong><span>Richiesta organizzativa dedicata</span></a>
+        </div>
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titolo %}Posto disponibile | S.C. Studio Infermieristico{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        {% if accettata %}
+        <span class="conferma-icona" aria-hidden="true">✓</span>
+        <h1>Posto accettato</h1>
+        <p>La richiesta per {{ corso.titolo }} è tornata in lavorazione. Riceverai la conferma organizzativa dallo studio.</p>
+        {% elif valida %}
+        <h1>Si è liberato un posto</h1>
+        <p>{{ corso.titolo }} · {{ iscrizione.data_corso }}</p>
+        <p>L’invito scade il {{ iscrizione.scadenza_invito_lista_attesa.strftime('%d/%m/%Y alle %H:%M') }}.</p>
+        <form method="post"><button class="btn" type="submit">Accetta il posto</button></form>
+        {% else %}
+        <h1>Invito non disponibile</h1>
+        <p>Il link è scaduto, è già stato utilizzato o il posto non è più disponibile.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

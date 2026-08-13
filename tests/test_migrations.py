@@ -19,6 +19,14 @@ EXPECTED_TABLES = {
     'presenza_accompagnamento',
     'questionario_sonno',
     'registro_evento',
+    'attivita_admin',
+    'nota_admin',
+    'email_operativa',
+    'proposta_slot',
+    'blocco_agenda',
+    'registro_modifica',
+    'collegamento_persona',
+    'richiesta_azienda',
 }
 
 
@@ -73,6 +81,8 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'promemoria_whatsapp_2h_il' not in call_columns
     appointment_columns = _column_names(database_path, 'appuntamento')
     assert 'duration_minutes' in appointment_columns
+    assert 'scadenza_gestione' in appointment_columns
+    assert 'sincronizzazione' in appointment_columns
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
@@ -114,7 +124,7 @@ def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):
         ).fetchone()[0]
 
     assert row == ('Persona Test', 30)
-    assert revision == '4d8b2c7a91e6'
+    assert revision == 'd91e6b4f2a30'
 
 
 def test_baseline_adotta_schema_rappresentativo_senza_perdere_dati(tmp_path):
@@ -156,4 +166,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == '4d8b2c7a91e6'
+    assert revision == 'd91e6b4f2a30'

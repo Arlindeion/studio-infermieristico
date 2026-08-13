@@ -1,6 +1,6 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 29 luglio 2026.
+Ultimo aggiornamento: 13 agosto 2026.
 
 ## Principio di architettura
 
@@ -28,6 +28,8 @@ Le priorità commerciali sono:
 | `/questionario-sonno/<token>` | Questionario privato inviato dopo la call | Preparare la formula concordata |
 | `/prestazioni-infermieristiche` | Spiegare le prestazioni in studio | Accedere alla prenotazione sanitaria |
 | `/prenota` | Prenotare una prestazione sanitaria | Inviare una richiesta di appuntamento |
+| `/da-dove-parto` | Orientare senza diagnosi né raccolta dati | Aprire uno dei percorsi pubblici, mantenendo visibili le alternative |
+| `/aziende-e-gruppi` | Raccogliere una richiesta organizzativa separata | Inviare contesto, partecipanti, sede e periodo da qualificare |
 | `/faq` | Rimuovere dubbi senza moltiplicare CTA | Proseguire nel flusso appropriato |
 | `/privacy` | Informativa sul trattamento dei dati | Nessuna CTA commerciale |
 
@@ -70,11 +72,8 @@ Homepage/pagina corsi
 ```
 
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
-- Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo
-  dove la coppia vale un posto. Nei corsi individuali una coppia può ancora
-  inviare la richiesta quando resta un solo posto: la data si chiude alle
-  richieste successive dopo il salvataggio della coppia.
-- Se il corso è pieno, proporre una data successiva; se non esiste, raccogliere preferenze indicative e creare un ricontatto.
+- Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto. Ogni edizione ha una capienza nominale configurabile. Finché il totale è inferiore a tale capienza, una coppia può prendere l’ultimo posto e portare il totale a `capienza + 1`; raggiunta la capienza nominale, il sito non accetta altre iscrizioni automatiche.
+- Le date piene restano selezionabili come lista d’attesa. Quando si libera capienza, la prima richiesta compatibile riceve un invito valido 24 ore. L’admin può inserire partecipanti oltre il limite online soltanto confermando l’eccezione e registrandone il motivo.
 - Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e consenso privacy; non richiede i dati amministrativi necessari a una vera iscrizione.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 
@@ -107,7 +106,7 @@ Link privato generico
 - Il link non compare nella navigazione e non deve essere indicizzato.
 - Se viene inoltrato, l'iscrizione resta accettabile.
 - Raccogliere solo i dati necessari, inclusa la data presunta del parto; non acquisire altri dati sanitari senza necessità esplicita.
-- In admin l'edizione gestisce coppie, incontri, professionisti, presenze ed export PDF.
+- In admin l'edizione gestisce coppie, nove incontri sincronizzati su Calendar, professionisti, presenze ed export PDF.
 
 ## Flusso consulenza del sonno
 
@@ -143,7 +142,7 @@ Campagna/condivisione
 - Lo slot tecnico dura 30 minuti: circa 20 minuti di call e 10 minuti di margine operativo. Tutti i controlli di disponibilità e gli eventi Calendar usano l'intero blocco.
 - Ogni conflitto con prestazioni, corsi, call, eventi manuali o Arzamed/Google Calendar rende lo slot non prenotabile.
 - Lo stato `In attesa` blocca immediatamente lo slot ma non equivale a conferma. La pagina e l'email devono dirlo senza ambiguità.
-- Se l'orario cambia, Selene concorda prima telefonicamente il nuovo slot; il salvataggio admin vale come accettazione e invia direttamente la conferma. Non esiste uno stato “proposta da accettare”.
+- Se l'orario cambia, Selene può concordarlo direttamente oppure inviare dall’admin una proposta modificabile via email. Il link dura 48 ore, ricontrolla lo slot al momento dell’accettazione e conferma solo se resta libero.
 - Prima della call vengono richiesti contatti, età 0-12 mesi, ruolo di genitore/tutore, difficoltà e durata, obiettivo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesto il diario.
 - Il questionario completo viene inviato solo dopo la call, quando la famiglia sceglie una formula. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile.
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
@@ -201,13 +200,19 @@ Pagina prestazioni
 ## Flusso aziende e gruppi
 
 ```text
-Pagina corso/richiesta diretta
-  → contatto con contesto aziendale
-  → valutazione sede, partecipanti e data
-  → proposta manuale
+Pagina corso o quiz
+  → `/aziende-e-gruppi`
+  → richiesta salvata + conferma di ricezione
+  → attività di qualificazione entro il prossimo giorno lavorativo
+  → stato Contattata/Qualificata + nuova attività
+  → proposta email tracciata + ricontatto
+  → conferma
+  → corso riservato in agenda e Google Calendar
 ```
 
-Le aziende non devono utilizzare il form individuale. CTA consigliata: `Richiedi il corso in studio o in azienda`.
+Le aziende non devono utilizzare il form individuale. Il modulo non conferma data, disponibilità o preventivo. Il corso generato ha stato `Chiuso`: è operativo nell’admin e su Calendar, ma non compare tra le date pubbliche. WhatsApp resta un contatto secondario contestuale.
+
+Il quiz `Da dove parto?` funziona interamente nel browser, non salva né invia le risposte, non raccoglie dati sanitari e non sostituisce una valutazione clinica. Il risultato suggerisce un ingresso già approvato; corsi, sonno, prestazioni e aziende restano sempre raggiungibili.
 
 ## Uso di WhatsApp
 
@@ -218,6 +223,23 @@ WhatsApp è appropriato per:
 - persone che non trovano una data adatta.
 
 Non deve diventare un widget indistinto o sostituire un modulo specifico già disponibile.
+
+## Flusso amministrativo
+
+```text
+Agenda giorno/settimana/mese
+  → richiesta urgente o impegno
+  → scheda pratica
+  → prossima azione, note e scadenza
+  → conferma, proposta, iscrizione o chiusura
+  → email tracciata e sincronizzazione Calendar
+  → riconciliazione delle anomalie
+```
+
+- Le richieste pubbliche scadono di norma alle 18 del giorno lavorativo successivo; se non vengono gestite restano bloccanti, diventano urgenti e generano un’attività.
+- Arzamed resta l’autorità operativa per i suoi appuntamenti; Google Calendar è il ponte. Gli eventi esterni sono mostrati con titolo e orario, ma non vengono importati come pratiche né arricchiti con dati clinici.
+- Modifiche o cancellazioni esterne di eventi collegati non riscrivono il database. L’admin mostra il confronto esatto e richiede una decisione; gli errori generici si riprovano soltanto in gruppo.
+- Il lancio usa un account singolo. Le pratiche non vengono eliminate automaticamente: si chiudono o si archiviano conservando storico, email e modifiche.
 
 ## SEO e autorevolezza
 
@@ -245,7 +267,6 @@ coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto
 
 ## Evoluzioni previste
 
-- Quiz guidato `Da dove parto?` per chi non sa quale servizio scegliere.
 - Prenotazione e pagamento dedicati alle consulenze.
 - Landing verticali per campagne specifiche: sonno/primi mesi, disostruzione, open day nascita.
 - Pagamento online soltanto quando policy, stati, email, capienza e calendario sono stabili.

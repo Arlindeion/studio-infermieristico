@@ -52,7 +52,7 @@ SECRET_KEY=
 FLASK_ENV=development
 DATABASE_URL=
 
-MAIL_SERVER=smtp.gmail.com
+MAIL_SERVER=smtp.mail.ovh.net
 MAIL_PORT=587
 MAIL_USE_TLS=true
 MAIL_USE_SSL=false
@@ -66,6 +66,7 @@ CALENDARIO_CACHE_SECONDI=300
 GOOGLE_SERVICE_ACCOUNT_FILE=
 GOOGLE_CALENDAR_ID=
 GOOGLE_ANALYTICS_ID=
+PUBLIC_BASE_URL=
 SONNO_CALL_URL=
 
 APP_ENV=development
@@ -73,6 +74,7 @@ ADMIN_BOOTSTRAP_USERNAME=
 ADMIN_BOOTSTRAP_PASSWORD=
 STAGING_AUTH_USERNAME=
 STAGING_AUTH_PASSWORD=
+STAGING_LIVE_INTEGRATIONS=false
 ```
 
 `DATABASE_URL` è facoltativa: senza questa variabile viene utilizzato `appuntamenti.db`. Gli URL `postgres://` e `postgresql://` vengono normalizzati per il driver `psycopg`.
@@ -173,6 +175,10 @@ I fogli di stile sono separati per responsabilità: `tokens.css`, `base.css` e `
 ## Area amministrativa
 
 Il login locale è disponibile su `http://127.0.0.1:5000/admin/login`.
+
+L’area apre sull’agenda giornaliera e comprende viste settimanale e mensile, coda unica, richieste dedicate ad aziende e gruppi, corsi, ricerca persone, attività, errori e impostazioni operative. Le richieste organizzative possono avanzare per stato, generare la prossima attività, inviare una proposta tracciata e diventare un corso riservato.
+
+Google Calendar resta il ponte con Arzamed: prima del lancio eseguire la riconciliazione e una giornata simulata completa; non usare dati reali nei test. Le route pubbliche `/da-dove-parto` e `/aziende-e-gruppi` offrono rispettivamente orientamento locale senza persistenza e richiesta organizzativa separata dai moduli individuali.
 
 L'applicazione non crea credenziali predefinite. Per creare interattivamente il
 primo amministratore in locale:

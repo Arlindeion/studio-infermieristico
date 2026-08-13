@@ -1,12 +1,44 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 29 luglio 2026.
+Ultimo aggiornamento: 4 agosto 2026.
+
+> Aggiornamento 13 agosto 2026: TikTok è accantonato fino a data da destinarsi. Le specifiche e le consegne TikTok presenti qui restano materiale storico o riutilizzabile, non un impegno corrente né un gate di lancio.
 
 ## Scopo
 
 Questo documento registra testi, immagini e materiali disponibili. Non sostituisce i template: serve a distinguere ciò che è approvato, provvisorio o ancora da selezionare.
 
 ## Messaggi approvati
+
+### Sistema generale per il creator
+
+- Il sistema permanente per produzione, approvazione, consegna e misurazione è in [`reels-creator-system/README.md`](reels-creator-system/README.md).
+- Ogni nuova settimana ha una cartella datata costruita dal template generale. Il pacchetto settimanale contiene soltanto temi, script, CTA, calendario e varianti specifiche.
+- Un contenuto passa a `Pronto` solo dopo l'approvazione di Selene, la verifica delle fonti richieste e la consegna dei file previsti.
+
+### Pacchetto editoriale 3-9 agosto 2026
+
+- Il pacchetto pronto per il creator è in [`reels-2026-08-03/README.md`](reels-2026-08-03/README.md).
+- Gli script approvati coprono risvegli frequenti, tre errori sulla disostruzione pediatrica e un caso pratico sui confini professionali.
+- Instagram usa CTA verso i box nelle Stories; TikTok usa CTA verso i commenti e non cita le Stories.
+- Tutte le versioni hanno sottotitoli completi. Copertine e titoli a schermo non sostituiscono i sottotitoli.
+- Il Reel Instagram sui risvegli del 3 agosto è `Pubblicato`, come confermato dall'attività. Il file consegnato è `2026-08-03_sonno_reel_instagram_9x16.mp4`; la copertina è disponibile. URL e orario effettivo restano da annotare nel registro di misurazione.
+- La variante TikTok sui risvegli risultava `Programmato` il 4 agosto; l'esito non è documentato e va verificato prima di indicarla come pubblicata.
+- Per la disostruzione sono disponibili due girati originali; esportazioni finali, copertina e master pulito non risultano ancora presenti nell'inventario controllato.
+- Per il contenuto sui confini professionali non risultano ancora presenti carosello, girato o esportazioni finali nell'inventario controllato.
+- Il master pulito del Reel sul sonno senza CTA, musica o watermark non risulta presente e resta necessario prima di un eventuale adattamento pubblicitario.
+
+### Inventario social esterno verificato il 4 agosto 2026
+
+| Materiale | Stato | Nota operativa |
+|---|---|---|
+| `SITO/REELS/0308_SONNO/1_SONNO.MOV`, `2_SONNO.MOV`, `3_SONNO.MOV` | Disponibile | Girati originali del contenuto sui risvegli |
+| `SITO/REELS/0308_SONNO/DA CARICARE/2026-08-03_sonno_reel_instagram_9x16.mp4` | Pubblicato | Nome storico della prima consegna; non rinominare dopo la pubblicazione |
+| `SITO/REELS/0308_SONNO/DA CARICARE/COPERTINA_SONNO.png` e `Quanti risvegli sono troppi.png` | Disponibile | Copertine verticali 1080×1920; verificare il ritaglio nella griglia Instagram |
+| `SITO/REELS/0308_SONNO/TikTok/Tik1 _sonno.MOV`, `Tik2_sonno.MOV` | Disponibile | Materiali TikTok; la versione risultava programmata il 4 agosto, ma esito e file finale canonico non sono documentati |
+| `SITO/REELS/03_08_DIS/1_DIS.MOV`, `2_DIS.MOV` | Disponibile | Girati originali sulla disostruzione |
+| Master puliti sonno e disostruzione | Mancante | Necessari solo per riuso e valutazione pubblicitaria; non autorizzano la sponsorizzazione |
+| Esportazioni finali disostruzione, carosello confini e video confini | Non individuati | Cercare o produrre prima dei rispettivi slot di pubblicazione |
 
 ### Revisione editoriale del 29 luglio 2026
 
@@ -156,7 +188,7 @@ I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_op
 - Prime testimonianze specifiche della consulenza del sonno, oggi non disponibili.
 - Fotografia o composizione Open Graph definitiva.
 - Informazioni complete e fonti per eventuali contenuti sanitari approfonditi.
-- Riprese, montaggio e copertine del set iniziale di annunci e contenuti social.
+- Master puliti del set iniziale e materiali finali ancora non individuati per disostruzione e confini professionali.
 - Testo e procedura di consenso per le testimonianze future.
 
 ## Criteri di selezione

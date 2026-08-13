@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block titolo %}Corsi per aziende e gruppi · S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Richiedi un corso riservato per azienda, associazione, scuola o gruppo: lo studio valuta obiettivo, partecipanti, sede e periodo prima della proposta.{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna company-request-page">
+    <div class="orientation-heading">
+        <p class="eyebrow">Formazione riservata</p>
+        <h1>Un corso costruito attorno al vostro gruppo.</h1>
+        <p class="sottotitolo">Raccogliamo qui le informazioni organizzative essenziali. Prima di confermare data, disponibilità e condizioni, verificheremo insieme obiettivo, partecipanti, sede e periodo.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="orientation-alerts" role="alert">
+            {% for category, message in messages %}<p class="nota nota-lg">{{ message }}</p>{% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="company-request-layout">
+        <aside class="company-request-steps" aria-label="Come funziona">
+            <p class="eyebrow">Tre passaggi</p>
+            <ol>
+                <li><span>01</span><div><strong>Raccolta</strong><p>Ci indicate contesto e dimensione del gruppo.</p></div></li>
+                <li><span>02</span><div><strong>Confronto</strong><p>Lo studio approfondisce esigenze, sede e calendario.</p></div></li>
+                <li><span>03</span><div><strong>Proposta</strong><p>Ricevete una proposta specifica da valutare.</p></div></li>
+            </ol>
+            <p class="company-request-note">Il modulo non è una prenotazione e non conferma un preventivo. La richiesta viene presa in carico entro il prossimo giorno lavorativo.</p>
+        </aside>
+
+        <form class="orientation-form company-request-form" method="post" action="{{ url_for('richiesta_azienda') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <fieldset>
+                <legend>Organizzazione e referente</legend>
+                <label>Nome dell’azienda o del gruppo
+                    <input name="organizzazione" maxlength="160" value="{{ form_data.get('organizzazione', '') }}" autocomplete="organization" required>
+                </label>
+                <div class="orientation-form-grid">
+                    <label>Nome del referente
+                        <input name="referente" maxlength="100" value="{{ form_data.get('referente', '') }}" autocomplete="name" required>
+                    </label>
+                    <label>Tipo di organizzazione
+                        <select name="tipo_organizzazione" required>
+                            <option value="">Seleziona</option>
+                            {% for tipo in tipi_organizzazione %}<option {% if form_data.get('tipo_organizzazione') == tipo %}selected{% endif %}>{{ tipo }}</option>{% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <div class="orientation-form-grid">
+                    <label>Telefono
+                        <input name="telefono" inputmode="tel" value="{{ form_data.get('telefono', '') }}" autocomplete="tel" required>
+                    </label>
+                    <label>Email
+                        <input name="email" type="email" maxlength="100" value="{{ form_data.get('email', '') }}" autocomplete="email" required>
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Corso e organizzazione</legend>
+                <label>Formazione da valutare
+                    <select name="corso_tipo" required>
+                        <option value="">Seleziona</option>
+                        {% for valore, etichetta in corsi_azienda.items() %}<option value="{{ valore }}" {% if form_data.get('corso_tipo') == valore %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}
+                    </select>
+                </label>
+                <div class="orientation-form-grid">
+                    <label>Partecipanti stimati <small>Facoltativo</small>
+                        <input name="partecipanti_stimati" type="number" min="2" max="500" value="{{ form_data.get('partecipanti_stimati', '') }}">
+                    </label>
+                    <label>Sede preferita
+                        <select name="sede_preferita" required>
+                            <option value="">Seleziona</option>
+                            {% for sede in sedi_azienda %}<option {% if form_data.get('sede_preferita') == sede %}selected{% endif %}>{{ sede }}</option>{% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <label>Periodo indicativo <small>Facoltativo</small>
+                    <input name="periodo_preferito" maxlength="160" value="{{ form_data.get('periodo_preferito', '') }}" placeholder="Per esempio: seconda metà di ottobre">
+                </label>
+                <label>Contesto o necessità organizzative <small>Facoltativo, non inserire dati sanitari personali</small>
+                    <textarea name="note" rows="5" maxlength="2000">{{ form_data.get('note', '') }}</textarea>
+                </label>
+            </fieldset>
+
+            <label class="orientation-consent"><input type="checkbox" name="consenso_privacy" required {% if form_data.get('consenso_privacy') %}checked{% endif %}> <span>Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank">informativa privacy</a> e autorizzo il trattamento dei dati per gestire la richiesta.</span></label>
+            <button class="btn" type="submit">Invia la richiesta organizzativa</button>
+            <p class="orientation-secondary-contact">Preferisci anticipare il contesto a voce? <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20valutare%20un%20corso%20per%20un%27azienda%20o%20un%20gruppo." target="_blank" rel="noopener noreferrer">Scrivi su WhatsApp</a>.</p>
+        </form>
+    </div>
+</section>
+{% endblock %}

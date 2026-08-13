@@ -1,6 +1,6 @@
 # Operatività tecnica
 
-Ultimo aggiornamento: 29 luglio 2026.
+Revisione documentale: 13 agosto 2026. Le ultime evidenze esterne registrate in questo documento risalgono al 30 luglio 2026 e non dimostrano da sole lo stato corrente dei pannelli.
 
 ## Architettura
 
@@ -12,10 +12,11 @@ Ultimo aggiornamento: 29 luglio 2026.
 - Flask-Mail per le notifiche.
 - Flask-Limiter per i limiti di richiesta.
 - Flask-Talisman per gli header di sicurezza.
-- APScheduler per i promemoria.
+- APScheduler per promemoria, scadenze e riconciliazione oraria.
 - Google Calendar come collante con Arzamed.
 
 Non introdurre framework frontend, SQL grezzo o dipendenze non necessarie.
+- Richieste organizzative in `richiesta_azienda`, separate da appuntamenti e iscrizioni individuali.
 
 Il redesign corrente resta interamente nel rendering Flask/Jinja e negli asset
 CSS e JavaScript statici. Snap della homepage, movimento delle pagine interne,
@@ -38,7 +39,7 @@ comunque la pagina normalmente.
 | Ambiente | Applicazione | Database | Indirizzo | Accesso |
 |---|---|---|---|---|
 | Staging iniziale | Render Web Service Free, Francoforte | Render PostgreSQL Free, Francoforte | sottodominio `onrender.com` | Basic Auth applicativa e `noindex` globale |
-| Produzione | Render Web Service Starter o superiore, Francoforte | Render PostgreSQL Basic-256mb o superiore, Francoforte | dominio definitivo definito in D-027 | pubblico dopo il gate pre-lancio |
+| Produzione | Render Web Service Starter o superiore, Francoforte | Render PostgreSQL Basic-256mb o superiore, Francoforte | `scstudioinfermieristico.it` | pubblico dopo il gate pre-lancio |
 
 Staging e produzione usano risorse separate. Il database gratuito non viene
 promosso, copiato o collegato alla produzione: il database pagato nasce vuoto e
@@ -311,14 +312,18 @@ contenuto dei questionari o dati identificativi nei log.
 - `IncontroAccompagnamento`: incontro di una specifica edizione.
 - `PresenzaAccompagnamento`: registro presenze.
 - `RegistroEvento`: log di email, sincronizzazioni ed errori parziali.
+- `AttivitaAdmin`, `NotaAdmin`: prossime azioni e note cronologiche.
+- `EmailOperativa`: copia esatta di destinatario, oggetto, corpo ed esito per 24 mesi.
+- `PropostaSlot`, `BloccoAgenda`: proposte accettabili e pause/chiusure sincronizzate.
+- `RegistroModifica`, `CollegamentoPersona`: audit amministrativo e collegamenti manuali tra pratiche.
 
 Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.md`.
 
 ## Stati
 
-- Appuntamenti: `In attesa`, `Confermato`, `Annullato`.
+- Appuntamenti: `In attesa`, `Confermato`, `Concluso`, `Assente`, `Annullato`.
 - Call sonno: `In attesa`, `Confermata`, `Annullata`, `Conclusa`.
-- Iscrizioni corso: `Nuova`, `Contattato`, `Confermato`, `Annullato`.
+- Iscrizioni corso: `Nuova`, `Contattato`, `Confermato`, `Lista attesa`, `Invitato`, `Annullato`.
 - Corsi: `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 - Percorsi nascita: `Bozza`, `Aperto`, `Chiuso`, `Concluso`.
 
@@ -346,6 +351,8 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
   ma non elimina la richiesta: l'admin riceve un avviso e può modificarla. Un
   errore secondario durante la successiva scrittura Calendar non annulla invece
   la conferma già salvata.
+- Ogni ora la riconciliazione confronta titolo, inizio e fine degli eventi collegati. Una modifica o eliminazione esterna imposta uno stato di anomalia e non cambia automaticamente il database. Il confronto esatto è visibile nella scheda; la riscrittura esplicita usa i dati locali.
+- Gli eventi non creati dal sito vengono mostrati in agenda con titolo e orario, senza importarli né attribuirli automaticamente ad Arzamed. Non esiste un identificativo Arzamed nel database finché non sarà disponibile un’integrazione diretta stabile.
 
 ## Errori parziali
 
@@ -366,6 +373,7 @@ Dopo il salvataggio, gli errori secondari devono essere registrati in `RegistroE
 - Nessun dato personale nei log oltre ciò che è realmente necessario.
 - Confermare che la CSP autorizzi soltanto origini indispensabili.
 - Proteggere route private e admin con autenticazione e controllo degli identificativi.
+- Il lancio usa un solo account, senza ruoli o assegnazioni. La sessione permanente scade dopo 60 minuti di inattività e il login conserva il limite di cinque tentativi al minuto.
 
 ### Credenziale admin iniziale
 
@@ -379,10 +387,10 @@ successivi non ne dipendono.
 
 ## Database e migrazioni
 
-La baseline Alembic `56dda7f5137f` crea l'intero schema; la revisione corrente è
-`4d8b2c7a91e6`: le revisioni successive aggiungono qualificazione, UTM e stato
-dei promemoria email alla call sonno, rimuovono i campi del precedente
-promemoria WhatsApp e aggiungono la durata effettiva agli appuntamenti. Un nuovo
+La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente è
+`d91e6b4f2a30`. Le revisioni aggiungono qualificazione, UTM e stato dei
+promemoria email alla call sonno, rimuovono i campi del precedente promemoria
+WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin e normalizzano le difformità dei database SQLite legacy. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:
 
 ```bash
@@ -426,6 +434,12 @@ Non eseguire migrazioni una tantum alla cieca su dati reali. Fare prima un backu
 mancanti, conserva le righe presenti e non attribuisce retroattivamente il
 consenso privacy, che resta falso se non era stato registrato.
 
+
+Se un database legacy possiede già le tabelle ma `alembic_version` è vuota,
+identificare prima la revisione realmente rappresentata dallo schema, crearne
+una copia e usare `stamp <revisione>` prima di `upgrade`. Non usare `stamp
+head` per aggirare colonne mancanti: registra uno stato falso e non le crea.
+
 La baseline è stata verificata generando anche SQL PostgreSQL e con prove
 automatiche di upgrade ripetuto su database vuoto e adozione di uno schema
 rappresentativo popolato. Non usare `db.create_all()` per database operativi.
@@ -439,8 +453,9 @@ rappresentativo popolato. Non usare `db.create_all()` per database operativi.
 3. **Export Render manuale:** creare un export dalla sezione Recovery prima di migrazioni rischiose o interventi straordinari; Render conserva questi export per 7 giorni, quindi scaricarli se devono durare più a lungo.
 
 Il database gratuito è ammesso soltanto nello staging con dati fittizi: scade
-dopo 30 giorni e non offre PITR o export gestiti. Prima dell'apertura pubblica
-va aggiornato al piano pagato.
+dopo 30 giorni e non offre PITR o export gestiti. Non viene aggiornato né
+promosso a produzione: prima dell'apertura pubblica si crea il PostgreSQL
+pagato, nuovo e vuoto, previsto da D-061 e `render.production.yaml`.
 
 ### Obiettivi e conservazione
 
@@ -545,11 +560,27 @@ Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e cont
 - Email reali testate con mittente corretto.
 - Promemoria email delle call collaudati a 24h e 2h, inclusa la prevenzione dei duplicati.
 - Lettura e scrittura Calendar testate con permessi minimi.
+- Riconciliazione Calendar testata su modifica e cancellazione originate da Arzamed, più scrittura forzata dopo confronto.
+- Giornata amministrativa simulata completata su desktop e mobile: richieste, urgenze, appuntamenti, corsi, lista d’attesa, attività ed errori.
 - GA4 caricato solo dopo consenso.
 - Privacy, cookie e policy operative validate.
 - Log controllati e privi di dati personali superflui.
 - Nome del logo normalizzato in `static/img/logo.png` e coerente con i riferimenti applicativi sui filesystem Linux case-sensitive.
 - Controllo visivo desktop/mobile completato.
+
+## Vista mensile e richieste organizzative
+
+Dal 13 agosto 2026 il codice locale include:
+
+- vista mensile dell’agenda, con massimo tre impegni sintetici per giorno e accesso alla vista giornaliera per il dettaglio;
+- modulo pubblico `/aziende-e-gruppi`, limitato a cinque invii al minuto e protetto da CSRF;
+- conferma al referente e avviso allo studio tramite la stessa infrastruttura SMTP tracciata;
+- attività automatica alla ricezione e sostituzione della prossima attività quando cambia lo stato;
+- proposta manuale inviata soltanto dopo conferma esplicita dell’operatore, con copia conservata nel registro email;
+- conversione in corso privato con stato `Chiuso`, visibile in agenda e sincronizzato su Calendar ma escluso dalle date pubbliche;
+- quiz `/da-dove-parto` eseguito solo nel browser, senza richieste di rete o persistenza delle risposte.
+
+La tabella è introdotta dalla revisione Alembic `c84f2d1a9e70`, successiva a `a13d8f7c2b40`. Prima di distribuire il codice eseguire `flask db upgrade` su una copia o su un database vuoto, quindi `flask db check`. Il collaudo con SMTP, Google Calendar e gli eventi provenienti da Arzamed resta un gate esterno separato: i test locali non provano lo stato live.
 
 ## Dati esclusi dalla documentazione
 

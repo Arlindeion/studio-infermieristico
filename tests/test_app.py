@@ -406,7 +406,7 @@ def test_call_sonno_dura_20_minuti_e_blocca_30_minuti_in_agenda(app):
 
 def test_call_sonno_prenotabile_anche_il_sabato(app):
     giorno = app_module.prima_data_call_disponibile()
-    while giorno.weekday() != 5:
+    while giorno.weekday() != 5 or app_module.is_festivo(giorno):
         giorno += app_module.timedelta(days=1)
 
     assert app_module.orario_call_prenotabile(giorno.isoformat(), '09:00') is True
@@ -1527,7 +1527,7 @@ def test_iscrizione_coppia_occupa_due_posti(client):
         assert iscrizione.posti == 2
 
 
-def test_data_piena_scompare_e_viene_proposta_quella_successiva(client):
+def test_data_piena_resta_selezionabile_come_lista_attesa(client):
     data_piena_id = _crea_data_corso(
         'disostruzione-pediatrica',
         'Prima data',
@@ -1561,7 +1561,8 @@ def test_data_piena_scompare_e_viene_proposta_quella_successiva(client):
     resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
 
     assert resp.status_code == 200
-    assert f'value="{data_piena_id}"' not in resp.text
+    assert f'value="{data_piena_id}"' in resp.text
+    assert 'lista d’attesa' in resp.text
     assert f'value="{data_successiva_id}"' in resp.text
     with flask_app.app_context():
         panoramica = app_module._panoramica_corsi(
@@ -1652,7 +1653,7 @@ def test_annullamento_riapre_automaticamente_la_data(client):
     assert f'value="{data_corso_id}"' in resp.text
 
 
-def test_data_piena_senza_successiva_diventa_ricontatto(client):
+def test_data_piena_senza_successiva_crea_lista_attesa(client):
     data_corso_id = _crea_data_corso(
         'disostruzione-pediatrica',
         'Disostruzione pediatrica',
@@ -1683,6 +1684,7 @@ def test_data_piena_senza_successiva_diventa_ricontatto(client):
         'telefono': '3337654321',
         'email': 'luisa@example.com',
         'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
         'scopo_informativo': 'on',
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
@@ -1692,10 +1694,11 @@ def test_data_piena_senza_successiva_diventa_ricontatto(client):
 
     assert resp.status_code == 302
     with flask_app.app_context():
-        ricontatto = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
-        assert ricontatto.corso_id is None
-        assert ricontatto.tipo_richiesta == 'ricontatto'
-        assert ricontatto.posti == 0
+        iscrizione = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
+        assert iscrizione.corso_id == int(data_corso_id)
+        assert iscrizione.stato == 'Lista attesa'
+        assert iscrizione.posti == 0
+        assert iscrizione.posti_richiesti == 1
 
 
 def test_admin_mostra_panoramica_iscritti_per_corso(client):
@@ -1940,10 +1943,10 @@ def calendario_finto(app):
             'end': {'dateTime': '2026-08-03T16:00:00+02:00'},
             'recurringEventId': 'chiusura-ricorrente',
         }],
-        '2026-08-11': [{
+        '2099-08-11': [{
             'id': 'appuntamento-arzamed-1',
-            'start': {'dateTime': '2026-08-11T10:00:00+02:00'},
-            'end': {'dateTime': '2026-08-11T11:00:00+02:00'},
+            'start': {'dateTime': '2099-08-11T10:00:00+02:00'},
+            'end': {'dateTime': '2099-08-11T11:00:00+02:00'},
         }],
         '2026-08-17': [{
             'id': 'chiusura-ricorrente-20260817',
@@ -1977,11 +1980,11 @@ def calendario_finto(app):
 
 def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
     intervalli = [(
-        datetime.fromisoformat('2026-08-11T10:00:00+02:00'),
-        datetime.fromisoformat('2026-08-11T11:00:00+02:00'),
+        datetime.fromisoformat('2099-08-11T10:00:00+02:00'),
+        datetime.fromisoformat('2099-08-11T11:00:00+02:00'),
         'evento-cache',
     )]
-    app_module._cache_calendario['per_data']['2026-08-11'] = {
+    app_module._cache_calendario['per_data']['2099-08-11'] = {
         'intervalli': intervalli,
         'scaricato_il': 0,
     }
@@ -1993,7 +1996,7 @@ def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
     monkeypatch.setattr(app_module, '_servizio_calendario_cache', mock_servizio)
 
     with app.app_context():
-        risultato = app_module._scarica_intervalli_calendario('2026-08-11')
+        risultato = app_module._scarica_intervalli_calendario('2099-08-11')
         eventi = RegistroEvento.query.filter_by(
             categoria='google_calendar',
             esito='errore',
@@ -2009,7 +2012,7 @@ def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
 
 def test_calendario_google_blocca_appuntamento_singolo(calendario_finto):
     """Un appuntamento Arzamed (10:00-11:00) deve bloccare gli slot 10:00 e 10:30."""
-    occupati = app_module.orari_occupati_da_calendario('2026-08-11')
+    occupati = app_module.orari_occupati_da_calendario('2099-08-11')
     assert occupati == {'10:00', '10:30'}
 
 
@@ -2099,12 +2102,12 @@ def test_endpoint_orari_occupati_unisce_db_e_calendario(client, calendario_finto
     with flask_app.app_context():
         appt = Appuntamento(
             nome='Prenotazione dal sito', telefono='333', email='sito@example.com',
-            servizio='Test', data='2026-08-11', ora='16:00', stato='Confermato'
+            servizio='Test', data='2099-08-11', ora='16:00', stato='Confermato'
         )
         db.session.add(appt)
         db.session.commit()
 
-    resp = client.get('/api/orari-occupati/2026-08-11')
+    resp = client.get('/api/orari-occupati/2099-08-11')
     orari = set(resp.get_json())
     # 10:00/10:30 vengono da Arzamed (calendario), 16:00 dalla prenotazione sul sito
     assert orari == {'10:00', '10:30', '16:00'}
@@ -2119,7 +2122,7 @@ def test_prenotazione_rifiutata_se_occupata_su_calendario(client, calendario_fin
 
     resp = client.post('/prenota', data={
         'nome': 'Mario Rossi', 'telefono': '333 1234567', 'email': 'mario@example.com',
-        'servizio': 'Medicazione semplice', 'data': '2026-08-11', 'ora': '10:00',
+        'servizio': 'Medicazione semplice', 'data': '2099-08-11', 'ora': '10:00',
         'consenso_privacy': 'on', '_csrf_token': token
     })
     assert 'non è più disponibile' in resp.text
@@ -2966,8 +2969,8 @@ def test_aggiunta_corso_usa_durata_modificata_su_calendario(client, google_calen
         assert corso.durata_ore == 4
 
 
-def test_eliminazione_corso_elimina_evento_su_calendario(client, google_calendar_scrittura_finto):
-    """Eliminare un corso in admin deve cancellare l'evento Google Calendar collegato."""
+def test_archiviazione_corso_elimina_evento_ma_conserva_storico(client, google_calendar_scrittura_finto):
+    """Archiviare un corso cancella l'evento ma conserva la pratica."""
     mock_servizio = google_calendar_scrittura_finto
 
     with flask_app.app_context():
@@ -2993,7 +2996,10 @@ def test_eliminazione_corso_elimina_evento_su_calendario(client, google_calendar
         eventId='evento-corso-da-eliminare',
     )
     with flask_app.app_context():
-        assert db.session.get(Corso, corso_id) is None
+        corso = db.session.get(Corso, corso_id)
+        assert corso is not None
+        assert corso.archiviato_il is not None
+        assert corso.stato == 'Annullato'
 
 
 def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scrittura_finto):
@@ -3024,6 +3030,132 @@ def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scri
         assert aggiornato.ora == '10:00'
 
 
+# ─── Regia operativa area admin ───
+
+def test_admin_espone_le_sezioni_operative_richieste(client):
+    _login_admin(client)
+
+    resp = client.get('/admin')
+
+    assert resp.status_code == 200
+    for etichetta in ['Agenda', 'Richieste', 'Corsi', 'Persone', 'Attività', 'Errori', 'Impostazioni']:
+        assert f'<span>{etichetta}</span>' in resp.text
+    assert 'Nuove richieste in attesa' in resp.text
+    assert 'Riconciliazione automatica: ogni ora.' in resp.text
+
+
+def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
+    csrf = _login_admin(client)
+
+    resp = client.post('/admin/appuntamento/aggiungi', data={
+        '_csrf_token': csrf,
+        'nome': 'Mario Rossi',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'servizio': 'Medicazione semplice',
+        'data': '2099-09-01',
+        'ora': '10:00',
+        'duration_minutes': '45',
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        appuntamento = Appuntamento.query.one()
+        assert appuntamento.stato == 'In attesa'
+        assert appuntamento.creato_da_admin is True
+        assert appuntamento.duration_minutes == 45
+        assert appuntamento.scadenza_gestione is not None
+
+
+def test_limite_online_accetta_coppia_a_tredici_ma_non_prenota_da_quattordici(app):
+    with flask_app.app_context():
+        corso = Corso(titolo='Disostruzione', tipo='disostruzione-pediatrica', data='2099-09-01', capienza_massima=14)
+        db.session.add(corso)
+        db.session.flush()
+        db.session.add(IscrizioneCorso(
+            corso_id=corso.id, corso_tipo=corso.tipo, corso_titolo=corso.titolo,
+            nome='Gruppo esistente', telefono='3331234567', email='', codice_fiscale='',
+            posti=13, posti_richiesti=13, consenso_privacy=True, stato='Nuova',
+        ))
+        db.session.commit()
+
+        assert app_module._corso_accetta_prenotazione_online(corso, 2) is True
+        assert app_module._corso_accetta_prenotazione_online(corso, 1) is True
+        db.session.add(IscrizioneCorso(
+            corso_id=corso.id, corso_tipo=corso.tipo, corso_titolo=corso.titolo,
+            nome='Quattordicesima persona', telefono='3337654321', email='', codice_fiscale='',
+            posti=1, posti_richiesti=1, consenso_privacy=True, stato='Nuova',
+        ))
+        db.session.commit()
+
+        assert app_module._corso_accetta_prenotazione_online(corso, 1) is False
+        assert app_module._corso_accetta_prenotazione_online(corso, 2) is False
+
+
+def test_admin_supera_limite_online_solo_con_conferma_e_motivo(client):
+    with flask_app.app_context():
+        corso = Corso(titolo='Corso pieno', tipo='bls-d', data='2099-09-01', capienza_massima=1)
+        db.session.add(corso)
+        db.session.flush()
+        db.session.add(IscrizioneCorso(
+            corso_id=corso.id, corso_tipo=corso.tipo, corso_titolo=corso.titolo,
+            nome='Coppia esistente', telefono='3331234567', email='', codice_fiscale='',
+            posti=2, posti_richiesti=2, consenso_privacy=True, stato='Confermato',
+        ))
+        db.session.commit()
+        corso_id = corso.id
+    csrf = _login_admin(client)
+    dati = {
+        '_csrf_token': csrf, 'corso_id': str(corso_id), 'nome': 'Persona extra',
+        'telefono': '3337654321', 'email': 'extra@example.com', 'posti': '1',
+        'partecipazione': 'Singolo', 'tipo_richiesta': 'iscrizione_effettiva', 'stato': 'Confermato',
+    }
+
+    client.post('/admin/iscrizione-corso/aggiungi', data=dati)
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.filter_by(nome='Persona extra').count() == 0
+
+    csrf = _csrf_admin(client)
+    dati.update({
+        '_csrf_token': csrf,
+        'conferma_superamento_capienza': '1',
+        'superamento_capienza_motivo': 'Partecipante aggiunto direttamente dallo studio',
+    })
+    client.post('/admin/iscrizione-corso/aggiungi', data=dati)
+    with flask_app.app_context():
+        extra = IscrizioneCorso.query.filter_by(nome='Persona extra').one()
+        assert 'direttamente' in extra.superamento_capienza_motivo
+
+
+def test_riconciliazione_segnala_modifica_esterna_senza_cambiare_appuntamento(
+    app,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi', telefono='3331234567', email='mario@example.com',
+            servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', google_event_id='evento-esterno',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+    mock_servizio.events.return_value.get.return_value.execute.return_value = {
+        'id': 'evento-esterno',
+        'summary': 'Titolo modificato fuori dal sito',
+        'start': {'dateTime': '2099-09-01T10:00:00+02:00'},
+        'end': {'dateTime': '2099-09-01T10:30:00+02:00'},
+    }
+
+    with flask_app.app_context():
+        risultato = app_module.riconcilia_calendario()
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        assert risultato['difformi'] == 1
+        assert appuntamento.sincronizzazione == 'difforme'
+        assert appuntamento.servizio == 'Medicazione semplice'
+        assert 'Titolo modificato' in appuntamento.difformita_calendario
+        assert RegistroEvento.query.filter_by(categoria='riconciliazione_calendar').count() == 1
 def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
     """Spostare un appuntamento su uno slot già preso non deve sovrascrivere l'agenda."""
     mock_servizio = google_calendar_scrittura_finto
@@ -3203,6 +3335,207 @@ def test_homepage_non_forza_il_layout_del_widget_instagram():
     assert 'transform:' not in regola_widget.group(1)
     assert 'width:' not in regola_widget.group(1)
     assert 'height:' not in regola_widget.group(1)
+
+def _csrf_richiesta_azienda(client):
+    response = client.get('/aziende-e-gruppi')
+    assert response.status_code == 200
+    return re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+
+
+def test_quiz_da_dove_parto_orienta_senza_raccogliere_dati(client):
+    response = client.get('/da-dove-parto')
+
+    assert response.status_code == 200
+    assert response.text.count('<h1') == 1
+    assert 'Da dove parto?' in response.text
+    assert 'non vengono salvate né inviate' in response.text
+    assert 'data-orientation-quiz' in response.text
+    assert '/aziende-e-gruppi' in response.text
+    assert 'js/da-dove-parto.js' in response.text
+    assert '<form' not in response.text
+
+
+def test_richiesta_azienda_crea_coda_attivita_ed_email_tracciata(client):
+    token = _csrf_richiesta_azienda(client)
+
+    with patch.object(app_module.mail, 'send') as send_mock:
+        response = client.post('/aziende-e-gruppi', data={
+            '_csrf_token': token,
+            'organizzazione': 'Scuola Test',
+            'referente': 'Ada Referente',
+            'telefono': '333 1234567',
+            'email': 'ada@example.com',
+            'tipo_organizzazione': 'Scuola o servizio educativo',
+            'corso_tipo': 'disostruzione-pediatrica',
+            'partecipanti_stimati': '24',
+            'sede_preferita': 'Presso l’organizzazione',
+            'periodo_preferito': 'Ottobre 2099',
+            'note': 'Turni da concordare.',
+            'consenso_privacy': 'on',
+        })
+
+    assert response.status_code == 302
+    assert response.headers['Location'] == '/aziende-e-gruppi/conferma'
+    assert send_mock.call_count >= 1
+    with flask_app.app_context():
+        richiesta = app_module.RichiestaAzienda.query.one()
+        assert richiesta.organizzazione == 'Scuola Test'
+        assert richiesta.stato == 'Nuova'
+        assert richiesta.partecipanti_stimati == 24
+        attivita = app_module.AttivitaAdmin.query.filter_by(
+            entita_tipo='RichiestaAzienda',
+            entita_id=richiesta.id,
+            stato='Aperta',
+        ).one()
+        assert 'Qualificare richiesta' in attivita.titolo
+        email = app_module.EmailOperativa.query.filter_by(
+            entita_tipo='RichiestaAzienda',
+            entita_id=richiesta.id,
+        ).first()
+        assert email is not None
+        assert email.destinatario == 'ada@example.com'
+
+
+def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
+    with flask_app.app_context():
+        db.session.add(Corso(
+            titolo='Corso mensile test',
+            tipo='bls-d',
+            data='2099-08-18',
+            ora='09:30',
+            durata_ore=5,
+            capienza_massima=14,
+            stato='Aperto',
+        ))
+        db.session.add(Appuntamento(
+            nome='Ada Calendario',
+            telefono='3331234567',
+            email='ada@example.com',
+            servizio='Medicazione complessa',
+            data='2099-08-19',
+            ora='10:00',
+            duration_minutes=45,
+            note='Portare la documentazione della medicazione precedente.',
+            stato='Confermato',
+        ))
+        db.session.commit()
+    _login_admin(client)
+
+    with patch.object(app_module, '_eventi_calendar_esterni', return_value=[]):
+        response = client.get('/admin?vista=mese&mese=2099-08')
+
+    assert response.status_code == 200
+    assert 'agosto 2099' in response.text.lower()
+    assert '<table class="admin-month">' in response.text
+    assert response.text.count('class="admin-month-day') == 42
+    assert response.text.count('<th scope="col">') == 7
+    assert 'name="mese" value="2099-08"' in response.text
+    assert 'Mese precedente' in response.text
+    assert 'Mese successivo' in response.text
+    assert '>Oggi</a>' in response.text
+    assert 'Corso mensile test' in response.text
+    assert 'data-calendar-preview' in response.text
+    assert 'admin-month-preview-template' in response.text
+    assert '<dt>Prestazione</dt><dd>Medicazione complessa</dd>' in response.text
+    assert '<dt>Telefono</dt><dd>3331234567</dd>' in response.text
+    assert 'Portare la documentazione della medicazione precedente.' in response.text
+    assert '19/08/2099 · 10:00–10:45' in response.text
+    assert '<dt>Sincronizzazione</dt>' in response.text
+    assert 'Clicca sull’evento per aprire la scheda' in response.text
+    assert 'vista=mese' in response.text
+    assert 'data=2099-07-01' in response.text
+    assert 'data=2099-09-01' in response.text
+    assert 'Nuovo appuntamento' not in response.text
+
+
+def test_stato_azienda_sostituisce_automaticamente_la_prossima_attivita(client):
+    with flask_app.app_context():
+        richiesta = app_module.RichiestaAzienda(
+            organizzazione='Azienda Test',
+            referente='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            tipo_organizzazione='Azienda',
+            corso_tipo='bls-d',
+            sede_preferita='Da valutare insieme',
+            consenso_privacy=True,
+            scadenza_gestione=datetime(2099, 8, 1, 18, 0),
+        )
+        db.session.add(richiesta)
+        db.session.flush()
+        db.session.add(app_module.AttivitaAdmin(
+            titolo='Qualificare richiesta · Azienda Test',
+            scadenza=datetime(2099, 8, 1, 18, 0),
+            entita_tipo='RichiestaAzienda',
+            entita_id=richiesta.id,
+        ))
+        db.session.commit()
+        richiesta_id = richiesta.id
+    csrf = _login_admin(client)
+
+    response = client.post(f'/admin/azienda/{richiesta_id}/stato', data={
+        '_csrf_token': csrf,
+        'stato': 'Qualificata',
+        'scadenza': '2099-08-03T18:00',
+    })
+
+    assert response.status_code == 302
+    dettaglio = client.get(response.headers['Location'])
+    assert dettaglio.status_code == 200
+    assert 'Invia la proposta' in dettaglio.text
+    assert 'Crea il corso riservato' in dettaglio.text
+    with flask_app.app_context():
+        richiesta = db.session.get(app_module.RichiestaAzienda, richiesta_id)
+        assert richiesta.stato == 'Qualificata'
+        aperte = app_module.AttivitaAdmin.query.filter_by(
+            entita_tipo='RichiestaAzienda',
+            entita_id=richiesta_id,
+            stato='Aperta',
+        ).all()
+        assert len(aperte) == 1
+        assert aperte[0].titolo == 'Preparare proposta · Azienda Test'
+
+
+def test_admin_converte_richiesta_azienda_in_corso_privato_non_pubblico(client):
+    with flask_app.app_context():
+        richiesta = app_module.RichiestaAzienda(
+            organizzazione='Gruppo Riservato',
+            referente='Lia Bianchi',
+            telefono='3331234567',
+            email='lia@example.com',
+            tipo_organizzazione='Gruppo privato',
+            corso_tipo='bls-d',
+            partecipanti_stimati=20,
+            sede_preferita='Presso l’organizzazione',
+            consenso_privacy=True,
+            stato='Qualificata',
+        )
+        db.session.add(richiesta)
+        db.session.commit()
+        richiesta_id = richiesta.id
+    csrf = _login_admin(client)
+
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_corso', return_value=True):
+        response = client.post(f'/admin/azienda/{richiesta_id}/crea-corso', data={
+            '_csrf_token': csrf,
+            'tipo': 'bls-d',
+            'titolo': 'BLSD · Gruppo Riservato',
+            'data': '2099-09-12',
+            'ora': '09:00',
+            'durata_ore': '5',
+            'capienza_massima': '20',
+            'luogo': 'Sede aziendale',
+        })
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        richiesta = db.session.get(app_module.RichiestaAzienda, richiesta_id)
+        assert richiesta.stato == 'Confermata'
+        assert richiesta.corso_generato.stato == 'Chiuso'
+        assert richiesta.corso_generato.capienza_massima == 20
+    homepage = client.get('/')
+    assert 'BLSD · Gruppo Riservato' not in homepage.text
+
 
 
 def test_homepage_usa_staffetta_scontornata_e_profondita_solo_con_movimento_attivo():

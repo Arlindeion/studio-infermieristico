@@ -55,33 +55,186 @@
         {% endif %}
     {% endwith %}
 
+    <form class="admin-global-search" method="get" action="{{ url_for('admin') }}">
+        <label class="visually-hidden" for="admin-search">Cerca per nome, telefono, email o codice fiscale</label>
+        <input id="admin-search" type="search" name="q" value="{{ ricerca }}" placeholder="Cerca nome, telefono, email o codice fiscale">
+        <button type="submit">Cerca</button>
+    </form>
+
     <div class="admin-view-switch" role="tablist" aria-label="Sezioni admin">
-        <button type="button" class="admin-view-btn attivo" data-admin-target="prenotazioni" role="tab" aria-selected="true">
-            <span>Prenotazioni sanitarie</span>
-            {% if in_attesa_count > 0 %}
-            <strong>{{ in_attesa_count }}</strong>
-            {% endif %}
-        </button>
-        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false">
-            <span>Call sonno</span>
-            {% if call_sonno_in_attesa_count > 0 %}
-            <strong>{{ call_sonno_in_attesa_count }}</strong>
-            {% endif %}
-        </button>
-        <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false">
-            <span>Corsi</span>
-            {% if iscrizioni_nuove_count > 0 %}
-            <strong>{{ iscrizioni_nuove_count }}</strong>
-            {% endif %}
-        </button>
-        <button type="button" class="admin-view-btn" data-admin-target="eventi" role="tab" aria-selected="false">
-            <span>Registro eventi</span>
-            {% if eventi_critici_count > 0 %}
-            <strong>{{ eventi_critici_count }}</strong>
-            {% endif %}
-        </button>
+        <button type="button" class="admin-view-btn attivo" data-admin-target="agenda" role="tab" aria-selected="true"><span>Agenda</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="richieste" role="tab" aria-selected="false"><span>Richieste</span>{% if richieste_nuove_count %}<strong>{{ richieste_nuove_count }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false"><span>Corsi</span>{% if iscrizioni_nuove_count %}<strong>{{ iscrizioni_nuove_count }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="aziende" role="tab" aria-selected="false"><span>Aziende e gruppi</span>{% if richieste_azienda_aperte_count %}<strong>{{ richieste_azienda_aperte_count }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="persone" role="tab" aria-selected="false"><span>Persone</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="attivita" role="tab" aria-selected="false"><span>Attività</span>{% if attivita_admin %}<strong>{{ attivita_admin|length }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="errori" role="tab" aria-selected="false"><span>Errori</span>{% if errori_aperti %}<strong>{{ errori_aperti|length }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="impostazioni" role="tab" aria-selected="false"><span>Impostazioni</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="prenotazioni" role="tab" aria-selected="false"><span>Archivio appuntamenti</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false"><span>Archivio sonno</span></button>
     </div>
 
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="agenda" id="admin-agenda">
+    <div class="admin-section-heading">
+        <div><p class="admin-eyebrow">Oggi e prossimi impegni</p><h2>Agenda operativa</h2></div>
+        <div class="admin-agenda-controls">
+            <a class="filtro-btn {% if vista_agenda == 'giorno' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='giorno') }}#admin-agenda">Giorno</a>
+            <a class="filtro-btn {% if vista_agenda == 'settimana' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='settimana') }}#admin-agenda">Settimana</a>
+            <a class="filtro-btn {% if vista_agenda == 'mese' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='mese') }}#admin-agenda">Mese</a>
+        </div>
+    </div>
+    <p class="admin-period-label">{% if vista_agenda == 'mese' %}{{ etichetta_mese|capitalize }}{% else %}{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>
+    <nav class="admin-period-navigation" aria-label="Cambia periodo dell’agenda">
+        <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_precedente.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese precedente{% else %}Periodo precedente{% endif %}">←</a>
+        {% if vista_agenda == 'mese' %}
+        <form class="admin-month-picker" method="get" action="{{ url_for('admin') }}">
+            <input type="hidden" name="vista" value="mese">
+            <label for="admin-month-input">Vai al mese</label>
+            <input id="admin-month-input" type="month" name="mese" value="{{ inizio_agenda.strftime('%Y-%m') }}" min="2020-01" max="2100-12">
+            <button type="submit">Mostra</button>
+        </form>
+        {% else %}
+        <strong>{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}</strong>
+        {% endif %}
+        <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_successiva.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese successivo{% else %}Periodo successivo{% endif %}">→</a>
+        <a class="admin-calendar-today" href="{{ url_for('admin', data=oggi_admin.isoformat(), vista=vista_agenda) }}#admin-agenda">Oggi</a>
+    </nav>
+    <div class="admin-command-strip">
+        <a href="#admin-agenda"><strong>{{ eventi_oggi_count }}</strong><span>impegni oggi</span></a>
+        <a href="#admin-richieste" data-admin-jump="richieste"><strong>{{ richieste_urgenti_count }}</strong><span>richieste urgenti</span></a>
+        <a href="#admin-corsi" data-admin-jump="corsi"><strong>{{ posti_corsi_settimana }}{% if capienza_corsi_settimana %}/{{ capienza_corsi_settimana }}{% endif %}</strong><span>posti corsi · 7 giorni</span></a>
+        <a href="#admin-call-sonno" data-admin-jump="call-sonno"><strong>{{ funnel_sonno.in_attesa }} · {{ funnel_sonno.confermate }} · {{ funnel_sonno.concluse }}</strong><span>sonno: attesa · confermate · concluse</span></a>
+    </div>
+
+    <div class="admin-agenda-layout{% if vista_agenda == 'mese' %} is-month{% endif %}">
+        <div class="admin-agenda-list">
+        {% if vista_agenda == 'mese' %}
+        <div class="admin-month-scroll">
+        <table class="admin-month">
+            <caption class="visually-hidden">Agenda di {{ etichetta_mese }}</caption>
+            <thead><tr>{% for nome in giorni_settimana_brevi %}<th scope="col">{{ nome }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for settimana in calendario_mese %}
+                <tr>
+                    {% for giorno in settimana %}
+                    <td class="admin-month-day{% if not giorno.nel_mese %} is-outside{% endif %}{% if giorno.oggi %} is-today{% endif %}">
+                        <a class="admin-month-date" href="{{ url_for('admin', data=giorno.data.isoformat(), vista='giorno') }}#admin-agenda" aria-label="Apri il {{ giorno.data.strftime('%d/%m/%Y') }}"{% if giorno.oggi %} aria-current="date"{% endif %}>{{ giorno.data.day }}</a>
+                        <div class="admin-month-events">
+                            {% for evento in giorno.eventi[:3] %}
+                            <a{% if evento.url %} href="{{ evento.url }}"{% else %} href="{{ url_for('admin', data=giorno.data.isoformat(), vista='giorno') }}#admin-agenda"{% endif %} class="admin-month-event admin-month-event-{{ evento.tipo|lower }}" data-calendar-preview>
+                                <time>{{ evento.inizio.strftime('%H:%M') }}</time><span>{{ evento.titolo }}</span>
+                                <template class="admin-month-preview-template">
+                                    <article class="admin-calendar-preview-card">
+                                        <p class="admin-calendar-preview-type">{{ evento.tipo|replace('CallSonno', 'Call sonno')|replace('IncontroAccompagnamento', 'Incontro accompagnamento')|replace('BloccoAgenda', 'Pausa o chiusura') }}</p>
+                                        <h4>{{ evento.titolo }}</h4>
+                                        <p class="admin-calendar-preview-time"><time datetime="{{ evento.inizio.isoformat() }}">{{ evento.inizio.strftime('%d/%m/%Y · %H:%M') }}–{{ evento.fine.strftime('%H:%M') }}</time><span>{{ evento.stato }}</span></p>
+                                        <dl>
+                                            {% for etichetta, valore in evento.dettagli %}<div><dt>{{ etichetta }}</dt><dd>{{ valore }}</dd></div>{% endfor %}
+                                            <div><dt>Sincronizzazione</dt><dd>{{ evento.sincronizzazione|replace('_', ' ') }}</dd></div>
+                                        </dl>
+                                        {% if evento.note %}<div class="admin-calendar-preview-notes"><strong>Note</strong><p>{{ evento.note }}</p></div>{% endif %}
+                                        {% if not evento.dettagli and not evento.note %}<p class="admin-calendar-preview-empty">Non sono disponibili altri dettagli per questo evento.</p>{% endif %}
+                                        <span class="admin-calendar-preview-action">Clicca sull’evento per aprire la scheda</span>
+                                    </article>
+                                </template>
+                            </a>
+                            {% endfor %}
+                            {% if giorno.eventi|length > 3 %}<a class="admin-month-more" href="{{ url_for('admin', data=giorno.data.isoformat(), vista='giorno') }}#admin-agenda">+{{ giorno.eventi|length - 3 }} altri</a>{% endif %}
+                        </div>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="admin-calendar-legend" aria-label="Legenda calendario"><span class="is-appointment">Appuntamenti e call</span><span class="is-course">Corsi</span><span class="is-block">Pause e chiusure</span><small>Seleziona il numero del giorno per aprire la vista dettagliata.</small></div>
+        {% else %}
+            {% for giorno, eventi in agenda_per_giorno.items() %}
+            <section class="admin-day">
+                <h3>{{ giorno.strftime('%A %d/%m') }}</h3>
+                {% for evento in eventi %}
+                <article class="admin-agenda-row admin-agenda-{{ evento.tipo|lower }}">
+                    <time>{{ evento.inizio.strftime('%H:%M') }}<span>{{ evento.fine.strftime('%H:%M') }}</span></time>
+                    <div><p class="admin-agenda-type">{{ evento.tipo|replace('CallSonno', 'Call sonno')|replace('IncontroAccompagnamento', 'Incontro')|replace('BloccoAgenda', 'Blocco') }}</p><h4>{% if evento.url %}<a href="{{ evento.url }}">{{ evento.titolo }}</a>{% else %}{{ evento.titolo }}{% endif %}</h4><p>{{ evento.stato }}</p></div>
+                    <span class="sync-dot sync-{{ evento.sincronizzazione }}" title="{{ evento.sincronizzazione|replace('_', ' ') }}"></span>
+                </article>
+                {% endfor %}
+            </section>
+            {% else %}<p class="nota nota-lg">Nessun impegno nel periodo selezionato.</p>{% endfor %}
+        {% endif %}
+        </div>
+        {% if vista_agenda != 'mese' %}
+        <aside class="admin-agenda-tools">
+            <details class="admin-surface" open><summary>Nuovo appuntamento</summary>
+                <form class="admin-form-stack" method="post" action="{{ url_for('aggiungi_appuntamento_admin') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <label>Persona esistente<select name="persona_id"><option value="">Nuova persona</option>{% for persona in persone_corsi %}<option value="{{ persona.id }}">{{ persona.nome }} · {{ persona.telefono }}</option>{% endfor %}</select></label>
+                    <label>Nome<input name="nome" maxlength="100"></label>
+                    <label>Telefono<input name="telefono" inputmode="tel"></label>
+                    <label>Email<input name="email" type="email"></label>
+                    <label>Prestazione<select name="servizio" required><option value="">Seleziona</option>{% for servizio in servizi_prenotabili %}<option>{{ servizio }}</option>{% endfor %}</select></label>
+                    <div class="admin-form-grid"><label>Data<input name="data" type="date" required></label><label>Ora<input name="ora" type="time" required></label><label>Durata<input name="duration_minutes" type="number" min="1" max="480" value="30" required></label></div>
+                    <label>Note<textarea name="note" rows="2"></textarea></label>
+                    <button class="btn" type="submit">Crea in attesa</button>
+                </form>
+            </details>
+            <details class="admin-surface"><summary>Aggiungi pausa o chiusura</summary>
+                <form class="admin-form-stack" method="post" action="{{ url_for('aggiungi_blocco_admin') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <label>Titolo<input name="titolo" value="Pausa studio" required></label>
+                    <div class="admin-form-grid"><label>Data<input name="data" type="date" required></label><label>Ora<input name="ora" type="time" required></label><label>Durata<input name="durata_minuti" type="number" min="1" max="480" value="30" required></label></div>
+                    <label>Note<textarea name="note" rows="2"></textarea></label>
+                    <button class="btn-azione verde" type="submit">Salva e sincronizza</button>
+                </form>
+            </details>
+        </aside>
+        {% endif %}
+    </div>
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="richieste" id="admin-richieste">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Coda unica</p><h2>Nuove richieste in attesa</h2></div><span class="admin-total">{{ richieste_nuove_count }} aperte · {{ richieste_urgenti_count }} urgenti</span></div>
+    <div class="admin-request-list">
+        {% for item in richieste_admin %}<a class="admin-request-row{% if item.urgente %} is-urgent{% endif %}" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo|replace('CallSonno', 'Call sonno')|replace('IscrizioneCorso', 'Corso')|replace('RichiestaAzienda', 'Aziende e gruppi') }}</span><strong>{{ item.nome }}</strong><p>{{ item.oggetto }}</p></div><div><span>{{ item.stato }}</span><time>{% if item.scadenza %}entro {{ item.scadenza.strftime('%d/%m %H:%M') }}{% else %}scadenza mancante{% endif %}</time></div></a>{% else %}<p class="nota nota-lg">Nessuna richiesta aperta.</p>{% endfor %}
+    </div>
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="aziende" id="admin-aziende">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Formazione riservata</p><h2>Aziende e gruppi</h2></div><a class="btn-azione blu" href="{{ url_for('richiesta_azienda') }}" target="_blank" rel="noopener">Apri il modulo pubblico</a></div>
+    <p class="filtro-descrizione">Ogni nuova richiesta genera una conferma di ricezione e un’attività. I passaggi di stato programmano la prossima azione; la conferma può diventare un corso privato in agenda.</p>
+    <div class="admin-request-list">
+        {% for item in richieste_azienda %}<a class="admin-request-row{% if item.scadenza_gestione and item.scadenza_gestione < adesso_admin %} is-urgent{% endif %}" href="{{ url_for('dettaglio_admin', tipo='RichiestaAzienda', entita_id=item.id) }}"><div><span>{{ item.tipo_organizzazione }}</span><strong>{{ item.organizzazione }}</strong><p>{{ item.referente }} · {{ formazione_azienda_tipi.get(item.corso_tipo, 'Progetto da valutare') }}</p></div><div><span>{{ item.stato }}</span><time>{% if item.scadenza_gestione %}entro {{ item.scadenza_gestione.strftime('%d/%m %H:%M') }}{% else %}nessuna scadenza{% endif %}</time></div></a>{% else %}<p class="nota nota-lg">Nessuna richiesta aziendale registrata.</p>{% endfor %}
+    </div>
+</section>
+
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="persone" id="admin-persone">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Ricerca trasversale</p><h2>Persone e pratiche</h2></div></div>
+    <p class="filtro-descrizione">Cerca per nome, telefono, email o codice fiscale. Il codice fiscale unisce automaticamente; telefono ed email mostrano solo possibili duplicati.</p>
+    {% if ricerca %}<h3>Risultati per “{{ ricerca }}”</h3><div class="admin-request-list">{% for item in risultati_ricerca %}<a class="admin-request-row" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo }}</span><strong>{{ item.nome }}</strong><p>{{ item.dettaglio }}</p></div></a>{% else %}<p class="nota">Nessun risultato.</p>{% endfor %}</div>{% else %}<p class="nota nota-lg">Usa la ricerca in alto per aprire la cronologia di una persona.</p>{% endif %}
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="attivita" id="admin-attivita">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Prossime azioni</p><h2>Attività</h2></div><span class="admin-total">{{ attivita_admin|length }} aperte</span></div>
+    <form class="admin-surface admin-form-grid" method="post" action="{{ url_for('aggiungi_attivita_admin') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Titolo<input name="titolo" required></label><label>Scadenza<input type="datetime-local" name="scadenza" required></label><label class="admin-form-wide">Note<textarea name="note" rows="2"></textarea></label><button class="btn" type="submit">Aggiungi attività</button></form>
+    <div class="admin-task-list">{% for item in attivita_admin %}<article class="admin-task-row"><div><strong>{{ item.titolo }}</strong><p>{{ item.note or 'Nessuna nota' }}</p><time>{{ item.scadenza.strftime('%d/%m/%Y %H:%M') }}</time></div><form method="post" action="{{ url_for('chiudi_attivita_admin', id=item.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Chiudi</button></form></article>{% else %}<p class="nota nota-lg">Nessuna attività aperta.</p>{% endfor %}</div>
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="errori" id="admin-errori">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Controllo operativo</p><h2>Errori e riconciliazione</h2></div><form method="post" action="{{ url_for('riconcilia_calendario_admin') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione blu" type="submit">Controlla ora Calendar</button></form></div>
+    <form id="sync-batch" method="post" action="{{ url_for('sincronizza_selezionati_admin') }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    </form>
+    <div class="admin-error-list">{% for evento in errori_aperti %}<article class="admin-error-row"><label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] %}<input form="sync-batch" type="checkbox" name="elementi" value="{{ evento.entita_tipo }}:{{ evento.entita_id }}">{% endif %}<span>{{ evento.categoria }}</span><strong>{{ evento.messaggio }}</strong><time>{{ evento.creato_il.strftime('%d/%m/%Y %H:%M') }}</time></label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and evento.entita_id %}<a href="{{ url_for('dettaglio_admin', tipo=evento.entita_tipo, entita_id=evento.entita_id) }}">Apri pratica</a>{% endif %}<form class="admin-error-resolution" method="post" action="{{ url_for('risolvi_errore_admin', id=evento.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input name="nota_risoluzione" placeholder="Come è stato risolto" required><button class="btn-azione blu" type="submit">Segna risolto</button></form></article>{% else %}<p class="nota nota-lg">Nessun errore aperto.</p>{% endfor %}</div>
+    <button class="btn-azione verde" form="sync-batch" type="submit">Riprova sincronizzazione selezionati</button>
+</section>
+
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="impostazioni" id="admin-impostazioni">
+    <div class="admin-section-heading"><div><p class="admin-eyebrow">Configurazione operativa</p><h2>Impostazioni</h2></div><span class="admin-desktop-only">Configurazione complessa da desktop</span></div>
+    <div class="admin-settings-grid"><article class="admin-surface"><h3>Google Calendar</h3><p class="settings-state {{ 'is-ok' if calendar_configurato else 'is-error' }}">{{ 'Configurato' if calendar_configurato else 'Non configurato' }}</p><p>Calendar è il ponte operativo. Gli eventi Arzamed restano esterni e vengono mostrati in agenda senza importarli nel database.</p><p>Riconciliazione automatica: ogni ora.</p></article><article class="admin-surface"><h3>Email</h3><p class="settings-state {{ 'is-warning' if mail_soppressa else 'is-ok' }}">{{ 'Invii soppressi' if mail_soppressa else 'Invii attivi' }}</p><p>Oggetto, destinatario, corpo ed esito sono conservati nel sito per 24 mesi.</p></article><article class="admin-surface"><h3>Sicurezza</h3><p>Account singolo · blocco tentativi login · sessione inattiva 60 minuti.</p></article></div>
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="prenotazioni" id="admin-prenotazioni">
@@ -124,7 +277,7 @@
     {% elif filtro == 'confermati' %}
         Appuntamenti confermati
     {% elif filtro == 'annullati' %}
-        Appuntamenti annullati (quelli più vecchi di 30 giorni vengono eliminati automaticamente)
+        Appuntamenti annullati conservati nello storico
     {% elif filtro == 'passati' %}
         Appuntamenti passati rispetto alla data odierna
     {% endif %}
@@ -550,6 +703,11 @@
                         <span>Consenso immagini raccolto</span>
                     </label>
                 </div>
+                <div class="manual-consensi admin-capacity-override">
+                    <label><input type="checkbox" name="conferma_superamento_capienza" value="1"><span>Autorizzo l’eventuale superamento del limite online</span></label>
+                    <label for="manual-capacity-reason">Motivo dell’eccezione</label>
+                    <input type="text" name="superamento_capienza_motivo" id="manual-capacity-reason" placeholder="Obbligatorio solo se si supera capienza + 1">
+                </div>
 
                 <button type="submit" class="btn">Aggiungi al corso</button>
             </form>
@@ -673,6 +831,17 @@
                             <strong>{{ incontro.numero }}. {{ incontro.professionista }}</strong>
                             <span>{{ incontro.tema }}</span>
                             <small>{{ incontro.data }}{% if incontro.ora %} alle {{ incontro.ora }}{% endif %} · Studio infermieristico</small>
+                            <details class="meeting-edit"><summary>Modifica o archivia</summary>
+                                <form method="post" action="{{ url_for('modifica_incontro_accompagnamento', id=incontro.id) }}" data-confirm="Salvare le modifiche e informare i partecipanti elencati nell’edizione?">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                    <div class="form-riga"><input type="date" name="data" value="{{ incontro.data }}" required><input type="time" name="ora" value="{{ incontro.ora or '' }}"><input type="text" name="professionista" value="{{ incontro.professionista }}" required></div>
+                                    <input type="text" name="tema" value="{{ incontro.tema }}" required>
+                                    <input type="text" name="note" value="{{ incontro.note or '' }}" placeholder="Note">
+                                    <label><input type="checkbox" name="conferma_notifiche" value="1"> Confermo l’invio ai {{ item.iscritti_count }} partecipanti</label>
+                                    <button class="btn-azione blu" type="submit">Salva e sincronizza</button>
+                                </form>
+                                <form method="post" action="{{ url_for('archivia_incontro_accompagnamento', id=incontro.id) }}" data-confirm="Archiviare l’incontro? Le presenze resteranno nello storico."><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Archivia incontro</button></form>
+                            </details>
                         </li>
                         {% endfor %}
                     </ol>
@@ -879,6 +1048,7 @@
                 </td>
                 <td><span class="badge">{{ i.stato }}</span></td>
                 <td class="azioni">
+                    <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=i.id) }}">Apri</a>
                     {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
                     {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
                     {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
@@ -915,6 +1085,7 @@
                 {% if extra.data_presunta_parto %}<p><span>DPP</span> {{ extra.data_presunta_parto }}</p>{% endif %}
             </div>
             <div class="card-admin-azioni">
+                <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=i.id) }}">Apri</a>
                 {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
                 {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
                 {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
@@ -1015,7 +1186,7 @@
                 <th>Iscritti</th>
                 <th>Luogo</th>
                 <th>Descrizione</th>
-                <th>Elimina</th>
+                <th>Operazioni</th>
             </tr>
         </thead>
         <tbody>
@@ -1035,7 +1206,8 @@
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
-                    {{ admin_post_action(url_for('elimina_corso', id=c.id), 'Elimina', 'rosso', 'Eliminare questo corso?') }}
+                    <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='Corso', entita_id=c.id) }}">Apri</a>
+                    {% if not c.archiviato_il %}{{ admin_post_action(url_for('elimina_corso', id=c.id), 'Archivia', 'rosso', 'Archiviare questo corso? Le iscrizioni resteranno nello storico.') }}{% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -1047,5 +1219,5 @@
 
 </section>
 
-    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.1"></script>
 {% endblock %}

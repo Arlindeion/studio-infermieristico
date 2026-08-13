@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titolo %}Richiesta ricevuta · Aziende e gruppi{% endblock %}
+{% block meta_description %}La richiesta organizzativa è stata ricevuta dallo Studio Infermieristico.{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna orientation-outcome">
+    <p class="eyebrow">Richiesta registrata</p>
+    <h1>Ora abbiamo un punto da cui partire.</h1>
+    <p class="sottotitolo">La richiesta è entrata nella coda dedicata ad aziende e gruppi. Lo studio verificherà le informazioni e ricontatterà il referente entro il prossimo giorno lavorativo.</p>
+    <div class="orientation-outcome-next">
+        <span>Prossimo passaggio</span>
+        <strong>Un confronto su obiettivo, partecipanti, sede e periodo.</strong>
+        <p>Solo dopo questo confronto verranno definite proposta, disponibilità e data. L’invio del modulo non costituisce una prenotazione.</p>
+    </div>
+    <div class="orientation-actions">
+        <a class="btn" href="{{ url_for('homepage') }}">Torna alla homepage</a>
+        <a class="link-azione" href="{{ url_for('iscrizione_corsi') }}">Esplora i corsi aperti al pubblico</a>
+    </div>
+</section>
+{% endblock %}

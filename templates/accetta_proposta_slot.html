@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titolo %}Proposta appuntamento | S.C. Studio Infermieristico{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        {% if accettata %}
+        <span class="conferma-icona" aria-hidden="true">✓</span>
+        <h1>Orario confermato</h1>
+        <p>L’appuntamento è fissato per il {{ proposta.data_proposta }} alle {{ proposta.ora_proposta }}.</p>
+        {% elif occupato %}
+        <h1>Orario non più disponibile</h1>
+        <p>Nel frattempo lo slot è stato occupato. Lo studio ti contatterà per una nuova proposta.</p>
+        {% elif valida %}
+        <h1>Conferma il nuovo orario</h1>
+        <p>{{ proposta.data_proposta }} alle {{ proposta.ora_proposta }} · {{ proposta.durata_minuti }} minuti</p>
+        <form method="post"><button class="btn" type="submit">Accetta l’orario</button></form>
+        {% else %}
+        <h1>Proposta non disponibile</h1>
+        <p>Il link è scaduto o è già stato utilizzato. Contatta lo studio per concordare un nuovo orario.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

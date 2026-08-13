@@ -40,6 +40,7 @@ class Config:
     # Impostazioni sessione
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_HTTPONLY = True
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
     # CSRF
     WTF_CSRF_ENABLED = False  # gestiamo CSRF manualmente per ora
     # Per quanti secondi tenere in cache gli eventi letti tramite Google

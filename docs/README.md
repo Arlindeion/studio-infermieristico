@@ -13,8 +13,11 @@ Questa cartella raccoglie la memoria stabile di S.C. Studio Infermieristico: con
 5. [`DECISIONS.md`](DECISIONS.md) — registro delle decisioni durevoli e delle relative motivazioni.
 6. [`CONTENT_AND_ASSETS.md`](CONTENT_AND_ASSETS.md) — testi approvati, testimonianze, fotografie disponibili e materiali mancanti.
 7. [`locandine.md`](locandine.md) — istruzioni per PDF, locandine digitali, annunci e materiali social coerenti con il sito.
-8. [`META_SONNO_CAMPAIGN.md`](META_SONNO_CAMPAIGN.md) — piano esecutivo, script e misurazione del primo test Meta.
-9. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
+8. [`MARKETING_PLAN.md`](MARKETING_PLAN.md) — strategia di acquisizione, ruolo dei canali, piano di lancio e misurazione.
+9. [`reels-creator-system/README.md`](reels-creator-system/README.md) — sistema permanente, template, prompt, checklist e misurazione per i contenuti social.
+10. [`reels-2026-08-03/README.md`](reels-2026-08-03/README.md) — handoff operativo per il creator dei contenuti del 3-9 agosto 2026.
+11. [`META_SONNO_CAMPAIGN.md`](META_SONNO_CAMPAIGN.md) — piano esecutivo, script e misurazione del primo test Meta.
+12. [`OPERATIONS.md`](OPERATIONS.md) — avvio, deploy, migrazioni, integrazioni e controlli operativi, senza credenziali.
 
 ## Fonti di verità
 
@@ -26,6 +29,7 @@ Questa cartella raccoglie la memoria stabile di S.C. Studio Infermieristico: con
 - `docs/DECISIONS.md`: motivazioni delle scelte già approvate.
 - `docs/CONTENT_AND_ASSETS.md`: stato di testi, fotografie e materiali.
 - `docs/locandine.md`: regole applicative per locandine, PDF e materiali social.
+- `docs/MARKETING_PLAN.md`: strategia di acquisizione, ruolo dei canali e piano di misurazione.
 - `docs/OPERATIONS.md`: procedure tecniche e di produzione.
 - `README.md`: installazione e utilizzo tecnico del repository.
 

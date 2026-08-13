@@ -66,8 +66,8 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 
 ## D-011 — Prezzi non dominanti sul sito
 
-- Stato: approvata.
-- Decisione: comunicare prima valore e appropriatezza; mostrare i prezzi soprattutto nei materiali destinati a famiglie già interessate.
+- Stato: approvata come principio generale; aggiornata da D-033 per la landing sonno.
+- Decisione: comunicare prima valore e appropriatezza; mostrare i prezzi soprattutto nei materiali destinati a famiglie già interessate. Per la consulenza del sonno, D-033 introduce l'eccezione esplicita dei tre prezzi visibili prima della prenotazione.
 - Motivo: l'obiettivo iniziale è generare contatti qualificati, non competere sul prezzo.
 
 ## D-012 — Flussi separati
@@ -190,16 +190,16 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-026 — Test di tre mesi per la consulenza del sonno
 
 - Data: 2026-07-16.
-- Stato: approvata per la fase di validazione.
+- Stato: approvata per la fase di validazione; budget, creatività e soglia di capacità sono stati definiti successivamente da D-035.
 - Decisione: promuovere per tre mesi la consulenza del sonno 0-12 mesi attraverso annunci e contenuti social che portano alla scelta diretta dello slot. Il servizio resta nazionale; Abruzzo e regioni confinanti possono essere un limite tattico iniziale della distribuzione pubblicitaria soltanto per controllare la spesa. WhatsApp resta secondario per chi è indeciso.
 - Motivo: raccogliere evidenze sull'intera fascia coperta dalla formazione di Selene, ridurre l'attrito tra annuncio e call e costruire prove specifiche per un servizio che non dispone ancora di testimonianze proprie.
-- Conseguenze: l'obiettivo interno è arrivare ad almeno tre testimonianze reali, autorizzate e pubblicabili al mese sulla consulenza del sonno; non si promettono risultati e non si usano testimonianze di altri servizi. Il funnel misura almeno slot prenotato, call confermata, call svolta, formula scelta e consenso alla testimonianza. Budget, costo massimo per contatto e tono creativo/video restano da definire sui dati del test.
+- Conseguenze: l'obiettivo interno è arrivare ad almeno tre testimonianze reali, autorizzate e pubblicabili al mese sulla consulenza del sonno; non si promettono risultati e non si usano testimonianze di altri servizi. Il funnel misura almeno slot prenotato, call confermata, call svolta, formula scelta e consenso alla testimonianza. Budget, checkpoint, creatività iniziali e arresto a dieci call settimanali non sono più questioni aperte: sono disciplinati da D-035 e dai documenti di campagna; i costi effettivi restano invece da validare con il test.
 - Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `locandine.md`.
 
 ## D-027 — Dominio operativo indipendente dalla trattativa
 
 - Data: 2026-07-20.
-- Stato: approvata.
+- Stato: approvata; l’alternativa condizionata è chiusa da D-074.
 - Decisione: registrare `scstudioinfermieristico.it` come dominio controllato direttamente dall'attività e procedere con staging e lancio senza dipendere dalla trattativa per `studioinfermieristico.it`. La trattativa termina entro il 15 agosto 2026 e l'offerta non supera 50 euro. Se il dominio generico viene acquisito con trasferimento completo, potrà diventare il dominio principale e `scstudioinfermieristico.it` reindirizzerà ad esso; altrimenti `scstudioinfermieristico.it` resta il dominio definitivo.
 - Motivo: proteggere il naming approvato `S.C. Studio Infermieristico`, evitare che un dominio in vendita condizioni il calendario del progetto e mantenere contenuto il costo di un vantaggio soprattutto mnemonico, non determinante per la SEO.
 - Conseguenze: `scstudioinfermieristico.it` è stato registrato il 20 luglio 2026 ed è sotto il controllo diretto dell'attività, con rinnovo automatico, autenticazione a due fattori, blocco trasferimento, protezione dei dati e DNSSEC attivi. La casella `info@scstudioinfermieristico.it` è operativa su Zimbra Starter; invio e ricezione sono stati provati e SPF, DKIM e DMARC risultano validi. Lo staging iniziale usa l'indirizzo Render; canonical, Analytics e materiali di lancio vengono configurati sul dominio definitivo dopo l'esito della trattativa, senza posticipare le attività tecniche.
@@ -217,10 +217,11 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-029 — Infrastruttura Render per staging e produzione
 
 - Data: 2026-07-20.
-- Stato: approvata.
+- Stato: sostituita in parte da D-061 per la topologia di produzione; restano valide le regole sullo staging gratuito.
 - Decisione: usare Render nella regione di Francoforte con un Web Service Flask e PostgreSQL nella stessa regione. Lo staging iniziale usa istanze gratuite, URL `onrender.com`, HTTPS gestito, autenticazione HTTP applicativa e blocco globale dell'indicizzazione; il dominio pubblico non viene collegato durante lo staging. Prima della scadenza del database gratuito, l'ambiente destinato alla produzione passa almeno a Web Service Starter e PostgreSQL Basic-256mb con storage adeguato.
 - Motivo: ottenere rapidamente un ambiente PostgreSQL realistico e accessibile ai soli tester, conservando un percorso di upgrade diretto e senza acquistare hosting duplicato presso il registrar.
 - Conseguenze: il database gratuito scade 30 giorni dopo la creazione e non contiene dati reali; il 30 luglio 2026 l'attività ha confermato di non avervi mai inserito dati di pazienti, famiglie o minori. Il servizio gratuito non viene usato per collaudare SMTP sulle porte bloccate. I segreti restano nelle variabili Render, l'auto-deploy è disattivato e ogni pubblicazione è intenzionale. L'HTTPS dei domini Render e personalizzati è gestito dalla piattaforma. Il dominio principale e i redirect restano disciplinati da D-027.
+- Aggiornamento: la previsione originaria di portare a pagamento le risorse di staging non è più in vigore. D-061 impone Web Service e PostgreSQL nuovi, vuoti e separati per la produzione; lo staging gratuito non viene promosso, copiato o usato per dati reali.
 - Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, `render.yaml`.
 
 ## D-030 — Backup PostgreSQL gestito ed esterno
@@ -271,10 +272,10 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-035 — Qualificazione, promemoria e campagna Meta del sonno
 
 - Data: 2026-07-21.
-- Stato: sostituita in parte da D-036 per il canale dei promemoria.
+- Stato: approvata per qualificazione e campagna; tutte le clausole sui promemoria WhatsApp sono superate dalla D-036.
 - Decisione: la prenotazione raccoglie soltanto i dati necessari a verificare fascia 0-12 mesi, ruolo di genitore/tutore, difficoltà, durata, obiettivo, comprensione del perimetro educativo e presa visione dei prezzi. Le call sono disponibili anche il sabato. Email e calendario prevengono le assenze; WhatsApp è facoltativo, usa template organizzativi neutrali e non contiene informazioni del bambino. La campagna iniziale è nazionale su Meta/Instagram, con tetto di 200 €, checkpoint dopo 100 € e due creatività iniziali su risvegli frequenti e addormentamento con forte supporto.
 - Motivo: aumentare la percentuale di call effettivamente svolte, evitare richieste fuori ambito e apprendere dal primo budget senza suddividerlo fra servizi o pubblici diversi.
-- Conseguenze: KPI canonici sono costo per call prenotata, presenza, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Gli annunci vengono rallentati a 10 call settimanali. Meta riceve eventi soltanto dopo consenso; l'email resta il fallback se WhatsApp fallisce. L'attuale numero telefonico non viene migrato in modo rischioso: si prova la coesistenza ufficiale e, se non disponibile, si usa un numero separato per l'automazione.
+- Conseguenze: KPI canonici sono costo per call prenotata, presenza, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Gli annunci vengono rallentati a 10 call settimanali. Meta riceve eventi soltanto dopo consenso. Il fallback email, la coesistenza e l'eventuale secondo numero descritti nella decisione originaria non sono più operativi: la D-036 ha eliminato integralmente l'automazione WhatsApp dei promemoria.
 - Collegamenti: `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `CONTENT_AND_ASSETS.md`, `app.py`.
 
 ## D-036 — Promemoria delle call soltanto via email
@@ -532,19 +533,19 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ## D-064 — Staging stabile su main con deploy manuali
 
 - Data: 2026-07-29.
-- Stato: implementata nel codice e sincronizzata su Render il 2026-07-30.
+- Stato: implementata nel codice e applicata al Web Service il 2026-07-30; il collegamento del Blueprint è stato poi revocato dalla D-066.
 - Decisione: fare seguire al Blueprint e al Web Service di staging il branch `main`, mantenendo `autoDeployTrigger` disattivato. Il branch identifica la linea stabile del progetto; il commit effettivamente distribuito continua a essere scelto e verificato prima di ogni deploy manuale.
 - Motivo: i branch di lavorazione precedenti non devono restare configurazione permanente dell'ambiente condiviso e non devono creare divergenza tra pannello Render e Blueprint.
-- Conseguenze: Blueprint e Web Service puntano a `main`, con Auto Sync e auto-deploy disattivati. L'approvazione della modifica di branch nel Blueprint ha comunque avviato un deploy del commit `e4fea38`; l'esecuzione è stata annullata e il deploy live è rimasto `8a4ad84`. Le sincronizzazioni Blueprint vanno quindi trattate come operazioni capaci di avviare un deploy anche quando i nuovi commit non lo fanno automaticamente. L'allineamento non ha modificato piani, dominio, integrazioni o segreti.
+- Conseguenze: al momento dell'allineamento Blueprint e Web Service puntavano a `main`, con Auto Sync e auto-deploy disattivati. L'approvazione della modifica di branch nel Blueprint avviò comunque un deploy del commit `e4fea38`; l'esecuzione fu annullata e il deploy live rimase `8a4ad84`. Le sincronizzazioni Blueprint vanno quindi trattate come operazioni capaci di avviare un deploy anche quando i nuovi commit non lo fanno automaticamente. L'allineamento non modificò piani, dominio, integrazioni o segreti. Lo stato successivo è quello della D-066: Blueprint disconnesso, Web Service ancora su `main`.
 - Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## D-065 — L'ultima disponibilità può accogliere una coppia
 
 - Data: 2026-07-29.
-- Stato: approvata dall'attività e implementata.
+- Stato: sostituita e precisata da D-072.
 - Decisione: per i corsi individuali una richiesta di coppia occupa due posti ma resta accettabile quando, al momento dell'invio, il corso ha ancora un solo posto disponibile. Dopo il salvataggio la data non accetta altre richieste. Le iscrizioni annullate non occupano posti e possono rendere nuovamente disponibile la data.
 - Motivo: l'eccezione sull'ultimo posto è una scelta operativa esplicita dell'attività, non un errore di capienza da bloccare automaticamente.
-- Conseguenze: il form esclude le date già piene, propone la successiva quando esiste e salva un ricontatto se non restano date. Su PostgreSQL la riga del corso viene bloccata durante il controllo finale per impedire che richieste simultanee superino ulteriormente questa eccezione. L'admin mostra `Completo` quando la disponibilità residua arriva a zero.
+- Conseguenze: la contestazione sul limite inderogabile non è più valida nei termini formulati: 14 è la capienza nominale tipica e 15 è l’esito massimo dell’iscrizione automatica in quel caso, non un divieto assoluto per l’operatore. La regola completa e la lista d’attesa sono disciplinate da D-072.
 - Collegamenti: `app.py`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`.
 
 ## D-066 — Revoca del Sync Hook tramite disconnessione del Blueprint
@@ -553,16 +554,16 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Stato: approvata dall'attività e implementata.
 - Decisione: disconnettere il Blueprint dello staging dopo che il relativo Sync Hook è stato visualizzato durante un controllo operativo e non può più essere considerato affidabile. Mantenere Web Service e PostgreSQL esistenti, senza ricollegare il Blueprint fino a una finestra di deploy controllata.
 - Motivo: Render non espone una rotazione isolata del Sync Hook; la disconnessione ne revoca l'uso senza eliminare le risorse gestite.
-- Conseguenze: lo staging non è temporaneamente gestito dal Blueprint, ma il Web Service resta collegato a `main`, il database resta intatto e il deploy live resta `8a4ad84`. La disconnessione non ha avviato deploy e il successivo controllo di `/healthz` ha restituito `200`. Il futuro ricollegamento deve verificare il piano proposto e considerare la prima sincronizzazione capace di avviare un deploy.
+- Conseguenze: al termine della disconnessione lo staging non era più gestito dal Blueprint, il Web Service restava collegato a `main`, il database era intatto e il deploy live era ancora `8a4ad84`. La disconnessione non avviò deploy e il controllo immediatamente successivo di `/healthz` restituì `200`. Nella stessa giornata il database fu poi migrato e il deploy manuale `148ec36` riallineò codice e schema, come registrato in `OPERATIONS.md` e `ROADMAP.md`. Il futuro ricollegamento deve verificare il piano proposto e considerare la prima sincronizzazione capace di avviare un deploy.
 - Collegamenti: `render.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## D-067 — Google Calendar API unica per lettura e scrittura
 
 - Data: 2026-07-30.
-- Stato: approvata dall'attività e implementata localmente; configurazione esterna da completare.
+- Stato: approvata dall'attività, implementata e verificata con un test reale controllato; configurazione nell'ambiente Render autorizzato e prove end-to-end ancora da completare.
 - Decisione: usare un unico account di servizio e Google Calendar API per leggere gli impegni sincronizzati da Arzamed e per creare, modificare o cancellare gli eventi del sito. Eliminare l'URL iCal dalla configurazione.
 - Motivo: il calendario Google operativo è già il collante bidirezionale con Arzamed e la scrittura richiede comunque un'identità API. Usare la stessa integrazione anche in lettura riduce segreti e percorsi di errore duplicati.
-- Conseguenze: l'account Google dello studio resta proprietario del calendario; l'app usa un'identità tecnica separata con accesso limitato agli eventi del solo calendario operativo. La lettura API espande le ricorrenze, conserva una cache per giorno e riusa la copia scaduta in caso di errore. La verifica documentale non ha trovato evidenza che l'account di servizio sia già stato generato o condiviso: prima del collaudo reale occorre completare e verificare questi passaggi senza inserire il JSON nel repository.
+- Conseguenze: l'account Google dello studio resta proprietario del calendario; l'app usa un'identità tecnica separata con accesso limitato agli eventi del solo calendario operativo. La lettura API espande le ricorrenze, conserva una cache per giorno e riusa la copia scaduta in caso di errore. Il 30 luglio 2026 sono stati verificati progetto Cloud, API, identità tecnica, chiave e condivisione del calendario con permesso di modifica degli eventi. Un test reale controllato ha completato autenticazione, lettura, creazione, rilettura e cancellazione immediata di un evento sintetico. Il JSON resta escluso da Git e non documentato; mancano ancora l'inserimento sicuro nell'ambiente Render autorizzato e il collaudo completo dei flussi con Calendar ed email reali.
 - Collegamenti: `app.py`, `config.py`, `render.production.yaml`, `OPERATIONS.md`, `ROADMAP.md`.
 
 ## D-068 — La casella Zimbra riceve gli avvisi amministrativi
@@ -574,7 +575,16 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: nuove prenotazioni, richieste di call, iscrizioni e ricontatti inviano l'avviso interno alla casella Zimbra dello studio. Il valore viene inserito soltanto nell'ambiente autorizzato; non abilita invii nello staging gratuito e non modifica `MAIL_SUPPRESS_SEND`.
 - Collegamenti: `OPERATIONS.md`, `config.py`, `app.py`, `render.production.yaml`.
 
-## D-069 — I tre post fissati occupano gli slot editoriali ordinari
+## D-069 — Sistema permanente per la produzione social
+
+- Data: 2026-08-03.
+- Stato: approvata dall'attività e documentata.
+- Decisione: separare le regole permanenti per i contenuti Instagram e TikTok dai pacchetti settimanali. Il sistema generale disciplina ruoli, stati, fonti, approvazioni, registrazione, montaggio, consegne e misurazione. Ogni cartella settimanale contiene temi, script, CTA, calendario e scelte specifiche.
+- Motivo: permettere al creator di riprendere il lavoro senza ricostruire ogni volta il metodo e senza confondere decisioni valide per una settimana con regole durevoli.
+- Conseguenze: le nuove settimane partono da un template comune, mantengono un registro delle fonti e vengono riviste a 7 e 30 giorni. Il pacchetto settimanale può derogare al sistema solo in modo esplicito e approvato.
+- Collegamenti: `MARKETING_PLAN.md`, `CONTENT_AND_ASSETS.md`, `reels-creator-system/README.md`, `reels-2026-08-03/README.md`.
+
+## D-070 — I tre post fissati occupano gli slot editoriali ordinari
 
 - Data: 2026-08-03.
 - Stato: approvata.
@@ -582,6 +592,60 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Motivo: preparare il profilo senza introdurre un quarto contenuto settimanale e senza concentrare tre pubblicazioni istituzionali nello stesso periodo.
 - Conseguenze: nelle tre settimane la cadenza resta di due video più il post strategico; il piano marketing registra date e controllo finale, mentre il sistema del creator applica la stessa regola ai calendari futuri.
 - Collegamenti: `MARKETING_PLAN.md`, `reels-creator-system/README.md`.
+
+## D-071 — Gli stati esterni sono evidenze datate, non verità correnti
+
+- Data: 2026-08-13.
+- Stato: approvata come regola di governo documentale.
+- Decisione: ogni affermazione sullo stato esterno di Render, dominio, email, Calendar, profili social, pubblicazioni e piattaforme deve indicare data ed evidenza del controllo. Una verifica storica non prova lo stato corrente; il repository può confermare codice e configurazione dichiarativa, non ciò che è live nei pannelli esterni.
+- Motivo: l'audit ha trovato decisioni corrette al momento della registrazione ma formulate come stato presente anche dopo verifiche successive, in particolare i riferimenti al deploy `8a4ad84`, alla configurazione Calendar ancora assente e ai contenuti social soltanto programmati.
+- Conseguenze: prima di deploy, apertura pubblica, attivazione di integrazioni o campagna si riconciliano in sola lettura commit live, piano, variabili non sensibili, dominio e ultimo esito disponibile. Uno stato `Programmato` rimasto oltre l'orario previsto diventa `da verificare`, non `Pubblicato`. `ROADMAP.md` distingue la data della revisione documentale dalla data dell'ultima evidenza esterna.
+- Collegamenti: `ROADMAP.md`, `OPERATIONS.md`, `CONTENT_AND_ASSETS.md`, `MARKETING_PLAN.md`.
+
+## D-072 — Capienza online, lista d’attesa e deroga amministrativa
+
+- Data: 2026-08-13.
+- Stato: approvata e implementata localmente; collaudo end-to-end ancora richiesto.
+- Decisione: ogni edizione ha una capienza nominale configurabile. Il sito accetta una richiesta soltanto se, prima dell’invio, i posti occupati sono inferiori alla capienza nominale; una coppia può occupare l’ultimo posto nominale e portare il totale a `capienza + 1`. Raggiunta la capienza nominale, nuove richieste entrano in lista d’attesa. L’admin può sempre superare il limite online, ma deve confermare l’eccezione e registrarne il motivo.
+- Motivo: con capienza nominale 14, a 13 adesioni deve restare possibile accettare sia un singolo, arrivando a 14, sia una coppia, arrivando a 15. Il valore 15 limita il flusso automatico del sito in quel caso; non rappresenta un limite fisico inderogabile per l’inserimento manuale.
+- Conseguenze: la prima persona in lista d’attesa riceve automaticamente un invito valido 24 ore quando si libera capienza. Le richieste in lista o invitate non occupano posti finché l’invito non viene accettato. L’admin conserva il motivo di ogni superamento del limite online.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/accetta_lista_attesa.html`, `tests/test_app.py`, D-065.
+
+## D-073 — L’area admin è una regia operativa a account singolo
+
+- Data: 2026-08-13.
+- Stato: approvata e implementata localmente; collaudo mobile e integrazioni reali ancora richiesti.
+- Decisione: organizzare l’admin in Agenda, Richieste, Corsi, Persone, Attività, Errori e Impostazioni. La vista iniziale è l’agenda giornaliera con accesso alla settimana. Tutte le richieste aperte hanno prossima azione e scadenza; quelle scadute restano bloccanti, diventano urgenti e generano un promemoria. Il lancio usa un solo account, sessione inattiva di 60 minuti e tracciamento append-only delle modifiche.
+- Motivo: il pannello precedente separava i dati per modulo ma non sosteneva il lavoro quotidiano, la riconciliazione degli errori o il passaggio da richiesta a appuntamento/iscrizione.
+- Conseguenze: l’admin crea appuntamenti in stato `In attesa`, pause e chiusure; propone slot con link di accettazione; gestisce stati, note, attività, corsi duplicabili o unificabili, spostamenti, export CSV/PDF e incontri del percorso nascita. Telefono ed email segnalano possibili duplicati ma non uniscono automaticamente; il codice fiscale unisce le persone dei corsi e le altre pratiche vengono collegate manualmente. Multiaccount, ruoli e assegnazioni restano fuori dal lancio.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `static/css/admin.css`, `migrations/versions/a13d8f7c2b40_strumenti_operativi_area_admin.py`.
+
+## D-074 — `scstudioinfermieristico.it` è il dominio definitivo
+
+- Data: 2026-08-13.
+- Stato: approvata.
+- Decisione: chiudere come fallita la trattativa per `studioinfermieristico.it` e mantenere `scstudioinfermieristico.it`, già acquistato e controllato dall’attività, come dominio definitivo.
+- Motivo: la trattativa non ha prodotto l’acquisizione e non deve più condizionare canonical, configurazione, materiali o calendario di lancio.
+- Conseguenze: non esiste più una biforcazione sul dominio principale. Il collegamento DNS e l’apertura pubblica restano azioni esterne soggette ai gate di pre-lancio; questa decisione non prova che il dominio sia già collegato al servizio live.
+- Collegamenti: D-027, `OPERATIONS.md`, `ROADMAP.md`.
+
+## D-075 — TikTok sospeso fino a nuova decisione
+
+- Data: 2026-08-13.
+- Stato: approvata.
+- Decisione: accantonare pubblicazione, adattamenti e misurazione su TikTok fino a data da destinarsi. Instagram resta il canale social operativo; i file TikTok esistenti restano materiale storico, non attività programmata.
+- Motivo: evitare che calendari superati e consegne non verificate continuino a essere interpretati come impegni correnti.
+- Conseguenze: checklist e piani non devono trattare TikTok come gate di lancio. La riattivazione richiederà una nuova decisione esplicita e un calendario aggiornato.
+- Collegamenti: D-069, `MARKETING_PLAN.md`, `CONTENT_AND_ASSETS.md`, `reels-creator-system/README.md`.
+
+## D-076 — Vista mensile, richieste organizzative e quiz entrano nel perimetro di lancio
+
+- Data: 2026-08-13.
+- Stato: approvata e implementata localmente; collaudo visuale e integrazioni reali ancora richiesti.
+- Decisione: anticipare dal post-lancio tre estensioni. L’admin offre una vista mensile compatta con accesso al dettaglio giornaliero. Aziende e gruppi usano un modulo pubblico e una coda dedicati, con conferma di ricezione, attività generate dai passaggi di stato, proposta email tracciata e conversione in corso riservato. Il quiz `Da dove parto?` orienta verso flussi pubblici già approvati senza inviare o conservare risposte.
+- Motivo: queste funzioni riducono tre attriti già visibili prima del lancio: lettura del carico su più settimane, gestione impropria delle richieste organizzative nel modulo individuale e difficoltà di scelta fra offerte diverse.
+- Conseguenze: i corsi generati da una richiesta organizzativa hanno stato `Chiuso`, compaiono nell’agenda e in Google Calendar ma non tra le date pubbliche. La richiesta aziendale non conferma disponibilità, data o preventivo. Il quiz non formula diagnosi, non raccoglie dati sanitari e lascia sempre visibili tutte le alternative. Multiaccount, ruoli e pagamenti restano esclusi.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/richiesta_azienda.html`, `templates/da_dove_parto.html`, `migrations/versions/c84f2d1a9e70_richieste_aziende_e_gruppi.py`, `ROADMAP.md`.
 
 ## Modello per nuove decisioni
 
