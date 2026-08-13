@@ -13,8 +13,9 @@
     <div class="orientation-shell">
         <div class="orientation-progress" aria-hidden="true"><span data-quiz-progress></span></div>
         <p class="orientation-step-count" data-quiz-step-count>Passaggio 1 di 2</p>
+        <div class="orientation-stage" data-quiz-stage>
 
-        <section class="orientation-question is-active" data-quiz-step="start" aria-labelledby="quiz-question-start">
+        <section class="orientation-question orientation-panel is-active" data-quiz-step="start" aria-labelledby="quiz-question-start">
             <h2 id="quiz-question-start" tabindex="-1">Per chi stai cercando?</h2>
             <div class="orientation-options">
                 <button type="button" data-quiz-next="famiglia"><span>Famiglia o caregiver</span><small>Per un bambino o per chi se ne prende cura</small></button>
@@ -24,7 +25,7 @@
             </div>
         </section>
 
-        <section class="orientation-question" data-quiz-step="famiglia" aria-labelledby="quiz-question-family" hidden>
+        <section class="orientation-question orientation-panel" data-quiz-step="famiglia" aria-labelledby="quiz-question-family" hidden>
             <h2 id="quiz-question-family" tabindex="-1">Qual è il bisogno più vicino a questo momento?</h2>
             <div class="orientation-options">
                 <button type="button" data-quiz-result="sicurezza"><span>Sicurezza e primo intervento</span><small>Disostruzione pediatrica, tagli sicuri o BLSD</small></button>
@@ -35,13 +36,14 @@
             <button class="orientation-back" type="button" data-quiz-back>← Torna indietro</button>
         </section>
 
-        <section class="orientation-result" data-quiz-result-panel aria-live="polite" hidden>
+        <section class="orientation-result orientation-panel" data-quiz-result-panel aria-live="polite" hidden>
             <p class="eyebrow">Il punto di partenza suggerito</p>
             <h2 data-result-title></h2>
             <p data-result-copy></p>
             <a class="btn" href="#" data-result-link>Apri il percorso</a>
             <button class="orientation-reset" type="button" data-quiz-reset>Ricomincia</button>
         </section>
+        </div>
     </div>
 
     <noscript>

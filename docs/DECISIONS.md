@@ -647,6 +647,16 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: i corsi generati da una richiesta organizzativa hanno stato `Chiuso`, compaiono nell’agenda e in Google Calendar ma non tra le date pubbliche. La richiesta aziendale non conferma disponibilità, data o preventivo. Il quiz non formula diagnosi, non raccoglie dati sanitari e lascia sempre visibili tutte le alternative. Multiaccount, ruoli e pagamenti restano esclusi.
 - Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/richiesta_azienda.html`, `templates/da_dove_parto.html`, `migrations/versions/c84f2d1a9e70_richieste_aziende_e_gruppi.py`, `ROADMAP.md`.
 
+
+## D-077 — L’admin può creare appuntamenti con contatti incompleti
+
+- Data: 2026-08-13.
+- Stato: approvata e implementata localmente; collaudo visuale ancora richiesto.
+- Decisione: nella creazione manuale di un appuntamento, telefono ed email sono facoltativi. Se uno o entrambi mancano, l’admin chiede una conferma esplicita prima del salvataggio e registra nell’audit i contatti assenti. Un valore compilato ma non valido resta bloccante. Nome, prestazione, data, ora e durata restano obbligatori.
+- Motivo: l’operatore può conoscere l’impegno prima di disporre di tutti i recapiti; rifiutare l’inserimento o svuotare il modulo crea perdita di lavoro senza aumentare l’affidabilità del dato.
+- Conseguenze: il modulo conserva i valori quando il server rileva un errore, usa il calendario nativo per la data e menu distinti per ore e minuti con granularità di cinque minuti. I contatti mancanti possono essere integrati successivamente dalla scheda della pratica.
+- Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `static/css/admin.css`, `tests/test_app.py`.
+
 ## Modello per nuove decisioni
 
 ```markdown

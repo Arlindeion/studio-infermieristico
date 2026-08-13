@@ -30,3 +30,24 @@ test('rende l’anteprima mensile utilizzabile anche da tastiera', () => {
     assert.match(script, /event\.key === 'Escape'/);
     assert.match(script, /setAttribute\('aria-describedby', anteprima\.id\)/);
 });
+
+test('conferma i contatti mancanti senza svuotare il modulo', () => {
+    assert.match(script, /document\.getElementById\('admin-new-appointment-form'\)/);
+    assert.match(script, /Mancano \$\{mancanti\.join\(' e '\)\}/);
+    assert.match(script, /window\.confirm/);
+    assert.match(script, /confirm_missing_contacts/);
+    assert.match(script, /new FormData\(nuovoAppuntamentoForm\)/);
+    assert.match(script, /i dati sono ancora nel modulo/);
+    assert.doesNotMatch(script, /nuovoAppuntamentoForm\.reset\(/);
+});
+
+test('apre il calendario e usa menu distinti per ore e minuti', () => {
+    assert.match(script, /document\.getElementById\('admin-appointment-date'\)/);
+    assert.match(script, /typeof dataAppuntamento\.showPicker === 'function'/);
+    assert.match(script, /dataAppuntamento\.showPicker\(\)/);
+});
+
+test('mostra nello stesso modulo gli errori restituiti dal server', () => {
+    assert.match(script, /mostraErroreModulo\(risultato\.message/);
+    assert.match(script, /X-Requested-With': 'XMLHttpRequest'/);
+});

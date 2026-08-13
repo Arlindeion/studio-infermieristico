@@ -169,15 +169,32 @@
         {% if vista_agenda != 'mese' %}
         <aside class="admin-agenda-tools">
             <details class="admin-surface" open><summary>Nuovo appuntamento</summary>
-                <form class="admin-form-stack" method="post" action="{{ url_for('aggiungi_appuntamento_admin') }}">
+                <form class="admin-form-stack" id="admin-new-appointment-form" method="post" action="{{ url_for('aggiungi_appuntamento_admin') }}">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    <label>Persona esistente<select name="persona_id"><option value="">Nuova persona</option>{% for persona in persone_corsi %}<option value="{{ persona.id }}">{{ persona.nome }} · {{ persona.telefono }}</option>{% endfor %}</select></label>
-                    <label>Nome<input name="nome" maxlength="100"></label>
-                    <label>Telefono<input name="telefono" inputmode="tel"></label>
-                    <label>Email<input name="email" type="email"></label>
+                    <input type="hidden" name="confirm_missing_contacts" value="0">
+                    <div class="admin-inline-form-message" role="alert" aria-live="assertive" hidden></div>
+                    <label>Persona esistente<select id="admin-appointment-person" name="persona_id"><option value="">Nuova persona</option>{% for persona in persone_corsi %}<option value="{{ persona.id }}" data-nome="{{ persona.nome }}" data-telefono="{{ persona.telefono or '' }}" data-email="{{ persona.email or '' }}">{{ persona.nome }}{% if persona.telefono %} · {{ persona.telefono }}{% endif %}</option>{% endfor %}</select></label>
+                    <label>Nome<input name="nome" maxlength="100" autocomplete="name" required></label>
+                    <div class="admin-contact-fields">
+                        <label>Telefono <small>facoltativo</small><input name="telefono" inputmode="tel" autocomplete="tel"></label>
+                        <label>Email <small>facoltativa</small><input name="email" type="email" autocomplete="email"></label>
+                    </div>
+                    <p class="admin-field-help">Se uno dei contatti manca, ti verrà chiesta conferma prima del salvataggio.</p>
                     <label>Prestazione<select name="servizio" required><option value="">Seleziona</option>{% for servizio in servizi_prenotabili %}<option>{{ servizio }}</option>{% endfor %}</select></label>
-                    <div class="admin-form-grid"><label>Data<input name="data" type="date" required></label><label>Ora<input name="ora" type="time" required></label><label>Durata<input name="duration_minutes" type="number" min="1" max="480" value="30" required></label></div>
-                    <label>Note<textarea name="note" rows="2"></textarea></label>
+                    <div class="admin-date-field">
+                        <label for="admin-appointment-date">Data</label>
+                        <div class="admin-date-control"><input id="admin-appointment-date" name="data" type="date" required><button type="button" data-open-date-picker aria-label="Apri il calendario">Calendario</button></div>
+                    </div>
+                    <fieldset class="admin-time-field">
+                        <legend>Ora di inizio</legend>
+                        <div class="admin-time-controls">
+                            <label for="admin-appointment-hour">Ore<select id="admin-appointment-hour" name="ora_ore" required><option value="">--</option>{% for ora in range(24) %}<option value="{{ '%02d'|format(ora) }}">{{ '%02d'|format(ora) }}</option>{% endfor %}</select></label>
+                            <span aria-hidden="true">:</span>
+                            <label for="admin-appointment-minute">Minuti<select id="admin-appointment-minute" name="ora_minuti" required><option value="">--</option>{% for minuto in range(0, 60, 5) %}<option value="{{ '%02d'|format(minuto) }}">{{ '%02d'|format(minuto) }}</option>{% endfor %}</select></label>
+                        </div>
+                    </fieldset>
+                    <label>Durata <span class="admin-input-suffix"><input name="duration_minutes" type="number" min="1" max="480" value="30" required><span>minuti</span></span></label>
+                    <label>Note<textarea name="note" rows="3"></textarea></label>
                     <button class="btn" type="submit">Crea in attesa</button>
                 </form>
             </details>
@@ -1219,5 +1236,5 @@
 
 </section>
 
-    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.1"></script>
+    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.2"></script>
 {% endblock %}

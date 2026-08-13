@@ -134,6 +134,109 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
+    const nuovoAppuntamentoForm = document.getElementById('admin-new-appointment-form');
+    if (nuovoAppuntamentoForm) {
+        const messaggioModulo = nuovoAppuntamentoForm.querySelector('.admin-inline-form-message');
+        const confermaContatti = nuovoAppuntamentoForm.elements.confirm_missing_contacts;
+        const selezionePersona = document.getElementById('admin-appointment-person');
+        const dataAppuntamento = document.getElementById('admin-appointment-date');
+        const apriCalendario = nuovoAppuntamentoForm.querySelector('[data-open-date-picker]');
+        const pulsanteInvio = nuovoAppuntamentoForm.querySelector('button[type="submit"]');
+
+        function mostraErroreModulo(messaggio) {
+            messaggioModulo.textContent = messaggio;
+            messaggioModulo.hidden = false;
+            messaggioModulo.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+
+        function nascondiErroreModulo() {
+            messaggioModulo.textContent = '';
+            messaggioModulo.hidden = true;
+        }
+
+        if (selezionePersona) {
+            selezionePersona.addEventListener('change', function() {
+                const persona = this.selectedOptions[0]?.dataset || {};
+                if (!this.value) return;
+                nuovoAppuntamentoForm.elements.nome.value = persona.nome || '';
+                nuovoAppuntamentoForm.elements.telefono.value = persona.telefono || '';
+                nuovoAppuntamentoForm.elements.email.value = persona.email || '';
+                confermaContatti.value = '0';
+                nascondiErroreModulo();
+            });
+        }
+
+        if (apriCalendario && dataAppuntamento) {
+            apriCalendario.addEventListener('click', function() {
+                dataAppuntamento.focus();
+                if (typeof dataAppuntamento.showPicker === 'function') {
+                    dataAppuntamento.showPicker();
+                }
+            });
+        }
+
+        async function inviaNuovoAppuntamento(contattiMancantiConfermati = false) {
+            nascondiErroreModulo();
+            confermaContatti.value = contattiMancantiConfermati ? '1' : '0';
+
+            if (!nuovoAppuntamentoForm.checkValidity()) {
+                nuovoAppuntamentoForm.reportValidity();
+                return;
+            }
+
+            const mancanti = [];
+            if (!nuovoAppuntamentoForm.elements.telefono.value.trim()) mancanti.push('telefono');
+            if (!nuovoAppuntamentoForm.elements.email.value.trim()) mancanti.push('email');
+            if (mancanti.length && !contattiMancantiConfermati) {
+                const confermato = window.confirm(
+                    `Mancano ${mancanti.join(' e ')}. Vuoi creare comunque l’appuntamento?`
+                );
+                if (!confermato) return;
+                return inviaNuovoAppuntamento(true);
+            }
+
+            pulsanteInvio.disabled = true;
+            pulsanteInvio.setAttribute('aria-busy', 'true');
+            try {
+                const risposta = await fetch(nuovoAppuntamentoForm.action, {
+                    method: 'POST',
+                    body: new FormData(nuovoAppuntamentoForm),
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const risultato = await risposta.json();
+                if (!risposta.ok) {
+                    if (risultato.requires_missing_contacts_confirmation && !contattiMancantiConfermati) {
+                        const confermato = window.confirm(`${risultato.message} Vuoi procedere?`);
+                        if (confermato) return inviaNuovoAppuntamento(true);
+                        return;
+                    }
+                    mostraErroreModulo(risultato.message || 'Non è stato possibile creare l’appuntamento.');
+                    return;
+                }
+                window.location.assign(risultato.redirect);
+            } catch (errore) {
+                mostraErroreModulo('Connessione interrotta: i dati sono ancora nel modulo. Riprova.');
+            } finally {
+                pulsanteInvio.disabled = false;
+                pulsanteInvio.removeAttribute('aria-busy');
+            }
+        }
+
+        nuovoAppuntamentoForm.addEventListener('input', function() {
+            confermaContatti.value = '0';
+            nascondiErroreModulo();
+        });
+        nuovoAppuntamentoForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            inviaNuovoAppuntamento(false);
+        });
+    }
+
     const eventiMensili = document.querySelectorAll('[data-calendar-preview]');
     if (eventiMensili.length) {
         const HOVER_DELAY_MS = 1000;

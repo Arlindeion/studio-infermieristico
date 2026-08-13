@@ -3067,6 +3067,112 @@ def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
         assert appuntamento.scadenza_gestione is not None
 
 
+def test_admin_chiede_conferma_json_se_mancano_i_contatti(client):
+    csrf = _login_admin(client)
+
+    response = client.post('/admin/appuntamento/aggiungi', data={
+        '_csrf_token': csrf,
+        'nome': 'Persona senza contatti',
+        'telefono': '',
+        'email': '',
+        'servizio': 'Medicazione semplice',
+        'data': '2099-09-02',
+        'ora_ore': '09',
+        'ora_minuti': '35',
+        'duration_minutes': '40',
+        'note': 'Questi dati devono restare nel modulo.',
+        'confirm_missing_contacts': '0',
+    }, headers={
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    })
+
+    assert response.status_code == 409
+    assert response.get_json() == {
+        'ok': False,
+        'message': 'Mancano telefono e email. Conferma se vuoi creare comunque l’appuntamento.',
+        'requires_missing_contacts_confirmation': True,
+    }
+    with flask_app.app_context():
+        assert Appuntamento.query.count() == 0
+
+
+def test_admin_crea_appuntamento_senza_contatti_dopo_conferma(client):
+    csrf = _login_admin(client)
+
+    response = client.post('/admin/appuntamento/aggiungi', data={
+        '_csrf_token': csrf,
+        'nome': 'Persona senza contatti',
+        'telefono': '',
+        'email': '',
+        'servizio': 'Medicazione semplice',
+        'data': '2099-09-02',
+        'ora_ore': '09',
+        'ora_minuti': '35',
+        'duration_minutes': '40',
+        'note': 'Contatto da integrare in seguito.',
+        'confirm_missing_contacts': '1',
+    }, headers={
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    })
+
+    assert response.status_code == 200
+    assert response.get_json()['ok'] is True
+    with flask_app.app_context():
+        appuntamento = Appuntamento.query.one()
+        assert appuntamento.telefono == ''
+        assert appuntamento.email == ''
+        assert appuntamento.ora == '09:35'
+        assert appuntamento.note == 'Contatto da integrare in seguito.'
+        modifica = app_module.RegistroModifica.query.filter_by(
+            azione='creazione_admin',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento.id,
+        ).one()
+        assert 'telefono' in modifica.dettagli
+        assert 'email' in modifica.dettagli
+
+
+def test_admin_non_accetta_contatto_compilato_ma_non_valido(client):
+    csrf = _login_admin(client)
+
+    response = client.post('/admin/appuntamento/aggiungi', data={
+        '_csrf_token': csrf,
+        'nome': 'Persona con telefono errato',
+        'telefono': 'abc',
+        'email': '',
+        'servizio': 'Medicazione semplice',
+        'data': '2099-09-02',
+        'ora_ore': '09',
+        'ora_minuti': '40',
+        'duration_minutes': '30',
+        'confirm_missing_contacts': '1',
+    }, headers={
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    })
+
+    assert response.status_code == 422
+    assert 'telefono inserito non è valido' in response.get_json()['message']
+    with flask_app.app_context():
+        assert Appuntamento.query.count() == 0
+
+
+def test_admin_nuovo_appuntamento_usa_calendario_e_select_ora(client):
+    _login_admin(client)
+
+    response = client.get('/admin')
+
+    assert response.status_code == 200
+    assert 'id="admin-new-appointment-form"' in response.text
+    assert 'id="admin-appointment-date" name="data" type="date"' in response.text
+    assert 'data-open-date-picker' in response.text
+    assert 'name="ora_ore"' in response.text
+    assert 'name="ora_minuti"' in response.text
+    assert '<option value="55">55</option>' in response.text
+
+
 def test_limite_online_accetta_coppia_a_tredici_ma_non_prenota_da_quattordici(app):
     with flask_app.app_context():
         corso = Corso(titolo='Disostruzione', tipo='disostruzione-pediatrica', data='2099-09-01', capienza_massima=14)
@@ -3350,6 +3456,9 @@ def test_quiz_da_dove_parto_orienta_senza_raccogliere_dati(client):
     assert 'Da dove parto?' in response.text
     assert 'non vengono salvate né inviate' in response.text
     assert 'data-orientation-quiz' in response.text
+    assert 'data-quiz-stage' in response.text
+    assert response.text.count('orientation-panel') == 3
+    assert 'js/da-dove-parto.js?v=1.1' in response.text
     assert '/aziende-e-gruppi' in response.text
     assert 'js/da-dove-parto.js' in response.text
     assert '<form' not in response.text

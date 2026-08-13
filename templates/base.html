@@ -46,10 +46,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.4">
     {% endif %}
     {% if page_endpoint in ['admin', 'dettaglio_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=4.7">
     {% endif %}
     {% if page_endpoint in ['da_dove_parto', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.1">
     {% endif %}
     {% if internal_page_mode %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.4">
@@ -253,7 +253,7 @@
 <script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
 {% endif %}
 {% if page_endpoint == 'da_dove_parto' %}
-<script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.0" defer></script>
+<script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.1" defer></script>
 {% endif %}
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>

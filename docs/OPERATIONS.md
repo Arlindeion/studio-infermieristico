@@ -572,13 +572,15 @@ Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e cont
 
 Dal 13 agosto 2026 il codice locale include:
 
-- vista mensile dell’agenda, con massimo tre impegni sintetici per giorno e accesso alla vista giornaliera per il dettaglio;
+- vista mensile dell’agenda, con massimo tre impegni sintetici per giorno, anteprima operativa dopo un secondo di hover e accesso alla vista giornaliera per il dettaglio;
+- creazione manuale di appuntamenti anche senza telefono o email, subordinata a conferma esplicita e registrazione dei contatti mancanti nell’audit; gli errori restano nello stesso modulo senza cancellare i valori;
+- selezione della data tramite calendario nativo e dell’orario tramite menu separati per ore e minuti, con granularità di cinque minuti;
 - modulo pubblico `/aziende-e-gruppi`, limitato a cinque invii al minuto e protetto da CSRF;
 - conferma al referente e avviso allo studio tramite la stessa infrastruttura SMTP tracciata;
 - attività automatica alla ricezione e sostituzione della prossima attività quando cambia lo stato;
 - proposta manuale inviata soltanto dopo conferma esplicita dell’operatore, con copia conservata nel registro email;
 - conversione in corso privato con stato `Chiuso`, visibile in agenda e sincronizzato su Calendar ma escluso dalle date pubbliche;
-- quiz `/da-dove-parto` eseguito solo nel browser, senza richieste di rete o persistenza delle risposte.
+- quiz `/da-dove-parto` eseguito solo nel browser, senza richieste di rete o persistenza delle risposte, con passaggi avanti e indietro che riusano direzione, durata e giunzione visiva delle transizioni laterali del sito.
 
 La tabella è introdotta dalla revisione Alembic `c84f2d1a9e70`, successiva a `a13d8f7c2b40`. Prima di distribuire il codice eseguire `flask db upgrade` su una copia o su un database vuoto, quindi `flask db check`. Il collaudo con SMTP, Google Calendar e gli eventi provenienti da Arzamed resta un gate esterno separato: i test locali non provano lo stato live.
 

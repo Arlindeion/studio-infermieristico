@@ -5098,6 +5098,18 @@ def crea_corso_da_richiesta_azienda(id):
 def aggiungi_appuntamento_admin():
     if not _csrf_admin_valido():
         abort(400)
+    risposta_json = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def errore_modulo(messaggio, status=422, richiede_conferma=False):
+        if risposta_json:
+            return jsonify({
+                'ok': False,
+                'message': messaggio,
+                'requires_missing_contacts_confirmation': richiede_conferma,
+            }), status
+        flash(messaggio, 'error')
+        return redirect(url_for('admin') + '#admin-agenda')
+
     persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int)) if request.form.get('persona_id') else None
     nome = request.form.get('nome', '').strip() or (persona.nome if persona else '')
     telefono = request.form.get('telefono', '').strip() or (persona.telefono if persona else '')
@@ -5105,13 +5117,37 @@ def aggiungi_appuntamento_admin():
     servizio = request.form.get('servizio', '').strip()
     data_str = request.form.get('data', '').strip()
     ora = request.form.get('ora', '').strip()
+    if not ora:
+        ora_ore = request.form.get('ora_ore', '').strip()
+        ora_minuti = request.form.get('ora_minuti', '').strip()
+        if re.fullmatch(r'([01]\d|2[0-3])', ora_ore) and re.fullmatch(r'[0-5]\d', ora_minuti):
+            ora = f'{ora_ore}:{ora_minuti}'
     durata = parse_appointment_duration(request.form.get('duration_minutes'))
-    if not nome or not _telefono_valido(telefono) or not email or not _email_valida(email) or not servizio or not data_str or not ora or durata is None:
-        flash('Completa i dati dell’appuntamento con contatti, data, ora e durata validi.', 'error')
-        return redirect(url_for('admin') + '#admin-agenda')
+    if not nome or not servizio or not data_str or not ora or durata is None:
+        return errore_modulo('Completa nome, prestazione, data, ora e durata con valori validi.')
+    try:
+        _intervallo_locale(data_str, ora, durata)
+    except (TypeError, ValueError):
+        return errore_modulo('Inserisci una data e un orario validi.')
+    if telefono and not _telefono_valido(telefono):
+        return errore_modulo('Il telefono inserito non è valido: correggilo oppure lascialo vuoto.')
+    if email and not _email_valida(email):
+        return errore_modulo('L’indirizzo email inserito non è valido: correggilo oppure lascialo vuoto.')
+
+    contatti_mancanti = [
+        etichetta
+        for etichetta, valore in [('telefono', telefono), ('email', email)]
+        if not valore
+    ]
+    if contatti_mancanti and request.form.get('confirm_missing_contacts') != '1':
+        elenco = ' e '.join(contatti_mancanti)
+        return errore_modulo(
+            f'Mancano {elenco}. Conferma se vuoi creare comunque l’appuntamento.',
+            status=409,
+            richiede_conferma=True,
+        )
     if slot_occupato_db(data_str, ora, durata) or intervallo_occupato_da_calendario(data_str, ora, durata):
-        flash('L’intervallo scelto è occupato. Verifica agenda e Calendar.', 'error')
-        return redirect(url_for('admin') + '#admin-agenda')
+        return errore_modulo('L’intervallo scelto è occupato. Verifica agenda e Calendar.', status=409)
     appuntamento = Appuntamento(
         nome=nome,
         telefono=telefono,
@@ -5128,9 +5164,17 @@ def aggiungi_appuntamento_admin():
     )
     db.session.add(appuntamento)
     db.session.commit()
-    registra_modifica('creazione_admin', 'Appuntamento', appuntamento.id)
+    registra_modifica(
+        'creazione_admin',
+        'Appuntamento',
+        appuntamento.id,
+        {'contatti_mancanti': contatti_mancanti} if contatti_mancanti else None,
+    )
     flash('Appuntamento creato in attesa di conferma.', 'success')
-    return redirect(_url_dettaglio_admin('Appuntamento', appuntamento.id))
+    destinazione = _url_dettaglio_admin('Appuntamento', appuntamento.id)
+    if risposta_json:
+        return jsonify({'ok': True, 'redirect': destinazione})
+    return redirect(destinazione)
 
 
 @app.route('/admin/blocco/aggiungi', methods=['POST'])

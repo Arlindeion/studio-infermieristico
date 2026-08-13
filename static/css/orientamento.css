@@ -52,6 +52,66 @@
     text-transform: uppercase;
 }
 
+.orientation-stage {
+    display: grid;
+    height: var(--orientation-stage-height, auto);
+    overflow: hidden;
+    position: relative;
+}
+
+.orientation-stage > .orientation-panel {
+    grid-area: 1 / 1;
+    min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .orientation-panel.is-entering-forward,
+    .orientation-panel.is-entering-backward {
+        background: var(--avorio);
+        position: relative;
+        will-change: transform;
+        z-index: 2;
+    }
+
+    .orientation-panel.is-entering-forward {
+        animation: orientation-panel-in-forward 620ms cubic-bezier(0.65, 0, 0.35, 1) both;
+        box-shadow: -18px 0 34px var(--verde-scuro-a14);
+    }
+
+    .orientation-panel.is-entering-backward {
+        animation: orientation-panel-in-backward 620ms cubic-bezier(0.65, 0, 0.35, 1) both;
+        box-shadow: 18px 0 34px var(--verde-scuro-a14);
+    }
+
+    .orientation-panel.is-entering-forward::after,
+    .orientation-panel.is-entering-backward::after {
+        background: var(--rosso-cuore);
+        bottom: 0;
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        top: 0;
+        width: 3px;
+    }
+
+    .orientation-panel.is-entering-forward::after { left: 0; }
+    .orientation-panel.is-entering-backward::after { right: 0; }
+}
+
+@keyframes orientation-panel-in-forward {
+    from { transform: translate3d(100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes orientation-panel-in-backward {
+    from { transform: translate3d(-100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .orientation-progress span { transition: none; }
+}
+
 .orientation-question[hidden],
 .orientation-result[hidden] {
     display: none;

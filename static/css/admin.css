@@ -1377,6 +1377,115 @@
 
 .admin-form-wide { grid-column: 1 / -1; }
 
+.admin-inline-form-message {
+    background: #fde2df;
+    border-left: 4px solid var(--rosa-antico);
+    border-radius: 6px;
+    color: #7d2e2e;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.7rem 0.8rem;
+}
+
+.admin-inline-form-message[hidden] { display: none; }
+
+.admin-contact-fields {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: 1fr;
+}
+
+.admin-contact-fields label small {
+    color: var(--grigio);
+    font-size: 0.7rem;
+    font-weight: 400;
+    justify-self: end;
+    margin-top: -1.15rem;
+}
+
+.admin-field-help {
+    color: var(--grigio);
+    font-size: 0.76rem;
+    line-height: 1.35;
+    margin: -0.45rem 0 0;
+}
+
+.admin-date-field {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.admin-date-field > label,
+.admin-time-field legend {
+    color: var(--testo);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.admin-date-control {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-date-control button {
+    background: var(--verde-chiaro);
+    border: 1px solid var(--verde-scuro-a14);
+    border-radius: 8px;
+    color: var(--verde-scuro);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 0 0.65rem;
+}
+
+.admin-date-control button:hover,
+.admin-date-control button:focus-visible { background: var(--verde-brand); }
+
+.admin-time-field {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.admin-time-controls {
+    align-items: end;
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    margin-top: 0.25rem;
+}
+
+.admin-time-controls > span {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 800;
+    padding-bottom: 0.4rem;
+}
+
+.admin-input-suffix {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-input-suffix input { border-radius: 8px 0 0 8px; }
+
+.admin-input-suffix > span {
+    align-items: center;
+    background: var(--verde-chiaro);
+    border: 1px solid var(--nero-a08);
+    border-left: 0;
+    border-radius: 0 8px 8px 0;
+    color: var(--grigio);
+    display: flex;
+    font-size: 0.75rem;
+    padding: 0 0.65rem;
+}
+
 .admin-request-list,
 .admin-task-list,
 .admin-error-list {
