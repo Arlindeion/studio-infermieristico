@@ -4580,9 +4580,9 @@ def admin():
             ))
     db.session.commit()
 
-    vista_agenda = request.args.get('vista', 'giorno')
+    vista_agenda = request.args.get('vista', 'mese')
     if vista_agenda not in {'giorno', 'settimana', 'mese'}:
-        vista_agenda = 'giorno'
+        vista_agenda = 'mese'
     mese_richiesto = request.args.get('mese', '').strip()
     try:
         if vista_agenda == 'mese' and mese_richiesto:

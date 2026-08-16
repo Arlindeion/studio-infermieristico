@@ -657,6 +657,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il modulo conserva i valori quando il server rileva un errore, usa il calendario nativo per la data e menu distinti per ore e minuti con granularità di cinque minuti. I contatti mancanti possono essere integrati successivamente dalla scheda della pratica.
 - Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `static/css/admin.css`, `tests/test_app.py`.
 
+## D-078 — L’agenda admin si apre sulla vista mensile
+
+- Data: 2026-08-16.
+- Stato: approvata dall’attività e implementata.
+- Decisione: aprire `/admin` sulla vista mensile e ordinare i controlli dell’agenda come `Mese`, `Settimana`, `Giorno`. Le viste settimanale e giornaliera restano disponibili tramite parametro esplicito.
+- Motivo: offrire all’accesso una lettura immediata del carico complessivo e rendere l’ordine dei controlli coerente con la vista iniziale.
+- Conseguenze: questa decisione sostituisce D-073 soltanto nel punto in cui indicava l’agenda giornaliera come vista iniziale. Un valore `vista` assente o non valido apre il mese corrente; gli strumenti operativi esclusi dalla griglia mensile restano disponibili nelle viste settimana e giorno.
+- Collegamenti: `app.py`, `templates/admin.html`, `tests/test_app.py`, D-073, D-076.
+
 ## Modello per nuove decisioni
 
 ```markdown

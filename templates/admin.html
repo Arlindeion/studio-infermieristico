@@ -80,9 +80,9 @@
     <div class="admin-section-heading">
         <div><p class="admin-eyebrow">Oggi e prossimi impegni</p><h2>Agenda operativa</h2></div>
         <div class="admin-agenda-controls">
-            <a class="filtro-btn {% if vista_agenda == 'giorno' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='giorno') }}#admin-agenda">Giorno</a>
-            <a class="filtro-btn {% if vista_agenda == 'settimana' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='settimana') }}#admin-agenda">Settimana</a>
             <a class="filtro-btn {% if vista_agenda == 'mese' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='mese') }}#admin-agenda">Mese</a>
+            <a class="filtro-btn {% if vista_agenda == 'settimana' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='settimana') }}#admin-agenda">Settimana</a>
+            <a class="filtro-btn {% if vista_agenda == 'giorno' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='giorno') }}#admin-agenda">Giorno</a>
         </div>
     </div>
     <p class="admin-period-label">{% if vista_agenda == 'mese' %}{{ etichetta_mese|capitalize }}{% else %}{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>

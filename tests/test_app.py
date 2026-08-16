@@ -3162,7 +3162,7 @@ def test_admin_non_accetta_contatto_compilato_ma_non_valido(client):
 def test_admin_nuovo_appuntamento_usa_calendario_e_select_ora(client):
     _login_admin(client)
 
-    response = client.get('/admin')
+    response = client.get('/admin?vista=giorno')
 
     assert response.status_code == 200
     assert 'id="admin-new-appointment-form"' in response.text
@@ -3569,6 +3569,25 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert 'data=2099-07-01' in response.text
     assert 'data=2099-09-01' in response.text
     assert 'Nuovo appuntamento' not in response.text
+
+
+def test_admin_apre_la_vista_mensile_e_ordina_i_controlli(client):
+    _login_admin(client)
+
+    with patch.object(app_module, '_eventi_calendar_esterni', return_value=[]):
+        response = client.get('/admin')
+        response_vista_non_valida = client.get('/admin?vista=non-valida')
+
+    assert response.status_code == 200
+    assert '<table class="admin-month">' in response.text
+    assert response_vista_non_valida.status_code == 200
+    assert '<table class="admin-month">' in response_vista_non_valida.text
+    indice_mese = response.text.index('>Mese</a>')
+    indice_settimana = response.text.index('>Settimana</a>')
+    indice_giorno = response.text.index('>Giorno</a>')
+    assert indice_mese < indice_settimana < indice_giorno
+    inizio_link_mese = response.text.rfind('<a', 0, indice_mese)
+    assert 'filtro-btn attivo' in response.text[inizio_link_mese:indice_mese]
 
 
 def test_stato_azienda_sostituisce_automaticamente_la_prossima_attivita(client):
