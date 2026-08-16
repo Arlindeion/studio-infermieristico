@@ -3573,7 +3573,8 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert 'vista=mese' in response.text
     assert 'data=2099-07-01' in response.text
     assert 'data=2099-09-01' in response.text
-    assert 'Nuovo appuntamento' not in response.text
+    assert '<details class="admin-surface"><summary>Nuovo appuntamento</summary>' in response.text
+    assert '<details class="admin-surface"><summary>Aggiungi pausa o chiusura</summary>' in response.text
 
 
 def test_admin_apre_la_vista_mensile_e_ordina_i_controlli(client):
@@ -3593,6 +3594,17 @@ def test_admin_apre_la_vista_mensile_e_ordina_i_controlli(client):
     assert indice_mese < indice_settimana < indice_giorno
     inizio_link_mese = response.text.rfind('<a', 0, indice_mese)
     assert 'filtro-btn attivo' in response.text[inizio_link_mese:indice_mese]
+
+
+def test_admin_mostra_gli_strumenti_agenda_chiusi_in_ogni_vista(client):
+    _login_admin(client)
+
+    with patch.object(app_module, '_eventi_calendar_esterni', return_value=[]):
+        for vista in ('mese', 'settimana', 'giorno'):
+            response = client.get(f'/admin?vista={vista}')
+            assert response.status_code == 200
+            assert '<details class="admin-surface"><summary>Nuovo appuntamento</summary>' in response.text
+            assert '<details class="admin-surface"><summary>Aggiungi pausa o chiusura</summary>' in response.text
 
 
 def test_stato_azienda_sostituisce_automaticamente_la_prossima_attivita(client):

@@ -165,9 +165,8 @@
             {% else %}<p class="nota nota-lg">Nessun impegno nel periodo selezionato.</p>{% endfor %}
         {% endif %}
         </div>
-        {% if vista_agenda != 'mese' %}
         <aside class="admin-agenda-tools">
-            <details class="admin-surface" open><summary>Nuovo appuntamento</summary>
+            <details class="admin-surface"><summary>Nuovo appuntamento</summary>
                 <form class="admin-form-stack" id="admin-new-appointment-form" method="post" action="{{ url_for('aggiungi_appuntamento_admin') }}">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="confirm_missing_contacts" value="0">
@@ -207,7 +206,6 @@
                 </form>
             </details>
         </aside>
-        {% endif %}
     </div>
 </section>
 
