@@ -1826,8 +1826,7 @@
 }
 
 .admin-calendar-arrow,
-.admin-calendar-today,
-.admin-month-picker button {
+.admin-calendar-today {
     align-items: center;
     border: 1px solid var(--verde-scuro-a14);
     border-radius: 10px;
@@ -1856,19 +1855,19 @@
 .admin-calendar-today:hover,
 .admin-calendar-today:focus-visible { background: var(--verde-chiaro); }
 
+.admin-period-navigation.is-month { align-items: flex-end; }
+
 .admin-month-picker {
-    align-items: end;
     display: grid;
-    gap: 0.35rem 0.55rem;
-    grid-template-columns: minmax(170px, 1fr) auto;
-    margin-right: auto;
+    flex: 0 1 240px;
+    gap: 0.35rem;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-month-picker label {
     color: var(--grigio);
     font-size: 0.72rem;
     font-weight: 800;
-    grid-column: 1 / -1;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -1879,15 +1878,10 @@
     border-radius: 10px;
     color: var(--testo);
     font: inherit;
+    min-width: 0;
     min-height: 44px;
     padding: 0 0.75rem;
-}
-
-.admin-month-picker button {
-    background: var(--verde-scuro);
-    color: white;
-    cursor: pointer;
-    padding: 0 1rem;
+    width: 100%;
 }
 
 .admin-month-scroll {

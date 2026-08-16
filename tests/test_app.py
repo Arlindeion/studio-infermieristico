@@ -3546,9 +3546,14 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert response.text.count('class="admin-month-day') == 42
     assert response.text.count('<th scope="col">') == 7
     assert 'name="mese" value="2099-08"' in response.text
+    assert 'data-submit-on-change' in response.text
+    assert '>Mostra</button>' not in response.text
     assert 'Mese precedente' in response.text
     assert 'Mese successivo' in response.text
     assert '>Oggi</a>' in response.text
+    assert response.text.index('Mese precedente') < response.text.index('id="admin-month-input"')
+    assert response.text.index('id="admin-month-input"') < response.text.index('Mese successivo')
+    assert response.text.index('Mese successivo') < response.text.index('>Oggi</a>')
     assert 'Corso mensile test' in response.text
     assert 'Chiusura studio' in response.text
     assert 'admin-month-event-appuntamento' in response.text

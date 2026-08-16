@@ -47,6 +47,12 @@ test('apre il calendario e usa menu distinti per ore e minuti', () => {
     assert.match(script, /dataAppuntamento\.showPicker\(\)/);
 });
 
+test('invia subito il mese selezionato senza pulsante aggiuntivo', () => {
+    assert.match(script, /querySelector\('\[data-submit-on-change\]'\)/);
+    assert.match(script, /addEventListener\('change'/);
+    assert.match(script, /this\.form\.requestSubmit\(\)/);
+});
+
 test('mostra nello stesso modulo gli errori restituiti dal server', () => {
     assert.match(script, /mostraErroreModulo\(risultato\.message/);
     assert.match(script, /X-Requested-With': 'XMLHttpRequest'/);

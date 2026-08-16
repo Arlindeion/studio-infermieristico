@@ -101,6 +101,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const selettoreMeseAdmin = document.querySelector('[data-submit-on-change]');
+    if (selettoreMeseAdmin) {
+        selettoreMeseAdmin.addEventListener('change', function() {
+            if (!this.value || !this.form) return;
+            if (typeof this.form.requestSubmit === 'function') {
+                this.form.requestSubmit();
+            } else {
+                this.form.submit();
+            }
+        });
+    }
+
     const personaCorsoSelect = document.getElementById('persona-corso-select');
     const campiPersonaCorso = {
         nome: document.getElementById('persona-corso-nome'),

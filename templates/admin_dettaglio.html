@@ -240,5 +240,5 @@ S.C. Studio Infermieristico</textarea></label>
 
     <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
 </main>
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.3"></script>
 {% endblock %}

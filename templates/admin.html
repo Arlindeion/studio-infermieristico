@@ -86,14 +86,13 @@
         </div>
     </div>
     <p class="admin-period-label">{% if vista_agenda == 'mese' %}{{ etichetta_mese|capitalize }}{% else %}{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>
-    <nav class="admin-period-navigation" aria-label="Cambia periodo dell’agenda">
+    <nav class="admin-period-navigation{% if vista_agenda == 'mese' %} is-month{% endif %}" aria-label="Cambia periodo dell’agenda">
         <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_precedente.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese precedente{% else %}Periodo precedente{% endif %}">←</a>
         {% if vista_agenda == 'mese' %}
-        <form class="admin-month-picker" method="get" action="{{ url_for('admin') }}">
+        <form class="admin-month-picker" method="get" action="{{ url_for('admin') }}#admin-agenda">
             <input type="hidden" name="vista" value="mese">
             <label for="admin-month-input">Vai al mese</label>
-            <input id="admin-month-input" type="month" name="mese" value="{{ inizio_agenda.strftime('%Y-%m') }}" min="2020-01" max="2100-12">
-            <button type="submit">Mostra</button>
+            <input id="admin-month-input" type="month" name="mese" value="{{ inizio_agenda.strftime('%Y-%m') }}" min="2020-01" max="2100-12" data-submit-on-change>
         </form>
         {% else %}
         <strong>{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}</strong>
@@ -1236,5 +1235,5 @@
 
 </section>
 
-    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.2"></script>
+    <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.3"></script>
 {% endblock %}
