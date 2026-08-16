@@ -3527,6 +3527,13 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
             note='Portare la documentazione della medicazione precedente.',
             stato='Confermato',
         ))
+        db.session.add(app_module.BloccoAgenda(
+            titolo='Chiusura studio',
+            data='2099-08-20',
+            ora='13:00',
+            durata_minuti=180,
+            note='Studio non disponibile.',
+        ))
         db.session.commit()
     _login_admin(client)
 
@@ -3543,6 +3550,13 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert 'Mese successivo' in response.text
     assert '>Oggi</a>' in response.text
     assert 'Corso mensile test' in response.text
+    assert 'Chiusura studio' in response.text
+    assert 'admin-month-event-appuntamento' in response.text
+    assert 'admin-month-event-corso' in response.text
+    assert 'admin-month-event-bloccoagenda' in response.text
+    assert 'Appuntamenti e call' in response.text
+    assert 'Corsi' in response.text
+    assert 'Pause e chiusure' in response.text
     assert 'data-calendar-preview' in response.text
     assert 'admin-month-preview-template' in response.text
     assert '<dt>Prestazione</dt><dd>Medicazione complessa</dd>' in response.text

@@ -1726,7 +1726,13 @@
 
 .admin-month-event,
 .admin-month-more {
-    border-left: 3px solid var(--verde-header);
+    --admin-calendar-accent: var(--verde-header);
+    --admin-calendar-surface: var(--verde-chiaro);
+    --admin-calendar-surface-hover: var(--verde-azione-soft-a22);
+    background: var(--admin-calendar-surface);
+    border: 1px solid var(--verde-scuro-a10);
+    border-left: 4px solid var(--admin-calendar-accent);
+    border-radius: 6px;
     color: var(--testo);
     display: grid;
     font-size: 0.72rem;
@@ -1740,7 +1746,7 @@
 .admin-month-event:focus-visible,
 .admin-month-more:hover,
 .admin-month-more:focus-visible {
-    background: var(--verde-chiaro);
+    background: var(--admin-calendar-surface-hover);
 }
 
 .admin-month-event time {
@@ -1754,21 +1760,42 @@
     white-space: nowrap;
 }
 
+.admin-month-event-appuntamento,
+.admin-month-event-callsonno {
+    --admin-calendar-accent: var(--verde-header);
+    --admin-calendar-surface: var(--verde-chiaro);
+    --admin-calendar-surface-hover: var(--verde-azione-soft-a22);
+}
+
 .admin-month-event-corso,
 .admin-month-event-incontroaccompagnamento {
-    border-left-color: var(--rosa-antico);
+    --admin-calendar-accent: var(--rosa-antico);
+    --admin-calendar-surface: var(--rosa-chiaro);
+    --admin-calendar-surface-hover: var(--corallo-medio-a22);
 }
 
 .admin-month-event-bloccoagenda {
-    border-left-color: var(--grigio);
+    --admin-calendar-accent: var(--grigio);
+    --admin-calendar-surface-hover: var(--terra-a12);
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--carta) 0,
+        var(--carta) 7px,
+        var(--terra-a12) 7px,
+        var(--terra-a12) 14px
+    );
 }
 
 .admin-month-event-esterno {
-    border-left-color: #55759a;
+    --admin-calendar-accent: #55759a;
+    --admin-calendar-surface: #edf2f6;
+    --admin-calendar-surface-hover: #e3ebf2;
 }
 
 .admin-month-more {
-    border-left-color: transparent;
+    --admin-calendar-surface: transparent;
+    --admin-calendar-surface-hover: var(--verde-chiaro);
+    border-color: transparent;
     color: var(--verde-scuro);
     font-weight: 800;
 }
@@ -1909,21 +1936,41 @@ table.admin-month {
 }
 
 .admin-calendar-legend span {
+    --admin-calendar-legend-accent: var(--verde-header);
+    --admin-calendar-legend-surface: var(--verde-chiaro);
     align-items: center;
     display: inline-flex;
     gap: 0.35rem;
 }
 
 .admin-calendar-legend span::before {
-    background: var(--verde-header);
-    border-radius: 2px;
+    background: var(--admin-calendar-legend-surface);
+    border: 1px solid var(--verde-scuro-a10);
+    border-left: 4px solid var(--admin-calendar-legend-accent);
+    border-radius: 3px;
     content: "";
-    height: 0.7rem;
-    width: 0.7rem;
+    height: 0.85rem;
+    width: 1.15rem;
 }
 
-.admin-calendar-legend .is-course::before { background: var(--rosa-antico); }
-.admin-calendar-legend .is-block::before { background: var(--grigio); }
+.admin-calendar-legend .is-course {
+    --admin-calendar-legend-accent: var(--rosa-antico);
+    --admin-calendar-legend-surface: var(--rosa-chiaro);
+}
+
+.admin-calendar-legend .is-block {
+    --admin-calendar-legend-accent: var(--grigio);
+}
+
+.admin-calendar-legend .is-block::before {
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--carta) 0,
+        var(--carta) 4px,
+        var(--terra-a12) 4px,
+        var(--terra-a12) 8px
+    );
+}
 .admin-calendar-legend small { margin-left: auto; }
 
 .admin-calendar-popover {
