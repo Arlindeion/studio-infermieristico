@@ -666,6 +666,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: questa decisione sostituisce D-073 soltanto nel punto in cui indicava l’agenda giornaliera come vista iniziale. Un valore `vista` assente o non valido apre il mese corrente; gli strumenti operativi esclusi dalla griglia mensile restano disponibili nelle viste settimana e giorno.
 - Collegamenti: `app.py`, `templates/admin.html`, `tests/test_app.py`, D-073, D-076.
 
+## D-079 — Le risorse definitive iniziano come preproduzione privata pagata
+
+- Data: 2026-08-23.
+- Stato: approvata e implementata.
+- Decisione: creare dal Blueprint dedicato un Web Service Starter e un PostgreSQL Basic-256mb da 1 GB in Francoforte, per un costo previsto di 13,30 USD al mese più eventuali imposte, mantenendoli come preproduzione privata con `APP_ENV=staging`, Basic Auth, `noindex`, invii soppressi, integrazioni reali disattivate e nessun dominio personalizzato.
+- Motivo: i collaudi SMTP, Calendar e dei flussi end-to-end richiedono risorse separate e a pagamento, ma non giustificano l'apertura pubblica o il cutover di produzione prima della chiusura dei P0.
+- Conseguenze: il database gratuito non viene promosso né copiato; Auto Sync e auto-deploy restano disattivati. Dopo il primo accesso amministrativo le variabili `ADMIN_BOOTSTRAP_*` vengono rimosse dal pannello e dal Blueprint, mentre l'account resta nel database. Finché `STAGING_LIVE_INTEGRATIONS=false`, il software non deve autenticare, leggere o scrivere su Google Calendar. Secret file Google, integrazioni reali, backup esterno, deploy successivi, `APP_ENV=production`, DNS e dominio conservano gate distinti.
+- Collegamenti: `render.production.yaml`, `OPERATIONS.md`, `ROADMAP.md`, D-030, D-061, D-071.
+
 ## Modello per nuove decisioni
 
 ```markdown

@@ -1,10 +1,7 @@
-# PREPARAZIONE SOLTANTO.
-# Non creare o sincronizzare questo Blueprint senza un nuovo ordine esplicito:
-# i piani dichiarati sotto generano costi Render.
-#
-# Il primo stato delle risorse di produzione separate resta una preproduzione
-# privata. APP_ENV, dominio e integrazioni vengono attivati soltanto attraverso
-# i gate descritti in docs/OPERATIONS.md.
+# BLUEPRINT ATTIVO DAL 23 AGOSTO 2026.
+# Auto Sync resta disattivato: ogni sincronizzazione o deploy richiede un gate
+# intenzionale. Le risorse restano una preproduzione privata; APP_ENV, dominio
+# e integrazioni vengono attivati soltanto attraverso docs/OPERATIONS.md.
 
 previews:
   generation: "off"
@@ -49,10 +46,6 @@ projects:
               - key: STAGING_AUTH_USERNAME
                 sync: false
               - key: STAGING_AUTH_PASSWORD
-                sync: false
-              - key: ADMIN_BOOTSTRAP_USERNAME
-                sync: false
-              - key: ADMIN_BOOTSTRAP_PASSWORD
                 sync: false
               - key: MAIL_SERVER
                 value: smtp.mail.ovh.net

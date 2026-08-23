@@ -83,16 +83,17 @@ All'avvio Render esegue nell'ordine `flask db upgrade`, il comando sicuro
 `bootstrap-admin` e infine Gunicorn. I comandi preparatori disabilitano lo
 scheduler; il processo Gunicorn lo avvia una sola volta perché usa un worker.
 
-`render.production.yaml` prepara un secondo Blueprint con nomi distinti. Non è
-il file del Blueprint esistente e non viene scoperto o sincronizzato
-automaticamente. Dichiara piani a pagamento: non va selezionato nel pannello,
-validato tramite un'operazione che crei risorse o sincronizzato senza un nuovo
-ordine esplicito successivo alla presentazione del costo aggiornato.
+`render.production.yaml` è il file del Blueprint
+`sc-studio-infermieristico-production`, creato il 23 agosto 2026 dopo l'ordine
+di spesa per 13,30 USD/mese più eventuali imposte. Gestisce il Web Service
+Starter e il PostgreSQL Basic-256mb separati dallo staging gratuito. Auto Sync
+è impostato su `No`: ogni futura sincronizzazione resta un'operazione capace di
+modificare la configurazione e avviare un deploy, quindi richiede un gate
+intenzionale.
 
-Il file è intenzionalmente sicuro per la prima accensione:
+Il file mantiene intenzionalmente sicura la preproduzione privata:
 
-- usa `main`, che prima della creazione deve essere portato esattamente al
-  commit approvato e nuovamente verificato;
+- usa `main`, da portare sempre esattamente al commit approvato e verificato;
 - crea Web Service Starter e PostgreSQL Basic-256mb separati in Francoforte;
 - fissa il disco iniziale a 1 GB e disabilita l'autoscaling per evitare aumenti
   automatici di costo;
@@ -103,14 +104,29 @@ Il file è intenzionalmente sicuro per la prima accensione:
 - mantiene auto-deploy e preview disattivati;
 - non collega il dominio e conserva il sottodominio Render soltanto per il
   collaudo privato;
-- usa un pre-deploy separato per migrazioni e bootstrap, lasciando a Gunicorn
-  il solo avvio dell'applicazione.
+- usa un pre-deploy separato per migrazioni e verifica dell'admin esistente,
+  lasciando a Gunicorn il solo avvio dell'applicazione.
+
+Il primo deploy del commit `ac17eaf` e il deploy successivo alla rimozione dei
+segreti `ADMIN_BOOTSTRAP_*` sono risultati `Live`. Il controllo del 23 agosto ha
+confermato `APP_ENV=staging`, root `401`, `/healthz` `200`, `robots.txt` con
+`Disallow: /`, intestazioni CSP, HSTS, anti-framing, `nosniff` e
+`X-Robots-Tag`, database alla revisione `d91e6b4f2a30`, `flask db check` senza
+nuove operazioni e `validate-config` riuscito.
 
 Il JSON Google non è rappresentato nel Blueprint. Prima del collaudo reale va
 caricato direttamente come secret file con nome
 `google-calendar-service-account.json`; Render lo monta in
 `/etc/secrets/google-calendar-service-account.json`. Nessun valore segreto va
 inserito nel repository.
+
+Al controllo del 23 agosto il secret file non era ancora presente. I log live
+mostravano tentativi di autenticazione Calendar riferiti esclusivamente al file
+mancante quando veniva aperta l'agenda; non sono stati osservati indirizzi email
+o altri dati personali nei messaggi. Il difetto è stato corretto nel codice:
+con `APP_ENV=staging` e `STAGING_LIVE_INTEGRATIONS=false` l'app non autentica,
+legge o scrive su Calendar. La correzione resta da distribuire; gli invii email
+sono comunque soppressi.
 
 Il 30 luglio 2026 sono stati verificati dal pannello Google il progetto Cloud,
 Google Calendar API abilitata, l'identità tecnica dedicata e la relativa chiave.
@@ -130,10 +146,11 @@ La sequenza seguente è obbligatoria e non può essere anticipata:
 3. portare `main` al commit verificato senza modificare la storia pubblicata;
 4. creare il Blueprint da `render.production.yaml` senza dominio e con
    configurazione privata;
-5. inserire i segreti direttamente nel pannello e caricare il secret file;
+5. inserire i segreti direttamente nel pannello, senza attivare le integrazioni;
 6. verificare database vuoto, migrazioni, admin, Basic Auth, `noindex`,
    `/healthz` e assenza di dati reali;
-7. ottenere autorizzazioni separate prima di email reali e scritture Calendar;
+7. ottenere autorizzazioni separate prima di caricare il secret file Google,
+   abilitare email reali o consentire scritture Calendar;
 8. collaudare i flussi con dati sintetici e rimuovere gli eventi di prova;
 9. restringere l'accesso esterno al database alla sola sorgente necessaria per
    il backup cifrato, dopo aver scelto una provenienza IP stabile; non usare
@@ -230,6 +247,20 @@ ridistribuire; `bootstrap-admin` verificherà l'account già presente.
 
 ### Preproduzione privata con integrazioni reali
 
+Stato verificato il 23 agosto 2026, prima dell'attivazione:
+
+| Chiave o controllo | Stato |
+|---|---|
+| `FLASK_ENV` | `production` |
+| `APP_ENV` | `staging` |
+| `MAIL_SUPPRESS_SEND` | `true` |
+| `STAGING_LIVE_INTEGRATIONS` | `false` |
+| `STAGING_AUTH_*` | presenti |
+| `ADMIN_BOOTSTRAP_*` | rimossi dopo il primo accesso |
+| configurazione Zimbra e `GOOGLE_CALENDAR_ID` | presente, valori non documentati |
+| `google-calendar-service-account.json` | assente |
+| dominio personalizzato | assente |
+
 Il collaudo di SMTP e Calendar avviene su un Web Service a pagamento ancora
 configurato come `APP_ENV=staging`: Basic Auth, `robots.txt` bloccante e
 `X-Robots-Tag` restano obbligatori. Sono ammessi esclusivamente dati sintetici,
@@ -243,9 +274,9 @@ Per abilitare questa fase impostare insieme:
 - la configurazione Zimbra e Calendar completa indicata nella matrice di
   produzione.
 
-Senza l'opt-in esplicito lo staging continua a richiedere
-`MAIL_SUPPRESS_SEND=true`; il Blueprint gratuito corrente resta quindi incapace
-di inviare email per errore. `flask --app app validate-config` verifica anche
+Senza l'opt-in esplicito la preproduzione continua a richiedere
+`MAIL_SUPPRESS_SEND=true` e resta quindi incapace di inviare email per errore.
+`flask --app app validate-config` verifica anche
 server `smtp.mail.ovh.net`, porta 587, TLS attivo, SSL disattivo, casella
 mittente approvata e presenza del secret file Google, senza mostrare valori
 sensibili.
@@ -452,10 +483,12 @@ rappresentativo popolato. Non usare `db.create_all()` per database operativi.
 2. **Export logico locale:** `scripts/backup_postgres.sh` esegue ogni giorno `pg_dump` in formato custom, cifra il dump con AES-256 e PBKDF2, genera SHA-256 e conserva la copia sul PC dell'attività.
 3. **Export Render manuale:** creare un export dalla sezione Recovery prima di migrazioni rischiose o interventi straordinari; Render conserva questi export per 7 giorni, quindi scaricarli se devono durare più a lungo.
 
-Il database gratuito è ammesso soltanto nello staging con dati fittizi: scade
-dopo 30 giorni e non offre PITR o export gestiti. Non viene aggiornato né
-promosso a produzione: prima dell'apertura pubblica si crea il PostgreSQL
-pagato, nuovo e vuoto, previsto da D-061 e `render.production.yaml`.
+Il database gratuito resta soltanto uno staging storico con dati fittizi e non
+viene aggiornato né promosso. Il 23 agosto è stato creato il PostgreSQL pagato,
+nuovo e senza dati commerciali o sanitari, previsto da D-061 e
+`render.production.yaml`; il pannello Recovery ha confermato una finestra PITR
+di tre giorni. Prima dei dati reali resta obbligatorio affiancargli l'export
+logico cifrato esterno.
 
 ### Obiettivi e conservazione
 

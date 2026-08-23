@@ -694,6 +694,9 @@ def _scarica_intervalli_calendario(data_str):
     except (TypeError, ValueError):
         return []
 
+    if not _integrazione_calendar_abilitata():
+        return []
+
     adesso = time.time()
     durata_cache = app.config.get('CALENDARIO_CACHE_SECONDI', 300)
     voce_cache = _cache_calendario['per_data'].get(data_str)
@@ -810,10 +813,20 @@ def orari_occupati_da_calendario(data_str):
 _servizio_calendario_cache = None
 
 
+def _integrazione_calendar_abilitata():
+    """Richiede l'opt-in esplicito soltanto nell'ambiente di staging."""
+    return not (
+        app.config.get('APP_ENV') == 'staging'
+        and not app.config.get('STAGING_LIVE_INTEGRATIONS')
+    )
+
+
 def _ottieni_servizio_calendario():
     """Restituisce un client autenticato per le API di Google Calendar, o None
     se l'integrazione Google Calendar non è configurata o fallisce."""
     global _servizio_calendario_cache
+    if not _integrazione_calendar_abilitata():
+        return None
     if _servizio_calendario_cache is not None:
         return _servizio_calendario_cache
 

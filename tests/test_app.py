@@ -441,6 +441,13 @@ def test_pagina_sonno_mostra_formule_e_prezzi_prima_della_prenotazione(client):
     assert 'partono da <strong>75 €</strong>' in booking.text
 
 
+def test_checkbox_call_sonno_usano_stile_compatto_mobile(client):
+    booking = client.get('/prenota-call-sonno')
+
+    assert booking.status_code == 200
+    assert booking.text.count('class="privacy-checkbox"') == 3
+
+
 def test_promemoria_call_sonno_email_non_si_duplica(app):
     adesso = datetime(2026, 9, 20, 10, 0, tzinfo=app_module.FUSO_ORARIO)
     with app.app_context():
@@ -2008,6 +2015,36 @@ def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
     app_module._servizio_calendario_cache = None
     app_module._invalida_cache_calendario()
     app_module._cache_calendario['errore_registrato_il'] = 0
+
+
+def test_staging_senza_opt_in_non_contatta_calendar(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'staging')
+    monkeypatch.setitem(app.config, 'STAGING_LIVE_INTEGRATIONS', False)
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    monkeypatch.setitem(
+        app.config,
+        'GOOGLE_SERVICE_ACCOUNT_FILE',
+        '/etc/secrets/google-calendar-service-account.json',
+    )
+    servizio_in_cache = MagicMock()
+    app_module._servizio_calendario_cache = servizio_in_cache
+    app_module._invalida_cache_calendario()
+
+    with patch.object(
+        app_module.service_account.Credentials,
+        'from_service_account_file',
+    ) as crea_credenziali, app.app_context():
+        risultato = app_module._scarica_intervalli_calendario('2099-08-11')
+        servizio = app_module._ottieni_servizio_calendario()
+        eventi = RegistroEvento.query.filter_by(categoria='google_calendar').all()
+
+    assert risultato == []
+    assert servizio is None
+    assert eventi == []
+    servizio_in_cache.events.assert_not_called()
+    crea_credenziali.assert_not_called()
+    app_module._servizio_calendario_cache = None
+    app_module._invalida_cache_calendario()
 
 
 def test_calendario_google_blocca_appuntamento_singolo(calendario_finto):

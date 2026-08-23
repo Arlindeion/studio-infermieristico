@@ -109,11 +109,11 @@
 
         <div class="form-gruppo">
             <label class="privacy-label">
-                <input type="checkbox" name="presa_visione_offerta" required {% if form_data.get('presa_visione_offerta') %}checked{% endif %}>
+                <input type="checkbox" name="presa_visione_offerta" required class="privacy-checkbox" {% if form_data.get('presa_visione_offerta') %}checked{% endif %}>
                 <span class="privacy-text">Ho visto modalità e prezzi delle consulenze e so che la call gratuita serve a scegliere il passo appropriato. *</span>
             </label>
             <label class="privacy-label">
-                <input type="checkbox" name="conferma_ambito" required {% if form_data.get('conferma_ambito') %}checked{% endif %}>
+                <input type="checkbox" name="conferma_ambito" required class="privacy-checkbox" {% if form_data.get('conferma_ambito') %}checked{% endif %}>
                 <span class="privacy-text">La richiesta non riguarda un’urgenza e non sto richiedendo diagnosi o terapia. *</span>
             </label>
             <label class="privacy-label">
