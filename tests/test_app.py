@@ -3349,6 +3349,16 @@ def test_admin_nuovo_appuntamento_usa_calendario_e_select_ora(client):
     assert '<option value="55">55</option>' in response.text
 
 
+def test_filtri_archivio_appuntamenti_mantengono_aperto_il_pannello(client):
+    _login_admin(client)
+
+    response = client.get('/admin?filtro=confermati')
+
+    assert response.status_code == 200
+    for filtro in ('in_attesa', 'confermati', 'annullati', 'passati'):
+        assert f'href="/admin?filtro={filtro}#admin-prenotazioni"' in response.text
+
+
 def test_limite_online_accetta_coppia_a_tredici_ma_non_prenota_da_quattordici(app):
     with flask_app.app_context():
         corso = Corso(titolo='Disostruzione', tipo='disostruzione-pediatrica', data='2099-09-01', capienza_massima=14)
@@ -3473,6 +3483,166 @@ def test_riconciliazione_si_ferma_al_primo_errore_calendar(
     assert risultato['errore'] == 'Errore Calendar: TimeoutError'
     assert mock_servizio.events.return_value.get.call_count == 1
     assert len(eventi) == 1
+
+
+def test_riallineamento_automatico_crea_evento_mancante_e_notifica_successo(
+    app,
+    google_calendar_scrittura_finto,
+    monkeypatch,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {
+        'id': 'evento-riallineato',
+    }
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'studio@example.com')
+    monkeypatch.setitem(app.config, 'PUBLIC_BASE_URL', 'https://scstudioinfermieristico.it')
+
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi', telefono='3331234567', email='mario@example.com',
+            servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', sincronizzazione='errore',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+        app_module.registra_evento(
+            'google_calendar', 'errore', 'Scrittura Calendar fallita.',
+            'Appuntamento', appuntamento_id,
+        )
+
+        with patch.object(
+            app_module,
+            '_invia_email_tracciata',
+            return_value=True,
+        ) as invia_email:
+            risultato = app_module.riallinea_calendar_automaticamente()
+            messaggio = invia_email.call_args.args[0]
+
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        errore_precedente = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            esito='errore',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento_id,
+        ).one()
+
+    assert risultato['tentati'] == 1
+    assert risultato['riusciti'] == 1
+    assert risultato['falliti'] == 0
+    assert appuntamento.google_event_id == 'evento-riallineato'
+    assert appuntamento.sincronizzazione == 'sincronizzato'
+    assert errore_precedente.risolto_il is not None
+    assert 'Riallineamento Calendar riuscito' in messaggio.subject
+    assert 'Appuntamento #' in messaggio.body
+    assert 'https://scstudioinfermieristico.it/admin#admin-errori' in messaggio.body
+
+
+def test_riallineamento_automatico_notifica_fallimento_senza_perdere_dato(
+    app,
+    google_calendar_scrittura_finto,
+    monkeypatch,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.side_effect = TimeoutError(
+        'Calendar non raggiungibile'
+    )
+    monkeypatch.setitem(app.config, 'MAIL_ADMIN_RECIPIENT', 'studio@example.com')
+
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi', telefono='3331234567', email='mario@example.com',
+            servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', sincronizzazione='errore',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+
+        with patch.object(
+            app_module,
+            '_invia_email_tracciata',
+            return_value=True,
+        ) as invia_email:
+            risultato = app_module.riallinea_calendar_automaticamente()
+            messaggio = invia_email.call_args.args[0]
+
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+
+    assert risultato['tentati'] == 1
+    assert risultato['riusciti'] == 0
+    assert risultato['falliti'] == 1
+    assert appuntamento.google_event_id is None
+    assert appuntamento.sincronizzazione == 'errore'
+    assert 'Riallineamento Calendar fallito' in messaggio.subject
+    assert 'Falliti: 1' in messaggio.body
+
+
+def test_riallineamento_recupera_evento_creato_prima_di_un_timeout_senza_duplicarlo(
+    app,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi', telefono='3331234567', email='mario@example.com',
+            servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', sincronizzazione='errore',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        mock_servizio.events.return_value.list.return_value.execute.return_value = {
+            'items': [{
+                'id': 'evento-gia-creato',
+                'extendedProperties': {'private': {
+                    'studioEntity': 'Appuntamento',
+                    'studioEntityId': str(appuntamento.id),
+                }},
+            }],
+        }
+
+        with patch.object(
+            app_module,
+            'invia_email_esito_riallineamento_calendar',
+            return_value=True,
+        ):
+            risultato = app_module.riallinea_calendar_automaticamente()
+
+        appuntamento_id_calendar = appuntamento.google_event_id
+
+    assert risultato['riusciti'] == 1
+    assert appuntamento_id_calendar == 'evento-gia-creato'
+    mock_servizio.events.return_value.insert.assert_not_called()
+    mock_servizio.events.return_value.patch.assert_called_once()
+
+
+def test_riallineamento_automatico_non_sovrascrive_anomalie_esterne_o_attese(app):
+    with flask_app.app_context():
+        db.session.add_all([
+            Appuntamento(
+                nome='Evento difforme', telefono='3331234567', email='uno@example.com',
+                servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+                duration_minutes=30, stato='Confermato', sincronizzazione='difforme',
+                google_event_id='evento-difforme',
+            ),
+            Appuntamento(
+                nome='Richiesta in attesa', telefono='3331234567', email='due@example.com',
+                servizio='Medicazione semplice', data='2099-09-01', ora='11:00',
+                duration_minutes=30, stato='In attesa', sincronizzazione='errore',
+            ),
+        ])
+        db.session.commit()
+
+        with patch.object(app_module, '_sincronizza_entita_calendar') as sincronizza, patch.object(
+            app_module,
+            'invia_email_esito_riallineamento_calendar',
+        ) as notifica:
+            risultato = app_module.riallinea_calendar_automaticamente()
+
+    assert risultato['tentati'] == 0
+    sincronizza.assert_not_called()
+    notifica.assert_not_called()
 
 
 def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
@@ -4063,6 +4233,45 @@ def test_form_prenotazione_include_il_listino_aggiornato(client):
     assert 'data-service-name="Assistenza domiciliare"' not in resp.text
     assert resp.text.index('name="consenso_privacy"') < resp.text.index('data-service-price-summary')
     assert resp.text.index('data-service-price-summary') < resp.text.index('id="btn-invia"')
+    assert 'js/form-prenotazione.js?v=1.4' in resp.text
+
+
+def test_form_prenotazione_ricentra_il_primo_campo_non_valido():
+    script = Path('static/js/form-prenotazione.js').read_text()
+    stylesheet = Path('static/css/prestazioni.css').read_text()
+
+    assert "bookingForm.addEventListener('invalid'" in script
+    assert "scrollIntoView({block: 'center'" in script
+    assert "campoNonValido.focus({preventScroll: true})" in script
+    assert 'scroll-margin-block: 7rem' in stylesheet
+
+
+def test_email_appuntamento_include_indirizzo_e_link_admin(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'PUBLIC_BASE_URL', 'https://scstudioinfermieristico.it')
+    appuntamento = Appuntamento(
+        id=42,
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Medicazione semplice',
+        data='2099-09-01',
+        ora='10:00',
+        duration_minutes=30,
+    )
+
+    with app.test_request_context('/prenota'), patch.object(
+        app_module,
+        '_invia_email_tracciata',
+        return_value=True,
+    ) as invia_email:
+        assert app_module.invia_email_conferma(appuntamento) is True
+        messaggio_conferma = invia_email.call_args.args[0]
+
+        assert app_module.invia_email_nuova_prenotazione(appuntamento) is True
+        messaggio_ricezione = invia_email.call_args.args[0]
+
+    assert "Via C. D'Agnese 43\n65015 Montesilvano (PE)" in messaggio_conferma.body
+    assert 'https://scstudioinfermieristico.it/admin' in messaggio_ricezione.body
 
 
 if __name__ == '__main__':

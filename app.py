@@ -2076,6 +2076,110 @@ def _modelli_sincronizzabili():
     ]
 
 
+def _sincronizza_entita_calendar(tipo, entita):
+    sincronizzatori = {
+        'Appuntamento': crea_o_aggiorna_evento_calendario,
+        'CallSonno': crea_o_aggiorna_evento_calendario_call_sonno,
+        'Corso': crea_o_aggiorna_evento_calendario_corso,
+        'IncontroAccompagnamento': crea_o_aggiorna_evento_calendario_incontro,
+        'BloccoAgenda': crea_o_aggiorna_evento_calendario_blocco,
+    }
+    sincronizzatore = sincronizzatori.get(tipo)
+    return sincronizzatore(entita) if sincronizzatore else False
+
+
+def _chiudi_errori_calendar_risolti(tipo, entita_id):
+    RegistroEvento.query.filter(
+        RegistroEvento.categoria.in_(['google_calendar', 'riconciliazione_calendar']),
+        RegistroEvento.esito.in_(['errore', 'avviso']),
+        RegistroEvento.entita_tipo == tipo,
+        RegistroEvento.entita_id == entita_id,
+        RegistroEvento.risolto_il.is_(None),
+    ).update({
+        'risolto_il': datetime.now(),
+        'nota_risoluzione': 'Riallineamento automatico completato.',
+    }, synchronize_session=False)
+    db.session.commit()
+
+
+def _recupera_evento_calendar_esistente(tipo, entita_id):
+    """Ricollega un evento già creato se la risposta dell'insert era andata persa."""
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        raise RuntimeError('Google Calendar non disponibile durante il recupero evento.')
+    risposta = _esegui_richiesta_calendario(
+        servizio.events().list(
+            calendarId=calendar_id,
+            privateExtendedProperty=f'studioEntityId={entita_id}',
+            showDeleted=False,
+            maxResults=10,
+        )
+    )
+    corrispondenze = []
+    for evento in risposta.get('items', []):
+        proprieta = ((evento.get('extendedProperties') or {}).get('private') or {})
+        if (
+            proprieta.get('studioEntity') == tipo
+            and proprieta.get('studioEntityId') == str(entita_id)
+            and evento.get('id')
+        ):
+            corrispondenze.append(evento['id'])
+    if len(corrispondenze) > 1:
+        raise RuntimeError('Più eventi Calendar risultano collegati alla stessa pratica.')
+    return corrispondenze[0] if corrispondenze else None
+
+
+def riallinea_calendar_automaticamente():
+    """Riprova le sincronizzazioni fallite senza sovrascrivere anomalie esterne."""
+    stati_da_riprovare = ('da_sincronizzare', 'errore', 'mancante')
+    risultato = {'tentati': 0, 'riusciti': 0, 'falliti': 0, 'dettagli': []}
+
+    for tipo, modello, deve_esistere, _ in _modelli_sincronizzabili():
+        candidati = modello.query.filter(
+            modello.sincronizzazione.in_(stati_da_riprovare)
+        ).all()
+        for entita in candidati:
+            if not deve_esistere(entita):
+                continue
+            risultato['tentati'] += 1
+            riuscito = False
+            try:
+                if not entita.google_event_id:
+                    evento_esistente_id = _recupera_evento_calendar_esistente(
+                        tipo,
+                        entita.id,
+                    )
+                    if evento_esistente_id:
+                        entita.google_event_id = evento_esistente_id
+                        db.session.commit()
+                riuscito = _sincronizza_entita_calendar(tipo, entita)
+            except Exception as errore:
+                db.session.rollback()
+                registra_evento(
+                    'google_calendar',
+                    'errore',
+                    'Errore imprevisto durante il riallineamento automatico Calendar.',
+                    tipo,
+                    entita.id,
+                    {'errore': str(errore)},
+                )
+            if riuscito:
+                risultato['riusciti'] += 1
+                _chiudi_errori_calendar_risolti(tipo, entita.id)
+            else:
+                risultato['falliti'] += 1
+            risultato['dettagli'].append({
+                'tipo': tipo,
+                'id': entita.id,
+                'esito': 'riuscito' if riuscito else 'fallito',
+            })
+
+    if risultato['tentati']:
+        invia_email_esito_riallineamento_calendar(risultato)
+    return risultato
+
+
 def _valore_evento_google(corpo, campo):
     valore = (corpo.get(campo) or {}).get('dateTime') or (corpo.get(campo) or {}).get('date')
     if not valore:
@@ -2946,7 +3050,9 @@ def invia_email_conferma(appuntamento):
                 f'Durata:   {appuntamento.duration_minutes} minuti\n\n'
                 f'Per qualsiasi necessità puoi contattarmi al numero 3806317175.\n\n'
                 f'A presto,\n'
-                f'S.C. Studio Infermieristico'
+                f'S.C. Studio Infermieristico\n'
+                f"Via C. D'Agnese 43\n"
+                f'65015 Montesilvano (PE)'
             )
         )
         _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
@@ -3019,6 +3125,7 @@ def invia_email_nuova_prenotazione(appuntamento):
     """Invia email di alert all'amministratore quando viene ricevuta una nuova richiesta di appuntamento."""
     try:
         logger.info('>>> Invio email alert nuova prenotazione...')
+        link_admin = public_url(url_for('admin'))
         msg = Message(
             subject=f'Nuova prenotazione - {appuntamento.nome}',
             recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
@@ -3031,7 +3138,7 @@ def invia_email_nuova_prenotazione(appuntamento):
                 f'Data:     {appuntamento.data}\n'
                 f'Ora:      {appuntamento.ora}\n'
                 f'Note:     {appuntamento.note or "Nessuna"}\n\n'
-                f'Accedi all\'area admin per gestire la prenotazione.'
+                f'Gestisci la prenotazione nell\'area admin:\n{link_admin}'
             )
         )
         _invia_email_tracciata(msg, 'Appuntamento', appuntamento.id)
@@ -3040,6 +3147,59 @@ def invia_email_nuova_prenotazione(appuntamento):
     except Exception as e:
         logger.error('>>> Errore invio email alert (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert nuova prenotazione non inviata allo studio.', 'Appuntamento', appuntamento.id, {'errore': str(e)})
+        return False
+
+
+def invia_email_esito_riallineamento_calendar(risultato):
+    """Invia un solo riepilogo amministrativo per ogni ciclo di retry Calendar."""
+    destinatario = app.config.get('MAIL_ADMIN_RECIPIENT')
+    if not destinatario:
+        registra_evento(
+            'email',
+            'avviso',
+            'Esito riallineamento Calendar non notificato: destinatario admin mancante.',
+        )
+        return False
+
+    falliti = risultato['falliti']
+    if falliti == 0:
+        stato = 'riuscito'
+    elif risultato['riusciti']:
+        stato = 'parziale'
+    else:
+        stato = 'fallito'
+    righe = '\n'.join(
+        f"- {dettaglio['tipo']} #{dettaglio['id']}: {dettaglio['esito']}"
+        for dettaglio in risultato['dettagli']
+    )
+    base_url = (app.config.get('PUBLIC_BASE_URL') or '').rstrip('/')
+    link_admin = f'{base_url}/admin#admin-errori' if base_url else '/admin#admin-errori'
+    msg = Message(
+        subject=(
+            f"Riallineamento Calendar {stato} · "
+            f"{risultato['riusciti']}/{risultato['tentati']} riusciti"
+        ),
+        recipients=[destinatario],
+        body=(
+            'Il tentativo automatico di riallineamento con Google Calendar '
+            f'è {stato}.\n\n'
+            f"Tentati: {risultato['tentati']}\n"
+            f"Riusciti: {risultato['riusciti']}\n"
+            f"Falliti: {falliti}\n\n"
+            f'{righe}\n\n'
+            f'Controlla gli esiti nell’area admin:\n{link_admin}'
+        ),
+    )
+    try:
+        _invia_email_tracciata(msg, 'RiallineamentoCalendar', None)
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            'Email esito riallineamento Calendar non inviata.',
+            dettagli={'errore': str(errore)},
+        )
         return False
 
 
@@ -3311,7 +3471,12 @@ def esegui_promemoria_call_sonno_con_contesto():
 
 def esegui_riconciliazione_con_contesto():
     with app.app_context():
-        riconcilia_calendario()
+        riallineamento = riallinea_calendar_automaticamente()
+        riconciliazione = riconcilia_calendario()
+        return {
+            'riallineamento': riallineamento,
+            'riconciliazione': riconciliazione,
+        }
 
 
 def esegui_manutenzione_admin_con_contesto():
@@ -3368,7 +3533,7 @@ if (
         trigger='interval',
         hours=1,
         id='riconciliazione_calendar_job',
-        name='Riconciliazione oraria Google Calendar',
+        name='Riallineamento e riconciliazione oraria Google Calendar',
         replace_existing=True,
     )
     scheduler.add_job(
@@ -5430,17 +5595,7 @@ def risolvi_errore_admin(id):
 
 
 def _sincronizza_entita_admin(tipo, entita):
-    if tipo == 'Appuntamento':
-        return crea_o_aggiorna_evento_calendario(entita)
-    if tipo == 'CallSonno':
-        return crea_o_aggiorna_evento_calendario_call_sonno(entita)
-    if tipo == 'Corso':
-        return crea_o_aggiorna_evento_calendario_corso(entita)
-    if tipo == 'IncontroAccompagnamento':
-        return crea_o_aggiorna_evento_calendario_incontro(entita)
-    if tipo == 'BloccoAgenda':
-        return crea_o_aggiorna_evento_calendario_blocco(entita)
-    return False
+    return _sincronizza_entita_calendar(tipo, entita)
 
 
 @app.route('/admin/calendar/riconcilia', methods=['POST'])

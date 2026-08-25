@@ -389,6 +389,12 @@
     max-width: 46rem;
 }
 
+.nursing-booking-page .form-gruppo input,
+.nursing-booking-page .form-gruppo select,
+.nursing-booking-page .form-gruppo textarea {
+    scroll-margin-block: 7rem;
+}
+
 .booking-service-picker__label {
     color: var(--testo);
     display: block;

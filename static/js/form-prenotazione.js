@@ -13,6 +13,23 @@ const servicePickerMenu = servicePicker.querySelector('[data-service-picker-menu
 const servicePickerError = document.querySelector('[data-service-picker-error]');
 const serviceGroups = Array.from(servicePicker.querySelectorAll('[data-service-picker-group]'));
 const serviceOptions = Array.from(servicePicker.querySelectorAll('[data-service-option]'));
+let scorrimentoValidazioneProgrammato = false;
+
+// Il browser porta il primo campo non valido appena dentro il viewport, ma
+// l'header sticky può coprirlo. Lo ricentriamo senza sostituire il messaggio
+// nativo di validazione e senza spostare il focus su errori successivi.
+bookingForm.addEventListener('invalid', function(event) {
+    if (scorrimentoValidazioneProgrammato) return;
+    scorrimentoValidazioneProgrammato = true;
+    const campoNonValido = event.target;
+    window.requestAnimationFrame(function() {
+        campoNonValido.scrollIntoView({block: 'center', inline: 'nearest', behavior: 'auto'});
+        campoNonValido.focus({preventScroll: true});
+        window.setTimeout(function() {
+            scorrimentoValidazioneProgrammato = false;
+        }, 0);
+    });
+}, true);
 
 function chiudiCategorie(tranne = null) {
     serviceGroups.forEach(group => {

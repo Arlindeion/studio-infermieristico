@@ -70,6 +70,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - BLSD: investimento concreto nella sicurezza degli ambienti; corso di 5 ore con teoria ed esercitazioni pratiche su manichino, rivolto a cittadini, associazioni, aziende e gruppi.
 - Instagram in homepage: gli ultimi sei post mostrano automaticamente attività reali e vita dello studio come prova secondaria, senza sostituire le CTA dei due pilastri. Il feed usa una griglia Behold a tre colonne su desktop e due su mobile; il clic apre la galleria interna.
 - Prestazioni infermieristiche: il listino pubblico è diviso in `Terapie e somministrazioni`, `Medicazioni`, `Controlli e diagnostica` e `Altre prestazioni`, con tariffe riferite allo studio e variazioni comunicate prima della conferma. La sezione `Dove ci troviamo` indica Via C. D'Agnese 43, 65015 Montesilvano (PE), con mappa e collegamento a Google Maps. Questa è la forma approvata da usare sempre per l'indirizzo.
+- Email appuntamenti: la conferma destinata alla persona riporta in firma `S.C. Studio Infermieristico`, `Via C. D'Agnese 43` e `65015 Montesilvano (PE)`; l'avviso interno per una nuova prenotazione include il collegamento assoluto all'area admin. Se il job orario ritenta una o più sincronizzazioni Calendar, l’amministratore riceve un unico riepilogo con esito riuscito, fallito o parziale e collegamento agli errori admin.
 
 ## Naming approvato
 

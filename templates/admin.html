@@ -263,22 +263,22 @@
 
     <!-- FILTRI -->
     <div class="admin-filtri">
-    <a href="/admin?filtro=in_attesa"
+    <a href="{{ url_for('admin', filtro='in_attesa') }}#admin-prenotazioni"
        class="filtro-btn {% if filtro == 'in_attesa' %}attivo{% endif %}">
         In attesa
         {% if in_attesa_count > 0 %}
         <span class="badge-count">{{ in_attesa_count }}</span>
         {% endif %}
     </a>
-    <a href="/admin?filtro=confermati"
+    <a href="{{ url_for('admin', filtro='confermati') }}#admin-prenotazioni"
        class="filtro-btn {% if filtro == 'confermati' %}attivo{% endif %}">
         Confermati
     </a>
-    <a href="/admin?filtro=annullati"
+    <a href="{{ url_for('admin', filtro='annullati') }}#admin-prenotazioni"
        class="filtro-btn {% if filtro == 'annullati' %}attivo{% endif %}">
         Annullati
     </a>
-    <a href="/admin?filtro=passati"
+    <a href="{{ url_for('admin', filtro='passati') }}#admin-prenotazioni"
        class="filtro-btn {% if filtro == 'passati' %}attivo{% endif %}">
         Passati
     </a>

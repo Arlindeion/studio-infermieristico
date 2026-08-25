@@ -684,6 +684,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: un errore Calendar non annulla il dato locale e viene registrato in `RegistroEvento`; il sito e `/healthz` devono restare disponibili. La disponibilità locale durante il circuito non dimostra che Arzamed sia libero. La produzione resta bloccata finché il test concorrente controllato non esclude crash e riavvii dell'istanza.
 - Collegamenti: `app.py`, `config.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`, D-071, D-079.
 
+## D-081 — Le sincronizzazioni Calendar fallite vengono ritentate automaticamente
+
+- Data: 2026-08-25.
+- Stato: approvata e implementata localmente; deploy e collaudo reale richiesti.
+- Decisione: prima della riconciliazione oraria, il sistema riprova automaticamente le pratiche attive con sincronizzazione `da_sincronizzare`, `errore` o `mancante`. Il ciclo invia all’indirizzo amministrativo una sola email riepilogativa di successo, fallimento o esito parziale quando esiste almeno un tentativo. Gli stati `difforme` ed `eliminato_esternamente` restano esclusi dal retry e richiedono una scelta esplicita dell’operatore.
+- Motivo: il dato locale sopravvive già a un guasto Calendar, ma un evento mai creato non deve restare disallineato fino a un intervento manuale dopo il ripristino della dipendenza.
+- Conseguenze: il recupero automatico avviene al primo ciclo orario utile, non istantaneamente. Prima di creare un evento privo di `google_event_id`, il retry cerca su Calendar le proprietà private `studioEntity` e `studioEntityId`: se trova una corrispondenza la ricollega e la aggiorna, evitando duplicati quando un precedente `insert` era riuscito ma la risposta era andata persa. Più corrispondenze bloccano il recupero automatico. Dopo il successo gli errori Calendar aperti della pratica vengono chiusi conservandone lo storico; un fallimento resta visibile e viene ritentato nel ciclo successivo senza annullare il dato locale.
+- Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`, D-073, D-080.
+
 ## Modello per nuove decisioni
 
 ```markdown

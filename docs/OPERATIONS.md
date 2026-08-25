@@ -395,7 +395,7 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
   ma non elimina la richiesta: l'admin riceve un avviso e può modificarla. Un
   errore secondario durante la successiva scrittura Calendar non annulla invece
   la conferma già salvata.
-- Ogni ora la riconciliazione confronta titolo, inizio e fine degli eventi collegati. Una modifica o eliminazione esterna imposta uno stato di anomalia e non cambia automaticamente il database. Il confronto esatto è visibile nella scheda; la riscrittura esplicita usa i dati locali.
+- Ogni ora il job riprova prima le pratiche attive in stato `da_sincronizzare`, `errore` o `mancante` e invia all’amministratore un’unica email riepilogativa se ha effettuato almeno un tentativo. Se manca il `google_event_id`, cerca prima una corrispondenza tramite le proprietà private della pratica per non duplicare un evento creato prima di un timeout. Subito dopo, la riconciliazione confronta titolo, inizio e fine degli eventi collegati. Una modifica o eliminazione esterna imposta uno stato di anomalia, resta esclusa dal retry automatico e non cambia automaticamente il database. Il confronto esatto è visibile nella scheda; la riscrittura esplicita usa i dati locali.
 - Gli eventi non creati dal sito vengono mostrati in agenda con titolo e orario, senza importarli né attribuirli automaticamente ad Arzamed. Non esiste un identificativo Arzamed nel database finché non sarà disponibile un’integrazione diretta stabile.
 
 ## Errori parziali
@@ -409,8 +409,10 @@ Il dato principale ha priorità:
 Dopo il salvataggio, gli errori secondari devono essere registrati in `RegistroEvento`. Quando l'errore riguarda un'azione admin, mostrare un avviso comprensibile senza fingere che l'intera operazione sia fallita.
 
 Un errore Calendar non deve propagarsi come errore HTTP del sito: la pratica
-locale resta salvata, la sincronizzazione passa in stato di errore e la
-riconciliazione successiva permette il recupero. In assenza di una copia
+locale resta salvata, la sincronizzazione passa in stato di errore e il primo
+job orario utile ritenta automaticamente la scrittura. Il ciclo invia una sola
+email con esito riuscito, fallito o parziale; un fallimento viene riprovato nel
+ciclo successivo. In assenza di una copia
 Calendar ancora valida, la disponibilità continua a includere i dati locali ma
 non deve essere considerata una prova che Arzamed sia libero.
 
