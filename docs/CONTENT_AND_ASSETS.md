@@ -164,6 +164,7 @@ I KPI, i costi obiettivo e l'obiettivo di raccolta delle testimonianze sono docu
 | `static/img/consulenza-sonno-neonato.jpg` | 1536×1024 | Sezione metodo della landing sonno | In uso; ritaglio panoramico centrato su neonato e contatto con l'adulto |
 | `static/img/logo.png` | 1024×1024 | Logo chiaro e materiali | In uso; nome normalizzato per i filesystem Linux case-sensitive |
 | `static/img/logo_black.png` | 469×589 | Login e materiali PDF | In uso |
+| `static/img/logo_nero.png` | 1024×1024 | Variante nera su fondo bianco per materiali | Disponibile; non ancora collegata ai template del sito |
 | `static/img/favicon-16.png`, `favicon-32.png`, `favicon.ico` | 16×16, 32×32, multi-risoluzione | Schede browser e barra dei preferiti | Derivati dal logo chiaro senza ridisegno; simbolo ingrandito su fondo verde profondo per la leggibilità alle piccole dimensioni |
 | `static/img/apple-touch-icon.png` | 180×180 | Collegamenti salvati su dispositivi Apple | Derivato dallo stesso master dei favicon |
 
