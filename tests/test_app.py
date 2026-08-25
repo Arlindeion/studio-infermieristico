@@ -2,13 +2,18 @@ import os
 import base64
 import re
 import secrets
+import ssl
 import subprocess
 import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pytest
 from unittest.mock import MagicMock, patch
 from datetime import date, datetime
 from werkzeug.security import check_password_hash, generate_password_hash
+from googleapiclient.errors import HttpError
 
 # Assicurarsi che l'applicazione possa essere importata
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -43,7 +48,9 @@ def app():
     # Stabilire un contesto applicativo
     with flask_app.app_context():
         db.create_all()
+        app_module._azzera_stato_calendario()
         yield flask_app
+        app_module._azzera_stato_calendario()
         db.session.remove()
         db.drop_all()
 
@@ -1941,7 +1948,7 @@ def test_login_admin_ignora_redirect_esterno(client):
 # ─── Integrazione Google Calendar (Arzamed) ───
 
 @pytest.fixture
-def calendario_finto(app):
+def calendario_finto(app, monkeypatch):
     """Inietta risposte Calendar API senza contattare Google."""
     eventi_per_data = {
         '2026-08-03': [{
@@ -1975,14 +1982,12 @@ def calendario_finto(app):
     mock_servizio.events.return_value.list.side_effect = risposta_lista
     app_module.app.config['GOOGLE_CALENDAR_ID'] = 'finto@group.calendar.google.com'
     app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = '/percorso/finto/service-account.json'
-    app_module._servizio_calendario_cache = mock_servizio
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: mock_servizio)
     app_module._invalida_cache_calendario()
     yield mock_servizio
     app_module.app.config['GOOGLE_CALENDAR_ID'] = None
     app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = None
-    app_module._servizio_calendario_cache = None
-    app_module._invalida_cache_calendario()
-    app_module._cache_calendario['errore_registrato_il'] = 0
+    app_module._azzera_stato_calendario()
 
 
 def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
@@ -1991,16 +1996,17 @@ def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
         datetime.fromisoformat('2099-08-11T11:00:00+02:00'),
         'evento-cache',
     )]
-    app_module._cache_calendario['per_data']['2099-08-11'] = {
+    chiave_cache = ('calendar@example.invalid', '2099-08-11')
+    app_module._cache_calendario['per_data'][chiave_cache] = {
         'intervalli': intervalli,
-        'scaricato_il': 0,
+        'scaricato_il': time.monotonic() - 301,
     }
     app_module._cache_calendario['errore_registrato_il'] = 0
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
     monkeypatch.setitem(app.config, 'CALENDARIO_CACHE_SECONDI', 300)
     mock_servizio = MagicMock()
     mock_servizio.events.return_value.list.return_value.execute.side_effect = RuntimeError('rete assente')
-    monkeypatch.setattr(app_module, '_servizio_calendario_cache', mock_servizio)
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: mock_servizio)
 
     with app.app_context():
         risultato = app_module._scarica_intervalli_calendario('2099-08-11')
@@ -2012,9 +2018,7 @@ def test_errore_lettura_calendar_usa_cache_e_viene_registrato(app, monkeypatch):
     assert risultato == intervalli
     assert len(eventi) == 1
     assert 'Lettura del calendario non disponibile' in eventi[0].messaggio
-    app_module._servizio_calendario_cache = None
-    app_module._invalida_cache_calendario()
-    app_module._cache_calendario['errore_registrato_il'] = 0
+    app_module._azzera_stato_calendario()
 
 
 def test_staging_senza_opt_in_non_contatta_calendar(app, monkeypatch):
@@ -2026,14 +2030,15 @@ def test_staging_senza_opt_in_non_contatta_calendar(app, monkeypatch):
         'GOOGLE_SERVICE_ACCOUNT_FILE',
         '/etc/secrets/google-calendar-service-account.json',
     )
-    servizio_in_cache = MagicMock()
-    app_module._servizio_calendario_cache = servizio_in_cache
-    app_module._invalida_cache_calendario()
+    app_module._azzera_stato_calendario()
 
     with patch.object(
         app_module.service_account.Credentials,
         'from_service_account_file',
-    ) as crea_credenziali, app.app_context():
+    ) as crea_credenziali, patch.object(
+        app_module,
+        'build',
+    ) as crea_servizio, app.app_context():
         risultato = app_module._scarica_intervalli_calendario('2099-08-11')
         servizio = app_module._ottieni_servizio_calendario()
         eventi = RegistroEvento.query.filter_by(categoria='google_calendar').all()
@@ -2041,10 +2046,9 @@ def test_staging_senza_opt_in_non_contatta_calendar(app, monkeypatch):
     assert risultato == []
     assert servizio is None
     assert eventi == []
-    servizio_in_cache.events.assert_not_called()
     crea_credenziali.assert_not_called()
-    app_module._servizio_calendario_cache = None
-    app_module._invalida_cache_calendario()
+    crea_servizio.assert_not_called()
+    app_module._azzera_stato_calendario()
 
 
 def test_calendario_google_blocca_appuntamento_singolo(calendario_finto):
@@ -2092,7 +2096,7 @@ def test_calendar_api_gestisce_paginazione_e_eventi_giornalieri(app, monkeypatch
         seconda_pagina,
     ]
     monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
-    monkeypatch.setattr(app_module, '_servizio_calendario_cache', mock_servizio)
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: mock_servizio)
     app_module._invalida_cache_calendario()
 
     intervalli = app_module._scarica_intervalli_calendario('2026-08-18')
@@ -2102,36 +2106,157 @@ def test_calendar_api_gestisce_paginazione_e_eventi_giornalieri(app, monkeypatch
     seconda_chiamata = mock_servizio.events.return_value.list.call_args_list[1]
     assert seconda_chiamata.kwargs['pageToken'] == 'pagina-2'
     assert seconda_chiamata.kwargs['singleEvents'] is True
-    app_module._servizio_calendario_cache = None
-    app_module._invalida_cache_calendario()
+    app_module._azzera_stato_calendario()
 
 
 def test_google_calendar_usa_scope_limitato_agli_eventi(app, monkeypatch):
     credenziali = object()
     client = MagicMock()
+    trasporto = object()
+    http_autorizzato = object()
     monkeypatch.setitem(
         app.config,
         'GOOGLE_SERVICE_ACCOUNT_FILE',
         '/percorso/finto/google-calendar-service-account.json',
     )
-    monkeypatch.setattr(app_module, '_servizio_calendario_cache', None)
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_TIMEOUT_SECONDI', 5)
+    app_module._azzera_stato_calendario()
 
     with patch.object(
         app_module.service_account.Credentials,
         'from_service_account_file',
         return_value=credenziali,
     ) as crea_credenziali, patch.object(
+        app_module.httplib2,
+        'Http',
+        return_value=trasporto,
+    ) as crea_trasporto, patch.object(
+        app_module.google_auth_httplib2,
+        'AuthorizedHttp',
+        return_value=http_autorizzato,
+    ) as autorizza_trasporto, patch.object(
         app_module,
         'build',
         return_value=client,
-    ):
+    ) as crea_servizio:
         risultato = app_module._ottieni_servizio_calendario()
 
     assert risultato is client
     assert crea_credenziali.call_args.kwargs['scopes'] == [
         'https://www.googleapis.com/auth/calendar.events',
     ]
-    app_module._servizio_calendario_cache = None
+    crea_trasporto.assert_called_once_with(timeout=5)
+    autorizza_trasporto.assert_called_once_with(credenziali, http=trasporto)
+    assert crea_servizio.call_args.kwargs['http'] is http_autorizzato
+    assert 'credentials' not in crea_servizio.call_args.kwargs
+    app_module._azzera_stato_calendario()
+
+
+def test_google_calendar_crea_un_trasporto_distinto_per_operazione(app, monkeypatch):
+    credenziali = object()
+    trasporti = [object(), object()]
+    http_autorizzati = [object(), object()]
+    servizi = [object(), object()]
+    monkeypatch.setitem(
+        app.config,
+        'GOOGLE_SERVICE_ACCOUNT_FILE',
+        '/percorso/finto/google-calendar-service-account.json',
+    )
+    app_module._azzera_stato_calendario()
+
+    with patch.object(
+        app_module.service_account.Credentials,
+        'from_service_account_file',
+        return_value=credenziali,
+    ), patch.object(
+        app_module.httplib2,
+        'Http',
+        side_effect=trasporti,
+    ), patch.object(
+        app_module.google_auth_httplib2,
+        'AuthorizedHttp',
+        side_effect=http_autorizzati,
+    ) as autorizza_trasporto, patch.object(
+        app_module,
+        'build',
+        side_effect=servizi,
+    ) as crea_servizio:
+        primo = app_module._ottieni_servizio_calendario()
+        secondo = app_module._ottieni_servizio_calendario()
+
+    assert [primo, secondo] == servizi
+    assert autorizza_trasporto.call_args_list[0].kwargs['http'] is trasporti[0]
+    assert autorizza_trasporto.call_args_list[1].kwargs['http'] is trasporti[1]
+    assert crea_servizio.call_args_list[0].kwargs['http'] is http_autorizzati[0]
+    assert crea_servizio.call_args_list[1].kwargs['http'] is http_autorizzati[1]
+
+
+def test_letture_calendar_concorrenti_eseguono_un_solo_fetch(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    monkeypatch.setitem(app.config, 'CALENDARIO_CACHE_SECONDI', 300)
+    app_module._azzera_stato_calendario()
+    servizio = MagicMock()
+    barriera = threading.Barrier(8)
+
+    def risposta_lenta(**_parametri):
+        richiesta = MagicMock()
+
+        def esegui(**_opzioni):
+            time.sleep(0.05)
+            return {'items': []}
+
+        richiesta.execute.side_effect = esegui
+        return richiesta
+
+    servizio.events.return_value.list.side_effect = risposta_lenta
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: servizio)
+
+    def leggi_giorno():
+        barriera.wait()
+        return app_module._scarica_intervalli_calendario('2099-08-11')
+
+    with ThreadPoolExecutor(max_workers=8) as esecutore:
+        risultati = list(esecutore.map(lambda _indice: leggi_giorno(), range(8)))
+
+    assert risultati == [[]] * 8
+    assert servizio.events.return_value.list.call_count == 1
+
+
+@pytest.mark.parametrize('tipo_errore', ['http_404', 'timeout', 'ssl'])
+def test_errori_calendar_aprono_il_circuito_senza_abbattere_il_sito(
+    app,
+    client,
+    monkeypatch,
+    tipo_errore,
+):
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    monkeypatch.setitem(app.config, 'CALENDARIO_CACHE_ERRORE_SECONDI', 30)
+    app_module._azzera_stato_calendario()
+    if tipo_errore == 'http_404':
+        risposta = MagicMock(status=404, reason='Not Found')
+        errore = HttpError(risposta, b'{"error": "not found"}')
+    elif tipo_errore == 'timeout':
+        errore = TimeoutError('Calendar non risponde')
+    else:
+        errore = ssl.SSLError('Handshake TLS fallito')
+
+    servizio = MagicMock()
+    servizio.events.return_value.list.return_value.execute.side_effect = errore
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: servizio)
+
+    with app.app_context():
+        prima = app_module._scarica_intervalli_calendario('2099-08-11')
+        seconda = app_module._scarica_intervalli_calendario('2099-08-12')
+        eventi = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            esito='errore',
+        ).all()
+
+    assert prima == []
+    assert seconda == []
+    assert servizio.events.return_value.list.call_count == 1
+    assert len(eventi) == 1
+    assert client.get('/healthz').status_code == 200
 
 
 def test_endpoint_orari_occupati_unisce_db_e_calendario(client, calendario_finto):
@@ -2410,7 +2535,7 @@ def test_admin_gestisce_percorso_accompagnamento_e_export_pdf(client):
 
 
 @pytest.fixture
-def google_calendar_scrittura_finto(app):
+def google_calendar_scrittura_finto(app, monkeypatch):
     """Configura la scrittura su Google Calendar e sostituisce il client API
     reale con un mock, per verificare le chiamate senza contattare Google."""
     app_module.app.config['GOOGLE_CALENDAR_ID'] = 'finto@group.calendar.google.com'
@@ -2419,11 +2544,11 @@ def google_calendar_scrittura_finto(app):
     mock_servizio.events.return_value.list.return_value.execute.return_value = {
         'items': [],
     }
-    app_module._servizio_calendario_cache = mock_servizio
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: mock_servizio)
     yield mock_servizio
     app_module.app.config['GOOGLE_CALENDAR_ID'] = None
     app_module.app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = None
-    app_module._servizio_calendario_cache = None
+    app_module._azzera_stato_calendario()
 
 
 def test_admin_completa_conferma_modifica_e_annullamento_call_sonno(
@@ -2814,9 +2939,21 @@ def test_conferma_rifiuta_durata_che_invade_un_altro_appuntamento(
         assert aggiornato.duration_minutes == 30
 
 
-def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, google_calendar_scrittura_finto):
+@pytest.mark.parametrize('tipo_errore', ['http_404', 'timeout', 'ssl'])
+def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(
+    client,
+    google_calendar_scrittura_finto,
+    tipo_errore,
+):
     mock_servizio = google_calendar_scrittura_finto
-    mock_servizio.events.return_value.insert.return_value.execute.side_effect = Exception('Calendar non disponibile')
+    if tipo_errore == 'http_404':
+        risposta = MagicMock(status=404, reason='Not Found')
+        errore = HttpError(risposta, b'{"error": "not found"}')
+    elif tipo_errore == 'timeout':
+        errore = TimeoutError('Calendar non disponibile')
+    else:
+        errore = ssl.SSLError('Calendar non disponibile')
+    mock_servizio.events.return_value.insert.return_value.execute.side_effect = errore
 
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
@@ -2841,9 +2978,11 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(client, g
         ).one()
         assert aggiornato.stato == 'Confermato'
         assert aggiornato.google_event_id is None
-        assert 'sincronizzazione Calendar' in evento.messaggio
+        assert 'sincronizzazione' in evento.messaggio
 
     admin_resp = client.get('/admin')
+    assert admin_resp.status_code == 200
+    assert client.get('/healthz').status_code == 200
     assert 'Registro eventi' in admin_resp.text
     assert 'email e Google Calendar non sono stati aggiornati' in admin_resp.text
 
@@ -3299,6 +3438,43 @@ def test_riconciliazione_segnala_modifica_esterna_senza_cambiare_appuntamento(
         assert appuntamento.servizio == 'Medicazione semplice'
         assert 'Titolo modificato' in appuntamento.difformita_calendario
         assert RegistroEvento.query.filter_by(categoria='riconciliazione_calendar').count() == 1
+
+
+def test_riconciliazione_si_ferma_al_primo_errore_calendar(
+    app,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    with flask_app.app_context():
+        for indice in range(2):
+            db.session.add(Appuntamento(
+                nome=f'Persona {indice}',
+                telefono='3331234567',
+                email=f'persona{indice}@example.com',
+                servizio='Medicazione semplice',
+                data='2099-09-01',
+                ora=f'1{indice}:00',
+                duration_minutes=30,
+                stato='Confermato',
+                google_event_id=f'evento-{indice}',
+            ))
+        db.session.commit()
+    mock_servizio.events.return_value.get.return_value.execute.side_effect = TimeoutError(
+        'Calendar non risponde'
+    )
+
+    with flask_app.app_context():
+        risultato = app_module.riconcilia_calendario()
+        eventi = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            esito='errore',
+        ).all()
+
+    assert risultato['errore'] == 'Errore Calendar: TimeoutError'
+    assert mock_servizio.events.return_value.get.call_count == 1
+    assert len(eventi) == 1
+
+
 def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
     """Spostare un appuntamento su uno slot già preso non deve sovrascrivere l'agenda."""
     mock_servizio = google_calendar_scrittura_finto

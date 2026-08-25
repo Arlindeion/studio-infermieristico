@@ -206,6 +206,9 @@ inoltre `X-Robots-Tag: noindex, nofollow, noarchive`.
 | `MAIL_DEFAULT_SENDER` | Nome/indirizzo mittente | Potenzialmente |
 | `MAIL_ADMIN_RECIPIENT` | Destinatario interno degli avvisi | Potenzialmente |
 | `CALENDARIO_CACHE_SECONDI` | Durata cache calendario, default 300 | No |
+| `CALENDARIO_CACHE_STALE_SECONDI` | Età massima del fallback Calendar, default 900 | No |
+| `CALENDARIO_CACHE_ERRORE_SECONDI` | Pausa del circuito dopo un errore Calendar, default 30 | No |
+| `GOOGLE_CALENDAR_TIMEOUT_SECONDI` | Timeout HTTP Calendar per operazione, default 5 | No |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale API per lettura e scrittura | Sì |
 | `GOOGLE_CALENDAR_ID` | Calendario operativo sincronizzato con Arzamed | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
@@ -367,6 +370,16 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
 - La lettura chiede a Google le singole occorrenze degli eventi nell'intervallo
   giornaliero, comprese le ricorrenze espanse, e usa una cache controllata da
   `CALENDARIO_CACHE_SECONDI`.
+- Ogni operazione costruisce un trasporto HTTP autenticato distinto: nessun
+  client `httplib2` viene condiviso fra thread, richieste web e scheduler. Il
+  timeout è limitato da `GOOGLE_CALENDAR_TIMEOUT_SECONDI` e le route web non
+  eseguono retry sincroni prolungati.
+- Le letture concorrenti della stessa giornata vengono accorpate. Dopo un
+  errore, il circuito sospende temporaneamente nuovi tentativi e usa, quando
+  disponibile, una copia non più vecchia di
+  `CALENDARIO_CACHE_STALE_SECONDI`. Cache e circuito sono locali al processo;
+  un futuro aumento dei worker richiederà un coordinamento condiviso oppure
+  accetterà un tentativo per ciascun processo.
 - Lo stesso account di servizio crea o aggiorna eventi quando appuntamenti o
   corsi vengono confermati; le call sonno vengono invece inserite subito come
   provvisorie per bloccare lo slot anche in Arzamed.
@@ -394,6 +407,12 @@ Il dato principale ha priorità:
 - un corso non deve scomparire per un errore di sincronizzazione.
 
 Dopo il salvataggio, gli errori secondari devono essere registrati in `RegistroEvento`. Quando l'errore riguarda un'azione admin, mostrare un avviso comprensibile senza fingere che l'intera operazione sia fallita.
+
+Un errore Calendar non deve propagarsi come errore HTTP del sito: la pratica
+locale resta salvata, la sincronizzazione passa in stato di errore e la
+riconciliazione successiva permette il recupero. In assenza di una copia
+Calendar ancora valida, la disponibilità continua a includere i dati locali ma
+non deve essere considerata una prova che Arzamed sia libero.
 
 ## Sicurezza
 

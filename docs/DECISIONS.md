@@ -675,6 +675,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il database gratuito non viene promosso né copiato; Auto Sync e auto-deploy restano disattivati. Dopo il primo accesso amministrativo le variabili `ADMIN_BOOTSTRAP_*` vengono rimosse dal pannello e dal Blueprint, mentre l'account resta nel database. Finché `STAGING_LIVE_INTEGRATIONS=false`, il software non deve autenticare, leggere o scrivere su Google Calendar. Secret file Google, integrazioni reali, backup esterno, deploy successivi, `APP_ENV=production`, DNS e dominio conservano gate distinti.
 - Collegamenti: `render.production.yaml`, `OPERATIONS.md`, `ROADMAP.md`, D-030, D-061, D-071.
 
+## D-080 — Google Calendar è una dipendenza degradabile e non condivide trasporti HTTP
+
+- Data: 2026-08-25.
+- Stato: approvata e implementata localmente; deploy e nuovo collaudo in preproduzione richiesti.
+- Decisione: ogni operazione Google Calendar usa un proprio trasporto HTTP autenticato con timeout breve. Le letture della stessa giornata usano uno snapshot unico, una cache sincronizzata e un solo tentativo concorrente; dopo un errore un circuito breve evita raffiche verso Google e ammette un fallback stale limitato. Le richieste web non eseguono retry sincroni prolungati.
+- Motivo: il collaudo con Calendar ID non valido e accessi concorrenti ha causato un crash nativo del worker Gunicorn, perdita dell'health check e `502`. Ridurre soltanto i thread avrebbe nascosto la condivisione non sicura senza rendere Calendar una dipendenza realmente degradabile.
+- Conseguenze: un errore Calendar non annulla il dato locale e viene registrato in `RegistroEvento`; il sito e `/healthz` devono restare disponibili. La disponibilità locale durante il circuito non dimostra che Arzamed sia libero. La produzione resta bloccata finché il test concorrente controllato non esclude crash e riavvii dell'istanza.
+- Collegamenti: `app.py`, `config.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`, D-071, D-079.
+
 ## Modello per nuove decisioni
 
 ```markdown

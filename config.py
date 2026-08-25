@@ -46,6 +46,17 @@ class Config:
     # Per quanti secondi tenere in cache gli eventi letti tramite Google
     # Calendar API, per non interrogare Google ad ogni richiesta del sito.
     CALENDARIO_CACHE_SECONDI = int(os.environ.get('CALENDARIO_CACHE_SECONDI') or 300)
+    # In caso di errore, una copia già letta resta utilizzabile per un tempo
+    # limitato e il circuito evita raffiche di richieste verso Google.
+    CALENDARIO_CACHE_STALE_SECONDI = int(
+        os.environ.get('CALENDARIO_CACHE_STALE_SECONDI') or 900
+    )
+    CALENDARIO_CACHE_ERRORE_SECONDI = int(
+        os.environ.get('CALENDARIO_CACHE_ERRORE_SECONDI') or 30
+    )
+    GOOGLE_CALENDAR_TIMEOUT_SECONDI = int(
+        os.environ.get('GOOGLE_CALENDAR_TIMEOUT_SECONDI') or 5
+    )
     # Lettura e scrittura Google Calendar usano lo stesso account di servizio
     # condiviso sul calendario operativo sincronizzato con Arzamed.
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')

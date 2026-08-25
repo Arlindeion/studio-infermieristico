@@ -69,6 +69,12 @@ projects:
                 sync: false
               - key: CALENDARIO_CACHE_SECONDI
                 value: "300"
+              - key: CALENDARIO_CACHE_STALE_SECONDI
+                value: "900"
+              - key: CALENDARIO_CACHE_ERRORE_SECONDI
+                value: "30"
+              - key: GOOGLE_CALENDAR_TIMEOUT_SECONDI
+                value: "5"
               - key: SONNO_CALL_URL
                 sync: false
         databases:

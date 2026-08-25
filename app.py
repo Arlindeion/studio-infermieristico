@@ -10,11 +10,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from dotenv import load_dotenv
 import os
 import secrets
+import threading
 import time
 from collections import defaultdict
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 import icalendar
+import google_auth_httplib2
+import httplib2
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -628,24 +631,85 @@ def is_safe_redirect_target(target):
 
 _cache_calendario = {
     'per_data': {},
-    'errore_registrato_il': 0,
+    'errore_registrato_il': 0.0,
+    'circuito_aperto_fino': 0.0,
+    'ultimo_errore': None,
 }
+_lock_stato_calendario = threading.RLock()
+_lock_letture_calendario = tuple(threading.Lock() for _ in range(16))
 
 
 def _invalida_cache_calendario():
-    _cache_calendario['per_data'].clear()
+    with _lock_stato_calendario:
+        _cache_calendario['per_data'].clear()
+
+
+def _azzera_stato_calendario():
+    """Azzera cache e circuito; usato dai test e dopo cambi di configurazione."""
+    with _lock_stato_calendario:
+        _cache_calendario['per_data'].clear()
+        _cache_calendario['errore_registrato_il'] = 0.0
+        _cache_calendario['circuito_aperto_fino'] = 0.0
+        _cache_calendario['ultimo_errore'] = None
+
+
+def _chiave_cache_calendario(data_str):
+    return app.config.get('GOOGLE_CALENDAR_ID') or '', data_str
+
+
+def _lock_lettura_calendario(chiave):
+    indice = sum(ord(carattere) for parte in chiave for carattere in parte) % len(
+        _lock_letture_calendario
+    )
+    return _lock_letture_calendario[indice]
+
+
+def _circuito_calendario_aperto(adesso=None):
+    adesso = time.monotonic() if adesso is None else adesso
+    with _lock_stato_calendario:
+        return adesso < _cache_calendario['circuito_aperto_fino']
+
+
+def _apri_circuito_calendario(errore):
+    adesso = time.monotonic()
+    durata = max(1, app.config.get('CALENDARIO_CACHE_ERRORE_SECONDI', 30))
+    with _lock_stato_calendario:
+        _cache_calendario['circuito_aperto_fino'] = max(
+            _cache_calendario['circuito_aperto_fino'],
+            adesso + durata,
+        )
+        _cache_calendario['ultimo_errore'] = type(errore).__name__
+
+
+def _chiudi_circuito_calendario():
+    with _lock_stato_calendario:
+        _cache_calendario['circuito_aperto_fino'] = 0.0
+        _cache_calendario['ultimo_errore'] = None
 
 
 def _registra_errore_lettura_calendario(tipo_errore, adesso, durata_cache):
-    if adesso < _cache_calendario['errore_registrato_il'] + durata_cache:
-        return
+    with _lock_stato_calendario:
+        if adesso < _cache_calendario['errore_registrato_il'] + durata_cache:
+            return
+        _cache_calendario['errore_registrato_il'] = adesso
     registra_evento(
         'google_calendar',
         'errore',
         'Lettura del calendario non disponibile; usata la copia in cache quando presente.',
         dettagli={'tipo_errore': tipo_errore},
     )
-    _cache_calendario['errore_registrato_il'] = adesso
+
+
+def _intervalli_cache_fallback(voce_cache, adesso):
+    if not voce_cache:
+        return []
+    durata_stale = max(
+        app.config.get('CALENDARIO_CACHE_SECONDI', 300),
+        app.config.get('CALENDARIO_CACHE_STALE_SECONDI', 900),
+    )
+    if adesso <= voce_cache['scaricato_il'] + durata_stale:
+        return voce_cache['intervalli']
+    return []
 
 
 def _datetime_evento_google(valore, timezone_evento=None):
@@ -697,70 +761,88 @@ def _scarica_intervalli_calendario(data_str):
     if not _integrazione_calendar_abilitata():
         return []
 
-    adesso = time.time()
+    adesso = time.monotonic()
     durata_cache = app.config.get('CALENDARIO_CACHE_SECONDI', 300)
-    voce_cache = _cache_calendario['per_data'].get(data_str)
+    chiave_cache = _chiave_cache_calendario(data_str)
+    with _lock_stato_calendario:
+        voce_cache = _cache_calendario['per_data'].get(chiave_cache)
     if voce_cache and adesso < voce_cache['scaricato_il'] + durata_cache:
         return voce_cache['intervalli']
 
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     if not calendar_id:
-        return voce_cache['intervalli'] if voce_cache else []
-    servizio = _ottieni_servizio_calendario()
-    if servizio is None:
-        _registra_errore_lettura_calendario(
-            'servizio_non_disponibile',
-            adesso,
-            durata_cache,
-        )
-        return voce_cache['intervalli'] if voce_cache else []
+        return _intervalli_cache_fallback(voce_cache, adesso)
+    if _circuito_calendario_aperto(adesso):
+        return _intervalli_cache_fallback(voce_cache, adesso)
 
-    inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
-    fine_giornata = inizio_giornata + timedelta(days=1)
-    intervalli = []
-    page_token = None
+    # Più richieste possono arrivare insieme con cache fredda. Una sola legge
+    # Google; le altre ricontrollano la cache dopo aver atteso lo stesso giorno.
+    with _lock_lettura_calendario(chiave_cache):
+        adesso = time.monotonic()
+        with _lock_stato_calendario:
+            voce_cache = _cache_calendario['per_data'].get(chiave_cache)
+        if voce_cache and adesso < voce_cache['scaricato_il'] + durata_cache:
+            return voce_cache['intervalli']
+        if _circuito_calendario_aperto(adesso):
+            return _intervalli_cache_fallback(voce_cache, adesso)
 
-    try:
-        while True:
-            parametri = {
-                'calendarId': calendar_id,
-                'timeMin': inizio_giornata.isoformat(),
-                'timeMax': fine_giornata.isoformat(),
-                'singleEvents': True,
-                'showDeleted': False,
-                'orderBy': 'startTime',
-                'maxResults': 2500,
-            }
-            if page_token:
-                parametri['pageToken'] = page_token
-            risposta = servizio.events().list(**parametri).execute()
-            for evento in risposta.get('items', []):
-                if evento.get('status') == 'cancelled':
-                    continue
-                intervallo = _intervallo_da_evento_google(evento)
-                if intervallo is not None:
-                    intervalli.append(intervallo)
-            page_token = risposta.get('nextPageToken')
-            if not isinstance(page_token, str) or not page_token:
-                break
+        servizio = _ottieni_servizio_calendario()
+        if servizio is None:
+            _registra_errore_lettura_calendario(
+                'servizio_non_disponibile',
+                adesso,
+                durata_cache,
+            )
+            return _intervalli_cache_fallback(voce_cache, adesso)
 
-        _cache_calendario['per_data'][data_str] = {
-            'intervalli': intervalli,
-            'scaricato_il': adesso,
-        }
-        return intervalli
-    except Exception as errore:
-        logger.error(
-            '>>> Errore nella lettura Google Calendar API (%s).',
-            type(errore).__name__,
-            exc_info=True,
-        )
-        _registra_errore_lettura_calendario(
-            type(errore).__name__,
-            adesso,
-            durata_cache,
-        )
-        return voce_cache['intervalli'] if voce_cache else []
+        inizio_giornata = datetime.combine(giorno, datetime.min.time(), tzinfo=FUSO_ORARIO)
+        fine_giornata = inizio_giornata + timedelta(days=1)
+        intervalli = []
+        page_token = None
+
+        try:
+            while True:
+                parametri = {
+                    'calendarId': calendar_id,
+                    'timeMin': inizio_giornata.isoformat(),
+                    'timeMax': fine_giornata.isoformat(),
+                    'singleEvents': True,
+                    'showDeleted': False,
+                    'orderBy': 'startTime',
+                    'maxResults': 2500,
+                }
+                if page_token:
+                    parametri['pageToken'] = page_token
+                richiesta = servizio.events().list(**parametri)
+                risposta = _esegui_richiesta_calendario(richiesta)
+                for evento in risposta.get('items', []):
+                    if evento.get('status') == 'cancelled':
+                        continue
+                    intervallo = _intervallo_da_evento_google(evento)
+                    if intervallo is not None:
+                        intervalli.append(intervallo)
+                page_token = risposta.get('nextPageToken')
+                if not isinstance(page_token, str) or not page_token:
+                    break
+
+            with _lock_stato_calendario:
+                _cache_calendario['per_data'][chiave_cache] = {
+                    'intervalli': intervalli,
+                    'scaricato_il': adesso,
+                }
+            return intervalli
+        except Exception as errore:
+            logger.error(
+                '>>> Errore nella lettura Google Calendar API (%s).',
+                type(errore).__name__,
+                exc_info=True,
+            )
+            _registra_errore_lettura_calendario(
+                type(errore).__name__,
+                adesso,
+                durata_cache,
+            )
+            return _intervalli_cache_fallback(voce_cache, adesso)
 
 
 def _intervalli_calendario(data_str, ignore_google_event_id=None):
@@ -791,11 +873,25 @@ def intervallo_occupato_da_calendario(data_str, ora, durata_minuti, ignore_googl
 
 def orari_occupati_da_calendario(data_str):
     """Restituisce gli slot sanitari da 30 minuti occupati su Calendar."""
-    occupati = {
-        ora for ora in ORARI_DISPONIBILI
-        if intervallo_occupato_da_calendario(data_str, ora, DURATA_SLOT_MINUTI)
-    }
-
+    try:
+        giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return set()
+    intervalli = _intervalli_calendario(data_str)
+    occupati = set()
+    for ora in ORARI_DISPONIBILI:
+        ore, minuti = map(int, ora.split(':'))
+        inizio_slot = datetime.combine(
+            giorno,
+            datetime.min.time(),
+            tzinfo=FUSO_ORARIO,
+        ).replace(hour=ore, minute=minuti)
+        fine_slot = inizio_slot + timedelta(minutes=DURATA_SLOT_MINUTI)
+        if any(
+            inizio_slot < fine_evento and inizio_evento < fine_slot
+            for inizio_evento, fine_evento in intervalli
+        ):
+            occupati.add(ora)
     return occupati
 
 
@@ -810,9 +906,6 @@ def orari_occupati_da_calendario(data_str):
 # Lettura e scrittura passano dalla stessa Calendar API e dallo stesso account
 # di servizio, condiviso soltanto sul calendario operativo.
 
-_servizio_calendario_cache = None
-
-
 def _integrazione_calendar_abilitata():
     """Richiede l'opt-in esplicito soltanto nell'ambiente di staging."""
     return not (
@@ -822,13 +915,11 @@ def _integrazione_calendar_abilitata():
 
 
 def _ottieni_servizio_calendario():
-    """Restituisce un client autenticato per le API di Google Calendar, o None
-    se l'integrazione Google Calendar non è configurata o fallisce."""
-    global _servizio_calendario_cache
+    """Crea un client Calendar isolato con un proprio trasporto HTTP."""
     if not _integrazione_calendar_abilitata():
         return None
-    if _servizio_calendario_cache is not None:
-        return _servizio_calendario_cache
+    if _circuito_calendario_aperto():
+        return None
 
     percorso_chiave = app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
     if not percorso_chiave:
@@ -840,11 +931,39 @@ def _ottieni_servizio_calendario():
             percorso_chiave,
             scopes=['https://www.googleapis.com/auth/calendar.events']
         )
-        _servizio_calendario_cache = build('calendar', 'v3', credentials=credenziali, cache_discovery=False)
-        return _servizio_calendario_cache
+        trasporto = httplib2.Http(
+            timeout=max(1, app.config.get('GOOGLE_CALENDAR_TIMEOUT_SECONDI', 5))
+        )
+        http_autorizzato = google_auth_httplib2.AuthorizedHttp(
+            credenziali,
+            http=trasporto,
+        )
+        return build(
+            'calendar',
+            'v3',
+            http=http_autorizzato,
+            cache_discovery=False,
+        )
     except Exception as e:
+        _apri_circuito_calendario(e)
         logger.error(f'>>> Errore nell\'autenticazione con Google Calendar: {e}', exc_info=True)
         return None
+
+
+def _esegui_richiesta_calendario(richiesta, ignora_assenza_evento=False):
+    """Esegue senza retry sincroni lunghi e aggiorna il circuito di errore."""
+    try:
+        risposta = richiesta.execute(num_retries=0)
+    except Exception as errore:
+        status = (
+            getattr(getattr(errore, 'resp', None), 'status', None)
+            or getattr(errore, 'status_code', None)
+        )
+        if not (ignora_assenza_evento and status in (404, 410)):
+            _apri_circuito_calendario(errore)
+        raise
+    _chiudi_circuito_calendario()
+    return risposta
 
 
 def _corpo_evento_da_appuntamento(appuntamento):
@@ -948,11 +1067,11 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
     corpo = _corpo_evento_da_appuntamento(appuntamento)
     try:
         if appuntamento.google_event_id:
-            servizio.events().patch(
+            _esegui_richiesta_calendario(servizio.events().patch(
                 calendarId=calendar_id,
                 eventId=appuntamento.google_event_id,
                 body=corpo
-            ).execute()
+            ))
             logger.info(f'>>> Evento Google Calendar aggiornato per appuntamento {appuntamento.id}.')
             registra_evento(
                 'google_calendar',
@@ -963,7 +1082,9 @@ def crea_o_aggiorna_evento_calendario(appuntamento):
                 {'google_event_id': appuntamento.google_event_id},
             )
         else:
-            evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            evento_creato = _esegui_richiesta_calendario(
+                servizio.events().insert(calendarId=calendar_id, body=corpo)
+            )
             appuntamento.google_event_id = evento_creato.get('id')
             db.session.commit()
             logger.info(f'>>> Evento Google Calendar creato per appuntamento {appuntamento.id}.')
@@ -1045,13 +1166,15 @@ def crea_o_aggiorna_evento_calendario_call_sonno(call):
     corpo = _corpo_evento_da_call_sonno(call)
     try:
         if call.google_event_id:
-            servizio.events().patch(
+            _esegui_richiesta_calendario(servizio.events().patch(
                 calendarId=calendar_id,
                 eventId=call.google_event_id,
                 body=corpo,
-            ).execute()
+            ))
         else:
-            evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            evento = _esegui_richiesta_calendario(
+                servizio.events().insert(calendarId=calendar_id, body=corpo)
+            )
             call.google_event_id = evento.get('id')
             db.session.commit()
         call.sincronizzazione = 'sincronizzato'
@@ -1096,7 +1219,10 @@ def elimina_evento_calendario_call_sonno(call):
         )
         return False
     try:
-        servizio.events().delete(calendarId=calendar_id, eventId=call.google_event_id).execute()
+        _esegui_richiesta_calendario(
+            servizio.events().delete(calendarId=calendar_id, eventId=call.google_event_id),
+            ignora_assenza_evento=True,
+        )
         call.google_event_id = None
         db.session.commit()
         _invalida_cache_calendario()
@@ -1144,11 +1270,11 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
     corpo = _corpo_evento_da_corso(corso)
     try:
         if corso.google_event_id:
-            servizio.events().patch(
+            _esegui_richiesta_calendario(servizio.events().patch(
                 calendarId=calendar_id,
                 eventId=corso.google_event_id,
                 body=corpo
-            ).execute()
+            ))
             logger.info(f'>>> Evento Google Calendar aggiornato per corso {corso.id}.')
             registra_evento(
                 'google_calendar',
@@ -1159,7 +1285,9 @@ def crea_o_aggiorna_evento_calendario_corso(corso):
                 {'google_event_id': corso.google_event_id},
             )
         else:
-            evento_creato = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            evento_creato = _esegui_richiesta_calendario(
+                servizio.events().insert(calendarId=calendar_id, body=corpo)
+            )
             corso.google_event_id = evento_creato.get('id')
             db.session.commit()
             logger.info(f'>>> Evento Google Calendar creato per corso {corso.id}.')
@@ -1220,7 +1348,10 @@ def elimina_evento_calendario(appuntamento):
 
     eliminato = False
     try:
-        servizio.events().delete(calendarId=calendar_id, eventId=appuntamento.google_event_id).execute()
+        _esegui_richiesta_calendario(
+            servizio.events().delete(calendarId=calendar_id, eventId=appuntamento.google_event_id),
+            ignora_assenza_evento=True,
+        )
         eliminato = True
         registra_evento(
             'google_calendar',
@@ -1291,7 +1422,10 @@ def elimina_evento_calendario_corso(corso):
 
     eliminato = False
     try:
-        servizio.events().delete(calendarId=calendar_id, eventId=corso.google_event_id).execute()
+        _esegui_richiesta_calendario(
+            servizio.events().delete(calendarId=calendar_id, eventId=corso.google_event_id),
+            ignora_assenza_evento=True,
+        )
         eliminato = True
         registra_evento(
             'google_calendar',
@@ -1389,9 +1523,17 @@ def _sincronizza_evento_generico(entita, tipo, corpo):
         return False
     try:
         if entita.google_event_id:
-            servizio.events().patch(calendarId=calendar_id, eventId=entita.google_event_id, body=corpo).execute()
+            _esegui_richiesta_calendario(
+                servizio.events().patch(
+                    calendarId=calendar_id,
+                    eventId=entita.google_event_id,
+                    body=corpo,
+                )
+            )
         else:
-            evento = servizio.events().insert(calendarId=calendar_id, body=corpo).execute()
+            evento = _esegui_richiesta_calendario(
+                servizio.events().insert(calendarId=calendar_id, body=corpo)
+            )
             entita.google_event_id = evento.get('id')
         entita.sincronizzazione = 'sincronizzato'
         db.session.commit()
@@ -1426,7 +1568,10 @@ def elimina_evento_calendario_generico(entita, tipo):
         registra_evento('google_calendar', 'errore', f'{tipo} archiviato, ma l’evento Calendar non è stato rimosso.', tipo, entita.id)
         return False
     try:
-        servizio.events().delete(calendarId=calendar_id, eventId=entita.google_event_id).execute()
+        _esegui_richiesta_calendario(
+            servizio.events().delete(calendarId=calendar_id, eventId=entita.google_event_id),
+            ignora_assenza_evento=True,
+        )
     except HttpError as errore:
         if getattr(errore, 'status_code', None) not in (404, 410):
             entita.sincronizzazione = 'errore'
@@ -2024,10 +2169,13 @@ def riconcilia_calendario():
                 continue
             risultato['controllati'] += 1
             try:
-                remoto = servizio.events().get(
-                    calendarId=calendar_id,
-                    eventId=entita.google_event_id,
-                ).execute()
+                remoto = _esegui_richiesta_calendario(
+                    servizio.events().get(
+                        calendarId=calendar_id,
+                        eventId=entita.google_event_id,
+                    ),
+                    ignora_assenza_evento=True,
+                )
             except HttpError as errore:
                 status = getattr(getattr(errore, 'resp', None), 'status', None) or getattr(errore, 'status_code', None)
                 if status in (404, 410):
@@ -2040,11 +2188,11 @@ def riconcilia_calendario():
                     continue
                 risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
                 registra_evento('google_calendar', 'errore', 'Riconciliazione Calendar interrotta da un errore API.', tipo, entita.id, {'errore': str(errore)})
-                continue
+                return risultato
             except Exception as errore:
                 risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
                 registra_evento('google_calendar', 'errore', 'Riconciliazione Calendar interrotta.', tipo, entita.id, {'errore': str(errore)})
-                continue
+                return risultato
 
             differenze = _differenze_evento(corpo_builder(entita), remoto)
             if differenze:
@@ -2077,15 +2225,17 @@ def _eventi_calendar_esterni(data_inizio, data_fine):
     inizio = datetime.combine(data_inizio, datetime.min.time(), tzinfo=FUSO_ORARIO)
     fine = datetime.combine(data_fine + timedelta(days=1), datetime.min.time(), tzinfo=FUSO_ORARIO)
     try:
-        risposta = servizio.events().list(
-            calendarId=calendar_id,
-            timeMin=inizio.isoformat(),
-            timeMax=fine.isoformat(),
-            singleEvents=True,
-            showDeleted=False,
-            orderBy='startTime',
-            maxResults=2500,
-        ).execute()
+        risposta = _esegui_richiesta_calendario(
+            servizio.events().list(
+                calendarId=calendar_id,
+                timeMin=inizio.isoformat(),
+                timeMax=fine.isoformat(),
+                singleEvents=True,
+                showDeleted=False,
+                orderBy='startTime',
+                maxResults=2500,
+            )
+        )
     except Exception:
         logger.warning('>>> Agenda esterna non disponibile.', exc_info=True)
         return []
