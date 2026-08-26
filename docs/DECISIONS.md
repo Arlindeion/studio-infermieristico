@@ -693,6 +693,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il recupero automatico avviene al primo ciclo orario utile, non istantaneamente. Prima di creare un evento privo di `google_event_id`, il retry cerca su Calendar le proprietà private `studioEntity` e `studioEntityId`: se trova una corrispondenza la ricollega e la aggiorna, evitando duplicati quando un precedente `insert` era riuscito ma la risposta era andata persa. Più corrispondenze bloccano il recupero automatico. Dopo il successo gli errori Calendar aperti della pratica vengono chiusi conservandone lo storico; un fallimento resta visibile e viene ritentato nel ciclo successivo senza annullare il dato locale.
 - Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`, D-073, D-080.
 
+## D-082 — Le modifiche umane su Calendar richiedono una decisione prioritaria
+
+- Data: 2026-08-26.
+- Stato: approvata, implementata e verificata localmente; deploy e collaudo reale ancora richiesti.
+- Decisione: trattare sia `404/410` sia `status="cancelled"` come `eliminato_esternamente`. Gli stati `difforme` ed `eliminato_esternamente` non entrano nell’autoretry e aprono un avviso prioritario al primo ingresso utile nell’admin. L’ingresso esegue una riconciliazione rapida soltanto se il controllo precedente non è abbastanza recente; timeout, circuito e fallback di D-080 restano applicati e l’admin non viene bloccato da Google. `Decidi dopo` nasconde il modal per i soli conflitti già visti nella sessione, lasciando banner, stato e anomalia aperti.
+- Motivo: una modifica o cancellazione manuale può essere intenzionale e non può essere interpretata come guasto tecnico. Ricreare automaticamente l’evento o chiudere l’anomalia senza scelta potrebbe contraddire una decisione sanitaria e nascondere il disallineamento.
+- Conseguenze: una modifica temporale di appuntamento o call può essere applicata al database soltanto dopo un nuovo controllo di disponibilità, audit ed email di spostamento; i titoli non vengono interpretati per ricavare dati sanitari o anagrafici. La conferma dei dati del sito riscrive Calendar. Un evento eliminato può essere ricreato con un nuovo ID senza nuova email oppure portare all’annullamento tramite il normale workflow con email. Il comando generico `Segna risolto` e la sincronizzazione in blocco sono vietati per questi due stati. Il 26 agosto il modal è stato verificato con dati sintetici a 1440×900 e 390×844 px: nessun overflow di pagina, confronto completo, azioni da almeno 44 px, `Decidi dopo` persistente nella sessione e riproposizione dopo un nuovo login.
+- Collegamenti: `app.py`, `config.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `static/css/admin.css`, `static/js/admin-azioni.js`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, D-073, D-080, D-081.
+
 ## Modello per nuove decisioni
 
 ```markdown

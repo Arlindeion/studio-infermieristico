@@ -57,6 +57,11 @@ class Config:
     GOOGLE_CALENDAR_TIMEOUT_SECONDI = int(
         os.environ.get('GOOGLE_CALENDAR_TIMEOUT_SECONDI') or 5
     )
+    # L'ingresso nell'admin può anticipare la riconciliazione oraria, ma una
+    # finestra breve evita una chiamata a Google a ogni caricamento pagina.
+    CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI = int(
+        os.environ.get('CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI') or 180
+    )
     # Lettura e scrittura Google Calendar usano lo stesso account di servizio
     # condiviso sul calendario operativo sincronizzato con Arzamed.
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')

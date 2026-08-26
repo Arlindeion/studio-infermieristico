@@ -8,6 +8,12 @@ const script = fs.readFileSync(
     'utf8'
 );
 
+test('apre il modal Calendar soltanto quando il server lo richiede', () => {
+    assert.match(script, /\[data-calendar-conflict-modal\]\[data-open-on-load\]/);
+    assert.match(script, /typeof modalConflittiCalendar\.showModal === 'function'/);
+    assert.match(script, /modalConflittiCalendar\.showModal\(\)/);
+});
+
 test('registra una sola volta i collegamenti rapidi tra sezioni admin', () => {
     const registrazioni = script.match(/querySelectorAll\('\[data-admin-jump\]'\)/g) || [];
     const funzioneCambioPannello = script.match(/function mostraPannelloAdmin[\s\S]*?\n    \}\n\n    if/);

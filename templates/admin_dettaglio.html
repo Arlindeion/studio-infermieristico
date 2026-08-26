@@ -121,10 +121,24 @@
         <table class="tabella-admin"><thead><tr><th>Campo</th><th>Dati del sito</th><th>Google Calendar</th></tr></thead><tbody>
             {% for campo, valori in difformita.items() %}<tr><td>{{ campo }}</td><td>{{ valori.sito }}</td><td>{{ valori.calendar }}</td></tr>{% endfor %}
         </tbody></table>
-        <form method="post" action="{{ url_for('forza_calendar_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="Sovrascrivere l’evento Calendar con i dati mostrati nella colonna Sito?">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-azione rosso" type="submit">Sovrascrivi Calendar con i dati del sito</button>
-        </form>
+        <div class="admin-calendar-conflict-actions">
+            <form method="post" action="{{ url_for('forza_calendar_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="{% if entita.sincronizzazione == 'eliminato_esternamente' %}Ripristinare su Calendar l’evento con i dati invariati del sito?{% else %}Sovrascrivere l’evento Calendar con i dati mostrati nella colonna Sito?{% endif %}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-azione verde" type="submit">{% if entita.sincronizzazione == 'eliminato_esternamente' %}Ripristina su Calendar{% else %}Conferma dati del sito{% endif %}</button>
+            </form>
+            {% if entita.sincronizzazione == 'difforme' and tipo in ['Appuntamento', 'CallSonno'] and ('inizio' in difformita or 'fine' in difformita) %}
+            <form method="post" action="{{ url_for('accetta_calendar_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="Applicare al sito data, ora e durata correnti di Calendar e inviare l’email di spostamento?">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-azione blu" type="submit">Accetta data e orario Calendar</button>
+            </form>
+            {% endif %}
+            {% if entita.sincronizzazione == 'eliminato_esternamente' and tipo in ['Appuntamento', 'CallSonno'] %}
+            <form method="post" action="{{ url_for('annulla_da_conflitto_calendar_admin', tipo=tipo, entita_id=entita.id) }}" data-confirm="Annullare la pratica nel sito e inviare l’email di cancellazione?">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-azione rosso" type="submit">Annulla appuntamento</button>
+            </form>
+            {% endif %}
+        </div>
     </section>
     {% endif %}
 
@@ -240,5 +254,5 @@ S.C. Studio Infermieristico</textarea></label>
 
     <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
 </main>
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.3"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.4"></script>
 {% endblock %}

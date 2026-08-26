@@ -209,6 +209,7 @@ inoltre `X-Robots-Tag: noindex, nofollow, noarchive`.
 | `CALENDARIO_CACHE_STALE_SECONDI` | Età massima del fallback Calendar, default 900 | No |
 | `CALENDARIO_CACHE_ERRORE_SECONDI` | Pausa del circuito dopo un errore Calendar, default 30 | No |
 | `GOOGLE_CALENDAR_TIMEOUT_SECONDI` | Timeout HTTP Calendar per operazione, default 5 | No |
+| `CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI` | Freschezza del controllo rapido all’ingresso admin, default 180 | No |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | Percorso della credenziale API per lettura e scrittura | Sì |
 | `GOOGLE_CALENDAR_ID` | Calendario operativo sincronizzato con Arzamed | Sì |
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
@@ -395,7 +396,9 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
   ma non elimina la richiesta: l'admin riceve un avviso e può modificarla. Un
   errore secondario durante la successiva scrittura Calendar non annulla invece
   la conferma già salvata.
-- Ogni ora il job riprova prima le pratiche attive in stato `da_sincronizzare`, `errore` o `mancante` e invia all’amministratore un’unica email riepilogativa se ha effettuato almeno un tentativo. Se manca il `google_event_id`, cerca prima una corrispondenza tramite le proprietà private della pratica per non duplicare un evento creato prima di un timeout. Subito dopo, la riconciliazione confronta titolo, inizio e fine degli eventi collegati. Una modifica o eliminazione esterna imposta uno stato di anomalia, resta esclusa dal retry automatico e non cambia automaticamente il database. Il confronto esatto è visibile nella scheda; la riscrittura esplicita usa i dati locali.
+- Ogni ora il job riprova prima le pratiche attive in stato `da_sincronizzare`, `errore` o `mancante` e invia all’amministratore un’unica email riepilogativa se ha effettuato almeno un tentativo. Se manca il `google_event_id`, cerca prima una corrispondenza tramite le proprietà private della pratica per non duplicare un evento creato prima di un timeout. Subito dopo, la riconciliazione confronta titolo, inizio e fine degli eventi collegati; `404/410` e una risposta con `status="cancelled"` indicano entrambi eliminazione esterna.
+- L’ingresso in `/admin` esegue lo stesso confronto soltanto quando l’ultimo controllo del processo è più vecchio di `CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI`. Usa client isolato, timeout e circuito di D-080; un errore o una risposta non valida mostra un avviso ma non impedisce l’apertura dell’admin. Il deploy corrente usa un worker; con più worker la finestra resta locale al processo come la cache Calendar.
+- Gli stati `difforme` ed `eliminato_esternamente` aprono un avviso prioritario, restano esclusi da autoretry, sincronizzazione in blocco e chiusura manuale generica. Una modifica temporale accettata da Calendar ricontrolla disponibilità, aggiorna il database, registra l’audit, riallinea il titolo canonico e invia l’email di spostamento. Un evento eliminato viene ricreato con nuovo ID senza email oppure porta al normale annullamento con email. `Decidi dopo` non modifica la pratica e non chiude l’anomalia.
 - Gli eventi non creati dal sito vengono mostrati in agenda con titolo e orario, senza importarli né attribuirli automaticamente ad Arzamed. Non esiste un identificativo Arzamed nel database finché non sarà disponibile un’integrazione diretta stabile.
 
 ## Errori parziali

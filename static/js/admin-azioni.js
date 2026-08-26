@@ -1,5 +1,10 @@
 // Azioni admin: conferma le azioni per appuntamenti e corsi
 document.addEventListener('DOMContentLoaded', function() {
+    const modalConflittiCalendar = document.querySelector('[data-calendar-conflict-modal][data-open-on-load]');
+    if (modalConflittiCalendar && typeof modalConflittiCalendar.showModal === 'function') {
+        modalConflittiCalendar.showModal();
+    }
+
     const adminViewButtons = document.querySelectorAll('[data-admin-target]');
     const adminPanels = document.querySelectorAll('[data-admin-panel]');
 

@@ -238,7 +238,9 @@ Agenda giorno/settimana/mese
 
 - Le richieste pubbliche scadono di norma alle 18 del giorno lavorativo successivo; se non vengono gestite restano bloccanti, diventano urgenti e generano un’attività.
 - Arzamed resta l’autorità operativa per i suoi appuntamenti; Google Calendar è il ponte. Gli eventi esterni sono mostrati con titolo e orario, ma non vengono importati come pratiche né arricchiti con dati clinici.
-- Modifiche o cancellazioni esterne di eventi collegati non riscrivono il database. L’admin mostra il confronto esatto e richiede una decisione; gli errori generici si riprovano soltanto in gruppo.
+- Modifiche o cancellazioni esterne di eventi collegati non riscrivono il database. Dopo una breve finestra di freschezza, l’ingresso in `/admin` anticipa la riconciliazione oraria senza bloccare la pagina se Google è indisponibile. Gli stati `difforme` ed `eliminato_esternamente` producono un modal prioritario e un banner persistente: `Decidi dopo` vale soltanto per la sessione e non chiude l’anomalia.
+- Una modifica temporale di un appuntamento o di una call richiede `Conferma dati del sito` oppure `Accetta data e orario Calendar`; la seconda azione ricontrolla disponibilità e regole, registra prima/dopo nell’audit e invia la comunicazione di spostamento. I titoli Calendar non vengono interpretati per modificare automaticamente dati anagrafici, prestazioni o contenuti sanitari.
+- Un evento eliminato richiede `Ripristina su Calendar`, con nuovo `google_event_id` e senza nuova email, oppure il normale annullamento della pratica con email. `Segna risolto`, sincronizzazione in blocco e autoretry restano esclusi per i conflitti umani.
 - Il lancio usa un account singolo. Le pratiche non vengono eliminate automaticamente: si chiudono o si archiviano conservando storico, email e modifiche.
 
 ## SEO e autorevolezza

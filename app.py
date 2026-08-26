@@ -637,6 +637,8 @@ _cache_calendario = {
 }
 _lock_stato_calendario = threading.RLock()
 _lock_letture_calendario = tuple(threading.Lock() for _ in range(16))
+_lock_riconciliazione_admin = threading.Lock()
+_ultima_riconciliazione_admin = 0.0
 
 
 def _invalida_cache_calendario():
@@ -646,11 +648,14 @@ def _invalida_cache_calendario():
 
 def _azzera_stato_calendario():
     """Azzera cache e circuito; usato dai test e dopo cambi di configurazione."""
+    global _ultima_riconciliazione_admin
     with _lock_stato_calendario:
         _cache_calendario['per_data'].clear()
         _cache_calendario['errore_registrato_il'] = 0.0
         _cache_calendario['circuito_aperto_fino'] = 0.0
         _cache_calendario['ultimo_errore'] = None
+    with _lock_riconciliazione_admin:
+        _ultima_riconciliazione_admin = 0.0
 
 
 def _chiave_cache_calendario(data_str):
@@ -2238,7 +2243,7 @@ def _registra_anomalia_sync(tipo, entita_id, messaggio, dettagli=None):
     return evento
 
 
-def _chiudi_anomalie_sync(tipo, entita_id):
+def _chiudi_anomalie_sync(tipo, entita_id, nota='Riconciliazione successiva senza differenze.'):
     RegistroEvento.query.filter_by(
         categoria='riconciliazione_calendar',
         entita_tipo=tipo,
@@ -2246,8 +2251,22 @@ def _chiudi_anomalie_sync(tipo, entita_id):
         risolto_il=None,
     ).update({
         'risolto_il': datetime.now(),
-        'nota_risoluzione': 'Riconciliazione successiva senza differenze.',
+        'nota_risoluzione': nota,
     })
+
+
+def _segna_evento_eliminato_esternamente(tipo, entita):
+    differenza = {'evento': {'sito': 'presente', 'calendar': 'eliminato'}}
+    entita.sincronizzazione = 'eliminato_esternamente'
+    if hasattr(entita, 'difformita_calendario'):
+        entita.difformita_calendario = json.dumps(differenza, ensure_ascii=False)
+    db.session.commit()
+    _registra_anomalia_sync(
+        tipo,
+        entita.id,
+        'Evento collegato eliminato da Google Calendar.',
+        differenza,
+    )
 
 
 def riconcilia_calendario():
@@ -2283,11 +2302,7 @@ def riconcilia_calendario():
             except HttpError as errore:
                 status = getattr(getattr(errore, 'resp', None), 'status', None) or getattr(errore, 'status_code', None)
                 if status in (404, 410):
-                    entita.sincronizzazione = 'eliminato_esternamente'
-                    if hasattr(entita, 'difformita_calendario'):
-                        entita.difformita_calendario = json.dumps({'evento': {'sito': 'presente', 'calendar': 'eliminato'}}, ensure_ascii=False)
-                    db.session.commit()
-                    _registra_anomalia_sync(tipo, entita.id, 'Evento collegato eliminato da Google Calendar.', {'google_event_id': entita.google_event_id})
+                    _segna_evento_eliminato_esternamente(tipo, entita)
                     risultato['mancanti'] += 1
                     continue
                 risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
@@ -2297,6 +2312,21 @@ def riconcilia_calendario():
                 risultato['errore'] = f'Errore Calendar: {type(errore).__name__}'
                 registra_evento('google_calendar', 'errore', 'Riconciliazione Calendar interrotta.', tipo, entita.id, {'errore': str(errore)})
                 return risultato
+
+            if not isinstance(remoto, dict):
+                risultato['errore'] = 'Errore Calendar: risposta non valida'
+                registra_evento(
+                    'google_calendar',
+                    'errore',
+                    'Riconciliazione Calendar interrotta da una risposta non valida.',
+                    tipo,
+                    entita.id,
+                )
+                return risultato
+            if remoto.get('status') == 'cancelled':
+                _segna_evento_eliminato_esternamente(tipo, entita)
+                risultato['mancanti'] += 1
+                continue
 
             differenze = _differenze_evento(corpo_builder(entita), remoto)
             if differenze:
@@ -2313,6 +2343,113 @@ def riconcilia_calendario():
                 _chiudi_anomalie_sync(tipo, entita.id)
                 db.session.commit()
     return risultato
+
+
+def _riconciliazione_admin_se_necessaria(adesso_monotonic=None):
+    """Esegue al massimo un controllo rapido per finestra di freschezza."""
+    global _ultima_riconciliazione_admin
+    if not _integrazione_calendar_abilitata():
+        return None
+    if not (
+        app.config.get('GOOGLE_CALENDAR_ID')
+        and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+    ):
+        return None
+
+    adesso = time.monotonic() if adesso_monotonic is None else adesso_monotonic
+    freschezza = max(
+        0,
+        app.config.get('CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI', 180),
+    )
+    with _lock_riconciliazione_admin:
+        if (
+            _ultima_riconciliazione_admin
+            and adesso < _ultima_riconciliazione_admin + freschezza
+        ):
+            return None
+        try:
+            return riconcilia_calendario()
+        finally:
+            _ultima_riconciliazione_admin = adesso
+
+
+def _segna_riconciliazione_admin_fresca():
+    global _ultima_riconciliazione_admin
+    with _lock_riconciliazione_admin:
+        _ultima_riconciliazione_admin = time.monotonic()
+
+
+def _dettagli_anomalia_calendar(tipo, entita):
+    if getattr(entita, 'difformita_calendario', None):
+        try:
+            return json.loads(entita.difformita_calendario)
+        except json.JSONDecodeError:
+            pass
+    anomalia = RegistroEvento.query.filter_by(
+        categoria='riconciliazione_calendar',
+        entita_tipo=tipo,
+        entita_id=entita.id,
+        risolto_il=None,
+    ).order_by(RegistroEvento.creato_il.desc()).first()
+    return anomalia.dettagli_dict() if anomalia else {}
+
+
+def _valore_conflitto_leggibile(valore):
+    if not valore:
+        return '—'
+    if valore == 'eliminato':
+        return 'EVENTO ELIMINATO'
+    if isinstance(valore, str) and 'T' in valore:
+        try:
+            istante = datetime.fromisoformat(valore.replace('Z', '+00:00'))
+            if istante.tzinfo:
+                istante = istante.astimezone(FUSO_ORARIO)
+            return istante.strftime('%d/%m/%Y %H:%M')
+        except ValueError:
+            pass
+    return str(valore)
+
+
+def _conflitti_calendar_prioritari():
+    conflitti = []
+    for tipo, modello, _, _ in _modelli_sincronizzabili():
+        entita_conflitto = modello.query.filter(
+            modello.sincronizzazione.in_(('difforme', 'eliminato_esternamente'))
+        ).all()
+        for entita in entita_conflitto:
+            dettagli = _dettagli_anomalia_calendar(tipo, entita)
+            righe = [
+                {
+                    'campo': campo,
+                    'sito': _valore_conflitto_leggibile(valori.get('sito')),
+                    'calendar': _valore_conflitto_leggibile(valori.get('calendar')),
+                }
+                for campo, valori in dettagli.items()
+                if isinstance(valori, dict)
+            ]
+            campi = set(dettagli)
+            conflitti.append({
+                'tipo': tipo,
+                'id': entita.id,
+                'nome': _nome_entita_admin(tipo, entita),
+                'prestazione': (
+                    getattr(entita, 'servizio', None)
+                    or ('Call gratuita sul sonno' if tipo == 'CallSonno' else tipo)
+                ),
+                'data': getattr(entita, 'data', ''),
+                'stato': entita.sincronizzazione,
+                'righe': righe,
+                'puo_accettare_calendar': (
+                    tipo in {'Appuntamento', 'CallSonno'}
+                    and entita.sincronizzazione == 'difforme'
+                    and bool(campi.intersection({'inizio', 'fine'}))
+                ),
+                'puo_annullare': (
+                    tipo in {'Appuntamento', 'CallSonno'}
+                    and entita.sincronizzazione == 'eliminato_esternamente'
+                ),
+            })
+    return sorted(conflitti, key=lambda voce: (voce['data'], voce['tipo'], voce['id']))
 
 
 def _eventi_calendar_esterni(data_inizio, data_fine):
@@ -3473,6 +3610,7 @@ def esegui_riconciliazione_con_contesto():
     with app.app_context():
         riallineamento = riallinea_calendar_automaticamente()
         riconciliazione = riconcilia_calendario()
+        _segna_riconciliazione_admin_fresca()
         return {
             'riallineamento': riallineamento,
             'riconciliazione': riconciliazione,
@@ -4858,6 +4996,7 @@ def login():
         if utente and check_password_hash(utente.password, password):
             login_user(utente, remember=False)
             session.permanent = True
+            session.pop('conflitti_calendar_rimandati', None)
             next_page = request.args.get('next')
             if is_safe_redirect_target(next_page):
                 return redirect(next_page)
@@ -4870,6 +5009,7 @@ def login():
 @app.route('/admin/logout')
 @login_required
 def logout():
+    session.pop('conflitti_calendar_rimandati', None)
     logout_user()
     return redirect(url_for('login'))
 
@@ -4879,6 +5019,7 @@ def logout():
 @app.route('/admin')
 @login_required
 def admin():
+    esito_controllo_calendar = _riconciliazione_admin_se_necessaria()
     oggi = date.today().strftime('%Y-%m-%d')
     filtro = request.args.get('filtro', 'in_attesa')
 
@@ -4979,6 +5120,22 @@ def admin():
         RegistroEvento.esito.in_(['errore', 'avviso']),
         RegistroEvento.risolto_il.is_(None),
     ).order_by(RegistroEvento.creato_il.desc()).all()
+    conflitti_calendar = _conflitti_calendar_prioritari()
+    conflitti_calendar_chiavi = {
+        f"{voce['tipo']}:{voce['id']}"
+        for voce in conflitti_calendar
+    }
+    if not conflitti_calendar:
+        session.pop('conflitti_calendar_rimandati', None)
+    conflitti_rimandati_salvati = session.get('conflitti_calendar_rimandati', [])
+    conflitti_rimandati = set(
+        conflitti_rimandati_salvati
+        if isinstance(conflitti_rimandati_salvati, list)
+        else []
+    )
+    mostra_modal_conflitti = bool(
+        conflitti_calendar_chiavi - conflitti_rimandati
+    )
     fine_settimana = (date.today() + timedelta(days=7)).isoformat()
     corsi_settimana = Corso.query.filter(
         Corso.data.between(oggi, fine_settimana),
@@ -5110,6 +5267,14 @@ def admin():
                            richieste_nuove_count=len(richieste_admin),
                            attivita_admin=attivita_admin,
                            errori_aperti=errori_aperti,
+                           conflitti_calendar=conflitti_calendar,
+                           conflitti_calendar_chiavi=conflitti_calendar_chiavi,
+                           mostra_modal_conflitti=mostra_modal_conflitti,
+                           errore_controllo_calendar=(
+                               esito_controllo_calendar.get('errore')
+                               if esito_controllo_calendar
+                               else None
+                           ),
                            ricerca=ricerca,
                            risultati_ricerca=risultati_ricerca,
                            calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
@@ -5171,6 +5336,10 @@ def dettaglio_admin(tipo, entita_id):
             difformita = json.loads(entita.difformita_calendario)
         except json.JSONDecodeError:
             difformita = {'dettaglio': entita.difformita_calendario}
+    elif getattr(entita, 'sincronizzazione', None) in {
+        'difforme', 'eliminato_esternamente'
+    }:
+        difformita = _dettagli_anomalia_calendar(tipo, entita)
     duplicati = _possibili_duplicati_persona(entita.persona) if tipo == 'IscrizioneCorso' and entita.persona else []
     corsi_disponibili = Corso.query.filter(Corso.archiviato_il.is_(None)).order_by(Corso.data).all()
     collegamento_persona = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
@@ -5583,6 +5752,19 @@ def risolvi_errore_admin(id):
     if not _csrf_admin_valido():
         abort(400)
     evento = db.get_or_404(RegistroEvento, id)
+    entita = _entita_admin(evento.entita_tipo, evento.entita_id)
+    if (
+        evento.categoria == 'riconciliazione_calendar'
+        and entita is not None
+        and getattr(entita, 'sincronizzazione', None) in {
+            'difforme', 'eliminato_esternamente'
+        }
+    ):
+        flash(
+            'Il conflitto Calendar richiede una decisione sulla pratica e non può essere segnato come risolto.',
+            'error',
+        )
+        return redirect(_url_dettaglio_admin(evento.entita_tipo, evento.entita_id))
     nota = request.form.get('nota_risoluzione', '').strip()
     if not nota:
         flash('La nota di risoluzione è obbligatoria.', 'error')
@@ -5604,6 +5786,7 @@ def riconcilia_calendario_admin():
     if not _csrf_admin_valido():
         abort(400)
     risultato = riconcilia_calendario()
+    _segna_riconciliazione_admin_fresca()
     if risultato['errore']:
         flash(risultato['errore'], 'error')
     else:
@@ -5624,7 +5807,13 @@ def sincronizza_selezionati_admin():
             entita = _entita_admin(tipo, int(id_str))
         except (ValueError, TypeError):
             continue
-        if entita and _sincronizza_entita_admin(tipo, entita):
+        if (
+            entita
+            and getattr(entita, 'sincronizzazione', None) not in {
+                'difforme', 'eliminato_esternamente'
+            }
+            and _sincronizza_entita_admin(tipo, entita)
+        ):
             riusciti += 1
             registra_modifica('forza_sincronizzazione', tipo, entita.id)
     flash(f'Sincronizzati {riusciti} elementi su {len(selezionati)} selezionati.', 'success' if riusciti == len(selezionati) else 'error')
@@ -5639,10 +5828,256 @@ def forza_calendar_admin(tipo, entita_id):
     entita = _entita_admin(tipo, entita_id)
     if entita is None:
         abort(404)
-    riuscito = _sincronizza_entita_admin(tipo, entita)
-    registra_modifica('sovrascrittura_calendar', tipo, entita_id, {'esito': riuscito})
-    flash('Dati del sito riscritti su Calendar.' if riuscito else 'Scrittura Calendar fallita.', 'success' if riuscito else 'error')
+    if entita.sincronizzazione == 'eliminato_esternamente':
+        riuscito = _ripristina_evento_calendar(tipo, entita)
+        messaggio = (
+            'Evento ripristinato su Calendar senza inviare nuove comunicazioni.'
+            if riuscito
+            else 'Ripristino Calendar non riuscito; il dato locale resta invariato e verrà ritentato.'
+        )
+    else:
+        riuscito = _sincronizza_entita_admin(tipo, entita)
+        if riuscito:
+            _chiudi_anomalie_sync(
+                tipo,
+                entita_id,
+                'Dati del sito confermati e riscritti su Calendar.',
+            )
+            db.session.commit()
+        registra_modifica('sovrascrittura_calendar', tipo, entita_id, {'esito': riuscito})
+        messaggio = 'Dati del sito riscritti su Calendar.' if riuscito else 'Scrittura Calendar fallita.'
+    flash(messaggio, 'success' if riuscito else 'error')
     return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+def _ripristina_evento_calendar(tipo, entita):
+    precedente_google_event_id = entita.google_event_id
+    entita.google_event_id = None
+    entita.sincronizzazione = 'da_sincronizzare'
+    if hasattr(entita, 'difformita_calendario'):
+        entita.difformita_calendario = None
+    db.session.commit()
+    riuscito = _sincronizza_entita_admin(tipo, entita)
+    if riuscito:
+        _chiudi_anomalie_sync(
+            tipo,
+            entita.id,
+            'Evento eliminato esternamente e ripristinato su Calendar.',
+        )
+        db.session.commit()
+    registra_modifica(
+        'ripristino_calendar',
+        tipo,
+        entita.id,
+        {
+            'esito': riuscito,
+            'google_event_id_precedente': precedente_google_event_id,
+            'google_event_id_nuovo': entita.google_event_id,
+        },
+    )
+    return riuscito
+
+
+def _evento_calendar_collegato(entita):
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None or not entita.google_event_id:
+        raise RuntimeError('Google Calendar non è disponibile.')
+    return _esegui_richiesta_calendario(
+        servizio.events().get(
+            calendarId=calendar_id,
+            eventId=entita.google_event_id,
+        ),
+        ignora_assenza_evento=True,
+    )
+
+
+@app.route('/admin/calendar/accetta/<tipo>/<int:entita_id>', methods=['POST'])
+@login_required
+def accetta_calendar_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+        abort(400)
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    if entita.sincronizzazione != 'difforme':
+        flash('La pratica non presenta più una modifica Calendar da accettare.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+    try:
+        remoto = _evento_calendar_collegato(entita)
+    except Exception as errore:
+        flash(f'Calendar non disponibile: {type(errore).__name__}. Il dato locale non è stato modificato.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    if not isinstance(remoto, dict):
+        flash('Calendar ha restituito una risposta non valida. Il dato locale non è stato modificato.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    if remoto.get('status') == 'cancelled':
+        _segna_evento_eliminato_esternamente(tipo, entita)
+        flash('L’evento risulta eliminato: scegli se ripristinarlo o annullare la pratica.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+    start = remoto.get('start') or {}
+    end = remoto.get('end') or {}
+    if not start.get('dateTime') or not end.get('dateTime'):
+        flash('Un evento senza orario preciso non può essere applicato automaticamente alla pratica.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    intervallo = _intervallo_da_evento_google(remoto)
+    if not intervallo:
+        flash('Calendar non ha restituito un intervallo valido.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    inizio, fine, _ = intervallo
+    durata = int((fine - inizio).total_seconds() // 60)
+    if inizio.second or fine.second or durata <= 0 or durata > 480:
+        flash('L’intervallo Calendar non è compatibile con una pratica del sito.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+    nuova_data = inizio.date().isoformat()
+    nuova_ora = inizio.strftime('%H:%M')
+    prima = {
+        'data': entita.data,
+        'ora': entita.ora,
+        'durata_minuti': (
+            entita.duration_minutes if tipo == 'Appuntamento' else BLOCCO_CALL_SONNO_MINUTI
+        ),
+    }
+    if tipo == 'Appuntamento':
+        valido = (
+            inizio.date() >= date.today()
+            and is_appointment_interval_bookable(nuova_data, nuova_ora, durata)
+        )
+        occupato = valido and (
+            slot_occupato_db(
+                nuova_data,
+                nuova_ora,
+                durata,
+                ignore_appuntamento_id=entita.id,
+            )
+            or intervallo_occupato_da_calendario(
+                nuova_data,
+                nuova_ora,
+                durata,
+                ignore_google_event_id=entita.google_event_id,
+            )
+        )
+    else:
+        valido = (
+            durata == BLOCCO_CALL_SONNO_MINUTI
+            and inizio.date() >= date.today()
+            and _giorno_lavorativo_call(inizio.date())
+            and nuova_ora in ORARI_CALL_SONNO
+        )
+        occupato = valido and (
+            slot_occupato_db(
+                nuova_data,
+                nuova_ora,
+                durata,
+                ignore_call_id=entita.id,
+            )
+            or intervallo_occupato_da_calendario(
+                nuova_data,
+                nuova_ora,
+                durata,
+                ignore_google_event_id=entita.google_event_id,
+            )
+        )
+    if not valido or occupato:
+        flash('Il nuovo intervallo non rispetta disponibilità o regole operative; il dato locale non è stato modificato.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+    dopo = {'data': nuova_data, 'ora': nuova_ora, 'durata_minuti': durata}
+    if prima == dopo:
+        flash('Calendar non contiene una modifica di data, ora o durata applicabile al sito.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    entita.data = nuova_data
+    entita.ora = nuova_ora
+    if tipo == 'Appuntamento':
+        entita.duration_minutes = durata
+    db.session.commit()
+
+    calendar_ok = _sincronizza_entita_admin(tipo, entita)
+    email_ok = (
+        invia_email_spostamento(entita)
+        if tipo == 'Appuntamento'
+        else invia_email_conferma_call_sonno(entita, modificata=True)
+    )
+    _chiudi_anomalie_sync(
+        tipo,
+        entita.id,
+        'Data e orario modificati su Calendar accettati esplicitamente nell’admin.',
+    )
+    db.session.commit()
+    registra_modifica(
+        'accettazione_modifica_calendar',
+        tipo,
+        entita.id,
+        {'prima': prima, 'dopo': dopo, 'email_inviata': email_ok, 'calendar_ok': calendar_ok},
+    )
+    if calendar_ok and email_ok:
+        flash('Modifica Calendar applicata al sito e comunicata al destinatario.', 'success')
+    elif not email_ok:
+        flash('Modifica applicata, ma l’email di spostamento non è partita. Controlla il registro eventi.', 'error')
+    else:
+        flash('Modifica applicata; il riallineamento Calendar verrà ritentato.', 'error')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/calendar/annulla/<tipo>/<int:entita_id>', methods=['POST'])
+@login_required
+def annulla_da_conflitto_calendar_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+        abort(400)
+    entita = _entita_admin(tipo, entita_id)
+    if entita is None:
+        abort(404)
+    if entita.sincronizzazione != 'eliminato_esternamente':
+        flash('La pratica non presenta più un evento eliminato da gestire.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+    if tipo == 'Appuntamento':
+        entita.stato = 'Annullato'
+        db.session.commit()
+        email_ok = invia_email_annullamento(entita)
+        calendar_ok = elimina_evento_calendario(entita)
+    else:
+        entita.stato = 'Annullata'
+        db.session.commit()
+        email_ok = invia_email_annullamento_call_sonno(entita)
+        calendar_ok = elimina_evento_calendario_call_sonno(entita)
+    if calendar_ok:
+        entita.sincronizzazione = 'non_collegato'
+    if hasattr(entita, 'difformita_calendario'):
+        entita.difformita_calendario = None
+    _chiudi_anomalie_sync(
+        tipo,
+        entita.id,
+        'Evento eliminato esternamente: pratica annullata con il normale flusso amministrativo.',
+    )
+    db.session.commit()
+    registra_modifica(
+        'annullamento_da_conflitto_calendar',
+        tipo,
+        entita.id,
+        {'email_inviata': email_ok, 'calendar_ok': calendar_ok},
+    )
+    if email_ok:
+        flash('Pratica annullata e comunicazione inviata.', 'success')
+    else:
+        flash('Pratica annullata, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/calendar/decidi-dopo', methods=['POST'])
+@login_required
+def rimanda_conflitti_calendar_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    session['conflitti_calendar_rimandati'] = [
+        f"{voce['tipo']}:{voce['id']}"
+        for voce in _conflitti_calendar_prioritari()
+    ]
+    flash('Decisione rimandata: i conflitti Calendar restano aperti e visibili.', 'error')
+    return redirect(url_for('admin') + '#conflitti-calendar')
 
 
 @app.route('/admin/email/<int:id>/reinvia', methods=['POST'])

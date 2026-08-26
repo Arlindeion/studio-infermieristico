@@ -1,5 +1,6 @@
 import os
 import base64
+import json
 import re
 import secrets
 import ssl
@@ -3450,6 +3451,279 @@ def test_riconciliazione_segnala_modifica_esterna_senza_cambiare_appuntamento(
         assert RegistroEvento.query.filter_by(categoria='riconciliazione_calendar').count() == 1
 
 
+def test_riconciliazione_tratta_status_cancelled_come_eliminazione_esterna(
+    app,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi', telefono='3331234567', email='mario@example.com',
+            servizio='Medicazione semplice', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', google_event_id='evento-cancellato',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+    mock_servizio.events.return_value.get.return_value.execute.return_value = {
+        'id': 'evento-cancellato',
+        'status': 'cancelled',
+        'summary': 'Mario Rossi Medicazione semplice',
+        'start': {'dateTime': '2099-09-01T10:00:00+02:00'},
+        'end': {'dateTime': '2099-09-01T10:30:00+02:00'},
+    }
+
+    with flask_app.app_context():
+        risultato = app_module.riconcilia_calendario()
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        anomalia = RegistroEvento.query.filter_by(
+            categoria='riconciliazione_calendar',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento_id,
+            risolto_il=None,
+        ).one()
+
+    assert risultato['mancanti'] == 1
+    assert appuntamento.stato == 'Confermato'
+    assert appuntamento.google_event_id == 'evento-cancellato'
+    assert appuntamento.sincronizzazione == 'eliminato_esternamente'
+    assert anomalia.dettagli_dict() == {
+        'evento': {'sito': 'presente', 'calendar': 'eliminato'}
+    }
+
+
+def test_controllo_admin_usa_finestra_di_freschezza(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar-test')
+    monkeypatch.setitem(app.config, 'GOOGLE_SERVICE_ACCOUNT_FILE', '/tmp/finto.json')
+    monkeypatch.setitem(app.config, 'CALENDARIO_RICONCILIAZIONE_ADMIN_SECONDI', 180)
+    app_module._azzera_stato_calendario()
+
+    with patch.object(
+        app_module,
+        'riconcilia_calendario',
+        return_value={'controllati': 1, 'difformi': 0, 'mancanti': 0, 'errore': None},
+    ) as riconcilia:
+        primo = app_module._riconciliazione_admin_se_necessaria(1000)
+        secondo = app_module._riconciliazione_admin_se_necessaria(1100)
+        terzo = app_module._riconciliazione_admin_se_necessaria(1300)
+
+    assert primo is not None
+    assert secondo is None
+    assert terzo is not None
+    assert riconcilia.call_count == 2
+
+
+def test_admin_mostra_modal_prioritario_e_decidi_dopo_conserva_conflitto(client):
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Test Calendar', telefono='3331234567', email='test@example.com',
+            servizio='Lavaggio auricolare', data='2099-09-01', ora='09:00',
+            duration_minutes=30, stato='Confermato', sincronizzazione='difforme',
+            google_event_id='evento-difforme',
+            difformita_calendario=json.dumps({
+                'inizio': {
+                    'sito': '2099-09-01T09:00+02:00',
+                    'calendar': '2099-09-01T10:00+02:00',
+                },
+                'fine': {
+                    'sito': '2099-09-01T09:30+02:00',
+                    'calendar': '2099-09-01T10:30+02:00',
+                },
+            }),
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+        app_module._registra_anomalia_sync(
+            'Appuntamento',
+            appuntamento_id,
+            'Evento Calendar modificato esternamente: serve conferma.',
+            json.loads(appuntamento.difformita_calendario),
+        )
+
+    csrf = _login_admin(client)
+    pagina = client.get('/admin')
+
+    assert pagina.status_code == 200
+    assert 'data-calendar-conflict-modal data-open-on-load' in pagina.text
+    assert 'Test Calendar' in pagina.text
+    assert 'Lavaggio auricolare' in pagina.text
+    assert 'Accetta data e orario Calendar' in pagina.text
+    assert 'Si chiude soltanto dopo una scelta nella pratica.' in pagina.text
+    assert 'name="nota_risoluzione"' not in pagina.text
+
+    risposta = client.post(
+        '/admin/calendar/decidi-dopo',
+        data={'_csrf_token': csrf},
+        follow_redirects=True,
+    )
+    assert risposta.status_code == 200
+    assert 'data-calendar-conflict-modal data-open-on-load' not in risposta.text
+    assert 'Google Calendar è stato modificato' in risposta.text
+    with flask_app.app_context():
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        assert appuntamento.sincronizzazione == 'difforme'
+        assert RegistroEvento.query.filter_by(risolto_il=None).count() == 1
+
+
+def test_ripristino_evento_eliminato_crea_nuovo_id_senza_email(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.insert.return_value.execute.return_value = {
+        'id': 'evento-ripristinato',
+    }
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Test Ripristino', telefono='3331234567', email='test@example.com',
+            servizio='Lavaggio auricolare', data='2099-09-01', ora='09:00',
+            duration_minutes=30, stato='Confermato',
+            sincronizzazione='eliminato_esternamente',
+            google_event_id='evento-eliminato',
+            difformita_calendario=json.dumps({
+                'evento': {'sito': 'presente', 'calendar': 'eliminato'}
+            }),
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+        app_module._registra_anomalia_sync(
+            'Appuntamento', appuntamento_id,
+            'Evento collegato eliminato da Google Calendar.',
+            {'evento': {'sito': 'presente', 'calendar': 'eliminato'}},
+        )
+    with patch.object(app_module, '_riconciliazione_admin_se_necessaria', return_value=None):
+        csrf = _login_admin(client)
+
+    with patch.object(app_module, 'invia_email_conferma') as email:
+        risposta = client.post(
+            f'/admin/calendar/forza/Appuntamento/{appuntamento_id}',
+            data={'_csrf_token': csrf},
+        )
+
+    assert risposta.status_code == 302
+    email.assert_not_called()
+    mock_servizio.events.return_value.insert.assert_called_once()
+    mock_servizio.events.return_value.patch.assert_not_called()
+    with flask_app.app_context():
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        anomalia = RegistroEvento.query.filter_by(
+            categoria='riconciliazione_calendar',
+            entita_id=appuntamento_id,
+        ).one()
+        assert appuntamento.google_event_id == 'evento-ripristinato'
+        assert appuntamento.sincronizzazione == 'sincronizzato'
+        assert appuntamento.stato == 'Confermato'
+        assert anomalia.risolto_il is not None
+
+
+def test_accetta_orario_calendar_aggiorna_db_audit_e_invia_spostamento(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+    mock_servizio.events.return_value.get.return_value.execute.return_value = {
+        'id': 'evento-spostato',
+        'status': 'confirmed',
+        'summary': 'Test Spostamento Lavaggio auricolare',
+        'start': {'dateTime': '2099-09-01T11:00:00+02:00'},
+        'end': {'dateTime': '2099-09-01T11:45:00+02:00'},
+    }
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Test Spostamento', telefono='3331234567', email='test@example.com',
+            servizio='Lavaggio auricolare', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato', sincronizzazione='difforme',
+            google_event_id='evento-spostato',
+            difformita_calendario=json.dumps({
+                'inizio': {'sito': '2099-09-01T10:00+02:00', 'calendar': '2099-09-01T11:00+02:00'},
+                'fine': {'sito': '2099-09-01T10:30+02:00', 'calendar': '2099-09-01T11:45+02:00'},
+            }),
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+        app_module._registra_anomalia_sync(
+            'Appuntamento', appuntamento_id,
+            'Evento Calendar modificato esternamente: serve conferma.',
+            json.loads(appuntamento.difformita_calendario),
+        )
+    with patch.object(app_module, '_riconciliazione_admin_se_necessaria', return_value=None):
+        csrf = _login_admin(client)
+
+    with patch.object(app_module, 'invia_email_spostamento', return_value=True) as email:
+        risposta = client.post(
+            f'/admin/calendar/accetta/Appuntamento/{appuntamento_id}',
+            data={'_csrf_token': csrf},
+        )
+
+    assert risposta.status_code == 302
+    email.assert_called_once()
+    mock_servizio.events.return_value.patch.assert_called_once()
+    with flask_app.app_context():
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        audit = app_module.RegistroModifica.query.filter_by(
+            azione='accettazione_modifica_calendar',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento_id,
+        ).one()
+        assert appuntamento.data == '2099-09-01'
+        assert appuntamento.ora == '11:00'
+        assert appuntamento.duration_minutes == 45
+        assert appuntamento.sincronizzazione == 'sincronizzato'
+        assert '11:00' in audit.dettagli
+
+
+def test_annullamento_da_evento_eliminato_usa_workflow_e_chiude_conflitto(client):
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Test Annullamento', telefono='3331234567', email='test@example.com',
+            servizio='Lavaggio auricolare', data='2099-09-01', ora='10:00',
+            duration_minutes=30, stato='Confermato',
+            sincronizzazione='eliminato_esternamente',
+            google_event_id='evento-eliminato',
+            difformita_calendario=json.dumps({
+                'evento': {'sito': 'presente', 'calendar': 'eliminato'}
+            }),
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+        app_module._registra_anomalia_sync(
+            'Appuntamento', appuntamento_id,
+            'Evento collegato eliminato da Google Calendar.',
+            {'evento': {'sito': 'presente', 'calendar': 'eliminato'}},
+        )
+    csrf = _login_admin(client)
+
+    with patch.object(app_module, 'invia_email_annullamento', return_value=True) as email, patch.object(
+        app_module, 'elimina_evento_calendario', return_value=True
+    ) as elimina:
+        risposta = client.post(
+            f'/admin/calendar/annulla/Appuntamento/{appuntamento_id}',
+            data={'_csrf_token': csrf},
+        )
+
+    assert risposta.status_code == 302
+    email.assert_called_once()
+    elimina.assert_called_once()
+    with flask_app.app_context():
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        anomalia = RegistroEvento.query.filter_by(
+            categoria='riconciliazione_calendar',
+            entita_id=appuntamento_id,
+        ).one()
+        assert appuntamento.stato == 'Annullato'
+        assert appuntamento.sincronizzazione == 'non_collegato'
+        assert appuntamento.difformita_calendario is None
+        assert anomalia.risolto_il is not None
+        assert app_module.RegistroModifica.query.filter_by(
+            azione='annullamento_da_conflitto_calendar',
+            entita_id=appuntamento_id,
+        ).count() == 1
+
+
 def test_riconciliazione_si_ferma_al_primo_errore_calendar(
     app,
     google_calendar_scrittura_finto,
@@ -3630,6 +3904,13 @@ def test_riallineamento_automatico_non_sovrascrive_anomalie_esterne_o_attese(app
                 nome='Richiesta in attesa', telefono='3331234567', email='due@example.com',
                 servizio='Medicazione semplice', data='2099-09-01', ora='11:00',
                 duration_minutes=30, stato='In attesa', sincronizzazione='errore',
+            ),
+            Appuntamento(
+                nome='Evento eliminato', telefono='3331234567', email='tre@example.com',
+                servizio='Medicazione semplice', data='2099-09-01', ora='12:00',
+                duration_minutes=30, stato='Confermato',
+                sincronizzazione='eliminato_esternamente',
+                google_event_id='evento-eliminato',
             ),
         ])
         db.session.commit()
