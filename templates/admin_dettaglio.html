@@ -244,15 +244,15 @@ S.C. Studio Infermieristico</textarea></label>
                 <textarea name="testo" rows="3" maxlength="4000" required></textarea>
                 <button class="btn-azione verde" type="submit">Aggiungi nota</button>
             </form>
-            <ol class="admin-timeline">{% for nota in note_admin %}<li><time>{{ nota.creata_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ nota.testo }}</p></li>{% else %}<li>Nessuna nota operativa.</li>{% endfor %}</ol>
+            <ol class="admin-timeline">{% for nota in note_admin %}<li><time>{{ nota.creata_il|local_timestamp }}</time><p>{{ nota.testo }}</p></li>{% else %}<li>Nessuna nota operativa.</li>{% endfor %}</ol>
         </section>
         <section class="admin-surface">
             <h2>Email collegate</h2>
-            <ol class="admin-timeline">{% for messaggio in email_admin %}<li><time>{{ messaggio.creata_il.strftime('%d/%m/%Y %H:%M') }}</time><p><strong>{{ messaggio.oggetto }}</strong><br>{{ messaggio.destinatario }} · {{ messaggio.stato }}</p>{% if messaggio.stato == 'fallita' %}<form method="post" action="{{ url_for('reinvia_email_admin', id=messaggio.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione blu" type="submit">Reinvia copia esatta</button></form>{% endif %}</li>{% else %}<li>Nessuna email registrata.</li>{% endfor %}</ol>
+            <ol class="admin-timeline">{% for messaggio in email_admin %}<li><time>{{ messaggio.creata_il|local_timestamp }}</time><p><strong>{{ messaggio.oggetto }}</strong><br>{{ messaggio.destinatario }} · {{ messaggio.stato }}</p>{% if messaggio.stato == 'fallita' %}<form method="post" action="{{ url_for('reinvia_email_admin', id=messaggio.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione blu" type="submit">Reinvia copia esatta</button></form>{% endif %}</li>{% else %}<li>Nessuna email registrata.</li>{% endfor %}</ol>
         </section>
     </div>
 
-    <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il.strftime('%d/%m/%Y %H:%M') }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
+    <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il|local_timestamp }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
 </main>
 <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.4"></script>
 {% endblock %}

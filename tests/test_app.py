@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pytest
 from unittest.mock import MagicMock, patch
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from werkzeug.security import check_password_hash, generate_password_hash
 from googleapiclient.errors import HttpError
 
@@ -72,6 +72,27 @@ def test_app_exists(app):
 def test_app_is_testing(app):
     """Assicurarsi che l'app sia in modalità di test."""
     assert app.config['TESTING'] == True
+
+
+def test_timestamp_utc_diventa_ora_italiana_e_distingue_l_ora_ripetuta():
+    assert app_module.format_local_timestamp(
+        datetime(2026, 8, 26, 18, 46)
+    ) == '26/08/2026 20:46 CEST'
+
+    prima_del_salto = app_module.as_local_time(datetime(2026, 3, 29, 0, 30))
+    dopo_il_salto = app_module.as_local_time(datetime(2026, 3, 29, 1, 30))
+    assert prima_del_salto.strftime('%d/%m/%Y %H:%M %Z') == '29/03/2026 01:30 CET'
+    assert dopo_il_salto.strftime('%d/%m/%Y %H:%M %Z') == '29/03/2026 03:30 CEST'
+
+    prima_ora_0230 = app_module.as_local_time(datetime(2026, 10, 25, 0, 30))
+    seconda_ora_0230 = app_module.as_local_time(datetime(2026, 10, 25, 1, 30))
+
+    assert prima_ora_0230.strftime('%d/%m/%Y %H:%M %Z') == '25/10/2026 02:30 CEST'
+    assert seconda_ora_0230.strftime('%d/%m/%Y %H:%M %Z') == '25/10/2026 02:30 CET'
+    assert prima_ora_0230.fold == 0
+    assert seconda_ora_0230.fold == 1
+    assert prima_ora_0230.astimezone(timezone.utc).replace(tzinfo=None) == datetime(2026, 10, 25, 0, 30)
+    assert seconda_ora_0230.astimezone(timezone.utc).replace(tzinfo=None) == datetime(2026, 10, 25, 1, 30)
 
 
 def test_errore_404_usa_layout_pubblico_e_non_viene_indicizzato(client):
@@ -1944,6 +1965,25 @@ def test_login_admin_ignora_redirect_esterno(client):
 
     assert resp.status_code == 302
     assert resp.headers['Location'] == '/admin'
+
+
+def test_admin_mostra_i_timestamp_persistiti_nel_fuso_italiano(client):
+    _login_admin(client)
+    with flask_app.app_context():
+        db.session.add(RegistroEvento(
+            categoria='audit',
+            esito='info',
+            messaggio='Correzione registrata.',
+            creato_il=datetime(2026, 8, 26, 18, 46),
+        ))
+        db.session.commit()
+
+    response = client.get('/admin')
+
+    assert response.status_code == 200
+    assert '26/08/2026' in response.text
+    assert '20:46 CEST' in response.text
+    assert '18:46' not in response.text
 
 
 # ─── Integrazione Google Calendar (Arzamed) ───

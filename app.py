@@ -30,7 +30,7 @@ except ImportError:  # Flask-Migrate è dichiarato in requirements, ma resta opz
     Migrate = None
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
-from datetime import datetime, date, time as datetime_time, timedelta
+from datetime import datetime, date, time as datetime_time, timedelta, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
@@ -523,6 +523,41 @@ FESTIVI_FISSI = {
 }
 
 FUSO_ORARIO = ZoneInfo('Europe/Rome')
+UTC_TIMEZONE = timezone.utc
+
+
+def utc_now():
+    """Return an unambiguous UTC instant for timezone-naive DB columns."""
+    return datetime.now(UTC_TIMEZONE).replace(tzinfo=None)
+
+
+def local_now():
+    """Return the current civil time in Italy for business-calendar rules."""
+    return datetime.now(FUSO_ORARIO)
+
+
+def local_now_naive():
+    """Return Italian wall time for legacy business-deadline columns."""
+    return local_now().replace(tzinfo=None)
+
+
+def local_today():
+    return local_now().date()
+
+
+def as_local_time(value):
+    """Convert a persisted UTC instant to Europe/Rome, including DST rules."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC_TIMEZONE)
+    return value.astimezone(FUSO_ORARIO)
+
+
+@app.template_filter('local_timestamp')
+def format_local_timestamp(value, format_string='%d/%m/%Y %H:%M %Z'):
+    local_value = as_local_time(value)
+    return local_value.strftime(format_string) if local_value else ''
 
 
 def calcola_pasqua(anno):
@@ -1613,7 +1648,7 @@ class Appuntamento(db.Model):
     )
     note = db.Column(db.Text, nullable=True)
     stato = db.Column(db.String(20), default='In attesa')
-    creato_il = db.Column(db.DateTime, default=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
     # ID dell'evento creato su Google Calendar quando l'appuntamento viene
     # confermato (None se non ancora confermato, o se la scrittura su
     # Google Calendar non è configurata/è fallita).
@@ -1652,8 +1687,8 @@ class CallSonno(db.Model):
     utm_medium = db.Column(db.String(100), nullable=True)
     utm_campaign = db.Column(db.String(100), nullable=True)
     utm_content = db.Column(db.String(100), nullable=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
-    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False)
+    aggiornato_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
     scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
     sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
     difformita_calendario = db.Column(db.Text, nullable=True)
@@ -1666,7 +1701,7 @@ class QuestionarioSonno(db.Model):
     risposte = db.Column(db.Text, nullable=False)
     consenso_dati_sanitari = db.Column(db.Boolean, default=False, nullable=False)
     consenso_marketing = db.Column(db.Boolean, default=False, nullable=False)
-    compilato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    compilato_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     call_sonno = db.relationship(
         'CallSonno',
         backref=db.backref('questionario', uselist=False, cascade='all, delete-orphan'),
@@ -1690,7 +1725,7 @@ class Corso(db.Model):
     durata_ore = db.Column(db.Float, default=DURATA_CORSO_DEFAULT_ORE, nullable=False)
     capienza_massima = db.Column(db.Integer, nullable=True)
     stato = db.Column(db.String(20), default='Aperto', nullable=False)
-    creato_il = db.Column(db.DateTime, default=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
     google_event_id = db.Column(db.String(255), nullable=True)
     sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
@@ -1705,8 +1740,8 @@ class PersonaCorso(db.Model):
     nome_bambino = db.Column(db.String(100), nullable=True)
     eta_bambino = db.Column(db.String(40), nullable=True)
     note = db.Column(db.Text, nullable=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now)
-    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
+    aggiornato_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
 
 class PercorsoAccompagnamento(db.Model):
@@ -1718,7 +1753,7 @@ class PercorsoAccompagnamento(db.Model):
     luogo = db.Column(db.String(200), nullable=True)
     contatti = db.Column(db.String(200), default='3806317175', nullable=True)
     stato = db.Column(db.String(20), default='Aperto', nullable=False)
-    creato_il = db.Column(db.DateTime, default=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
 
 
 class IncontroAccompagnamento(db.Model):
@@ -1731,7 +1766,7 @@ class IncontroAccompagnamento(db.Model):
     tema = db.Column(db.String(200), nullable=False)
     luogo = db.Column(db.String(200), nullable=True)
     note = db.Column(db.Text, nullable=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
     google_event_id = db.Column(db.String(255), nullable=True)
     sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
@@ -1758,7 +1793,7 @@ class IscrizioneCorso(db.Model):
     consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
     consenso_immagini = db.Column(db.Boolean, default=False, nullable=False)
     stato = db.Column(db.String(20), default='Nuova', nullable=False)
-    creato_il = db.Column(db.DateTime, default=datetime.now)
+    creato_il = db.Column(db.DateTime, default=utc_now)
     scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
     posti_richiesti = db.Column(db.Integer, default=1, nullable=False)
     token_lista_attesa = db.Column(db.String(96), unique=True, nullable=True, index=True)
@@ -1798,8 +1833,8 @@ class RichiestaAzienda(db.Model):
     stato = db.Column(db.String(30), default='Nuova', nullable=False, index=True)
     scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
     corso_generato_id = db.Column(db.Integer, db.ForeignKey('corso.id'), nullable=True, index=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
-    aggiornato_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
+    aggiornato_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
     corso_generato = db.relationship(
         'Corso',
@@ -1814,7 +1849,7 @@ class PresenzaAccompagnamento(db.Model):
     incontro_id = db.Column(db.Integer, db.ForeignKey('incontro_accompagnamento.id'), nullable=False)
     presente = db.Column(db.Boolean, nullable=True)
     note = db.Column(db.Text, nullable=True)
-    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    aggiornata_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     iscrizione = db.relationship('IscrizioneCorso', backref=db.backref('presenze_accompagnamento', lazy=True))
     incontro = db.relationship('IncontroAccompagnamento', backref=db.backref('presenze', lazy=True))
 
@@ -1827,7 +1862,7 @@ class RegistroEvento(db.Model):
     entita_tipo = db.Column(db.String(80), nullable=True, index=True)
     entita_id = db.Column(db.Integer, nullable=True, index=True)
     dettagli = db.Column(db.Text, nullable=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, index=True)
+    creato_il = db.Column(db.DateTime, default=utc_now, index=True)
     risolto_il = db.Column(db.DateTime, nullable=True, index=True)
     nota_risoluzione = db.Column(db.Text, nullable=True)
 
@@ -1848,8 +1883,8 @@ class AttivitaAdmin(db.Model):
     entita_tipo = db.Column(db.String(40), nullable=True, index=True)
     entita_id = db.Column(db.Integer, nullable=True, index=True)
     note = db.Column(db.Text, nullable=True)
-    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
-    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    creata_il = db.Column(db.DateTime, default=utc_now, nullable=False)
+    aggiornata_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
 
 class NotaAdmin(db.Model):
@@ -1857,8 +1892,8 @@ class NotaAdmin(db.Model):
     entita_tipo = db.Column(db.String(40), nullable=False, index=True)
     entita_id = db.Column(db.Integer, nullable=False, index=True)
     testo = db.Column(db.Text, nullable=False)
-    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
-    aggiornata_il = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    creata_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
+    aggiornata_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
 
 class EmailOperativa(db.Model):
@@ -1871,7 +1906,7 @@ class EmailOperativa(db.Model):
     stato = db.Column(db.String(20), nullable=False, index=True)
     errore = db.Column(db.Text, nullable=True)
     inviata_il = db.Column(db.DateTime, nullable=True, index=True)
-    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    creata_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     scade_il = db.Column(db.DateTime, nullable=False, index=True)
 
 
@@ -1885,7 +1920,7 @@ class PropostaSlot(db.Model):
     durata_minuti = db.Column(db.Integer, nullable=False, default=30)
     stato = db.Column(db.String(20), nullable=False, default='Inviata', index=True)
     scade_il = db.Column(db.DateTime, nullable=False, index=True)
-    creata_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    creata_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     accettata_il = db.Column(db.DateTime, nullable=True)
 
 
@@ -1898,7 +1933,7 @@ class BloccoAgenda(db.Model):
     note = db.Column(db.Text, nullable=True)
     google_event_id = db.Column(db.String(255), nullable=True)
     sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
@@ -1909,7 +1944,7 @@ class RegistroModifica(db.Model):
     entita_id = db.Column(db.Integer, nullable=False, index=True)
     dettagli = db.Column(db.Text, nullable=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
 
 
 class CollegamentoPersona(db.Model):
@@ -1917,7 +1952,7 @@ class CollegamentoPersona(db.Model):
     persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=False, index=True)
     entita_tipo = db.Column(db.String(40), nullable=False, index=True)
     entita_id = db.Column(db.Integer, nullable=False, index=True)
-    creato_il = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     persona = db.relationship('PersonaCorso', backref=db.backref('collegamenti_pratiche', lazy=True))
     __table_args__ = (db.UniqueConstraint('entita_tipo', 'entita_id', name='uq_collegamento_persona_pratica'),)
 
@@ -1959,7 +1994,7 @@ def registra_modifica(azione, entita_tipo, entita_id, dettagli=None):
 
 def prossima_scadenza_lavorativa(adesso=None):
     """Restituisce le 18 del primo giorno lavorativo successivo."""
-    riferimento = adesso or datetime.now()
+    riferimento = adesso or local_now()
     candidato = riferimento.date() + timedelta(days=1)
     while candidato.weekday() >= 6 or is_festivo(candidato):
         candidato += timedelta(days=1)
@@ -1985,14 +2020,14 @@ def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
         oggetto=msg.subject or '',
         corpo=msg.body or '',
         stato='in_preparazione',
-        scade_il=datetime.now() + timedelta(days=730),
+        scade_il=utc_now() + timedelta(days=730),
     )
     db.session.add(record)
     db.session.commit()
     try:
         mail.send(msg)
         record.stato = 'soppressa' if app.config.get('MAIL_SUPPRESS_SEND') else 'inviata'
-        record.inviata_il = datetime.now()
+        record.inviata_il = utc_now()
         db.session.commit()
         return True
     except Exception as errore:
@@ -2004,7 +2039,7 @@ def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
 
 def elimina_email_scadute(adesso=None):
     """Applica la conservazione di 24 mesi senza toccare le pratiche collegate."""
-    limite = adesso or datetime.now()
+    limite = adesso or utc_now()
     eliminate = EmailOperativa.query.filter(EmailOperativa.scade_il <= limite).delete(
         synchronize_session=False
     )
@@ -2015,7 +2050,7 @@ def elimina_email_scadute(adesso=None):
 
 def genera_promemoria_richieste(adesso=None):
     """Trasforma le scadenze superate in attività visibili, senza sbloccare lo slot."""
-    limite = adesso or datetime.now()
+    limite = adesso or local_now_naive()
     create = 0
     gruppi = [
         ('Appuntamento', Appuntamento.query.filter(Appuntamento.stato == 'In attesa', Appuntamento.scadenza_gestione <= limite, Appuntamento.archiviato_il.is_(None)).all()),
@@ -2101,7 +2136,7 @@ def _chiudi_errori_calendar_risolti(tipo, entita_id):
         RegistroEvento.entita_id == entita_id,
         RegistroEvento.risolto_il.is_(None),
     ).update({
-        'risolto_il': datetime.now(),
+        'risolto_il': utc_now(),
         'nota_risoluzione': 'Riallineamento automatico completato.',
     }, synchronize_session=False)
     db.session.commit()
@@ -2250,7 +2285,7 @@ def _chiudi_anomalie_sync(tipo, entita_id, nota='Riconciliazione successiva senz
         entita_id=entita_id,
         risolto_il=None,
     ).update({
-        'risolto_il': datetime.now(),
+        'risolto_il': utc_now(),
         'nota_risoluzione': nota,
     })
 
@@ -2619,7 +2654,7 @@ def _giorno_lavorativo_call(giorno):
 
 
 def prima_data_call_disponibile(da_giorno=None):
-    candidato = (da_giorno or date.today()) + timedelta(days=1)
+    candidato = (da_giorno or local_today()) + timedelta(days=1)
     while not _giorno_lavorativo_call(candidato):
         candidato += timedelta(days=1)
     return candidato
@@ -3521,7 +3556,7 @@ def controlla_e_invia_ricordi_24h():
         logger.info('>>> Controllo appuntamenti per invio ricordi 24h...')
 
         # Calcola la finestra temporale: ora + 24 ore +/- 30 minuti
-        adesso = datetime.now()
+        adesso = local_now()
         target_time = adesso + timedelta(hours=24)
         window_start = target_time - timedelta(minutes=30)
         window_end = target_time + timedelta(minutes=30)
@@ -3538,11 +3573,15 @@ def controlla_e_invia_ricordi_24h():
         ricordi_inviati = 0
         for app in appuntamenti:
             try:
-                app_datetime = datetime.strptime(f"{app.data} {app.ora}", '%Y-%m-%d %H:%M')
+                app_datetime, _ = _intervallo_locale(
+                    app.data,
+                    app.ora,
+                    app.duration_minutes,
+                )
                 if window_start <= app_datetime <= window_end:
                     invia_email_ricordo_24h(app)
                     ricordi_inviati += 1
-            except ValueError:
+            except (TypeError, ValueError):
                 # Salta gli appuntamenti con formato data/ora non valido
                 continue
 
@@ -3553,7 +3592,7 @@ def controlla_e_invia_ricordi_24h():
 
 def controlla_e_invia_promemoria_call_sonno(adesso=None):
     """Invia una sola volta i promemoria 24h e 2h delle call confermate."""
-    adesso = adesso or datetime.now(FUSO_ORARIO)
+    adesso = adesso or local_now()
     oggi = adesso.date().isoformat()
     limite = (adesso.date() + timedelta(days=1)).isoformat()
     calls = CallSonno.query.filter(
@@ -3587,7 +3626,7 @@ def controlla_e_invia_promemoria_call_sonno(adesso=None):
             continue
 
         invia_email_promemoria_call_sonno(call, ore_promemoria)
-        timestamp = datetime.now()
+        timestamp = utc_now()
         if ore_promemoria == 24:
             call.promemoria_email_24h_il = timestamp
         else:
@@ -3695,7 +3734,7 @@ def da_dove_parto():
 
 @app.route('/')
 def homepage():
-    oggi = date.today().isoformat()
+    oggi = local_today().isoformat()
     corsi = Corso.query.filter(
         Corso.data >= oggi,
         Corso.stato == 'Aperto',
@@ -4045,7 +4084,7 @@ def _etichetta_data_corso(corso):
 
 
 def _opzioni_date_corso(corso_tipo):
-    oggi = date.today().strftime('%Y-%m-%d')
+    oggi = local_today().strftime('%Y-%m-%d')
     corsi = Corso.query.filter(
         Corso.tipo == corso_tipo,
         Corso.data >= oggi,
@@ -4918,7 +4957,7 @@ def prenota():
             return render_template('prenota.html', form_data=request.form)
 
         # Valida che la data non sia nel passato
-        oggi = date.today().strftime('%Y-%m-%d')
+        oggi = local_today().strftime('%Y-%m-%d')
         if data_scelta < oggi:
             flash('Non puoi prenotare una data nel passato.')
             return render_template('prenota.html', form_data=request.form)
@@ -5020,12 +5059,12 @@ def logout():
 @login_required
 def admin():
     esito_controllo_calendar = _riconciliazione_admin_se_necessaria()
-    oggi = date.today().strftime('%Y-%m-%d')
+    oggi = local_today().strftime('%Y-%m-%d')
     filtro = request.args.get('filtro', 'in_attesa')
 
     # Gli appuntamenti confermati già trascorsi diventano conclusi; lo stato
     # resta sempre correggibile dalla scheda pratica.
-    adesso_locale = datetime.now(FUSO_ORARIO)
+    adesso_locale = local_now()
     for elemento in Appuntamento.query.filter_by(stato='Confermato').all():
         try:
             fine = _intervallo_locale(
@@ -5059,7 +5098,7 @@ def admin():
         else:
             data_agenda = datetime.strptime(request.args.get('data', oggi), '%Y-%m-%d').date()
     except ValueError:
-        data_agenda = date.today()
+        data_agenda = local_today()
     if vista_agenda == 'mese':
         inizio_agenda = data_agenda.replace(day=1)
         ultimo_giorno = calendar_module.monthrange(inizio_agenda.year, inizio_agenda.month)[1]
@@ -5086,7 +5125,7 @@ def admin():
                 {
                     'data': giorno,
                     'nel_mese': giorno.month == inizio_agenda.month,
-                    'oggi': giorno == date.today(),
+                    'oggi': giorno == local_today(),
                     'eventi': agenda_per_giorno.get(giorno, []),
                 }
                 for giorno in settimana
@@ -5113,7 +5152,7 @@ def admin():
 
     richieste_admin.sort(key=lambda elemento: elemento['scadenza'] or datetime.max)
     for elemento in richieste_admin:
-        elemento['urgente'] = bool(elemento['scadenza'] and elemento['scadenza'] < datetime.now())
+        elemento['urgente'] = bool(elemento['scadenza'] and elemento['scadenza'] < local_now_naive())
 
     attivita_admin = AttivitaAdmin.query.filter(AttivitaAdmin.stato != 'Chiusa').order_by(AttivitaAdmin.scadenza).all()
     errori_aperti = RegistroEvento.query.filter(
@@ -5136,7 +5175,7 @@ def admin():
     mostra_modal_conflitti = bool(
         conflitti_calendar_chiavi - conflitti_rimandati
     )
-    fine_settimana = (date.today() + timedelta(days=7)).isoformat()
+    fine_settimana = (local_today() + timedelta(days=7)).isoformat()
     corsi_settimana = Corso.query.filter(
         Corso.data.between(oggi, fine_settimana),
         Corso.stato != 'Annullato',
@@ -5245,7 +5284,7 @@ def admin():
     registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
     eventi_critici_count = RegistroEvento.query.filter(
         RegistroEvento.esito.in_(['errore', 'avviso']),
-        RegistroEvento.creato_il >= datetime.now() - timedelta(days=7)
+        RegistroEvento.creato_il >= utc_now() - timedelta(days=7)
     ).count()
     return render_template('admin.html',
                            agenda_per_giorno=dict(agenda_per_giorno),
@@ -5257,10 +5296,10 @@ def admin():
                            etichetta_mese=etichetta_mese,
                            giorni_settimana_brevi=GIORNI_SETTIMANA_BREVI,
                            richieste_azienda=richieste_azienda,
-                           oggi_admin=date.today(),
+                           oggi_admin=local_today(),
                            formazione_azienda_tipi=FORMAZIONE_AZIENDA_TIPI,
                            richieste_azienda_aperte_count=sum(1 for elemento in richieste_azienda if elemento.stato not in {'Confermata', 'Chiusa'}),
-                           adesso_admin=datetime.now(),
+                           adesso_admin=local_now_naive(),
                            vista_agenda=vista_agenda,
                            richieste_admin=richieste_admin,
                            richieste_urgenti_count=sum(1 for elemento in richieste_admin if elemento['urgente']),
@@ -5279,7 +5318,7 @@ def admin():
                            risultati_ricerca=risultati_ricerca,
                            calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
                            mail_soppressa=bool(app.config.get('MAIL_SUPPRESS_SEND')),
-                           eventi_oggi_count=sum(len(eventi) for giorno, eventi in agenda_per_giorno.items() if giorno == date.today()),
+                           eventi_oggi_count=sum(len(eventi) for giorno, eventi in agenda_per_giorno.items() if giorno == local_today()),
                            corsi_settimana_count=len(corsi_settimana),
                            posti_corsi_settimana=posti_corsi_settimana,
                            capienza_corsi_settimana=capienza_corsi_settimana,
@@ -5459,7 +5498,7 @@ def _sostituisci_attivita_azienda(richiesta, titolo=None, scadenza=None, note=No
         entita_tipo='RichiestaAzienda',
         entita_id=richiesta.id,
         stato='Aperta',
-    ).update({'stato': 'Chiusa', 'aggiornata_il': datetime.now()})
+    ).update({'stato': 'Chiusa', 'aggiornata_il': utc_now()})
     if titolo:
         db.session.add(AttivitaAdmin(
             titolo=titolo,
@@ -5560,7 +5599,7 @@ def crea_corso_da_richiesta_azienda(id):
     if tipo not in CORSI_ADMIN_TIPI or not titolo or len(titolo) > 200:
         flash('Seleziona una tipologia e inserisci un titolo valido.', 'error')
         return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
-    if giorno is None or giorno < date.today() or not 0.5 <= durata_ore <= 12 or not 1 <= capienza <= 500 or not luogo:
+    if giorno is None or giorno < local_today() or not 0.5 <= durata_ore <= 12 or not 1 <= capienza <= 500 or not luogo:
         flash('Controlla data, ora, durata, capienza e luogo del corso.', 'error')
         return redirect(_url_dettaglio_admin('RichiestaAzienda', richiesta.id))
     corso = Corso(
@@ -5706,7 +5745,7 @@ def archivia_blocco_admin(id):
     if not _csrf_admin_valido():
         abort(400)
     blocco = db.get_or_404(BloccoAgenda, id)
-    blocco.archiviato_il = datetime.now()
+    blocco.archiviato_il = utc_now()
     db.session.commit()
     elimina_evento_calendario_generico(blocco, 'BloccoAgenda')
     registra_modifica('archiviazione', 'BloccoAgenda', blocco.id)
@@ -5769,7 +5808,7 @@ def risolvi_errore_admin(id):
     if not nota:
         flash('La nota di risoluzione è obbligatoria.', 'error')
         return redirect(url_for('admin') + '#admin-errori')
-    evento.risolto_il = datetime.now()
+    evento.risolto_il = utc_now()
     evento.nota_risoluzione = nota
     db.session.commit()
     registra_modifica('risoluzione_errore', 'RegistroEvento', evento.id)
@@ -5943,7 +5982,7 @@ def accetta_calendar_admin(tipo, entita_id):
     }
     if tipo == 'Appuntamento':
         valido = (
-            inizio.date() >= date.today()
+            inizio.date() >= local_today()
             and is_appointment_interval_bookable(nuova_data, nuova_ora, durata)
         )
         occupato = valido and (
@@ -5963,7 +6002,7 @@ def accetta_calendar_admin(tipo, entita_id):
     else:
         valido = (
             durata == BLOCCO_CALL_SONNO_MINUTI
-            and inizio.date() >= date.today()
+            and inizio.date() >= local_today()
             and _giorno_lavorativo_call(inizio.date())
             and nuova_ora in ORARI_CALL_SONNO
         )
@@ -6121,7 +6160,7 @@ def proponi_slot_admin(tipo, entita_id):
         data_proposta=data_proposta,
         ora_proposta=ora_proposta,
         durata_minuti=durata,
-        scade_il=datetime.now() + timedelta(hours=48),
+        scade_il=utc_now() + timedelta(hours=48),
     )
     db.session.add(proposta)
     db.session.commit()
@@ -6151,7 +6190,7 @@ def proponi_slot_admin(tipo, entita_id):
 def accetta_proposta_slot(token):
     proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
     entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
-    valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > datetime.now())
+    valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > utc_now())
     if request.method == 'POST' and valida:
         ignore_call = entita.id if proposta.entita_tipo == 'CallSonno' else None
         ignore_appuntamento = entita.id if proposta.entita_tipo == 'Appuntamento' else None
@@ -6179,7 +6218,7 @@ def accetta_proposta_slot(token):
         else:
             entita.stato = 'Confermata'
         proposta.stato = 'Accettata'
-        proposta.accettata_il = datetime.now()
+        proposta.accettata_il = utc_now()
         db.session.commit()
         _sincronizza_entita_admin(proposta.entita_tipo, entita)
         if proposta.entita_tipo == 'Appuntamento':
@@ -6199,8 +6238,8 @@ def _invita_prossimo_lista_attesa(corso):
         return None
     candidato.stato = 'Invitato'
     candidato.token_lista_attesa = candidato.token_lista_attesa or secrets.token_urlsafe(48)
-    candidato.invito_lista_attesa_il = datetime.now()
-    candidato.scadenza_invito_lista_attesa = datetime.now() + timedelta(hours=24)
+    candidato.invito_lista_attesa_il = utc_now()
+    candidato.scadenza_invito_lista_attesa = utc_now() + timedelta(hours=24)
     db.session.commit()
     if candidato.email:
         link = public_url(url_for('accetta_invito_lista_attesa', token=candidato.token_lista_attesa))
@@ -6237,7 +6276,7 @@ def accetta_invito_lista_attesa(token):
         corso
         and iscrizione.stato == 'Invitato'
         and iscrizione.scadenza_invito_lista_attesa
-        and iscrizione.scadenza_invito_lista_attesa > datetime.now()
+        and iscrizione.scadenza_invito_lista_attesa > utc_now()
         and _corso_accetta_prenotazione_online(corso, iscrizione.posti_richiesti or 1)
     )
     if request.method == 'POST' and valida:
@@ -6326,7 +6365,7 @@ def modifica_call_sonno_admin(id):
         except ValueError:
             giorno = None
         valido = (
-            giorno is not None and giorno >= date.today() and _giorno_lavorativo_call(giorno)
+            giorno is not None and giorno >= local_today() and _giorno_lavorativo_call(giorno)
             and nuova_ora in ORARI_CALL_SONNO
         )
         occupato = valido and (
@@ -6401,7 +6440,7 @@ def invia_questionario_sonno_admin(id):
     call.stato = 'Conclusa'
     if not call.token_questionario:
         call.token_questionario = secrets.token_urlsafe(48)
-    call.questionario_inviato_il = datetime.now()
+    call.questionario_inviato_il = utc_now()
     db.session.commit()
     if invia_email_questionario_sonno(call):
         flash('Questionario privato inviato.', 'success')
@@ -6520,7 +6559,7 @@ def modifica_appuntamento(id):
         duration_minutes = parse_appointment_duration(
             request.form.get('duration_minutes')
         )
-        oggi = date.today().strftime('%Y-%m-%d')
+        oggi = local_today().strftime('%Y-%m-%d')
 
         if not nuova_data or not nuova_ora or duration_minutes is None:
             flash(
@@ -6748,7 +6787,7 @@ def archivia_incontro_accompagnamento(id):
     if not _csrf_admin_valido():
         abort(400)
     incontro = db.get_or_404(IncontroAccompagnamento, id)
-    incontro.archiviato_il = datetime.now()
+    incontro.archiviato_il = utc_now()
     db.session.commit()
     elimina_evento_calendario_generico(incontro, 'IncontroAccompagnamento')
     registra_modifica('archiviazione', 'IncontroAccompagnamento', incontro.id)
@@ -6980,7 +7019,7 @@ def elimina_corso(id):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     corso = db.get_or_404(Corso, id)
-    corso.archiviato_il = datetime.now()
+    corso.archiviato_il = utc_now()
     corso.stato = 'Annullato'
     db.session.commit()
     calendar_ok = elimina_evento_calendario_corso(corso)
@@ -7085,7 +7124,7 @@ def unisci_corso_admin(id):
         iscrizione.corso_tipo = destinazione.tipo or iscrizione.corso_tipo
         iscrizione.corso_titolo = destinazione.titolo
         iscrizione.data_corso = _etichetta_data_corso(destinazione)
-    origine.archiviato_il = datetime.now()
+    origine.archiviato_il = utc_now()
     origine.stato = 'Annullato'
     db.session.commit()
     elimina_evento_calendario_corso(origine)

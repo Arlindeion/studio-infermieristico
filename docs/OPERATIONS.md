@@ -334,6 +334,23 @@ viene creato `app.log`; le operazioni email registrano ID interni e tipo di
 errore, non indirizzi dei destinatari. Non inserire mai token, password,
 contenuto dei questionari o dati identificativi nei log.
 
+### Timestamp e fuso orario
+
+Gli istanti tecnici e di audit (`creato_il`, `aggiornato_il`, invii, risoluzioni,
+archiviazioni e scadenze relative) sono salvati nelle colonne `DateTime` come
+UTC senza offset, secondo una convenzione applicativa unica compatibile con
+SQLite e PostgreSQL. L'area admin li interpreta come UTC e li converte con
+`ZoneInfo('Europe/Rome')`; l'etichetta visibile `CET` o `CEST` mantiene
+distinguibili anche le due occorrenze della stessa ora durante il ritorno
+all'ora solare. Le date e gli orari civili scelti per appuntamenti, corsi e
+attività restano invece valori locali italiani. Non impostare `TZ` sul server
+come sostituto di questa conversione.
+
+I timestamp storici creati sul servizio Render vengono interpretati come UTC:
+non serve riscrivere le righe né modificare lo schema. Dopo ogni deploy
+verificare nell'admin almeno un istante noto e, nei test automatici, entrambi i
+passaggi CET/CEST.
+
 ## Modelli principali
 
 - `Admin`: utente dell'area riservata.

@@ -702,6 +702,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: una modifica temporale di appuntamento o call può essere applicata al database soltanto dopo un nuovo controllo di disponibilità, audit ed email di spostamento; i titoli non vengono interpretati per ricavare dati sanitari o anagrafici. La conferma dei dati del sito riscrive Calendar. Un evento eliminato può essere ricreato con un nuovo ID senza nuova email oppure portare all’annullamento tramite il normale workflow con email. Il comando generico `Segna risolto` e la sincronizzazione in blocco sono vietati per questi due stati. Il 26 agosto il modal è stato verificato con dati sintetici a 1440×900 e 390×844 px: nessun overflow di pagina, confronto completo, azioni da almeno 44 px, `Decidi dopo` persistente nella sessione e riproposizione dopo un nuovo login.
 - Collegamenti: `app.py`, `config.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `static/css/admin.css`, `static/js/admin-azioni.js`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, D-073, D-080, D-081.
 
+## D-083 — Gli istanti operativi sono UTC e l’admin li mostra nel fuso italiano
+
+- Data: 2026-08-26.
+- Stato: approvata e implementata localmente; verifica dopo il deploy richiesta.
+- Decisione: salvare i nuovi timestamp tecnici e di audit come UTC senza offset nelle colonne `DateTime` esistenti e convertirli in `Europe/Rome` soltanto in visualizzazione. I log admin mostrano anche `CET` o `CEST`; date e orari civili di appuntamenti, corsi e attività restano nel fuso italiano.
+- Motivo: il server registrava `datetime.now()` nel proprio fuso UTC e l’admin stampava il valore senza conversione, mostrando due ore in meno durante l’ora legale. Salvare ore locali senza offset renderebbe inoltre ambigua l’ora ripetuta al ritorno all’ora solare.
+- Conseguenze: i timestamp storici già prodotti dal servizio Render vengono interpretati come UTC e appaiono corretti senza migrazione o riscrittura distruttiva. `ZoneInfo` applica le regole CET/CEST; i test coprono il salto primaverile, le due diverse 02:30 autunnali e il rendering admin. Le scadenze relative e i confronti tecnici usano UTC, mentre le regole del calendario operativo usano la data locale italiana.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/admin_questionario_sonno.html`, `templates/accetta_lista_attesa.html`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`.
+
 ## Modello per nuove decisioni
 
 ```markdown

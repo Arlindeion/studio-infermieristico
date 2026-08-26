@@ -11,7 +11,7 @@
         {% elif valida %}
         <h1>Si è liberato un posto</h1>
         <p>{{ corso.titolo }} · {{ iscrizione.data_corso }}</p>
-        <p>L’invito scade il {{ iscrizione.scadenza_invito_lista_attesa.strftime('%d/%m/%Y alle %H:%M') }}.</p>
+        <p>L’invito scade il {{ iscrizione.scadenza_invito_lista_attesa|local_timestamp('%d/%m/%Y alle %H:%M %Z') }}.</p>
         <form method="post"><button class="btn" type="submit">Accetta il posto</button></form>
         {% else %}
         <h1>Invito non disponibile</h1>

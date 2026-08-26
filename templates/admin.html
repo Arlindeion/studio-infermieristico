@@ -316,7 +316,7 @@
     <form id="sync-batch" method="post" action="{{ url_for('sincronizza_selezionati_admin') }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     </form>
-    <div class="admin-error-list">{% for evento in errori_aperti %}{% set chiave_evento = evento.entita_tipo ~ ':' ~ evento.entita_id %}<article class="admin-error-row"><label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and chiave_evento not in conflitti_calendar_chiavi %}<input form="sync-batch" type="checkbox" name="elementi" value="{{ evento.entita_tipo }}:{{ evento.entita_id }}">{% endif %}<span>{{ evento.categoria }}</span><strong>{{ evento.messaggio }}</strong><time>{{ evento.creato_il.strftime('%d/%m/%Y %H:%M') }}</time></label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and evento.entita_id %}<a href="{{ url_for('dettaglio_admin', tipo=evento.entita_tipo, entita_id=evento.entita_id) }}">Apri pratica</a>{% endif %}{% if chiave_evento in conflitti_calendar_chiavi %}<p class="admin-error-decision-note">Si chiude soltanto dopo una scelta nella pratica.</p>{% else %}<form class="admin-error-resolution" method="post" action="{{ url_for('risolvi_errore_admin', id=evento.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input name="nota_risoluzione" placeholder="Come è stato risolto" required><button class="btn-azione blu" type="submit">Segna risolto</button></form>{% endif %}</article>{% else %}<p class="nota nota-lg">Nessun errore aperto.</p>{% endfor %}</div>
+    <div class="admin-error-list">{% for evento in errori_aperti %}{% set chiave_evento = evento.entita_tipo ~ ':' ~ evento.entita_id %}<article class="admin-error-row"><label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and chiave_evento not in conflitti_calendar_chiavi %}<input form="sync-batch" type="checkbox" name="elementi" value="{{ evento.entita_tipo }}:{{ evento.entita_id }}">{% endif %}<span>{{ evento.categoria }}</span><strong>{{ evento.messaggio }}</strong><time>{{ evento.creato_il|local_timestamp }}</time></label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and evento.entita_id %}<a href="{{ url_for('dettaglio_admin', tipo=evento.entita_tipo, entita_id=evento.entita_id) }}">Apri pratica</a>{% endif %}{% if chiave_evento in conflitti_calendar_chiavi %}<p class="admin-error-decision-note">Si chiude soltanto dopo una scelta nella pratica.</p>{% else %}<form class="admin-error-resolution" method="post" action="{{ url_for('risolvi_errore_admin', id=evento.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input name="nota_risoluzione" placeholder="Come è stato risolto" required><button class="btn-azione blu" type="submit">Segna risolto</button></form>{% endif %}</article>{% else %}<p class="nota nota-lg">Nessun errore aperto.</p>{% endfor %}</div>
     <button class="btn-azione verde" form="sync-batch" type="submit">Riprova sincronizzazione selezionati</button>
 </section>
 
@@ -538,8 +538,8 @@
                 {% for evento in registro_eventi %}
                 <tr class="evento-{{ evento.esito }}">
                     <td>
-                        <strong class="admin-primary">{{ evento.creato_il.strftime('%d/%m/%Y') }}</strong>
-                        <span class="admin-secondary">{{ evento.creato_il.strftime('%H:%M') }}</span>
+                        <strong class="admin-primary">{{ evento.creato_il|local_timestamp('%d/%m/%Y') }}</strong>
+                        <span class="admin-secondary">{{ evento.creato_il|local_timestamp('%H:%M %Z') }}</span>
                     </td>
                     <td><span class="event-badge event-badge-{{ evento.esito }}">{{ evento.esito }}</span></td>
                     <td>{{ evento.categoria | replace('_', ' ') }}</td>
@@ -567,7 +567,7 @@
                 <span class="event-badge event-badge-{{ evento.esito }}">{{ evento.esito }}</span>
             </div>
             <div class="card-admin-body">
-                <p><span>Quando</span> {{ evento.creato_il.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><span>Quando</span> {{ evento.creato_il|local_timestamp }}</p>
                 <p><span>Messaggio</span> {{ evento.messaggio }}</p>
                 {% if evento.entita_tipo %}
                 <p><span>Riferimento</span> {{ evento.entita_tipo }} ID {{ evento.entita_id }}</p>
@@ -1096,7 +1096,7 @@
             <tr class="stato-{{ i.stato | lower | replace(' ', '-') }}">
                 <td>
                     <strong>{{ i.corso_titolo }}</strong><br>
-                    <span class="text-muted">{{ i.creato_il.strftime('%d/%m/%Y %H:%M') }}</span>
+                    <span class="text-muted">{{ i.creato_il|local_timestamp }}</span>
                 </td>
                 <td>
                     <span class="badge badge-flusso">{{ tipo_richiesta_labels.get(i.tipo_richiesta, i.tipo_richiesta) }}</span>
