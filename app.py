@@ -3479,13 +3479,23 @@ def invia_email_conferma_iscrizione_corso(iscrizione):
             iscrizione,
             iscrizione.percorso_accompagnamento,
         )
+    data_confermata = (
+        _etichetta_data_corso(iscrizione.corso)
+        if iscrizione.corso
+        else re.sub(
+            r'\s*·\s*lista d’attesa\s*$',
+            '',
+            iscrizione.data_corso or 'Da definire',
+            flags=re.IGNORECASE,
+        )
+    )
     return _invia_email_partecipante_corso(
         iscrizione,
         f'Posto confermato - {iscrizione.corso_titolo}',
         (
             f'Buongiorno {iscrizione.nome},\n\n'
             f'il tuo posto per {iscrizione.corso_titolo} è confermato.\n\n'
-            f'Data e luogo: {iscrizione.data_corso or "Da definire"}\n'
+            f'Data e luogo: {data_confermata}\n'
             f'Partecipazione: {iscrizione.partecipazione or "Non indicata"}\n\n'
             'Se hai bisogno di comunicare una variazione, contatta lo studio.\n\n'
             'S.C. Studio Infermieristico'

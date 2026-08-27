@@ -1470,7 +1470,7 @@ def test_admin_conferma_e_annulla_iscrizione_inviando_una_sola_mail_per_transizi
             telefono='3331234567',
             email='mario@example.com',
             codice_fiscale='RSSMRA80A01G482X',
-            data_corso='16/07/2099 - ore 18:00 - S.C. Studio Infermieristico',
+            data_corso='16/07/2099 - ore 18:00 - S.C. Studio Infermieristico · lista d’attesa',
             partecipazione='Singolo 34 euro',
             tipo_richiesta='richiesta_iscrizione',
             posti=1,
@@ -1503,6 +1503,8 @@ def test_admin_conferma_e_annulla_iscrizione_inviando_una_sola_mail_per_transizi
     assert conferma_msg.recipients == ['mario@example.com']
     assert conferma_msg.subject == 'Posto confermato - Disostruzione pediatrica'
     assert 'il tuo posto per Disostruzione pediatrica è confermato' in conferma_msg.body
+    assert 'Data e luogo: 16/07/2099 - ore 18:00 - S.C. Studio Infermieristico' in conferma_msg.body
+    assert 'lista d’attesa' not in conferma_msg.body
     assert annullamento_msg.recipients == ['mario@example.com']
     assert annullamento_msg.subject == 'Iscrizione annullata - Disostruzione pediatrica'
     with flask_app.app_context():
