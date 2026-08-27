@@ -738,6 +738,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: l’upgrade amplia la colonna senza trasformare né troncare i valori esistenti. Il downgrade a 20 caratteri non è sicuro dopo il salvataggio di etichette più lunghe e può richiedere una bonifica esplicita dei dati. Prima di riprendere il collaudo corsi bisogna distribuire il codice, applicare `flask db upgrade`, confermare la revisione `e2f4a6b8c901` con `flask db check` e ripetere l’iscrizione singola che aveva prodotto HTTP 500.
 - Collegamenti: `app.py`, `templates/base.html`, `migrations/versions/e2f4a6b8c901_estende_data_corso.py`, `tests/test_app.py`, `tests/test_migrations.py`, `OPERATIONS.md`, `ROADMAP.md`, D-085.
 
+## D-087 — Data, luogo e interesse restano azioni distinte nel modulo corsi
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: mostrare nelle iscrizioni data e ora come unica scelta modificabile e il luogo dell’edizione in un campo separato di sola lettura, aggiornato in base alla data. Quando le date aperte non sono compatibili con le esigenze della persona, presentare sotto i dati dell’edizione un’azione separata `Lascia il tuo interesse`, diretta al modulo minimo di ricontatto con la tematica già preselezionata.
+- Motivo: il luogo è una proprietà dell’edizione e non una preferenza dell’iscritto; inserirlo nell’etichetta della data rendeva meno leggibili entrambi i dati. `Nessuna data compatibile` non è una data e non deve apparire nello stesso menu: confonderebbe una richiesta di ricontatto con un’iscrizione e richiederebbe dati amministrativi non necessari.
+- Conseguenze: il valore descrittivo completo continua a essere salvato in `iscrizione_corso.data_corso`, quindi email e admin conservano data, ora e luogo. La richiesta d’interesse usa il flusso già minimizzato, non occupa posti e può essere inviata anche quando esistono altre date aperte. Il collaudo responsive ha verificato aggiornamento del luogo, tematica preselezionata, assenza del codice fiscale nel ricontatto e assenza di overflow. Non cambia lo schema dati.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `app.py`, `templates/iscrizione_corso.html`, `templates/interesse_corsi.html`, `templates/base.html`, `static/css/components.css`, `static/js/course-registration.js`, `tests/test_app.py`, `tests/js/course-registration.test.js`, D-057, D-086.
+
 ## Modello per nuove decisioni
 
 ```markdown

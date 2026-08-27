@@ -578,6 +578,71 @@ section[id] {
 }
 
 .form-riga { display: flex; gap: 1.2rem; }
+
+.course-schedule-fields {
+    align-items: flex-start;
+}
+
+.course-schedule-fields .form-gruppo small {
+    color: var(--grigio);
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    margin-top: 0.45rem;
+}
+
+.course-schedule-fields input[readonly] {
+    background: var(--verde-chiaro-a55);
+    border-color: var(--verde-supporto-a24);
+    cursor: default;
+}
+
+.course-date-alternative {
+    align-items: center;
+    background: var(--carta-luminosa-a72);
+    border: 1px solid var(--salvia-bordo-a22);
+    border-left: 4px solid var(--rosa-antico);
+    border-radius: 8px;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin: -0.15rem 0 1.5rem;
+    padding: 0.95rem 1rem;
+}
+
+.course-date-alternative strong,
+.course-date-alternative span {
+    display: block;
+}
+
+.course-date-alternative strong {
+    color: var(--verde-scuro);
+    font-size: 0.94rem;
+    margin-bottom: 0.2rem;
+}
+
+.course-date-alternative span {
+    color: var(--grigio);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.course-date-alternative a {
+    border: 1.5px solid var(--verde-supporto-a35);
+    border-radius: 7px;
+    color: var(--verde-scuro);
+    font-weight: 700;
+    padding: 0.65rem 0.8rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.course-date-alternative a:hover {
+    background: var(--verde-scuro);
+    border-color: var(--verde-scuro);
+    color: var(--bianco);
+}
+
 .privacy { font-size: 0.8rem; color: #999; margin-bottom: 1.2rem; line-height: 1.5; }
 
 .form-gruppo .privacy-label {
@@ -1324,6 +1389,13 @@ footer p {
     }
 .cta p { font-size: 1rem; }
 .form-riga { flex-direction: column; gap: 0; }
+.course-date-alternative {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+.course-date-alternative a {
+        white-space: normal;
+    }
 .pagina-interna { padding: 2rem 1rem; }
 .faq-list {
         grid-template-columns: 1fr;

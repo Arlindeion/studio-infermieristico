@@ -33,7 +33,7 @@ La sola finalizzazione grafica non basta. Se un requisito P0 resta aperto, il si
 - Prestazioni infermieristiche mantenute in un flusso separato.
 - Metadati condivisi, canonical, Open Graph e dati strutturati principali.
 - Tracciamento differenziato delle CTA predisposto per GA4 e subordinato al consenso.
-- Iscrizioni a corsi collegate alle date e modulo unico di ricontatto con scelta della tematica quando il calendario è vuoto. La directory mostra prima le edizioni future già organizzate e porta al modulo con la data preselezionata.
+- Iscrizioni a corsi collegate alle date, con data/ora separate dal luogo non modificabile dell’edizione. Il modulo minimo di ricontatto resta disponibile sia quando il calendario è vuoto sia quando le date pubblicate non sono compatibili, in questo caso con la tematica preselezionata. La directory mostra prima le edizioni future già organizzate e porta al modulo con la data preselezionata.
 - Gestione in admin di tipologie, capienza e stati dei corsi; la creazione di una nuova edizione è separata dalla gestione e propone `S.C. Studio Infermieristico` come luogo modificabile.
 - Flusso privato del percorso nascita con edizioni, incontri, iscritti, presenze ed export PDF.
 - Vista mensile dell’agenda, flusso dedicato per aziende e gruppi e quiz locale `Da dove parto?`, implementati il 13 agosto 2026; le richieste organizzative generano attività, proposta tracciata e corsi riservati non pubblici.

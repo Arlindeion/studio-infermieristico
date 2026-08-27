@@ -66,6 +66,7 @@ La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel 
 ```text
 Homepage/pagina corsi
   → se esistono date: scelta tipologia → data → modulo di iscrizione
+  → se le date esistono ma non sono compatibili: modulo minimo con tematica preselezionata → ricontatto
   → se non esistono date: modulo unico → scelta tematica → ricontatto
   → richiesta salvata
   → conferma o ricontatto manuale
@@ -74,6 +75,7 @@ Homepage/pagina corsi
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
 - Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto. Ogni edizione ha una capienza nominale configurabile. Finché il totale è inferiore a tale capienza, una coppia può prendere l’ultimo posto e portare il totale a `capienza + 1`; raggiunta la capienza nominale, il sito non accetta altre iscrizioni automatiche.
 - Le date piene restano selezionabili come lista d’attesa. Quando si libera capienza, la prima richiesta compatibile riceve un invito valido 24 ore. L’admin può inserire partecipanti oltre il limite online soltanto confermando l’eccezione e registrandone il motivo.
+- Nei moduli di iscrizione la scelta mostra soltanto data e ora; il luogo dell’edizione compare in un campo non modificabile e si aggiorna con la data selezionata. `Nessuna data è compatibile con le tue esigenze?` resta un’azione separata dal menu delle date e apre il modulo minimo di ricontatto con la tematica già selezionata.
 - Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e consenso privacy; non richiede i dati amministrativi necessari a una vera iscrizione.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 

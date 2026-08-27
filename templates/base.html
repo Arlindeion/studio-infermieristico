@@ -263,6 +263,9 @@
 {% if page_endpoint == 'da_dove_parto' %}
 <script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.1" defer></script>
 {% endif %}
+{% if page_endpoint == 'iscrizione_corso' %}
+<script src="{{ url_for('static', filename='js/course-registration.js') }}?v=1.0" defer></script>
+{% endif %}
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>
 {% endif %}

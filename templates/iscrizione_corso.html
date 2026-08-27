@@ -1,4 +1,29 @@
 {% extends "base.html" %}
+{% macro course_schedule_fields(corso, form_data, selected_course_location, date_label) %}
+<div class="form-riga course-schedule-fields">
+    <div class="form-gruppo">
+        <label for="data_corso">{{ date_label }} *</label>
+        <select id="data_corso" name="data_corso" data-course-date-select required>
+            <option value="" data-course-location="">-- Seleziona --</option>
+            {% for option in corso.data_options %}
+            <option value="{{ option.value }}" data-course-location="{{ option.location }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.date_label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-gruppo">
+        <label for="luogo_corso">Luogo di svolgimento</label>
+        <input type="text" id="luogo_corso" data-course-location-output value="{{ selected_course_location }}" placeholder="Seleziona una data per vedere il luogo" aria-live="polite" readonly>
+        <small>Il luogo è associato all’edizione e non può essere modificato da questo modulo.</small>
+    </div>
+</div>
+<aside class="course-date-alternative" aria-label="Alternativa alle date disponibili">
+    <div>
+        <strong>Nessuna data è compatibile con le tue esigenze?</strong>
+        <span>Lascia soltanto i recapiti e le tue preferenze: l’invio non comporta un’iscrizione.</span>
+    </div>
+    <a href="{{ url_for('course_interest', tematica=corso.interest_topic) }}" data-conversion="course_interest_from_registration">Lascia il tuo interesse</a>
+</aside>
+{% endmacro %}
 {% block titolo %}{{ corso.titolo }} | S.C. Studio Infermieristico{% endblock %}
 {% block meta_description %}{% if corso_tipo == 'bls-d' %}Corso BLSD di 5 ore con teoria ed esercitazioni su manichino per cittadini, associazioni, aziende e gruppi a Montesilvano.{% elif corso_tipo == 'disostruzione-pediatrica' %}Corso teorico-pratico di disostruzione pediatrica e tagli sicuri per genitori, nonni e caregiver a Montesilvano.{% elif corso_tipo == 'laboratorio-infanzia' %}Laboratori in presenza per bambini dai 6 mesi ai 5 anni e famiglie: alimentazione, gioco sensoriale, creatività e autonomia a Montesilvano.{% else %}Scopri contenuti, prossime date e modalità di iscrizione a {{ corso.titolo }} presso S.C. Studio Infermieristico.{% endif %}{% endblock %}
 
@@ -355,17 +380,7 @@
         <h3>Dettagli corso</h3>
         <input type="hidden" name="partecipazione" value="Iscrizione individuale">
         {% if corso.has_open_dates %}
-        <div class="form-riga">
-            <div class="form-gruppo">
-                <label for="data_corso">Preferenza data *</label>
-                <select id="data_corso" name="data_corso" required>
-                    <option value="">-- Seleziona --</option>
-                    {% for option in corso.data_options %}
-                    <option value="{{ option.value }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+        {{ course_schedule_fields(corso, form_data, selected_course_location, 'Data corso') }}
         {% else %}
         <p class="nota-form">La richiesta verrà salvata come ricontatto per le prossime date disponibili. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
@@ -411,6 +426,9 @@
 
         {% elif corso_tipo == 'disostruzione-pediatrica' %}
         <h3>Dettagli corso</h3>
+        {% if corso.has_open_dates %}
+        {{ course_schedule_fields(corso, form_data, selected_course_location, 'Data corso') }}
+        {% endif %}
         <div class="form-riga">
             <div class="form-gruppo">
                 <label for="partecipazione">Partecipi come *</label>
@@ -421,17 +439,6 @@
                     {% endfor %}
                 </select>
             </div>
-            {% if corso.has_open_dates %}
-            <div class="form-gruppo">
-                <label for="data_corso">Data corso *</label>
-                <select id="data_corso" name="data_corso" required>
-                    <option value="">-- Seleziona --</option>
-                    {% for option in corso.data_options %}
-                    <option value="{{ option.value }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
         </div>
         {% if not corso.has_open_dates %}
         <p class="nota-form">La richiesta verrà salvata come ricontatto per le prossime date disponibili. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
@@ -537,15 +544,7 @@
 
         {% if corso.has_open_dates %}
         <h3>Data open day</h3>
-        <div class="form-gruppo">
-            <label for="data_corso">Data open day *</label>
-            <select id="data_corso" name="data_corso" required>
-                <option value="">-- Seleziona --</option>
-                {% for option in corso.data_options %}
-                <option value="{{ option.value }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.label }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        {{ course_schedule_fields(corso, form_data, selected_course_location, 'Data open day') }}
         {% else %}
         <p class="nota-form">La richiesta verrà salvata come ricontatto per i prossimi open day. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
@@ -574,15 +573,7 @@
         <h3>Dettagli laboratorio</h3>
         <input type="hidden" name="partecipazione" value="Iscrizione individuale">
         {% if corso.has_open_dates %}
-        <div class="form-gruppo">
-            <label for="data_corso">Data laboratorio *</label>
-            <select id="data_corso" name="data_corso" required>
-                <option value="">-- Seleziona --</option>
-                {% for option in corso.data_options %}
-                <option value="{{ option.value }}" {{ 'selected' if form_data.get('data_corso') == option.value }}>{{ option.label }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        {{ course_schedule_fields(corso, form_data, selected_course_location, 'Data laboratorio') }}
         {% else %}
         <p class="nota-form">La richiesta verrà salvata come ricontatto per i prossimi laboratori. Nel campo note puoi indicare età del bambino, fascia oraria o tema di interesse.</p>
         {% endif %}

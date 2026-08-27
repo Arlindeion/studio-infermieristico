@@ -1060,7 +1060,92 @@ def test_elenco_corsi_mostra_edizioni_programmate_e_preseleziona_il_modulo(clien
     assert f'/iscrizione-corsi/disostruzione-pediatrica?corso_id={corso_id}#modulo-iscrizione-corso' in resp.text
 
     modulo = client.get(f'/iscrizione-corsi/disostruzione-pediatrica?corso_id={corso_id}')
-    assert f'<option value="{corso_id}" selected>' in modulo.text
+    assert re.search(rf'<option value="{corso_id}"[^>]* selected>', modulo.text)
+
+
+def test_modulo_corso_separa_data_e_luogo_e_offre_ricontatto(client):
+    corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        titolo='Disostruzione in studio',
+        data='2099-09-18',
+        ora='18:30',
+        luogo='S.C. Studio Infermieristico',
+    )
+
+    resp = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert resp.status_code == 200
+    select_html = re.search(
+        r'<select id="data_corso".*?</select>',
+        resp.text,
+        re.DOTALL,
+    ).group(0)
+    assert '18/09/2099 - ore 18:30' in select_html
+    assert '>18/09/2099 - ore 18:30</option>' in select_html
+    assert '>18/09/2099 - ore 18:30 - S.C. Studio Infermieristico</option>' not in select_html
+    assert 'data-course-location="S.C. Studio Infermieristico"' in select_html
+    assert 'id="luogo_corso"' in resp.text
+    assert 'data-course-location-output value=""' in resp.text
+    assert 'readonly' in resp.text
+    assert 'Nessuna data è compatibile con le tue esigenze?' in resp.text
+    assert (
+        'href="/iscrizione-corsi/interesse?tematica=disostruzione-tagli-sicuri"'
+        in resp.text
+    )
+
+    preselezionato = client.get(
+        f'/iscrizione-corsi/disostruzione-pediatrica?corso_id={corso_id}'
+    )
+    assert re.search(rf'<option value="{corso_id}"[^>]* selected>', preselezionato.text)
+    assert (
+        'data-course-location-output value="S.C. Studio Infermieristico"'
+        in preselezionato.text
+    )
+
+
+@pytest.mark.parametrize(
+    ('corso_tipo', 'path', 'interest_topic'),
+    [
+        ('bls-d', '/iscrizione-corsi/blsd', 'blsd'),
+        (
+            'disostruzione-pediatrica',
+            '/iscrizione-corsi/disostruzione-pediatrica',
+            'disostruzione-tagli-sicuri',
+        ),
+        (
+            'accompagnamento-nascita',
+            '/iscrizione-corsi/accompagnamento-nascita',
+            'accompagnamento-nascita',
+        ),
+        ('laboratorio-infanzia', '/iscrizione-corsi/laboratorio-infanzia', 'laboratori'),
+    ],
+)
+def test_ogni_modulo_corso_espone_luogo_fisso_e_interesse_preselezionato(
+    client,
+    corso_tipo,
+    path,
+    interest_topic,
+):
+    _crea_data_corso(corso_tipo, luogo='S.C. Studio Infermieristico')
+
+    resp = client.get(path)
+
+    assert resp.status_code == 200
+    assert 'data-course-date-select' in resp.text
+    assert 'data-course-location-output' in resp.text
+    assert 'aria-live="polite"' in resp.text
+    assert f'href="/iscrizione-corsi/interesse?tematica={interest_topic}"' in resp.text
+
+
+def test_modulo_interesse_preseleziona_solo_tematiche_valide(client):
+    resp = client.get('/iscrizione-corsi/interesse?tematica=blsd')
+
+    assert resp.status_code == 200
+    assert '<option value="blsd" selected>BLSD</option>' in resp.text
+
+    resp_non_valida = client.get('/iscrizione-corsi/interesse?tematica=non-prevista')
+    assert 'value="non-prevista"' not in resp_non_valida.text
+    assert '<option value="blsd" selected>' not in resp_non_valida.text
 
 
 def test_testi_pubblici_mantengono_il_tu_senza_passare_al_voi(client):

@@ -95,6 +95,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - `Guarda date e corsi` in homepage apre l’elenco delle edizioni future già organizzate; da ogni riga `Vai all’iscrizione` apre il modulo del corso con la data preselezionata.
 - `Iscriviti ora` è la CTA principale nella hero del corso di disostruzione pediatrica e tagli sicuri.
 - `Lascia il tuo interesse` apre il modulo unico per le prossime date quando il calendario è vuoto; l'azione finale del modulo è `Invia il tuo interesse`.
+- `Nessuna data è compatibile con le tue esigenze?` introduce l’alternativa nei moduli che hanno date aperte; `Lascia il tuo interesse` apre il modulo minimo con il corso già preselezionato.
 - `Scopri la consulenza` nello snap sonno della homepage apre direttamente il confronto tra le tre formule in `/consulenze-online#formule`.
 - `Scopri la consulenza del sonno`
 - `Scegli l’orario della call`

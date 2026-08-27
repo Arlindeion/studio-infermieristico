@@ -377,6 +377,13 @@ COURSE_INTEREST_TOPICS = {
     },
 }
 
+COURSE_INTEREST_TOPIC_BY_TYPE = {
+    'disostruzione-pediatrica': 'disostruzione-tagli-sicuri',
+    'bls-d': 'blsd',
+    'accompagnamento-nascita': 'accompagnamento-nascita',
+    'laboratorio-infanzia': 'laboratori',
+}
+
 STUDIO_MAP_EMBED_SRC = "https://www.google.com/maps?q=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE&output=embed"
 STUDIO_MAP_LINK = "https://www.google.com/maps/search/?api=1&query=Via%20C.%20D%27Agnese%2043%2C%2065015%20Montesilvano%20PE"
 
@@ -4095,6 +4102,13 @@ def _etichetta_data_corso(corso):
     return ' - '.join(parti)
 
 
+def _etichetta_data_e_ora_corso(corso):
+    parti = [_formatta_data_corso(corso.data)]
+    if corso.ora:
+        parti.append(f'ore {corso.ora}')
+    return ' - '.join(parti)
+
+
 def _opzioni_date_corso(corso_tipo):
     oggi = local_today().strftime('%Y-%m-%d')
     corsi = Corso.query.filter(
@@ -4102,26 +4116,44 @@ def _opzioni_date_corso(corso_tipo):
         Corso.data >= oggi,
         Corso.stato == 'Aperto'
     ).order_by(Corso.data, Corso.ora).all()
-    return [
-        {
+    opzioni = []
+    for corso in corsi:
+        posti_disponibili = _corso_ha_posti(corso)
+        data_label = _etichetta_data_e_ora_corso(corso)
+        etichetta_completa = _etichetta_data_corso(corso)
+        opzioni.append({
             'value': str(corso.id),
             'corso_id': corso.id,
             'label': (
-                _etichetta_data_corso(corso)
-                if _corso_ha_posti(corso)
-                else f'{_etichetta_data_corso(corso)} · lista d’attesa'
+                etichetta_completa
+                if posti_disponibili
+                else f'{etichetta_completa} · lista d’attesa'
             ),
-            'posti_disponibili': _corso_ha_posti(corso),
-        }
-        for corso in corsi
-    ]
+            'date_label': (
+                data_label
+                if posti_disponibili
+                else f'{data_label} · lista d’attesa'
+            ),
+            'location': corso.luogo or 'Sede da definire',
+            'posti_disponibili': posti_disponibili,
+        })
+    return opzioni
 
 
 def _corso_iscrivibile_con_date(corso_tipo):
     corso = dict(CORSI_ISCRIVIBILI[corso_tipo])
     corso['data_options'] = _opzioni_date_corso(corso_tipo)
     corso['has_open_dates'] = len(corso['data_options']) > 0
+    corso['interest_topic'] = COURSE_INTEREST_TOPIC_BY_TYPE[corso_tipo]
     return corso
+
+
+def _luogo_corso_per_modulo(corso, form_data):
+    valore_selezionato = str(form_data.get('data_corso', '') or '')
+    for option in corso['data_options']:
+        if option['value'] == valore_selezionato:
+            return option['location']
+    return ''
 
 
 def _slug_pubblico_corso(corso_tipo):
@@ -4130,12 +4162,14 @@ def _slug_pubblico_corso(corso_tipo):
 
 def _render_iscrizione_con_errore(corso_tipo, messaggio):
     flash(messaggio, 'error')
+    corso = _corso_iscrivibile_con_date(corso_tipo)
     return render_template(
         'iscrizione_corso.html',
         corso_tipo=corso_tipo,
         corso_slug=_slug_pubblico_corso(corso_tipo),
-        corso=_corso_iscrivibile_con_date(corso_tipo),
-        form_data=request.form
+        corso=corso,
+        form_data=request.form,
+        selected_course_location=_luogo_corso_per_modulo(corso, request.form),
     )
 
 
@@ -4305,10 +4339,12 @@ def course_interest():
         invia_email_nuova_iscrizione(interest)
         return redirect(url_for('course_interest_confirmation'))
 
+    topic_key = request.args.get('tematica', '').strip()
+    form_data = {'tematica': topic_key} if topic_key in COURSE_INTEREST_TOPICS else {}
     return render_template(
         'interesse_corsi.html',
         topics=COURSE_INTEREST_TOPICS,
-        form_data={},
+        form_data=form_data,
     )
 
 
@@ -4537,6 +4573,7 @@ def iscrizione_corso(corso_tipo):
         corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=corso,
         form_data=form_data,
+        selected_course_location=_luogo_corso_per_modulo(corso, form_data),
     )
 
 
