@@ -170,6 +170,7 @@
             </div>
             <div class="cal-griglia" id="cal-griglia"></div>
             <div class="cal-dettaglio" id="cal-dettaglio" role="status" aria-live="polite" style="display:none;">
+                <button class="cal-dettaglio-chiudi" id="cal-dettaglio-chiudi" type="button" aria-label="Chiudi i dettagli del corso">&times;</button>
                 <h4 id="det-titolo"></h4>
                 <p id="det-ora"></p>
                 <p id="det-luogo"></p>
@@ -192,7 +193,7 @@
     {% endfor %}
 ]
 </script>
-<script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/calendario.js') }}?v=1.1" defer></script>
 {% endif %}
 
 <section class="home-birth" id="home-nascita" data-home-scene="nascita" aria-labelledby="home-birth-title">

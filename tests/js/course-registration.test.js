@@ -17,5 +17,24 @@ test('aggiorna il luogo fisso quando cambia la data del corso', () => {
 });
 
 test('non genera errori nelle pagine prive dei campi corso', () => {
-    assert.match(script, /if \(!dateSelect \|\| !locationOutput\) return;/);
+    assert.match(script, /if \(dateSelect && locationOutput\)/);
+    assert.match(script, /if \(!courseForm\) return;/);
+});
+
+test('mostra i dati del secondo partecipante soltanto per la coppia', () => {
+    assert.match(script, /\[data-second-participant-fields\]/);
+    assert.match(script, /startsWith\('coppia'\)/);
+    assert.match(script, /secondParticipantFields\.hidden = !isCouple/);
+    assert.match(script, /secondParticipantName\.required = isCouple/);
+    assert.match(script, /secondParticipantTaxCode\.disabled = !isCouple/);
+});
+
+test('riporta gli errori al campo da correggere senza tornare in cima', () => {
+    assert.match(script, /\[data-course-form-error\]/);
+    assert.match(script, /dataset\.errorField/);
+    assert.match(script, /scrollIntoView\(\{block: 'center'/);
+    assert.match(script, /setAttribute\('aria-invalid', 'true'\)/);
+    assert.match(script, /field-error-message/);
+    assert.match(script, /field\.validationMessage/);
+    assert.match(script, /focus\(\{preventScroll: true\}\)/);
 });

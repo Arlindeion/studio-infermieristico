@@ -96,6 +96,8 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - `Iscriviti ora` è la CTA principale nella hero del corso di disostruzione pediatrica e tagli sicuri.
 - `Lascia il tuo interesse` apre il modulo unico per le prossime date quando il calendario è vuoto; l'azione finale del modulo è `Invia il tuo interesse`.
 - `Nessuna data è compatibile con le tue esigenze?` introduce l’alternativa nei moduli che hanno date aperte; `Lascia il tuo interesse` apre il modulo minimo con il corso già preselezionato.
+- Dopo l’invio di un’iscrizione, la pagina usa `Richiesta ricevuta` e mette in evidenza `Il posto non è ancora confermato.`; chiarisce inoltre che la mail al partecipante arriverà soltanto dopo la conferma dello studio.
+- In caso di errore nel modulo corsi, il richiamo usa `Controlla il campo indicato` e identifica visivamente il dato `Da correggere`, senza riportare la persona all’inizio della pagina.
 - `Scopri la consulenza` nello snap sonno della homepage apre direttamente il confronto tra le tre formule in `/consulenze-online#formule`.
 - `Scopri la consulenza del sonno`
 - `Scegli l’orario della call`

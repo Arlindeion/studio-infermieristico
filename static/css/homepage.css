@@ -1297,7 +1297,7 @@ section[data-home-scene] {
         left: auto;
         margin-top: 1rem;
         max-width: none;
-        position: static;
+        position: relative;
         right: auto;
     }
 

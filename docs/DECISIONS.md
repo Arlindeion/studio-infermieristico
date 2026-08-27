@@ -747,6 +747,24 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il valore descrittivo completo continua a essere salvato in `iscrizione_corso.data_corso`, quindi email e admin conservano data, ora e luogo. La richiesta d’interesse usa il flusso già minimizzato, non occupa posti e può essere inviata anche quando esistono altre date aperte. Il collaudo responsive ha verificato aggiornamento del luogo, tematica preselezionata, assenza del codice fiscale nel ricontatto e assenza di overflow. Non cambia lo schema dati.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `app.py`, `templates/iscrizione_corso.html`, `templates/interesse_corsi.html`, `templates/base.html`, `static/css/components.css`, `static/js/course-registration.js`, `tests/test_app.py`, `tests/js/course-registration.test.js`, D-057, D-086.
 
+## D-088 — La mail al partecipante segue la decisione amministrativa sul posto
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente.
+- Decisione: all’invio di un modulo corso, compreso il percorso nascita privato, salvare una richiesta `Nuova` e inviare soltanto l’alert Zimbra allo studio. La pagina di esito dichiara che il posto non è confermato. La mail al partecipante parte sul primo passaggio admin a `Confermato`; annullamento e spostamento individuale inviano le rispettive comunicazioni.
+- Motivo: una ricevuta automatica immediata può essere interpretata come conferma del posto prima della verifica dello studio. Stato gestionale e comunicazione devono coincidere, senza duplicare messaggi quando l’admin seleziona nuovamente lo stesso stato.
+- Conseguenze: le richieste collegate a una data richiedono l’email; i ricontatti senza data mantengono email facoltativa e flusso minimo. Stato o spostamento vengono persistiti prima di SMTP; un errore di invio non annulla l’operazione ed è registrato in `EmailOperativa` e `RegistroEvento`. Le iscrizioni inserite manualmente già come `Confermato` inviano la stessa mail. Le pagine di conferma pubblica e privata sono state controllate a 1440 x 900 e 390 x 844 px senza overflow; la suite locale passa con 225 test Python e 33 test JavaScript. Non cambia lo schema dati.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `OPERATIONS.md`, `ROADMAP.md`, `app.py`, `templates/iscrizione_corso.html`, `templates/conferma_iscrizione_corso.html`, `templates/conferma_iscrizione_accompagnamento.html`, `templates/admin.html`, `templates/admin_dettaglio.html`, `static/css/components.css`, `tests/test_app.py`, D-057, D-087.
+
+## D-089 — La gestione di un’edizione parte dagli iscritti e gli errori restano nel modulo
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: aprire i corsi dall’agenda e dalla panoramica direttamente sulla scheda dell’edizione, con la lista dei partecipanti come prima sezione operativa. Nei moduli corso, mostrare l’errore dentro il modulo, portare focus e scroll sul campo evidenziato e conservare i dati inseriti. Per la disostruzione, mostrare i dati del secondo partecipante soltanto con `Coppia`, rendendo obbligatorio il nome e facoltativo il codice fiscale. Il dettaglio del calendario homepage dispone di un comando esplicito di chiusura che restituisce il focus al giorno selezionato.
+- Motivo: l’azione più frequente su un corso già programmato è verificare chi partecipa; filtri intermedi, ritorno in cima e campi condizionali sempre visibili rallentano rispettivamente l’operatore e la persona che compila.
+- Conseguenze: il collegamento storico `/admin?corso_id=<id>#admin-corsi` continua a filtrare la tabella, ma `Vedi iscritti` e gli eventi agenda usano `/admin/pratica/Corso/<id>#partecipanti-corso`. Il server ignora eventuali dati del secondo partecipante inviati per una partecipazione singola. Il controllo responsive ha verificato lista partecipanti, campi coppia, chiusura del calendario con ritorno del focus ed errore telefono evidenziato senza overflow; la suite passa con 227 test Python e 35 test JavaScript. Non cambia lo schema dati.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/homepage.html`, `templates/iscrizione_corso.html`, `static/css/admin.css`, `static/css/components.css`, `static/js/calendario.js`, `static/js/course-registration.js`, `tests/test_app.py`, `tests/js/course-registration.test.js`, D-073, D-078, D-087.
+
 ## Modello per nuove decisioni
 
 ```markdown

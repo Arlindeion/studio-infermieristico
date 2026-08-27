@@ -14,10 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const titolo = document.getElementById('cal-titolo');
     const griglia = document.getElementById('cal-griglia');
     const dettaglio = document.getElementById('cal-dettaglio');
+    const chiudiDettaglio = document.getElementById('cal-dettaglio-chiudi');
     const precedente = document.getElementById('btn-prec');
     const successivo = document.getElementById('btn-succ');
 
-    if (!titolo || !griglia || !dettaglio || !precedente || !successivo) {
+    if (!titolo || !griglia || !dettaglio || !chiudiDettaglio || !precedente || !successivo) {
         return;
     }
 
@@ -112,6 +113,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('det-descrizione').textContent = corso.descrizione || '';
         dettaglio.style.display = 'block';
     }
+
+    function nascondiDettaglio(ripristinaFocus) {
+        const pulsanteDaRipristinare = pulsanteAttivo;
+        if (pulsanteDaRipristinare) {
+            pulsanteDaRipristinare.setAttribute('aria-expanded', 'false');
+        }
+        pulsanteAttivo = null;
+        dettaglio.style.display = 'none';
+        if (ripristinaFocus && pulsanteDaRipristinare) {
+            pulsanteDaRipristinare.focus();
+        }
+    }
+
+    chiudiDettaglio.addEventListener('click', () => nascondiDettaglio(true));
+    dettaglio.addEventListener('keydown', event => {
+        if (event.key === 'Escape') nascondiDettaglio(true);
+    });
 
     precedente.addEventListener('click', () => {
         mese--; if (mese < 0) { mese = 11; anno--; }

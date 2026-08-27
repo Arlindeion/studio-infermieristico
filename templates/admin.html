@@ -655,7 +655,7 @@
                 {% endif %}
             </p>
             <div class="course-dashboard-actions">
-                <a href="/admin?corso_id={{ c.id }}#admin-corsi" class="btn-azione blu">Vedi iscritti</a>
+                <a href="{{ url_for('dettaglio_admin', tipo='Corso', entita_id=c.id, _anchor='partecipanti-corso') }}" class="btn-azione blu">Vedi iscritti</a>
                 <a href="/admin#admin-corsi" class="btn-azione">Tutti i corsi</a>
             </div>
         </article>
@@ -1140,8 +1140,8 @@
                 <td class="azioni">
                     <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=i.id) }}">Apri</a>
                     {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
-                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
-                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde', 'Confermare l’iscrizione di ' ~ i.nome ~ '? Verrà inviata la mail a ' ~ (i.email or 'email non indicata') ~ '.') }}
+                    {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso', 'Annullare la richiesta di ' ~ i.nome ~ '? Verrà inviata la relativa comunicazione a ' ~ (i.email or 'email non indicata') ~ '.') }}
                 </td>
             </tr>
             {% endfor %}
@@ -1177,8 +1177,8 @@
             <div class="card-admin-azioni">
                 <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=i.id) }}">Apri</a>
                 {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Contattato'), 'Contattato', 'blu') }}
-                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde') }}
-                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Confermato'), 'Conferma', 'verde', 'Confermare l’iscrizione di ' ~ i.nome ~ '? Verrà inviata la mail a ' ~ (i.email or 'email non indicata') ~ '.') }}
+                {{ admin_post_action(url_for('aggiorna_stato_iscrizione_corso', id=i.id, stato='Annullato'), 'Annulla', 'rosso', 'Annullare la richiesta di ' ~ i.nome ~ '? Verrà inviata la relativa comunicazione a ' ~ (i.email or 'email non indicata') ~ '.') }}
             </div>
         </div>
         {% endfor %}

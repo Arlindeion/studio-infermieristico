@@ -300,12 +300,6 @@
     </section>
     {% endif %}
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="flash-message">{{ messages[0] }}</div>
-        {% endif %}
-    {% endwith %}
-
     {% if not corso.has_open_dates %}
     <div class="date-callout">
         <div class="date-callout-copy">
@@ -328,8 +322,17 @@
     </div>
     {% endif %}
 
-    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}">
+    <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}" data-course-registration-form>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="course-form-error" id="course-form-error" role="alert" tabindex="-1" data-course-form-error data-error-field="{{ form_error_field or '' }}">
+                <strong>Controlla il campo indicato</strong>
+                <span>{{ messages[0][1] }}</span>
+            </div>
+            {% endif %}
+        {% endwith %}
 
         {% if not corso.has_open_dates %}
         <div class="form-ricontatto-intro">
@@ -352,13 +355,14 @@
             </div>
             <div class="form-gruppo">
                 <label for="telefono">Telefono *</label>
-                <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" required>
+                <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" minlength="7" maxlength="20" pattern="[0-9+() \-]{7,20}" title="Usa da 7 a 20 caratteri: numeri, spazi, +, parentesi o trattini." required>
             </div>
         </div>
 
         <div class="form-gruppo">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}">
+            <label for="email">Email{% if corso.has_open_dates %} *{% endif %}</label>
+            <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" {% if corso.has_open_dates %}required{% endif %}>
+            {% if corso.has_open_dates %}<small>La userò per inviarti la conferma del posto dopo la verifica dello studio.</small>{% endif %}
         </div>
 
         {% if corso_tipo in ['disostruzione-pediatrica', 'laboratorio-infanzia'] %}
@@ -444,14 +448,15 @@
         <p class="nota-form">La richiesta verrà salvata come ricontatto per le prossime date disponibili. Se hai preferenze su giorni o orari, indicale nel campo note.</p>
         {% endif %}
 
-        <div class="form-riga">
+        {% set partecipazione_coppia = form_data.get('partecipazione') == 'Coppia 60 euro' %}
+        <div class="form-riga second-participant-fields" data-second-participant-fields{% if not partecipazione_coppia %} hidden{% endif %}>
             <div class="form-gruppo">
-                <label for="nome_secondo_partecipante">Nome secondo partecipante</label>
-                <input type="text" id="nome_secondo_partecipante" name="nome_secondo_partecipante" value="{{ form_data.get('nome_secondo_partecipante', '') }}">
+                <label for="nome_secondo_partecipante">Nome secondo partecipante *</label>
+                <input type="text" id="nome_secondo_partecipante" name="nome_secondo_partecipante" value="{{ form_data.get('nome_secondo_partecipante', '') }}" maxlength="100"{% if partecipazione_coppia %} required{% else %} disabled{% endif %}>
             </div>
             <div class="form-gruppo">
                 <label for="codice_fiscale_secondo_partecipante">Codice fiscale secondo partecipante</label>
-                <input type="text" id="codice_fiscale_secondo_partecipante" name="codice_fiscale_secondo_partecipante" value="{{ form_data.get('codice_fiscale_secondo_partecipante', '') }}">
+                <input type="text" id="codice_fiscale_secondo_partecipante" name="codice_fiscale_secondo_partecipante" value="{{ form_data.get('codice_fiscale_secondo_partecipante', '') }}" maxlength="32"{% if not partecipazione_coppia %} disabled{% endif %}>
             </div>
         </div>
 

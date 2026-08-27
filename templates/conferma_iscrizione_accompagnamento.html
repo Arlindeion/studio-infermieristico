@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titolo %}Iscrizione confermata | Corso di accompagnamento alla nascita{% endblock %}
+{% block titolo %}Richiesta ricevuta | Corso di accompagnamento alla nascita{% endblock %}
 {% block head_extra %}
 <meta name="robots" content="noindex,nofollow">
 {% endblock %}
@@ -8,9 +8,12 @@
 <section class="pagina-interna testo-centro">
     <div class="conferma-box">
         <span class="conferma-icona">&#10003;</span>
-        <h1>Iscrizione confermata</h1>
-        <p>Grazie, l'iscrizione al corso di accompagnamento alla nascita è stata registrata.</p>
-        <p>Ti invierò un’email con il riepilogo delle date e i contatti dello studio.</p>
+        <h1>Richiesta ricevuta</h1>
+        <p>Grazie, la richiesta per il corso di accompagnamento alla nascita è stata registrata.</p>
+        <div class="confirmation-pending-notice">
+            <strong>Il posto non è ancora confermato.</strong>
+            <span>In questa fase non riceverai una mail automatica. Dopo la verifica dello studio, riceverai una mail con la conferma, il riepilogo delle date e i contatti.</span>
+        </div>
         <a href="/" class="btn" data-conversion="birth_private_confirmation_home">Torna alla homepage</a>
     </div>
 </section>

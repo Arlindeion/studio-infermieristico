@@ -427,7 +427,7 @@ FAQ_ITEMS = [
     {
         'id': 'percorso-privato-accompagnamento-nascita',
         'question': 'Il link privato del corso di accompagnamento alla nascita conferma direttamente l\'iscrizione?',
-        'answer': "Sì. Quando invii il modulo riservato, l'iscrizione al percorso completo viene registrata come confermata. Riceverai un'email con il calendario degli incontri e i contatti dello studio.",
+        'answer': "No. Quando invii il modulo riservato, lo studio riceve la richiesta ma il posto non è ancora confermato. Riceverai l'email con la conferma, il calendario degli incontri e i contatti soltanto dopo la verifica dello studio.",
         'link_href': '/iscrizione-corsi/accompagnamento-nascita',
         'link_text': 'Scopri il percorso nascita',
     },
@@ -2559,7 +2559,20 @@ def _agenda_operativa(data_inizio, data_fine):
     limite_fine = data_fine.isoformat()
     eventi = []
 
-    def aggiungi(tipo, entita, titolo, data_str, ora, durata, stato, sync, endpoint=None, dettagli=None, note=None):
+    def aggiungi(
+        tipo,
+        entita,
+        titolo,
+        data_str,
+        ora,
+        durata,
+        stato,
+        sync,
+        endpoint=None,
+        dettagli=None,
+        note=None,
+        anchor=None,
+    ):
         if not ora:
             ora = '09:00'
         inizio, fine = _intervallo_locale(data_str, ora, durata)
@@ -2571,7 +2584,11 @@ def _agenda_operativa(data_inizio, data_fine):
             'fine': fine,
             'stato': stato,
             'sincronizzazione': sync,
-            'url': url_for(endpoint, tipo=tipo, entita_id=entita.id) if endpoint else None,
+            'url': (
+                url_for(endpoint, tipo=tipo, entita_id=entita.id, _anchor=anchor)
+                if endpoint
+                else None
+            ),
             'dettagli': [
                 (etichetta, valore)
                 for etichetta, valore in (dettagli or [])
@@ -2623,6 +2640,7 @@ def _agenda_operativa(data_inizio, data_fine):
                 ('Capienza', f'{elemento.capienza_massima} persone' if elemento.capienza_massima else None),
             ],
             note=elemento.descrizione,
+            anchor='partecipanti-corso',
         )
     for elemento in IncontroAccompagnamento.query.filter(IncontroAccompagnamento.data.between(limite_inizio, limite_fine), IncontroAccompagnamento.archiviato_il.is_(None)).all():
         aggiungi(
@@ -3394,7 +3412,7 @@ def invia_email_esito_riallineamento_calendar(risultato):
         return False
 
 
-def invia_email_nuova_iscrizione(iscrizione):
+def invia_email_alert_nuova_iscrizione(iscrizione):
     """Invia email di alert all'amministratore quando arriva una richiesta di iscrizione corso."""
     try:
         logger.info('>>> Invio email alert nuova iscrizione corso...')
@@ -3432,6 +3450,87 @@ def invia_email_nuova_iscrizione(iscrizione):
         logger.error('>>> Errore invio email alert corso (%s).', type(e).__name__)
         registra_evento('email', 'errore', 'Email alert iscrizione corso non inviata allo studio.', 'IscrizioneCorso', iscrizione.id, {'errore': str(e)})
         return False
+
+
+def _invia_email_partecipante_corso(iscrizione, subject, body, failure_message):
+    """Invia una comunicazione successiva alla richiesta senza modificare il dato principale."""
+    if not iscrizione.email:
+        return None
+    msg = Message(subject=subject, recipients=[iscrizione.email], body=body)
+    try:
+        _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            failure_message,
+            'IscrizioneCorso',
+            iscrizione.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
+def invia_email_conferma_iscrizione_corso(iscrizione):
+    """Comunica la conferma soltanto dopo il passaggio admin a Confermato."""
+    if iscrizione.percorso_accompagnamento:
+        return invia_email_iscrizione_accompagnamento(
+            iscrizione,
+            iscrizione.percorso_accompagnamento,
+        )
+    return _invia_email_partecipante_corso(
+        iscrizione,
+        f'Posto confermato - {iscrizione.corso_titolo}',
+        (
+            f'Buongiorno {iscrizione.nome},\n\n'
+            f'il tuo posto per {iscrizione.corso_titolo} è confermato.\n\n'
+            f'Data e luogo: {iscrizione.data_corso or "Da definire"}\n'
+            f'Partecipazione: {iscrizione.partecipazione or "Non indicata"}\n\n'
+            'Se hai bisogno di comunicare una variazione, contatta lo studio.\n\n'
+            'S.C. Studio Infermieristico'
+        ),
+        'Email di conferma iscrizione corso non inviata al partecipante.',
+    )
+
+
+def invia_email_annullamento_iscrizione_corso(iscrizione, stato_precedente):
+    """Comunica l'annullamento distinguendo una richiesta da un posto già confermato."""
+    descrizione = 'iscrizione' if stato_precedente == 'Confermato' else 'richiesta di iscrizione'
+    return _invia_email_partecipante_corso(
+        iscrizione,
+        f'{descrizione.capitalize()} annullata - {iscrizione.corso_titolo}',
+        (
+            f'Buongiorno {iscrizione.nome},\n\n'
+            f'la tua {descrizione} per {iscrizione.corso_titolo} è stata annullata.\n\n'
+            f'Edizione: {iscrizione.data_corso or "Da definire"}\n\n'
+            'Per chiarimenti o per valutare una data diversa, contatta lo studio.\n\n'
+            'S.C. Studio Infermieristico'
+        ),
+        'Email di annullamento iscrizione corso non inviata al partecipante.',
+    )
+
+
+def invia_email_spostamento_iscrizione_corso(iscrizione, edizione_precedente):
+    """Comunica la nuova edizione senza trasformare una richiesta in conferma."""
+    stato_posto = (
+        'Il posto resta confermato.'
+        if iscrizione.stato == 'Confermato'
+        else 'Il posto non è ancora confermato: riceverai una mail separata dopo la verifica dello studio.'
+    )
+    return _invia_email_partecipante_corso(
+        iscrizione,
+        f'Nuova edizione - {iscrizione.corso_titolo}',
+        (
+            f'Buongiorno {iscrizione.nome},\n\n'
+            f'la tua richiesta per {iscrizione.corso_titolo} è stata spostata.\n\n'
+            f'Edizione precedente: {edizione_precedente or "Da definire"}\n'
+            f'Nuova edizione: {iscrizione.data_corso or "Da definire"}\n\n'
+            f'{stato_posto}\n\n'
+            'S.C. Studio Infermieristico'
+        ),
+        'Email di spostamento iscrizione corso non inviata al partecipante.',
+    )
 
 
 def invia_email_richiesta_azienda(richiesta):
@@ -3517,14 +3616,15 @@ def invia_email_iscrizione_accompagnamento(iscrizione, percorso):
 
 
 def invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso):
-    """Invia notifica semplice allo studio per una nuova iscrizione confermata."""
+    """Invia allo studio la notifica della nuova richiesta al percorso nascita."""
     try:
         logger.info('>>> Invio email alert iscrizione percorso accompagnamento...')
         msg = Message(
-            subject=f'Nuova iscrizione confermata - {percorso.titolo}',
+            subject=f'Nuova richiesta di iscrizione - {percorso.titolo}',
             recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
             body=(
-                f'Nuova iscrizione confermata al corso di accompagnamento alla nascita.\n\n'
+                f'Nuova richiesta di iscrizione al corso di accompagnamento alla nascita.\n'
+                f'Il posto non è ancora confermato.\n\n'
                 f'Percorso: {percorso.titolo}\n'
                 f'Nome:     {iscrizione.nome}\n'
                 f'Telefono: {iscrizione.telefono}\n'
@@ -4160,7 +4260,7 @@ def _slug_pubblico_corso(corso_tipo):
     return CORSI_SLUG_PUBBLICI.get(corso_tipo, corso_tipo)
 
 
-def _render_iscrizione_con_errore(corso_tipo, messaggio):
+def _render_iscrizione_con_errore(corso_tipo, messaggio, campo=None):
     flash(messaggio, 'error')
     corso = _corso_iscrivibile_con_date(corso_tipo)
     return render_template(
@@ -4169,6 +4269,7 @@ def _render_iscrizione_con_errore(corso_tipo, messaggio):
         corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=corso,
         form_data=request.form,
+        form_error_field=campo,
         selected_course_location=_luogo_corso_per_modulo(corso, request.form),
     )
 
@@ -4336,7 +4437,7 @@ def course_interest():
         )
         db.session.add(interest)
         db.session.commit()
-        invia_email_nuova_iscrizione(interest)
+        invia_email_alert_nuova_iscrizione(interest)
         return redirect(url_for('course_interest_confirmation'))
 
     topic_key = request.args.get('tematica', '').strip()
@@ -4387,7 +4488,11 @@ def iscrizione_corso(corso_tipo):
         corso_id = None
         if opzioni_date:
             if data_corso_id not in opzioni_date:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona una data disponibile tra quelle aperte.')
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Seleziona una data disponibile tra quelle aperte.',
+                    'data_corso',
+                )
             data_scelta = opzioni_date[data_corso_id]
             corso_id = data_scelta['corso_id']
             data_corso = data_scelta['label']
@@ -4400,17 +4505,23 @@ def iscrizione_corso(corso_tipo):
         tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
 
         if not nome or len(nome) > 100:
-            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.')
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.', 'nome')
         if not codice_fiscale or len(codice_fiscale) > 32:
-            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il codice fiscale.')
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il codice fiscale.', 'codice_fiscale')
         if not telefono or not _telefono_valido(telefono):
-            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un numero di telefono valido.')
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un numero di telefono valido.', 'telefono')
+        if corso_id and not email:
+            return _render_iscrizione_con_errore(
+                corso_tipo,
+                'Inserisci un indirizzo email: verrà usato per comunicarti la conferma del posto.',
+                'email',
+            )
         if email and not _email_valida(email):
-            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.')
+            return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.', 'email')
         if len(nome_bambino) > 100:
-            return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.')
+            return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.', 'nome_bambino')
         if len(eta_bambino) > 40:
-            return _render_iscrizione_con_errore(corso_tipo, 'L\'età del bambino è troppo lunga.')
+            return _render_iscrizione_con_errore(corso_tipo, 'L\'età del bambino è troppo lunga.', 'eta_bambino')
 
         if nome_bambino:
             extra['nome_bambino'] = nome_bambino
@@ -4419,18 +4530,23 @@ def iscrizione_corso(corso_tipo):
 
         if corso_tipo == 'bls-d':
             if partecipazione not in corso['partecipazione_options']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.', 'partecipazione')
             dichiarazioni = {
                 'prove_pratiche': _checkbox_checked('prove_pratiche'),
                 'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
                 'richiesta_non_conferma': _checkbox_checked('richiesta_non_conferma'),
             }
             if not all(dichiarazioni.values()):
-                return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
+                campo_mancante = next(campo for campo, valore in dichiarazioni.items() if not valore)
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
+                    campo_mancante,
+                )
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
             extra = {
                 **extra,
@@ -4439,13 +4555,21 @@ def iscrizione_corso(corso_tipo):
 
         elif corso_tipo == 'disostruzione-pediatrica':
             if partecipazione not in corso['partecipazione_options']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona se partecipi da solo/a o in coppia.')
-            nome_secondo = request.form.get('nome_secondo_partecipante', '').strip()
-            cf_secondo = request.form.get('codice_fiscale_secondo_partecipante', '').strip()
-            if partecipazione == 'Coppia 60 euro' and (not nome_secondo or not cf_secondo):
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona se partecipi da solo/a o in coppia.', 'partecipazione')
+            partecipazione_coppia = partecipazione == 'Coppia 60 euro'
+            nome_secondo = request.form.get('nome_secondo_partecipante', '').strip() if partecipazione_coppia else ''
+            cf_secondo = request.form.get('codice_fiscale_secondo_partecipante', '').strip() if partecipazione_coppia else ''
+            if partecipazione_coppia and (not nome_secondo or len(nome_secondo) > 100):
                 return _render_iscrizione_con_errore(
                     corso_tipo,
-                    'Per la partecipazione in coppia inserisci nome e codice fiscale del secondo partecipante.'
+                    'Per la partecipazione in coppia inserisci il nome del secondo partecipante.',
+                    'nome_secondo_partecipante',
+                )
+            if len(cf_secondo) > 32:
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Il codice fiscale del secondo partecipante è troppo lungo.',
+                    'codice_fiscale_secondo_partecipante',
                 )
 
             dichiarazioni = {
@@ -4454,9 +4578,14 @@ def iscrizione_corso(corso_tipo):
                 'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
             }
             if not all(dichiarazioni.values()):
-                return _render_iscrizione_con_errore(corso_tipo, 'Per procedere devi accettare tutte le dichiarazioni obbligatorie.')
+                campo_mancante = next(campo for campo, valore in dichiarazioni.items() if not valore)
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
+                    campo_mancante,
+                )
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
 
             extra = {
                 **extra,
@@ -4478,11 +4607,11 @@ def iscrizione_corso(corso_tipo):
             }
             for field_name, error_message in required_fields.items():
                 if not request.form.get(field_name, '').strip():
-                    return _render_iscrizione_con_errore(corso_tipo, error_message)
+                    return _render_iscrizione_con_errore(corso_tipo, error_message, field_name)
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi acconsentire al trattamento dei dati personali.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi acconsentire al trattamento dei dati personali.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
             extra = {
                 **extra,
@@ -4501,11 +4630,11 @@ def iscrizione_corso(corso_tipo):
 
         elif corso_tipo == 'laboratorio-infanzia':
             if partecipazione not in corso['partecipazione_options']:
-                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.', 'partecipazione')
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.', 'conferma_finale')
 
         posti_richiesti = 0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione)
         in_lista_attesa = False
@@ -4515,7 +4644,8 @@ def iscrizione_corso(corso_tipo):
                 db.session.rollback()
                 return _render_iscrizione_con_errore(
                     corso_tipo,
-                    'La data scelta non è più aperta. Seleziona un’altra edizione.'
+                    'La data scelta non è più aperta. Seleziona un’altra edizione.',
+                    'data_corso',
                 )
             in_lista_attesa = not _corso_accetta_prenotazione_online(
                 corso_selezionato,
@@ -4555,7 +4685,7 @@ def iscrizione_corso(corso_tipo):
         )
         db.session.add(iscrizione)
         db.session.commit()
-        invia_email_nuova_iscrizione(iscrizione)
+        invia_email_alert_nuova_iscrizione(iscrizione)
         if in_lista_attesa:
             return redirect(url_for('conferma_iscrizione_corso', lista_attesa='1'))
         return redirect(url_for('conferma_iscrizione_corso'))
@@ -4573,6 +4703,7 @@ def iscrizione_corso(corso_tipo):
         corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=corso,
         form_data=form_data,
+        form_error_field=None,
         selected_course_location=_luogo_corso_per_modulo(corso, form_data),
     )
 
@@ -4717,14 +4848,14 @@ def iscrizione_accompagnamento_privata(slug):
             posti=1,
             consenso_privacy=consenso_privacy,
             consenso_immagini=consenso_immagini,
-            stato='Confermato',
+            stato='Nuova',
+            scadenza_gestione=prossima_scadenza_lavorativa(),
         )
         db.session.add(iscrizione)
         db.session.flush()
         for incontro in _incontri_percorso(percorso):
             db.session.add(PresenzaAccompagnamento(iscrizione=iscrizione, incontro=incontro))
         db.session.commit()
-        invia_email_iscrizione_accompagnamento(iscrizione, percorso)
         invia_email_alert_iscrizione_accompagnamento(iscrizione, percorso)
         return redirect(url_for('conferma_iscrizione_accompagnamento'))
 
@@ -6374,7 +6505,7 @@ def accetta_invito_lista_attesa(token):
         iscrizione.posti = iscrizione.posti_richiesti or 1
         iscrizione.scadenza_gestione = prossima_scadenza_lavorativa()
         db.session.commit()
-        invia_email_nuova_iscrizione(iscrizione)
+        invia_email_alert_nuova_iscrizione(iscrizione)
         return render_template('accetta_lista_attesa.html', iscrizione=iscrizione, corso=corso, valida=False, accettata=True)
     return render_template('accetta_lista_attesa.html', iscrizione=iscrizione, corso=corso, valida=valida)
 
@@ -7097,7 +7228,16 @@ def aggiungi_iscrizione_corso_manuale():
     )
     db.session.add(iscrizione)
     db.session.commit()
-    flash('Iscritto aggiunto al corso e salvato in rubrica.', 'success')
+    if stato == 'Confermato' and tipo_richiesta != 'ricontatto':
+        email_inviata = invia_email_conferma_iscrizione_corso(iscrizione)
+        if email_inviata is True:
+            flash('Iscritto aggiunto, salvato in rubrica ed email di conferma inviata.', 'success')
+        elif email_inviata is None:
+            flash('Iscritto aggiunto e confermato, ma l’email è mancante: contattalo manualmente.', 'error')
+        else:
+            flash('Iscritto aggiunto e confermato, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    else:
+        flash('Iscritto aggiunto al corso e salvato in rubrica.', 'success')
     return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
 
@@ -7233,6 +7373,7 @@ def sposta_iscrizione_corso_admin(id):
     if not destinazione:
         abort(400)
     origine_id = iscrizione.corso_id
+    edizione_precedente = iscrizione.data_corso
     iscrizione.corso = destinazione
     iscrizione.corso_tipo = destinazione.tipo or iscrizione.corso_tipo
     iscrizione.corso_titolo = destinazione.titolo
@@ -7243,7 +7384,16 @@ def sposta_iscrizione_corso_admin(id):
         origine = db.session.get(Corso, origine_id)
         if origine:
             _invita_prossimo_lista_attesa(origine)
-    flash('Partecipante spostato alla nuova edizione.', 'success')
+    email_inviata = invia_email_spostamento_iscrizione_corso(
+        iscrizione,
+        edizione_precedente,
+    )
+    if email_inviata is True:
+        flash('Partecipante spostato; email inviata con la nuova edizione.', 'success')
+    elif email_inviata is None:
+        flash('Partecipante spostato, ma l’email è mancante: contattalo manualmente.', 'error')
+    else:
+        flash('Partecipante spostato, ma l’email non è partita. Controlla il registro eventi.', 'error')
     return redirect(_url_dettaglio_admin('IscrizioneCorso', iscrizione.id))
 
 
@@ -7281,13 +7431,42 @@ def aggiorna_stato_iscrizione_corso(id, stato):
         return redirect(url_for('admin'))
     iscrizione = db.get_or_404(IscrizioneCorso, id)
     stato_precedente = iscrizione.stato
+    if stato == stato_precedente:
+        flash('Stato invariato; nessuna nuova email inviata.', 'success')
+        return redirect(url_for('admin'))
+    if (
+        stato == 'Confermato'
+        and iscrizione.tipo_richiesta == 'ricontatto'
+        and not iscrizione.corso
+        and not iscrizione.percorso_accompagnamento
+    ):
+        flash('Collega prima la richiesta di interesse a un’edizione: il posto non può ancora essere confermato.', 'error')
+        return redirect(url_for('admin'))
     iscrizione.stato = stato
     if stato not in {'Lista attesa', 'Invitato'} and iscrizione.posti == 0:
         iscrizione.posti = iscrizione.posti_richiesti or 1
     db.session.commit()
     registra_modifica('cambio_stato', 'IscrizioneCorso', iscrizione.id, {'da': stato_precedente, 'a': stato})
+    email_inviata = None
+    if stato == 'Confermato':
+        email_inviata = invia_email_conferma_iscrizione_corso(iscrizione)
+    elif stato == 'Annullato':
+        email_inviata = invia_email_annullamento_iscrizione_corso(
+            iscrizione,
+            stato_precedente,
+        )
     if stato == 'Annullato' and iscrizione.corso:
         _invita_prossimo_lista_attesa(iscrizione.corso)
+    if stato in {'Confermato', 'Annullato'}:
+        azione = 'confermata' if stato == 'Confermato' else 'annullata'
+        if email_inviata is True:
+            flash(f'Iscrizione {azione}; email inviata al partecipante.', 'success')
+        elif email_inviata is None:
+            flash(f'Iscrizione {azione}, ma l’email è mancante: contatta il partecipante manualmente.', 'error')
+        else:
+            flash(f'Iscrizione {azione}, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    else:
+        flash('Stato iscrizione aggiornato.', 'success')
     return redirect(url_for('admin'))
 
 

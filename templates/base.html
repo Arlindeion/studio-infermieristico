@@ -35,10 +35,10 @@
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=5.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.5">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transitions.css') }}?v=1.8">
     {% if page_endpoint == 'homepage' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.6">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.4">
     {% elif page_endpoint == 'prima_della_nascita' %}
@@ -49,7 +49,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.5">
     {% endif %}
     {% if page_endpoint in ['admin', 'dettaglio_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=5.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=5.2">
     {% endif %}
     {% if page_endpoint in ['da_dove_parto', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.1">
@@ -264,7 +264,7 @@
 <script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.1" defer></script>
 {% endif %}
 {% if page_endpoint == 'iscrizione_corso' %}
-<script src="{{ url_for('static', filename='js/course-registration.js') }}?v=1.0" defer></script>
+<script src="{{ url_for('static', filename='js/course-registration.js') }}?v=1.1" defer></script>
 {% endif %}
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>

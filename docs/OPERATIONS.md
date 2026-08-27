@@ -413,6 +413,14 @@ Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.m
 
 Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in admin come `Da ricontattare`; non è uno stato aggiuntivo. Conservano il normale stato iniziale `Nuova`, occupano zero posti e proseguono poi negli stati corso già elencati. Il modulo unico della homepage registra anche la tematica scelta senza richiedere i dati amministrativi di un'iscrizione.
 
+### Mail operative delle iscrizioni corso
+
+- L’invio di un modulo pubblico o privato salva la richiesta in stato `Nuova` e manda soltanto l’alert interno a `MAIL_ADMIN_RECIPIENT`; non invia una ricevuta al partecipante.
+- Per una richiesta collegata a una data, l’email del partecipante è obbligatoria perché costituisce il canale della successiva conferma.
+- Il passaggio admin a `Confermato` invia la mail con corso, edizione e tipo di partecipazione. Un secondo passaggio sullo stesso stato non reinvia nulla.
+- Il passaggio ad `Annullato` e lo spostamento individuale verso un’altra edizione inviano le relative comunicazioni. Lo spostamento di una richiesta ancora `Nuova` chiarisce che il posto resta non confermato.
+- Stato e nuova edizione vengono salvati prima dell’invio SMTP. Un errore email non annulla l’operazione: resta tracciato in `EmailOperativa` e `RegistroEvento` e viene mostrato nell’admin.
+
 ## Google Calendar e Arzamed
 
 - Lettura e scrittura usano Google Calendar API con un unico account di

@@ -1674,6 +1674,11 @@
 .sync-chip.sync-eliminato_esternamente { background: #fde2df; color: #8c2f27; }
 
 .admin-detail-page { max-width: 1180px; }
+
+.admin-course-participants {
+    border-top: 4px solid var(--verde-header);
+    scroll-margin-top: 1.5rem;
+}
 .admin-detail-topbar,
 .admin-detail-header {
     align-items: center;

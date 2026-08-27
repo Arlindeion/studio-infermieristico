@@ -25,6 +25,53 @@
         </div>
     </header>
 
+    {% if tipo == 'Corso' %}
+    <section class="admin-surface admin-course-participants" id="partecipanti-corso">
+        <div class="admin-section-heading">
+            <div>
+                <p class="admin-eyebrow">Prima operazione</p>
+                <h2>Partecipanti iscritti</h2>
+            </div>
+            <span class="admin-total">{{ iscrizioni_corso|length }} richiest{% if iscrizioni_corso|length == 1 %}a{% else %}e{% endif %}</span>
+        </div>
+        {% if iscrizioni_corso %}
+        <table class="tabella-admin tabella-desktop">
+            <thead><tr><th>Partecipante</th><th>Contatti</th><th>Partecipazione</th><th>Stato</th><th>Azioni</th></tr></thead>
+            <tbody>
+                {% for iscrizione in iscrizioni_corso %}
+                {% set extra = iscrizione.extra_dict() %}
+                <tr>
+                    <td><strong>{{ iscrizione.nome }}</strong>{% if extra.nome_secondo_partecipante %}<br><span class="text-muted">Con {{ extra.nome_secondo_partecipante }}</span>{% endif %}</td>
+                    <td>{{ iscrizione.telefono }}<br><span class="text-muted">{{ iscrizione.email or 'Email non indicata' }}</span></td>
+                    <td>{{ iscrizione.partecipazione or 'Non indicata' }}<br><span class="text-muted">{{ iscrizione.posti }} post{% if iscrizione.posti == 1 %}o{% else %}i{% endif %}</span></td>
+                    <td><span class="badge">{{ iscrizione.stato }}</span></td>
+                    <td><a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=iscrizione.id) }}">Apri iscrizione</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="card-admin-lista">
+            {% for iscrizione in iscrizioni_corso %}
+            {% set extra = iscrizione.extra_dict() %}
+            <article class="card-admin">
+                <div class="card-admin-header"><strong>{{ iscrizione.nome }}</strong><span class="badge">{{ iscrizione.stato }}</span></div>
+                <div class="card-admin-body">
+                    {% if extra.nome_secondo_partecipante %}<p><span>Secondo partecipante</span> {{ extra.nome_secondo_partecipante }}</p>{% endif %}
+                    <p><span>Telefono</span> {{ iscrizione.telefono }}</p>
+                    <p><span>Email</span> {{ iscrizione.email or 'Non indicata' }}</p>
+                    <p><span>Partecipazione</span> {{ iscrizione.partecipazione or 'Non indicata' }}</p>
+                    <p><span>Posti</span> {{ iscrizione.posti }}</p>
+                </div>
+                <div class="card-admin-azioni"><a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='IscrizioneCorso', entita_id=iscrizione.id) }}">Apri iscrizione</a></div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="nota nota-lg">Non risultano ancora partecipanti collegati a questa edizione.</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
     <div class="admin-detail-grid">
         <section class="admin-surface admin-detail-main">
             <h2>Dati della pratica</h2>
@@ -70,7 +117,11 @@
                 {% if entita.stato == 'In attesa' %}<form class="admin-state-form" method="post" action="{{ url_for('conferma_call_sonno_admin', id=entita.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Conferma call</button></form>{% endif %}
                 {% if entita.stato not in ['Annullata', 'Conclusa'] %}<a class="btn-azione blu" href="{{ url_for('modifica_call_sonno_admin', id=entita.id) }}">Modifica orario</a><form class="admin-state-form" method="post" action="{{ url_for('annulla_call_sonno_admin', id=entita.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>{% endif %}
             {% elif tipo == 'IscrizioneCorso' %}
-                {% for stato, classe in [('Contattato', 'blu'), ('Confermato', 'verde'), ('Annullato', 'rosso')] %}<form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato_iscrizione_corso', id=entita.id, stato=stato) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione {{ classe }}" type="submit">{{ stato }}</button></form>{% endfor %}
+                {% for stato, classe, messaggio_conferma in [
+                    ('Contattato', 'blu', ''),
+                    ('Confermato', 'verde', 'Confermare l’iscrizione? Verrà inviata la mail a ' ~ (entita.email or 'email non indicata') ~ '.'),
+                    ('Annullato', 'rosso', 'Annullare la richiesta? Verrà inviata la relativa comunicazione a ' ~ (entita.email or 'email non indicata') ~ '.')
+                ] %}<form class="admin-state-form" method="post" action="{{ url_for('aggiorna_stato_iscrizione_corso', id=entita.id, stato=stato) }}"{% if messaggio_conferma %} data-confirm="{{ messaggio_conferma }}"{% endif %}><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione {{ classe }}" type="submit">{{ stato }}</button></form>{% endfor %}
             {% elif tipo == 'RichiestaAzienda' %}
                 <form class="admin-form-grid admin-company-state" method="post" action="{{ url_for('aggiorna_stato_richiesta_azienda', id=entita.id) }}">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -229,7 +280,7 @@ S.C. Studio Infermieristico</textarea></label>
     {% endif %}
 
     {% if tipo == 'IscrizioneCorso' %}
-    <section class="admin-surface"><p class="admin-eyebrow">Cambio edizione</p><h2>Sposta partecipante</h2><form class="admin-form-grid" method="post" action="{{ url_for('sposta_iscrizione_corso_admin', id=entita.id) }}" data-confirm="Spostare questa iscrizione nella nuova edizione?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Nuova edizione<select name="corso_destinazione_id" required><option value="">Seleziona</option>{% for corso in corsi_disponibili if corso.id != entita.corso_id %}<option value="{{ corso.id }}">{{ corso.titolo }} · {{ corso.data }}</option>{% endfor %}</select></label><button class="btn-azione verde" type="submit">Sposta</button></form></section>
+    <section class="admin-surface"><p class="admin-eyebrow">Cambio edizione</p><h2>Sposta partecipante</h2><form class="admin-form-grid" method="post" action="{{ url_for('sposta_iscrizione_corso_admin', id=entita.id) }}" data-confirm="Spostare questa iscrizione nella nuova edizione e inviare la comunicazione a {{ entita.email or 'email non indicata' }}?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Nuova edizione<select name="corso_destinazione_id" required><option value="">Seleziona</option>{% for corso in corsi_disponibili if corso.id != entita.corso_id %}<option value="{{ corso.id }}">{{ corso.titolo }} · {{ corso.data }}</option>{% endfor %}</select></label><button class="btn-azione verde" type="submit">Sposta</button></form></section>
     {% endif %}
 
     {% if duplicati %}

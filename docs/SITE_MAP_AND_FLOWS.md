@@ -68,14 +68,18 @@ Homepage/pagina corsi
   → se esistono date: scelta tipologia → data → modulo di iscrizione
   → se le date esistono ma non sono compatibili: modulo minimo con tematica preselezionata → ricontatto
   → se non esistono date: modulo unico → scelta tematica → ricontatto
-  → richiesta salvata
-  → conferma o ricontatto manuale
+  → richiesta salvata + notifica Zimbra allo studio
+  → nessuna mail automatica al partecipante
+  → conferma admin → mail di conferma al partecipante
+  → annullamento o spostamento → relativa comunicazione al partecipante
 ```
 
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
+- La pagina successiva all’invio deve dire esplicitamente che la richiesta è stata ricevuta ma il posto non è ancora confermato. L’alert iniziale è destinato soltanto allo studio; la prima mail al partecipante parte quando l’admin imposta lo stato `Confermato`. Ripetere lo stesso stato non reinvia la comunicazione. Annullamento e spostamento inviano invece il relativo aggiornamento, sempre dopo il salvataggio locale dell’operazione.
 - Le iscrizioni di coppia valgono due posti, salvo il percorso nascita completo dove la coppia vale un posto. Ogni edizione ha una capienza nominale configurabile. Finché il totale è inferiore a tale capienza, una coppia può prendere l’ultimo posto e portare il totale a `capienza + 1`; raggiunta la capienza nominale, il sito non accetta altre iscrizioni automatiche.
 - Le date piene restano selezionabili come lista d’attesa. Quando si libera capienza, la prima richiesta compatibile riceve un invito valido 24 ore. L’admin può inserire partecipanti oltre il limite online soltanto confermando l’eccezione e registrandone il motivo.
 - Nei moduli di iscrizione la scelta mostra soltanto data e ora; il luogo dell’edizione compare in un campo non modificabile e si aggiorna con la data selezionata. `Nessuna data è compatibile con le tue esigenze?` resta un’azione separata dal menu delle date e apre il modulo minimo di ricontatto con la tematica già selezionata.
+- Se il server rifiuta un dato, il modulo resta il punto visibile della pagina: il messaggio viene mostrato al suo interno, il campo da correggere riceve evidenza e focus e i valori già inseriti restano disponibili. Nel corso di disostruzione i dati del secondo partecipante compaiono soltanto scegliendo `Coppia`; il nome è obbligatorio, il codice fiscale resta facoltativo.
 - Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e consenso privacy; non richiede i dati amministrativi necessari a una vera iscrizione.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 
@@ -102,7 +106,8 @@ Link privato generico
   → edizione del percorso
   → calendario di 9 incontri
   → modulo essenziale
-  → iscrizione salvata come Confermato
+  → richiesta salvata come Nuova
+  → conferma admin → iscrizione Confermata e mail al partecipante
 ```
 
 - Il link non compare nella navigazione e non deve essere indicizzato.
@@ -239,6 +244,7 @@ Agenda giorno/settimana/mese
 ```
 
 - Le richieste pubbliche scadono di norma alle 18 del giorno lavorativo successivo; se non vengono gestite restano bloccanti, diventano urgenti e generano un’attività.
+- Aprire un corso dall’agenda o usare `Vedi iscritti` nella panoramica porta alla scheda dell’edizione con la lista dei partecipanti come prima sezione operativa; modifica, duplicazione e unione restano successive.
 - Arzamed resta l’autorità operativa per i suoi appuntamenti; Google Calendar è il ponte. Gli eventi esterni sono mostrati con titolo e orario, ma non vengono importati come pratiche né arricchiti con dati clinici.
 - Modifiche o cancellazioni esterne di eventi collegati non riscrivono il database. Dopo una breve finestra di freschezza, l’ingresso in `/admin` anticipa la riconciliazione oraria senza bloccare la pagina se Google è indisponibile. Gli stati `difforme` ed `eliminato_esternamente` producono un modal prioritario e un banner persistente: `Decidi dopo` vale soltanto per la sessione e non chiude l’anomalia.
 - Una modifica temporale di un appuntamento o di una call richiede `Conferma dati del sito` oppure `Accetta data e orario Calendar`; la seconda azione ricontrolla disponibilità e regole, registra prima/dopo nell’audit e invia la comunicazione di spostamento. I titoli Calendar non vengono interpretati per modificare automaticamente dati anagrafici, prestazioni o contenuti sanitari.

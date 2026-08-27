@@ -34,6 +34,7 @@ from app import (
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
     RegistroEvento,
+    EmailOperativa,
     CallSonno,
     QuestionarioSonno,
     crea_amministratore_iniziale,
@@ -1363,6 +1364,8 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         'nome_bambino': 'Luca',
         'eta_bambino': '3 anni',
         'partecipazione': 'Singolo 34 euro',
+        'nome_secondo_partecipante': 'Dato da ignorare',
+        'codice_fiscale_secondo_partecipante': 'IGNORA80A01G482X',
         'data_corso': data_corso_id,
         'scopo_informativo': 'on',
         'no_certificazione': 'on',
@@ -1384,9 +1387,236 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.persona.nome_bambino == 'Luca'
         assert iscrizione.persona.eta_bambino == '3 anni'
         assert iscrizione.extra_dict()['nome_bambino'] == 'Luca'
+        assert iscrizione.extra_dict()['nome_secondo_partecipante'] == ''
+        assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
         assert PersonaCorso.query.count() == 1
+
+
+def test_invio_modulo_corso_notifica_solo_lo_studio_e_chiarisce_che_il_posto_non_e_confermato(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+    )
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+            'nome': 'Mario Rossi',
+            'codice_fiscale': 'RSSMRA80A01G482X',
+            'telefono': '3331234567',
+            'email': 'mario@example.com',
+            'partecipazione': 'Singolo 34 euro',
+            'data_corso': data_corso_id,
+            'scopo_informativo': 'on',
+            'no_certificazione': 'on',
+            'buono_stato_salute': 'on',
+            'consenso_privacy': 'on',
+            '_csrf_token': token,
+        })
+
+    assert resp.status_code == 302
+    assert send_mock.call_count == 1
+    alert = send_mock.call_args.args[0]
+    assert alert.recipients == [flask_app.config['MAIL_ADMIN_RECIPIENT']]
+    assert 'mario@example.com' not in alert.recipients
+
+    conferma = client.get('/iscrizione-corsi/conferma')
+    assert '<h1>Richiesta ricevuta</h1>' in conferma.text
+    assert 'Il posto non è ancora confermato.' in conferma.text
+    assert 'non riceverai una mail automatica' in conferma.text
+    assert 'soltanto quando l’iscrizione sarà confermata' in conferma.text
+
+
+def test_iscrizione_con_data_richiede_email_per_la_conferma_successiva(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+    )
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    resp = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert resp.status_code == 200
+    assert 'verrà usato per comunicarti la conferma del posto' in resp.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
+
+
+def test_admin_conferma_e_annulla_iscrizione_inviando_una_sola_mail_per_transizione(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        luogo='S.C. Studio Infermieristico',
+    )
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099 - ore 18:00 - S.C. Studio Infermieristico',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        conferma = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+        duplicata = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+        annullamento = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Annullato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert conferma.status_code == duplicata.status_code == annullamento.status_code == 302
+    assert send_mock.call_count == 2
+    conferma_msg, annullamento_msg = [call.args[0] for call in send_mock.call_args_list]
+    assert conferma_msg.recipients == ['mario@example.com']
+    assert conferma_msg.subject == 'Posto confermato - Disostruzione pediatrica'
+    assert 'il tuo posto per Disostruzione pediatrica è confermato' in conferma_msg.body
+    assert annullamento_msg.recipients == ['mario@example.com']
+    assert annullamento_msg.subject == 'Iscrizione annullata - Disostruzione pediatrica'
+    with flask_app.app_context():
+        assert db.session.get(IscrizioneCorso, iscrizione_id).stato == 'Annullato'
+
+
+def test_errore_mail_conferma_non_annulla_lo_stato_salvato(client):
+    data_corso_id = _crea_data_corso(
+        'bls-d',
+        'Corso BLSD',
+        data='2099-09-18',
+        luogo='S.C. Studio Infermieristico',
+    )
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='bls-d',
+            corso_titolo='Corso BLSD',
+            nome='Giulia Bianchi',
+            telefono='3331234567',
+            email='giulia@example.com',
+            codice_fiscale='BNCGLI85A41G482Z',
+            data_corso='18/09/2099 - ore 18:00 - S.C. Studio Infermieristico',
+            partecipazione='Iscrizione individuale',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.stato == 'Confermato'
+        email = EmailOperativa.query.filter_by(
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione_id,
+        ).one()
+        assert email.stato == 'fallita'
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione_id,
+        ).one()
+        assert 'conferma iscrizione corso' in evento.messaggio
+
+
+def test_spostamento_iscrizione_invia_la_nuova_edizione_senza_confermare_il_posto(client):
+    origine_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione settembre',
+        data='2099-09-18',
+        luogo='S.C. Studio Infermieristico',
+    )
+    destinazione_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione ottobre',
+        data='2099-10-03',
+        ora='10:00',
+        luogo='Sala partner',
+    )
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso(
+            corso_id=int(origine_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione settembre',
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='18/09/2099 - ore 18:00 - S.C. Studio Infermieristico',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/sposta',
+            data={
+                '_csrf_token': csrf,
+                'corso_destinazione_id': destinazione_id,
+            },
+        )
+
+    assert resp.status_code == 302
+    assert send_mock.call_count == 1
+    messaggio = send_mock.call_args.args[0]
+    assert messaggio.recipients == ['mario@example.com']
+    assert 'Edizione precedente: 18/09/2099' in messaggio.body
+    assert 'Nuova edizione: 03/10/2099 - ore 10:00 - Sala partner' in messaggio.body
+    assert 'Il posto non è ancora confermato' in messaggio.body
+    with flask_app.app_context():
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.corso_id == int(destinazione_id)
+        assert iscrizione.stato == 'Nuova'
 
 
 def test_errore_email_non_perde_iscrizione_corso(client):
@@ -1698,7 +1928,6 @@ def test_iscrizione_coppia_occupa_due_posti(client):
         'partecipazione': 'Coppia 60 euro',
         'data_corso': data_corso_id,
         'nome_secondo_partecipante': 'Luisa Verdi',
-        'codice_fiscale_secondo_partecipante': 'VRDLSU90A41G482Y',
         'scopo_informativo': 'on',
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
@@ -1710,6 +1939,46 @@ def test_iscrizione_coppia_occupa_due_posti(client):
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.posti == 2
+        assert iscrizione.extra_dict()['nome_secondo_partecipante'] == 'Luisa Verdi'
+        assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
+
+
+def test_modulo_disostruzione_mostra_secondo_partecipante_solo_per_coppia(client):
+    _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
+
+    response = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+
+    assert response.status_code == 200
+    assert 'data-second-participant-fields hidden' in response.text
+    assert 'Nome secondo partecipante *' in response.text
+    assert re.search(r'name="nome_secondo_partecipante"[^>]* disabled', response.text)
+    assert 'Codice fiscale secondo partecipante</label>' in response.text
+    assert 'Codice fiscale secondo partecipante *</label>' not in response.text
+
+
+def test_errore_iscrizione_corso_indica_e_riporta_al_campo_telefono(client):
+    data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    response = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '123',
+        'email': 'mario@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert response.status_code == 200
+    assert 'data-course-registration-form' in response.text
+    assert 'data-course-form-error data-error-field="telefono"' in response.text
+    assert 'Inserisci un numero di telefono valido.' in response.text
+    assert 'value="123"' in response.text
 
 
 def test_data_piena_resta_selezionabile_come_lista_attesa(client):
@@ -1911,6 +2180,14 @@ def test_admin_mostra_panoramica_iscritti_per_corso(client):
     assert 'Disostruzione pediatrica' in resp.text
     assert 'posti stimati' in resp.text
     assert 'Richiesta iscrizione' in resp.text
+    assert f'href="/admin/pratica/Corso/{data_corso_id}#partecipanti-corso"' in resp.text
+
+    scheda = client.get(f'/admin/pratica/Corso/{data_corso_id}')
+    assert scheda.status_code == 200
+    assert 'id="partecipanti-corso"' in scheda.text
+    assert 'Partecipanti iscritti' in scheda.text
+    assert 'Mario Rossi' in scheda.text
+    assert scheda.text.index('Partecipanti iscritti') < scheda.text.index('Modifica corso')
 
 
 def test_admin_filtra_iscritti_per_tipologia_corso(client):
@@ -1960,26 +2237,29 @@ def test_admin_aggiunge_iscritto_manualmente_e_crea_rubrica(client):
     )
     csrf = _login_admin(client)
 
-    resp = client.post('/admin/iscrizione-corso/aggiungi', data={
-        'corso_id': data_corso_id,
-        'nome': 'Anna Neri',
-        'telefono': '3331234567',
-        'email': 'anna@example.com',
-        'codice_fiscale': '',
-        'nome_bambino': 'Leo',
-        'eta_bambino': '18 mesi',
-        'tipo_richiesta': 'iscrizione_effettiva',
-        'stato': 'Confermato',
-        'posti': '1',
-        'partecipazione': 'Bambino/a',
-        'note': 'Prenotata da Instagram',
-        'note_persona': 'Preferisce laboratorio pomeridiano',
-        'consenso_privacy': 'on',
-        '_csrf_token': csrf,
-    })
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post('/admin/iscrizione-corso/aggiungi', data={
+            'corso_id': data_corso_id,
+            'nome': 'Anna Neri',
+            'telefono': '3331234567',
+            'email': 'anna@example.com',
+            'codice_fiscale': '',
+            'nome_bambino': 'Leo',
+            'eta_bambino': '18 mesi',
+            'tipo_richiesta': 'iscrizione_effettiva',
+            'stato': 'Confermato',
+            'posti': '1',
+            'partecipazione': 'Bambino/a',
+            'note': 'Prenotata da Instagram',
+            'note_persona': 'Preferisce laboratorio pomeridiano',
+            'consenso_privacy': 'on',
+            '_csrf_token': csrf,
+        })
 
     assert resp.status_code == 302
     assert resp.headers['Location'] == f'/admin?corso_id={data_corso_id}#admin-corsi'
+    assert send_mock.call_count == 1
+    assert send_mock.call_args.args[0].recipients == ['anna@example.com']
     with flask_app.app_context():
         persona = PersonaCorso.query.one()
         iscrizione = IscrizioneCorso.query.one()
@@ -2617,12 +2897,18 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
 
     assert resp.status_code == 302
     assert resp.headers['Location'] == '/iscrizione-accompagnamento/conferma'
-    assert send_mock.call_count == 2
+    assert send_mock.call_count == 1
+    assert send_mock.call_args.args[0].recipients == [flask_app.config['MAIL_ADMIN_RECIPIENT']]
+    pagina_conferma = client.get('/iscrizione-accompagnamento/conferma')
+    assert '<h1>Richiesta ricevuta</h1>' in pagina_conferma.text
+    assert 'Il posto non è ancora confermato.' in pagina_conferma.text
+    assert 'non riceverai una mail automatica' in pagina_conferma.text
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
+        iscrizione_id = iscrizione.id
         extra = iscrizione.extra_dict()
         assert iscrizione.percorso_accompagnamento_id == percorso_id
-        assert iscrizione.stato == 'Confermato'
+        assert iscrizione.stato == 'Nuova'
         assert iscrizione.tipo_richiesta == 'iscrizione_effettiva'
         assert iscrizione.posti == 1
         assert iscrizione.partecipazione == 'Coppia - partner si'
@@ -2631,6 +2917,21 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert iscrizione.consenso_immagini is True
         assert PersonaCorso.query.count() == 1
         assert PresenzaAccompagnamento.query.count() == 9
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as confirmation_send:
+        stato_resp = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert stato_resp.status_code == 302
+    assert confirmation_send.call_count == 1
+    messaggio = confirmation_send.call_args.args[0]
+    assert messaggio.recipients == ['luisa@example.com']
+    assert 'Iscrizione confermata' in messaggio.subject
+    with flask_app.app_context():
+        assert db.session.get(IscrizioneCorso, iscrizione_id).stato == 'Confermato'
 
 
 def test_capienza_percorso_privato_blocca_e_annullamento_riapre(client):
@@ -2697,15 +2998,35 @@ def test_errori_email_non_perdono_iscrizione_e_presenze_del_percorso(client):
     assert resp.status_code == 302
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
-        assert iscrizione.stato == 'Confermato'
+        iscrizione_id = iscrizione.id
+        assert iscrizione.stato == 'Nuova'
         assert PresenzaAccompagnamento.query.count() == 9
         eventi = RegistroEvento.query.filter_by(
             categoria='email',
             entita_tipo='IscrizioneCorso',
             entita_id=iscrizione.id,
         ).all()
-        assert len(eventi) == 2
+        assert len(eventi) == 1
         assert all(evento.esito == 'errore' for evento in eventi)
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP ancora non disponibile')):
+        conferma = client.post(
+            f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert conferma.status_code == 302
+    with flask_app.app_context():
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.stato == 'Confermato'
+        eventi = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione.id,
+        ).all()
+        assert len(eventi) == 2
+        assert any('conferma percorso' in evento.messaggio for evento in eventi)
 
 
 def test_percorso_accompagnamento_chiuso_offre_un_contatto_utilizzabile(client):
@@ -4358,6 +4679,9 @@ def test_calendario_homepage_usa_controlli_accessibili():
     assert "Mostra i dettagli" in script
     assert "'Orario: '" in script
     assert "'Luogo: '" in script
+    assert "chiudiDettaglio.addEventListener('click'" in script
+    assert "nascondiDettaglio(true)" in script
+    assert "pulsanteDaRipristinare.focus()" in script
 
 
 def test_homepage_non_forza_il_layout_del_widget_instagram():
@@ -4486,6 +4810,7 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert 'admin-month-event-appuntamento' in response.text
     assert 'admin-month-event-corso' in response.text
     assert 'admin-month-event-bloccoagenda' in response.text
+    assert re.search(r'href="/admin/pratica/Corso/\d+#partecipanti-corso"[^>]*class="admin-month-event admin-month-event-corso"', response.text)
     assert 'Appuntamenti e call' in response.text
     assert 'Corsi' in response.text
     assert 'Pause e chiusure' in response.text
