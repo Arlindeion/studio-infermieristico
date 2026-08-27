@@ -58,11 +58,18 @@ app.config.from_object(config[config_name])
 if config_name == 'production':
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# Limitazione del traffico
+# Limite applicativo aggregato per IP sulle sole richieste dinamiche. I limiti
+# più stretti dei moduli vengono applicati separatamente ai soli POST.
+def _escludi_dal_limite_generale():
+    return request.endpoint in {'static', 'healthz'}
+
+
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
+    application_limits=["10000 per day", "1000 per hour"],
+    application_limits_exempt_when=_escludi_dal_limite_generale,
+    headers_enabled=True,
     storage_uri="memory://",
 )
 
@@ -3062,6 +3069,28 @@ def not_found(_errore):
     ), 404
 
 
+@app.errorhandler(429)
+def troppe_richieste(errore):
+    limite = getattr(errore, 'description', 'limite configurato')
+    logger.warning(
+        '>>> Limite richieste superato: endpoint=%s metodo=%s limite=%s',
+        request.endpoint or 'sconosciuto',
+        request.method,
+        limite,
+    )
+    messaggio = (
+        'Hai effettuato troppe richieste in poco tempo. '
+        'Attendi e riprova più tardi.'
+    )
+    if request.endpoint == 'api_orari_call_sonno':
+        return jsonify({'errore': messaggio}), 429
+    return render_template(
+        'errore.html',
+        titolo='Troppe richieste',
+        messaggio=messaggio,
+    ), 429
+
+
 @app.errorhandler(500)
 def server_error(_errore):
     db.session.rollback()
@@ -3472,6 +3501,15 @@ def _invia_email_partecipante_corso(iscrizione, subject, body, failure_message):
         return False
 
 
+def _firma_email_studio():
+    """Restituisce i recapiti pubblici approvati per le comunicazioni ai partecipanti."""
+    return (
+        'S.C. Studio Infermieristico\n'
+        'Telefono: 380 631 7175\n'
+        'Email: info@scstudioinfermieristico.it'
+    )
+
+
 def invia_email_conferma_iscrizione_corso(iscrizione):
     """Comunica la conferma soltanto dopo il passaggio admin a Confermato."""
     if iscrizione.percorso_accompagnamento:
@@ -3498,7 +3536,7 @@ def invia_email_conferma_iscrizione_corso(iscrizione):
             f'Data e luogo: {data_confermata}\n'
             f'Partecipazione: {iscrizione.partecipazione or "Non indicata"}\n\n'
             'Se hai bisogno di comunicare una variazione, contatta lo studio.\n\n'
-            'S.C. Studio Infermieristico'
+            f'{_firma_email_studio()}'
         ),
         'Email di conferma iscrizione corso non inviata al partecipante.',
     )
@@ -3515,7 +3553,7 @@ def invia_email_annullamento_iscrizione_corso(iscrizione, stato_precedente):
             f'la tua {descrizione} per {iscrizione.corso_titolo} è stata annullata.\n\n'
             f'Edizione: {iscrizione.data_corso or "Da definire"}\n\n'
             'Per chiarimenti o per valutare una data diversa, contatta lo studio.\n\n'
-            'S.C. Studio Infermieristico'
+            f'{_firma_email_studio()}'
         ),
         'Email di annullamento iscrizione corso non inviata al partecipante.',
     )
@@ -3537,9 +3575,26 @@ def invia_email_spostamento_iscrizione_corso(iscrizione, edizione_precedente):
             f'Edizione precedente: {edizione_precedente or "Da definire"}\n'
             f'Nuova edizione: {iscrizione.data_corso or "Da definire"}\n\n'
             f'{stato_posto}\n\n'
-            'S.C. Studio Infermieristico'
+            f'{_firma_email_studio()}'
         ),
         'Email di spostamento iscrizione corso non inviata al partecipante.',
+    )
+
+
+def invia_email_annullamento_edizione_corso(iscrizione, corso, etichetta_edizione):
+    """Avvisa un partecipante confermato che l'intera edizione è stata annullata."""
+    return _invia_email_partecipante_corso(
+        iscrizione,
+        f'Edizione annullata - {corso.titolo}',
+        (
+            f'Buongiorno {iscrizione.nome},\n\n'
+            f'ti informo che l’edizione di {corso.titolo} è stata annullata.\n\n'
+            f'Data e luogo previsti: {etichetta_edizione}\n\n'
+            'Per conoscere le prossime date disponibili o chiedere chiarimenti, '
+            'puoi contattare lo studio ai seguenti recapiti:\n\n'
+            f'{_firma_email_studio()}'
+        ),
+        'Email di annullamento corso non inviata al partecipante.',
     )
 
 
@@ -4296,7 +4351,7 @@ def _render_richiesta_azienda_error(messaggio):
 
 
 @app.route('/aziende-e-gruppi', methods=['GET', 'POST'])
-@limiter.limit('5 per minute')
+@limiter.limit('5 per minute', methods=['POST'])
 def richiesta_azienda():
     """Raccoglie richieste organizzative senza usare il modulo individuale."""
     if request.method == 'POST':
@@ -4389,7 +4444,7 @@ def _render_course_interest_error(message):
 
 
 @app.route('/iscrizione-corsi/interesse', methods=['GET', 'POST'])
-@limiter.limit('5 per minute')
+@limiter.limit('5 per minute', methods=['POST'])
 def course_interest():
     if request.method == 'POST':
         token = session.pop('_csrf_token', None)
@@ -4465,7 +4520,7 @@ def course_interest_confirmation():
 
 
 @app.route('/iscrizione-corsi/<corso_tipo>', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("5 per minute", methods=['POST'])
 def iscrizione_corso(corso_tipo):
     if corso_tipo == 'bls-d':
         return redirect(
@@ -4777,7 +4832,7 @@ def _render_accompagnamento_privato(percorso, messaggio=None):
 
 
 @app.route('/iscrizione-accompagnamento/<slug>', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("5 per minute", methods=['POST'])
 def iscrizione_accompagnamento_privata(slug):
     percorso = PercorsoAccompagnamento.query.filter_by(slug=slug).first_or_404()
 
@@ -4891,7 +4946,7 @@ def _orari_call_occupati(data_str, ignore_call_id=None, ignore_google_event_id=N
 
 
 @app.route('/prenota-call-sonno', methods=['GET', 'POST'])
-@limiter.limit('5 per hour')
+@limiter.limit('5 per hour', methods=['POST'])
 def prenota_call_sonno():
     prima_data = prima_data_call_disponibile().isoformat()
     template_context = {
@@ -5025,7 +5080,7 @@ def api_orari_call_sonno(data_str):
 
 
 @app.route('/questionario-sonno/<token>', methods=['GET', 'POST'])
-@limiter.limit('10 per hour')
+@limiter.limit('10 per hour', methods=['POST'])
 def questionario_sonno(token):
     if not re.match(r'^[A-Za-z0-9_-]{32,96}$', token):
         abort(404)
@@ -5120,7 +5175,7 @@ def _panoramica_corsi(corsi):
 
 
 @app.route('/prenota', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("5 per minute", methods=['POST'])
 def prenota():
     if request.method == 'POST':
         # Protezione CSRF
@@ -5245,7 +5300,7 @@ def privacy():
 # ─── LOGIN / LOGOUT ───
 
 @app.route('/admin/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("5 per minute", methods=['POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin'))
@@ -6417,7 +6472,7 @@ def proponi_slot_admin(tipo, entita_id):
 
 
 @app.route('/proposta-slot/<token>', methods=['GET', 'POST'])
-@limiter.limit('10 per hour')
+@limiter.limit('10 per hour', methods=['POST'])
 def accetta_proposta_slot(token):
     proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
     entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
@@ -6499,7 +6554,7 @@ def _invita_prossimo_lista_attesa(corso):
 
 
 @app.route('/lista-attesa/<token>', methods=['GET', 'POST'])
-@limiter.limit('10 per hour')
+@limiter.limit('10 per hour', methods=['POST'])
 def accetta_invito_lista_attesa(token):
     iscrizione = IscrizioneCorso.query.filter_by(token_lista_attesa=token).first_or_404()
     corso = iscrizione.corso
@@ -7258,13 +7313,84 @@ def elimina_corso(id):
     if not token or token != session.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
+
     corso = db.get_or_404(Corso, id)
+
+    if corso.archiviato_il is not None:
+        flash('Edizione già archiviata; nessuna nuova email inviata.', 'success')
+        return redirect(url_for('admin') + '#admin-corsi')
+
+    # Salva i dati dell'edizione prima dell'archiviazione.
+    etichetta_edizione = _etichetta_data_corso(corso)
+
+    # Recupera i partecipanti che avevano già un posto confermato.
+    destinatari = IscrizioneCorso.query.filter(
+        IscrizioneCorso.corso_id == corso.id,
+        IscrizioneCorso.stato == 'Confermato',
+        IscrizioneCorso.archiviata_il.is_(None),
+    ).all()
+
+    # L'annullamento del corso deve essere salvato anche se Calendar
+    # o l'invio delle email dovessero successivamente fallire.
     corso.archiviato_il = utc_now()
     corso.stato = 'Annullato'
     db.session.commit()
+
     calendar_ok = elimina_evento_calendario_corso(corso)
-    registra_modifica('archiviazione', 'Corso', corso.id)
-    flash('Corso archiviato; iscrizioni e storico restano conservati.' if calendar_ok else 'Corso archiviato, ma Calendar richiede verifica.', 'success' if calendar_ok else 'error')
+
+    registra_modifica(
+        'archiviazione',
+        'Corso',
+        corso.id,
+        {'stato': 'Annullato'}
+    )
+
+    # Avvisa tutti i partecipanti con posto già confermato.
+    email_inviate = 0
+    email_fallite = 0
+    email_mancanti = 0
+
+    for iscrizione in destinatari:
+        risultato_email = invia_email_annullamento_edizione_corso(
+            iscrizione,
+            corso,
+            etichetta_edizione,
+        )
+
+        if risultato_email is True:
+            email_inviate += 1
+        elif risultato_email is False:
+            email_fallite += 1
+        else:
+            email_mancanti += 1
+
+    if not calendar_ok or email_fallite or email_mancanti:
+        problemi = []
+        if not calendar_ok:
+            problemi.append('Calendar richiede verifica.')
+        if email_fallite or email_mancanti:
+            problemi.append(
+                'Controlla il registro eventi e contatta manualmente chi non ha ricevuto l’avviso.'
+            )
+        flash(
+            f'Edizione archiviata. Email inviate: {email_inviate}; '
+            f'email non inviate: {email_fallite}; '
+            f'email mancanti: {email_mancanti}. '
+            f'{" ".join(problemi)}',
+            'error'
+        )
+    elif destinatari:
+        flash(
+            f'Edizione archiviata e partecipanti confermati avvisati '
+            f'via email ({email_inviate}).',
+            'success'
+        )
+    else:
+        flash(
+            'Edizione archiviata; non risultano partecipanti confermati da avvisare.',
+            'success'
+        )
+
     return redirect(url_for('admin') + '#admin-corsi')
 
 
@@ -7308,8 +7434,14 @@ def modifica_corso_admin(id):
             msg = Message(
                 subject=f'Aggiornamento · {corso.titolo}',
                 recipients=[iscrizione.email],
-                body=(f'Buongiorno {iscrizione.nome},\n\ni dettagli del corso sono stati aggiornati: '
-                      f'{_etichetta_data_corso(corso)}.\n\nStudio infermieristico'),
+                body=(
+                    f'Buongiorno {iscrizione.nome},\n\n'
+                    f'sono stati aggiornati i dettagli dell’edizione di {corso.titolo}.\n\n'
+                    f'Data e luogo: {_etichetta_data_corso(corso)}\n\n'
+                    'Per chiarimenti o per comunicare una variazione, puoi contattare '
+                    'lo studio ai seguenti recapiti:\n\n'
+                    f'{_firma_email_studio()}'
+                ),
             )
             try:
                 _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)

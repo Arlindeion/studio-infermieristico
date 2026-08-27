@@ -189,6 +189,27 @@ generale produce falsi `429` e può mettere l'istanza in un ciclo di riavvii.
 `/robots.txt` nello staging risponde con `Disallow: /`; ogni risposta include
 inoltre `X-Robots-Tag: noindex, nofollow, noarchive`.
 
+### Limiti di richiesta
+
+Flask-Limiter applica per IP un limite aggregato alle richieste dinamiche di
+`1000 per hour` e `10000 per day`. Asset statici e `/healthz` sono esclusi: la
+navigazione, il caricamento di CSS, JavaScript e immagini e i controlli Render
+non devono consumare quote destinate alla protezione dell’applicazione.
+
+Le route pubbliche miste `GET`/`POST` limitano soltanto i POST: `5 per hour` per
+la richiesta di call sonno, `10 per hour` per questionario sonno, proposta slot
+e lista d’attesa, `5 per minute` per prenotazioni sanitarie, corsi, interesse
+corsi, aziende e gruppi, percorso nascita privato e login. Un POST invalido,
+compresi errori di validazione o CSRF, conta come tentativo: escluderlo
+permetterebbe invii automatici malformati senza limite. L’API GET degli orari
+call sonno mantiene inoltre il limite specifico `30 per minute`.
+
+Le risposte `429` includono le intestazioni di rate limiting e `Retry-After`,
+mostrano un messaggio italiano e registrano soltanto endpoint, metodo e soglia,
+senza IP, token o dati inseriti. `memory://` è adeguato finché Render usa un solo
+worker; prima di aumentare worker o istanze occorre passare a uno storage
+condiviso, per esempio Redis, e ripetere i test di concorrenza.
+
 ## Variabili d'ambiente
 
 | Variabile | Scopo | Sensibile |

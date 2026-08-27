@@ -13,6 +13,9 @@ from pathlib import Path
 import pytest
 from unittest.mock import MagicMock, patch
 from datetime import date, datetime, timezone
+from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 from googleapiclient.errors import HttpError
 
@@ -174,6 +177,137 @@ def test_health_check_e_esente_dai_limiti_globali(app):
     route_esenti = limiter.limit_manager._route_exemptions
 
     assert any(route.endswith('.healthz') for route in route_esenti)
+
+
+def test_rate_limiting_usa_limiti_applicativi_e_non_limiti_predefiniti(app):
+    limiti_applicativi = {
+        str(limite.limit)
+        for limite in limiter.limit_manager.application_limits
+    }
+
+    assert limiter.limit_manager.default_limits == []
+    assert limiti_applicativi == {'1000 per 1 hour', '10000 per 1 day'}
+    assert limiter._headers_enabled is True
+
+    with app.test_request_context('/static/css/base.css'):
+        assert app_module._escludi_dal_limite_generale() is True
+    with app.test_request_context('/healthz'):
+        assert app_module._escludi_dal_limite_generale() is True
+    with app.test_request_context('/prenota-call-sonno'):
+        assert app_module._escludi_dal_limite_generale() is False
+
+
+def test_route_miste_limitano_solo_i_post_e_api_orari_resta_limitata_su_get():
+    attesi = {
+        'richiesta_azienda': '5 per minute',
+        'course_interest': '5 per minute',
+        'iscrizione_corso': '5 per minute',
+        'iscrizione_accompagnamento_privata': '5 per minute',
+        'prenota_call_sonno': '5 per hour',
+        'questionario_sonno': '10 per hour',
+        'prenota': '5 per minute',
+        'login': '5 per minute',
+        'accetta_proposta_slot': '10 per hour',
+        'accetta_invito_lista_attesa': '10 per hour',
+    }
+    decorati = limiter.limit_manager._decorated_limits
+
+    for endpoint, limite_atteso in attesi.items():
+        gruppi = [
+            gruppo
+            for nome, limiti in decorati.items()
+            if nome.endswith(f'.{endpoint}.{endpoint}')
+            for gruppo in limiti
+        ]
+        assert len(gruppi) == 1, endpoint
+        assert gruppi[0].limit_provider == limite_atteso
+        assert gruppi[0].methods == ('post',)
+
+    limite_api = [
+        gruppo
+        for nome, limiti in decorati.items()
+        if nome.endswith('.api_orari_call_sonno.api_orari_call_sonno')
+        for gruppo in limiti
+    ]
+    assert len(limite_api) == 1
+    assert limite_api[0].limit_provider == '30 per minute'
+    assert limite_api[0].methods is None
+
+
+def test_flask_limiter_non_consuma_il_limite_specifico_con_i_get():
+    probe = Flask('rate-limit-methods')
+    probe.config['TESTING'] = True
+    probe_limiter = Limiter(
+        get_remote_address,
+        app=probe,
+        application_limits=['100 per hour'],
+        headers_enabled=True,
+        storage_uri='memory://',
+    )
+
+    @probe.route('/mista', methods=['GET', 'POST'])
+    @probe_limiter.limit('2 per hour', methods=['POST'])
+    def route_mista_probe():
+        return 'ok'
+
+    client = probe.test_client()
+    risposte_get = [client.get('/mista') for _ in range(10)]
+    risposte_post = [client.post('/mista') for _ in range(3)]
+
+    assert all(risposta.status_code == 200 for risposta in risposte_get)
+    assert [risposta.status_code for risposta in risposte_post] == [200, 200, 429]
+    assert risposte_post[-1].headers.get('Retry-After')
+
+
+def test_flask_limiter_aggrega_endpoint_dinamici_ed_esclude_statici():
+    probe = Flask('rate-limit-application')
+    probe.config['TESTING'] = True
+    Limiter(
+        get_remote_address,
+        app=probe,
+        application_limits=['2 per hour'],
+        application_limits_exempt_when=lambda: app_module.request.endpoint == 'static',
+        storage_uri='memory://',
+    )
+
+    @probe.get('/prima')
+    def prima_probe():
+        return 'prima'
+
+    @probe.get('/seconda')
+    def seconda_probe():
+        return 'seconda'
+
+    client = probe.test_client()
+
+    assert client.get('/prima').status_code == 200
+    assert client.get('/seconda').status_code == 200
+    assert client.get('/prima').status_code == 429
+    assert [
+        client.get('/static/inesistente.css').status_code
+        for _ in range(3)
+    ] == [404, 404, 404]
+
+
+def test_risposta_429_e_in_italiano_e_non_registra_dati_personali(app, caplog):
+    errore = type('ErroreLimite', (), {'description': '5 per 1 minute'})()
+
+    with app.test_request_context('/admin/login', method='POST'), caplog.at_level('WARNING'):
+        html, status = app_module.troppe_richieste(errore)
+
+    assert status == 429
+    assert 'Troppe richieste' in html
+    assert 'Attendi e riprova più tardi.' in html
+    assert 'endpoint=login metodo=POST limite=5 per 1 minute' in caplog.text
+    assert '127.0.0.1' not in caplog.text
+
+    with app.test_request_context('/api/orari-call-sonno/2099-01-05'):
+        risposta, status = app_module.troppe_richieste(errore)
+
+    assert status == 429
+    assert risposta.get_json() == {
+        'errore': 'Hai effettuato troppe richieste in poco tempo. Attendi e riprova più tardi.'
+    }
 
 
 def test_staging_non_si_avvia_senza_protezione(app, monkeypatch):
@@ -3763,6 +3897,218 @@ def test_archiviazione_corso_elimina_evento_ma_conserva_storico(client, google_c
         assert corso is not None
         assert corso.archiviato_il is not None
         assert corso.stato == 'Annullato'
+
+
+@pytest.mark.parametrize(
+    ('tipo', 'titolo'),
+    [
+        ('disostruzione-pediatrica', 'Disostruzione pediatrica'),
+        ('laboratorio-infanzia', 'Laboratorio gioco e sviluppo'),
+    ],
+)
+def test_archiviazione_edizione_avvisa_solo_i_partecipanti_confermati(
+    client,
+    google_calendar_scrittura_finto,
+    tipo,
+    titolo,
+):
+    with flask_app.app_context():
+        corso = Corso(
+            titolo=titolo,
+            tipo=tipo,
+            data='2099-11-08',
+            ora='17:30',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=2,
+            google_event_id=f'evento-{tipo}',
+        )
+        db.session.add(corso)
+        db.session.flush()
+
+        def iscrizione(nome, email, stato='Confermato', archiviata_il=None):
+            return IscrizioneCorso(
+                corso_id=corso.id,
+                corso_tipo=tipo,
+                corso_titolo=titolo,
+                nome=nome,
+                telefono='3331234567',
+                email=email,
+                codice_fiscale='RSSMRA80A01G482X',
+                data_corso='08/11/2099 - ore 17:30 - S.C. Studio Infermieristico',
+                partecipazione='Iscrizione individuale',
+                tipo_richiesta='richiesta_iscrizione',
+                posti=1,
+                posti_richiesti=1,
+                consenso_privacy=True,
+                stato=stato,
+                archiviata_il=archiviata_il,
+            )
+
+        db.session.add_all([
+            iscrizione('Mario Rossi', 'mario@example.com'),
+            iscrizione('Giulia Bianchi', ''),
+            iscrizione('Luca Verdi', 'luca@example.com', stato='Nuova'),
+            iscrizione(
+                'Anna Neri',
+                'anna@example.com',
+                archiviata_il=app_module.utc_now(),
+            ),
+        ])
+        db.session.commit()
+        corso_id = corso.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/corso/elimina/{corso_id}',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+        ripetizione = client.post(
+            f'/admin/corso/elimina/{corso_id}',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == ripetizione.status_code == 200
+    assert send_mock.call_count == 1
+    messaggio = send_mock.call_args.args[0]
+    assert messaggio.recipients == ['mario@example.com']
+    assert messaggio.subject == f'Edizione annullata - {titolo}'
+    assert f'l’edizione di {titolo}' in messaggio.body
+    assert '08/11/2099 - ore 17:30 - S.C. Studio Infermieristico' in messaggio.body
+    assert 'Telefono: 380 631 7175' in messaggio.body
+    assert 'Email: info@scstudioinfermieristico.it' in messaggio.body
+    assert 'Email inviate: 1; email non inviate: 0; email mancanti: 1.' in resp.text
+    assert 'Edizione già archiviata; nessuna nuova email inviata.' in ripetizione.text
+
+
+def test_errore_email_annullamento_edizione_non_ripristina_il_corso(
+    client,
+    google_calendar_scrittura_finto,
+):
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='Laboratorio movimento',
+            tipo='laboratorio-infanzia',
+            data='2099-11-09',
+            ora='10:00',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=2,
+            google_event_id='evento-laboratorio',
+        )
+        db.session.add(corso)
+        db.session.flush()
+        iscrizione = IscrizioneCorso(
+            corso_id=corso.id,
+            corso_tipo=corso.tipo,
+            corso_titolo=corso.titolo,
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='09/11/2099 - ore 10:00 - S.C. Studio Infermieristico',
+            partecipazione='Iscrizione individuale',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        corso_id = corso.id
+        iscrizione_id = iscrizione.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        resp = client.post(
+            f'/admin/corso/elimina/{corso_id}',
+            data={'_csrf_token': csrf},
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == 200
+    assert 'Email inviate: 0; email non inviate: 1; email mancanti: 0.' in resp.text
+    with flask_app.app_context():
+        corso = db.session.get(Corso, corso_id)
+        assert corso.stato == 'Annullato'
+        assert corso.archiviato_il is not None
+        email = EmailOperativa.query.filter_by(
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione_id,
+        ).one()
+        assert email.stato == 'fallita'
+        evento = RegistroEvento.query.filter_by(
+            categoria='email',
+            entita_tipo='IscrizioneCorso',
+            entita_id=iscrizione_id,
+        ).one()
+        assert 'annullamento corso' in evento.messaggio
+
+
+def test_modifica_edizione_invia_recapiti_corretti_ai_partecipanti(
+    client,
+    google_calendar_scrittura_finto,
+):
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='Laboratorio gioco e sviluppo',
+            tipo='laboratorio-infanzia',
+            data='2099-11-10',
+            ora='16:00',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=2,
+            stato='Aperto',
+            google_event_id='evento-laboratorio',
+        )
+        db.session.add(corso)
+        db.session.flush()
+        iscrizione = IscrizioneCorso(
+            corso_id=corso.id,
+            corso_tipo=corso.tipo,
+            corso_titolo=corso.titolo,
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='10/11/2099 - ore 16:00 - S.C. Studio Infermieristico',
+            partecipazione='Iscrizione individuale',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        corso_id = corso.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/corso/{corso_id}/modifica',
+            data={
+                '_csrf_token': csrf,
+                'titolo': 'Laboratorio gioco e sviluppo',
+                'data': '2099-11-17',
+                'ora': '17:00',
+                'luogo': 'S.C. Studio Infermieristico',
+                'durata_ore': '2',
+                'capienza_massima': '8',
+                'stato': 'Aperto',
+                'conferma_notifiche': '1',
+            },
+        )
+
+    assert resp.status_code == 302
+    assert send_mock.call_count == 1
+    messaggio = send_mock.call_args.args[0]
+    assert messaggio.recipients == ['mario@example.com']
+    assert messaggio.subject == 'Aggiornamento · Laboratorio gioco e sviluppo'
+    assert 'Data e luogo: 17/11/2099 - ore 17:00 - S.C. Studio Infermieristico' in messaggio.body
+    assert 'Telefono: 380 631 7175' in messaggio.body
+    assert 'Email: info@scstudioinfermieristico.it' in messaggio.body
 
 
 def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scrittura_finto):

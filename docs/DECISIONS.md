@@ -765,6 +765,24 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il collegamento storico `/admin?corso_id=<id>#admin-corsi` continua a filtrare la tabella, ma `Vedi iscritti` e gli eventi agenda usano `/admin/pratica/Corso/<id>#partecipanti-corso`. Il server ignora eventuali dati del secondo partecipante inviati per una partecipazione singola. Il controllo responsive ha verificato lista partecipanti, campi coppia, chiusura del calendario con ritorno del focus ed errore telefono evidenziato senza overflow; la suite passa con 227 test Python e 35 test JavaScript. Non cambia lo schema dati.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/homepage.html`, `templates/iscrizione_corso.html`, `static/css/admin.css`, `static/css/components.css`, `static/js/calendario.js`, `static/js/course-registration.js`, `tests/test_app.py`, `tests/js/course-registration.test.js`, D-073, D-078, D-087.
 
+## D-090 — L’annullamento dell’edizione avvisa i partecipanti confermati
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente; invio reale ancora da collaudare nel flusso corsi.
+- Decisione: quando l’admin archivia un’intera edizione, sia essa un corso o un laboratorio, salvare prima `stato="Annullato"` e `archiviato_il`, quindi rimuovere l’evento Calendar e inviare una mail ai soli partecipanti `Confermato` e non archiviati. Tutte le comunicazioni corso al partecipante riportano i recapiti pubblici approvati `380 631 7175` e `info@scstudioinfermieristico.it`.
+- Motivo: l’annullamento dell’edizione riguarda chi possiede già un posto, mentre richieste non confermate, liste d’attesa e pratiche archiviate non devono ricevere un avviso che presuppone l’iscrizione. Calendar e SMTP restano dipendenze secondarie rispetto al dato locale.
+- Conseguenze: email mancanti e invii falliti vengono conteggiati e segnalati all’admin; gli errori SMTP restano tracciati in `EmailOperativa` e `RegistroEvento` senza ripristinare il corso. Una richiesta ripetuta su un’edizione già archiviata non reinvia le mail. I test coprono corso, laboratorio, esclusione degli stati non confermati, email mancante, guasto SMTP, recapiti e idempotenza; la suite locale passa con 231 test Python. Non cambia lo schema dati.
+- Collegamenti: `app.py`, `templates/admin.html`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, D-073, D-080, D-088.
+
+## D-091 — Navigazione e invio dei moduli hanno limiti distinti
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente; verifica post-deploy ancora richiesta.
+- Decisione: sostituire i limiti predefiniti per endpoint con un limite applicativo realmente aggregato per IP di `1000 per hour` e `10000 per day`, escludendo asset statici e `/healthz`. Applicare i limiti specifici delle route miste soltanto ai POST; mantenere `30 per minute` sul GET dell’API orari call sonno. I POST malformati o non validi continuano a contare come tentativi.
+- Motivo: aperture, refresh e ritorni a una pagina non sono invii e non devono esaurire la soglia del modulo. `default_limits` separa i contatori per endpoint e non realizza il freno generale descritto; `application_limits` aggrega invece il traffico dinamico tra endpoint, mentre i limiti POST proteggono le operazioni sensibili.
+- Conseguenze: un superamento produce una risposta `429` italiana con `Retry-After`; il log conserva endpoint, metodo e soglia senza IP o dati personali. I test verificano configurazione, tutti i decoratori, separazione GET/POST, aggregazione tra endpoint, esclusione degli statici e risposta HTML/JSON. La suite locale passa con 236 test Python. Lo storage resta `memory://` perché il servizio usa un solo worker; più worker o istanze richiederanno uno storage condiviso. Non cambia lo schema dati.
+- Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, D-073, D-074.
+
 ## Modello per nuove decisioni
 
 ```markdown

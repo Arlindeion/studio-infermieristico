@@ -1305,7 +1305,7 @@
                 <td>{{ c.descrizione or '—' }}</td>
                 <td>
                     <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='Corso', entita_id=c.id) }}">Apri</a>
-                    {% if not c.archiviato_il %}{{ admin_post_action(url_for('elimina_corso', id=c.id), 'Archivia', 'rosso', 'Archiviare questo corso? Le iscrizioni resteranno nello storico.') }}{% endif %}
+                    {% if not c.archiviato_il %}{{ admin_post_action(url_for('elimina_corso', id=c.id), 'Archivia', 'rosso', 'Archiviare questa edizione? Le iscrizioni resteranno nello storico e i partecipanti confermati riceveranno una mail di annullamento.') }}{% endif %}
                 </td>
             </tr>
             {% endfor %}
