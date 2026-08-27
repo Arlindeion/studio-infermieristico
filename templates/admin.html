@@ -139,6 +139,7 @@
         <button type="button" class="admin-view-btn attivo" data-admin-target="agenda" role="tab" aria-selected="true"><span>Agenda</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="richieste" role="tab" aria-selected="false"><span>Richieste</span>{% if richieste_nuove_count %}<strong>{{ richieste_nuove_count }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false"><span>Corsi</span>{% if iscrizioni_nuove_count %}<strong>{{ iscrizioni_nuove_count }}</strong>{% endif %}</button>
+        <button type="button" class="admin-view-btn" data-admin-target="nuovo-corso" role="tab" aria-selected="false"><span>Nuovo corso</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="aziende" role="tab" aria-selected="false"><span>Aziende e gruppi</span>{% if richieste_azienda_aperte_count %}<strong>{{ richieste_azienda_aperte_count }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="persone" role="tab" aria-selected="false"><span>Persone</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="attivita" role="tab" aria-selected="false"><span>Attività</span>{% if attivita_admin %}<strong>{{ attivita_admin|length }}</strong>{% endif %}</button>
@@ -316,7 +317,7 @@
     <form id="sync-batch" method="post" action="{{ url_for('sincronizza_selezionati_admin') }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     </form>
-    <div class="admin-error-list">{% for evento in errori_aperti %}{% set chiave_evento = evento.entita_tipo ~ ':' ~ evento.entita_id %}<article class="admin-error-row"><label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and chiave_evento not in conflitti_calendar_chiavi %}<input form="sync-batch" type="checkbox" name="elementi" value="{{ evento.entita_tipo }}:{{ evento.entita_id }}">{% endif %}<span>{{ evento.categoria }}</span><strong>{{ evento.messaggio }}</strong><time>{{ evento.creato_il|local_timestamp }}</time></label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and evento.entita_id %}<a href="{{ url_for('dettaglio_admin', tipo=evento.entita_tipo, entita_id=evento.entita_id) }}">Apri pratica</a>{% endif %}{% if chiave_evento in conflitti_calendar_chiavi %}<p class="admin-error-decision-note">Si chiude soltanto dopo una scelta nella pratica.</p>{% else %}<form class="admin-error-resolution" method="post" action="{{ url_for('risolvi_errore_admin', id=evento.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input name="nota_risoluzione" placeholder="Come è stato risolto" required><button class="btn-azione blu" type="submit">Segna risolto</button></form>{% endif %}</article>{% else %}<p class="nota nota-lg">Nessun errore aperto.</p>{% endfor %}</div>
+    <div class="admin-error-list">{% for evento in errori_aperti %}{% set chiave_evento = evento.entita_tipo ~ ':' ~ evento.entita_id %}<article class="admin-error-row"><label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and chiave_evento not in conflitti_calendar_chiavi %}<input form="sync-batch" type="checkbox" name="elementi" value="{{ evento.entita_tipo }}:{{ evento.entita_id }}">{% endif %}<span>{{ evento.categoria }}</span><strong>{{ evento.messaggio }}</strong>{% if evento.entita_tipo and evento.entita_id %}<span class="admin-error-reference">{{ evento.entita_tipo }} #{{ evento.entita_id }}{% if riferimenti_eventi.get(evento.id) %} · {{ riferimenti_eventi[evento.id] }}{% endif %}</span>{% endif %}<time>{{ evento.creato_il|local_timestamp }}</time></label>{% if evento.entita_tipo in ['Appuntamento', 'CallSonno', 'Corso', 'IncontroAccompagnamento', 'BloccoAgenda'] and evento.entita_id %}<a href="{{ url_for('dettaglio_admin', tipo=evento.entita_tipo, entita_id=evento.entita_id) }}">Apri pratica</a>{% endif %}{% if chiave_evento in conflitti_calendar_chiavi %}<p class="admin-error-decision-note">Si chiude soltanto dopo una scelta nella pratica.</p>{% else %}<form class="admin-error-resolution" method="post" action="{{ url_for('risolvi_errore_admin', id=evento.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input name="nota_risoluzione" placeholder="Come è stato risolto" required><button class="btn-azione blu" type="submit">Segna risolto</button></form>{% endif %}</article>{% else %}<p class="nota nota-lg">Nessun errore aperto.</p>{% endfor %}</div>
     <button class="btn-azione verde" form="sync-batch" type="submit">Riprova sincronizzazione selezionati</button>
 </section>
 
@@ -547,6 +548,7 @@
                     <td>
                         {% if evento.entita_tipo %}
                         <strong class="admin-primary">{{ evento.entita_tipo }}</strong>
+                        {% if riferimenti_eventi.get(evento.id) %}<span>{{ riferimenti_eventi[evento.id] }}</span>{% endif %}
                         <span class="admin-secondary">ID {{ evento.entita_id }}</span>
                         {% else %}
                         —
@@ -570,7 +572,7 @@
                 <p><span>Quando</span> {{ evento.creato_il|local_timestamp }}</p>
                 <p><span>Messaggio</span> {{ evento.messaggio }}</p>
                 {% if evento.entita_tipo %}
-                <p><span>Riferimento</span> {{ evento.entita_tipo }} ID {{ evento.entita_id }}</p>
+                <p><span>Riferimento</span> {{ evento.entita_tipo }} #{{ evento.entita_id }}{% if riferimenti_eventi.get(evento.id) %} · {{ riferimenti_eventi[evento.id] }}{% endif %}</p>
                 {% endif %}
                 {% if evento.dettagli %}
                 <p><span>Dettagli</span> {{ evento.dettagli }}</p>
@@ -1187,17 +1189,16 @@
 </section>
 
 <!-- GESTIONE CORSI -->
-<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi">
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="nuovo-corso" id="admin-nuovo-corso">
     <div class="admin-section-heading">
         <div>
             <p class="admin-eyebrow">Calendario formazione</p>
-            <h2>Gestione corsi</h2>
+            <h2>Crea nuovo corso</h2>
         </div>
-        <span class="admin-total">{{ corsi|length }} corsi</span>
     </div>
 
     <div class="form-corso">
-        <h3>Aggiungi nuovo corso</h3>
+        <h3>Dati della nuova edizione</h3>
         <form method="POST" action="/admin/corso/aggiungi">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="form-riga">
@@ -1250,7 +1251,7 @@
                 </div>
                 <div class="form-gruppo">
                     <label for="course-place-admin">Luogo</label>
-                    <input type="text" name="luogo" id="course-place-admin" placeholder="Es. Milano, Fiera">
+                    <input type="text" name="luogo" id="course-place-admin" value="S.C. Studio Infermieristico">
                 </div>
             </div>
             <div class="form-gruppo">
@@ -1260,7 +1261,16 @@
             <button type="submit" class="btn">Aggiungi corso</button>
         </form>
     </div>
+</section>
 
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Edizioni programmate</p>
+            <h2>Gestione corsi</h2>
+        </div>
+        <span class="admin-total">{{ corsi|length }} corsi</span>
+    </div>
     {% if corsi %}
     <table class="tabella-admin">
         <thead>
@@ -1307,5 +1317,5 @@
 
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.4"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.5"></script>
 {% endblock %}

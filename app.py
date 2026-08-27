@@ -1784,7 +1784,7 @@ class IscrizioneCorso(db.Model):
     telefono = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(100), nullable=True)
     codice_fiscale = db.Column(db.String(32), nullable=False)
-    data_corso = db.Column(db.String(20), nullable=True)
+    data_corso = db.Column(db.String(255), nullable=True)
     partecipazione = db.Column(db.String(100), nullable=True)
     note = db.Column(db.Text, nullable=True)
     dati_extra = db.Column(db.Text, nullable=True)
@@ -2104,6 +2104,18 @@ def _nome_entita_admin(tipo, entita):
     if tipo == 'IncontroAccompagnamento':
         return f'Incontro {entita.numero}: {entita.tema}'
     return tipo
+
+
+def _riferimento_registro_evento(evento):
+    if not evento.entita_tipo or not evento.entita_id:
+        return None
+    entita = _entita_admin(evento.entita_tipo, evento.entita_id)
+    if entita is None:
+        return None
+    nome = _nome_entita_admin(evento.entita_tipo, entita)
+    if evento.entita_tipo == 'IscrizioneCorso' and entita.corso_titolo:
+        return f'{nome} · {entita.corso_titolo}'
+    return nome
 
 
 def _modelli_sincronizzabili():
@@ -4512,18 +4524,54 @@ def iscrizione_corso(corso_tipo):
             return redirect(url_for('conferma_iscrizione_corso', lista_attesa='1'))
         return redirect(url_for('conferma_iscrizione_corso'))
 
+    corso_id_preselezionato = request.args.get('corso_id', type=int)
+    opzioni_disponibili = {option['corso_id'] for option in corso['data_options']}
+    form_data = (
+        {'data_corso': str(corso_id_preselezionato)}
+        if corso_id_preselezionato in opzioni_disponibili
+        else {}
+    )
     return render_template(
         'iscrizione_corso.html',
         corso_tipo=corso_tipo,
         corso_slug=_slug_pubblico_corso(corso_tipo),
         corso=corso,
-        form_data={},
+        form_data=form_data,
     )
 
 
 @app.route('/iscrizione-corsi')
 def iscrizione_corsi():
-    return render_template('iscrizione_corsi.html')
+    oggi = local_today().isoformat()
+    corsi_in_calendario = Corso.query.filter(
+        Corso.tipo.in_(tuple(CORSI_ISCRIVIBILI)),
+        Corso.data >= oggi,
+        Corso.stato.in_(['Aperto', 'Completo']),
+        Corso.archiviato_il.is_(None),
+    ).order_by(Corso.data, Corso.ora).all()
+    edizioni_programmate = []
+    for corso in corsi_in_calendario:
+        corso_slug = _slug_pubblico_corso(corso.tipo)
+        iscrivibile = corso.stato == 'Aperto'
+        destinazione = url_for(
+            'iscrizione_corso',
+            corso_tipo=corso_slug,
+            **({'corso_id': corso.id} if iscrivibile else {}),
+        )
+        if iscrivibile:
+            ancora = 'iscrizione-individuale' if corso.tipo == 'bls-d' else 'modulo-iscrizione-corso'
+            destinazione = f'{destinazione}#{ancora}'
+        edizioni_programmate.append({
+            'corso': corso,
+            'data_label': _formatta_data_corso(corso.data),
+            'destinazione': destinazione,
+            'stato_label': 'Lista d’attesa' if iscrivibile and not _corso_ha_posti(corso) else corso.stato,
+            'iscrivibile': iscrivibile,
+        })
+    return render_template(
+        'iscrizione_corsi.html',
+        edizioni_programmate=edizioni_programmate,
+    )
 
 
 @app.route('/iscrizione-corsi/conferma')
@@ -5282,6 +5330,10 @@ def admin():
     call_sonno = CallSonno.query.order_by(CallSonno.data, CallSonno.ora).all()
     call_sonno_in_attesa_count = CallSonno.query.filter_by(stato='In attesa').count()
     registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
+    riferimenti_eventi = {
+        evento.id: _riferimento_registro_evento(evento)
+        for evento in [*errori_aperti, *registro_eventi]
+    }
     eventi_critici_count = RegistroEvento.query.filter(
         RegistroEvento.esito.in_(['errore', 'avviso']),
         RegistroEvento.creato_il >= utc_now() - timedelta(days=7)
@@ -5339,6 +5391,7 @@ def admin():
                            call_sonno_in_attesa_count=call_sonno_in_attesa_count,
                            formule_sonno=FORMULE_SONNO,
                            registro_eventi=registro_eventi,
+                           riferimenti_eventi=riferimenti_eventi,
                            eventi_critici_count=eventi_critici_count,
                            tipo_richiesta_labels=TIPI_RICHIESTA_CORSO,
                            corso_filtro_attivo=corso_filtro_attivo,
@@ -6638,11 +6691,11 @@ def aggiungi_corso():
     token = session.pop('_csrf_token', None)
     if not token or token != request.form.get('_csrf_token'):
         flash('Richiesta non valida. Riprova.', 'error')
-        return redirect(url_for('admin'))
+        return redirect(url_for('admin') + '#admin-nuovo-corso')
     tipo_corso = request.form.get('tipo', '').strip()
     if tipo_corso not in CORSI_ADMIN_TIPI:
         flash('Seleziona un tipo di corso valido.', 'error')
-        return redirect(url_for('admin'))
+        return redirect(url_for('admin') + '#admin-nuovo-corso')
     corso = Corso(
         titolo=request.form['titolo'],
         tipo=tipo_corso,
@@ -6658,7 +6711,7 @@ def aggiungi_corso():
     db.session.commit()
     if not crea_o_aggiorna_evento_calendario_corso(corso):
         flash('Corso salvato, ma Google Calendar non è stato aggiornato. Controlla il registro eventi.', 'error')
-    return redirect(url_for('admin'))
+    return redirect(url_for('admin') + '#admin-corsi')
 
 
 @app.route('/admin/percorso-accompagnamento/aggiungi', methods=['POST'])

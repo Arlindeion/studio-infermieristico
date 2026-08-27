@@ -34,7 +34,7 @@
     {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=5.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transitions.css') }}?v=1.8">
     {% if page_endpoint == 'homepage' %}
@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.1">
     {% endif %}
     {% if internal_page_mode %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.5">
     {% endif %}
     <script src="{{ url_for('static', filename='js/page-transitions.js') }}?v=1.11"></script>
     <script type="application/ld+json">
@@ -179,7 +179,7 @@
                 <span>infermieristiche</span>
             </a>
             <a href="/faq" class="site-nav__link{% if current_endpoint == 'faq' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'faq' %} data-nav-current aria-current="page"{% endif %}>FAQ</a>
-            <a href="{{ url_for('da_dove_parto') }}" class="site-nav__link{% if current_endpoint == 'da_dove_parto' %} is-current{% endif %}" data-nav-item{% if current_endpoint == 'da_dove_parto' %} data-nav-current aria-current="page"{% endif %}>Da dove parto?</a>
+            <a href="{{ url_for('da_dove_parto') }}" class="site-nav__link site-nav__link--guide{% if current_endpoint == 'da_dove_parto' %} is-current{% endif %}" data-nav-item data-conversion="header_quiz_orientamento"{% if current_endpoint == 'da_dove_parto' %} data-nav-current aria-current="page"{% endif %}><small>Quiz</small><strong>Da dove parto?</strong></a>
         </nav>
 
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-mobile-menu" aria-label="Apri il menu" data-menu-toggle>
@@ -218,6 +218,12 @@
             </a>
         </div>
 
+        <a href="{{ url_for('da_dove_parto') }}" class="mobile-nav__guide{% if current_endpoint == 'da_dove_parto' %} is-current{% endif %}" data-conversion="header_mobile_quiz_orientamento"{% if current_endpoint == 'da_dove_parto' %} aria-current="page"{% endif %}>
+            <small>Quiz di orientamento</small>
+            <strong>Da dove parto?</strong>
+            <span>Tre domande per trovare il percorso più adatto.</span>
+        </a>
+
         <div class="mobile-courses">
             <button type="button" aria-expanded="false" aria-controls="mobile-course-links" data-mobile-courses-toggle>
                 Esplora i corsi
@@ -236,7 +242,6 @@
             <a href="/chi-sono"{% if current_endpoint == 'chi_siamo' %} aria-current="page"{% endif %}>Chi sono</a>
             <a href="/prestazioni-infermieristiche"{% if nursing_active %} aria-current="page"{% endif %}>Prestazioni infermieristiche</a>
             <a href="/faq"{% if current_endpoint == 'faq' %} aria-current="page"{% endif %}>Domande frequenti</a>
-            <a href="{{ url_for('da_dove_parto') }}"{% if current_endpoint == 'da_dove_parto' %} aria-current="page"{% endif %}>Da dove parto?</a>
             <a href="{{ url_for('richiesta_azienda') }}"{% if current_endpoint in ['richiesta_azienda', 'richiesta_azienda_conferma'] %} aria-current="page"{% endif %}>Corsi per aziende e gruppi</a>
         </div>
 
@@ -294,8 +299,12 @@
 {% set sticky_href = '/prenota' %}
 {% set sticky_label = 'Prenota una prestazione' %}
 {% if endpoint == 'iscrizione_corso' %}
-    {% set sticky_href = '#richiesta-ricontatto' if not corso.has_open_dates else ('#iscrizione-individuale' if corso_tipo == 'bls-d' else '#modulo-iscrizione-corso') %}
-    {% set sticky_label = 'Vai al modulo' %}
+    {% if corso is defined %}
+        {% set sticky_href = '#richiesta-ricontatto' if not corso.has_open_dates else ('#iscrizione-individuale' if corso_tipo == 'bls-d' else '#modulo-iscrizione-corso') %}
+        {% set sticky_label = 'Vai al modulo' %}
+    {% else %}
+        {% set sticky_enabled = false %}
+    {% endif %}
 {% elif endpoint == 'iscrizione_corsi' %}
     {% set sticky_href = '#elenco-corsi' %}
     {% set sticky_label = 'Scegli il corso' %}

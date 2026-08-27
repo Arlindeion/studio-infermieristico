@@ -8,6 +8,33 @@
     <h1>Scegli il corso e controlla le prossime date</h1>
     <p class="sottotitolo">Scegli tra corsi sulla sicurezza, accompagnamento alla nascita e laboratori per l'infanzia. Se trovi una data aperta puoi richiedere l'iscrizione; altrimenti lascia i tuoi dati e ti ricontatterò alla prossima apertura.</p>
 
+    {% if edizioni_programmate %}
+    <section class="course-schedule" aria-labelledby="corsi-in-calendario">
+        <div class="section-heading section-heading-compact">
+            <p class="eyebrow">Date già organizzate</p>
+            <h2 id="corsi-in-calendario">Corsi e laboratori in calendario</h2>
+            <p>Scegli un’edizione per arrivare direttamente al modulo con la data già selezionata.</p>
+        </div>
+        <div class="course-schedule__list">
+            {% for item in edizioni_programmate %}
+            {% set corso = item.corso %}
+            <article class="course-schedule__row">
+                <time datetime="{{ corso.data }}">
+                    <strong>{{ item.data_label }}</strong>
+                    {% if corso.ora %}<span>ore {{ corso.ora }}</span>{% endif %}
+                </time>
+                <div>
+                    <span class="course-schedule__status">{{ item.stato_label }}</span>
+                    <h3>{{ corso.titolo }}</h3>
+                    <p>{{ corso.luogo or 'Sede da definire' }}{% if corso.durata_ore %} · {{ corso.durata_ore|int if corso.durata_ore == corso.durata_ore|int else corso.durata_ore }} ore{% endif %}</p>
+                </div>
+                <a href="{{ item.destinazione }}" class="link-azione" data-conversion="course_schedule_{{ corso.tipo }}">{{ 'Vai all’iscrizione' if item.iscrivibile else 'Vedi il corso' }}</a>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <h2 class="visually-hidden" id="come-funzionano-corsi">Come funzionano le iscrizioni</h2>
     <div class="course-overview-strip" aria-labelledby="come-funzionano-corsi">
         <article>

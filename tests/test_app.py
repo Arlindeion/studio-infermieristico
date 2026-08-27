@@ -105,6 +105,16 @@ def test_errore_404_usa_layout_pubblico_e_non_viene_indicizzato(client):
     assert 'Torna alla homepage' in resp.text
 
 
+def test_pagina_500_del_modulo_corsi_non_richiede_il_contesto_del_corso(app):
+    with app.test_request_context('/iscrizione-corsi/disostruzione-pediatrica'):
+        html, status_code = app_module.server_error(RuntimeError('Errore database simulato'))
+
+    assert status_code == 500
+    assert 'Non è stato possibile completare la richiesta' in html
+    assert 'Torna alla homepage' in html
+    assert 'class="sticky-prenota"' not in html
+
+
 @pytest.mark.parametrize('route', [
     '/conferma',
     '/prenota-call-sonno/conferma',
@@ -720,6 +730,17 @@ def test_header_elenca_tutte_le_tipologie_di_corso(client):
     assert 'Laboratori alimentari, gioco e sviluppo' in resp.text
 
 
+def test_header_mette_in_evidenza_il_quiz_di_orientamento(client):
+    resp = client.get('/')
+
+    assert resp.status_code == 200
+    assert 'site-nav__link site-nav__link--guide' in resp.text
+    assert 'data-conversion="header_quiz_orientamento"' in resp.text
+    assert 'class="mobile-nav__guide' in resp.text
+    assert 'Quiz di orientamento' in resp.text
+    assert 'Tre domande per trovare il percorso più adatto.' in resp.text
+
+
 def test_comportamento_javascript_header():
     project_root = Path(app_module.__file__).resolve().parent
     test_file = project_root / 'tests' / 'js' / 'menu-mobile.test.js'
@@ -999,6 +1020,49 @@ def test_elenco_corsi_collega_immagini_titoli_e_cta(client):
     assert '>Richiedi iscrizione<' not in directory_html
 
 
+def test_elenco_corsi_mostra_edizioni_programmate_e_preseleziona_il_modulo(client):
+    corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        titolo='Disostruzione settembre',
+        data='2099-09-18',
+        ora='18:30',
+        luogo='S.C. Studio Infermieristico',
+    )
+    with flask_app.app_context():
+        db.session.add(Corso(
+            titolo='Laboratorio completo',
+            tipo='laboratorio-infanzia',
+            data='2099-09-20',
+            ora='10:00',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=2,
+            stato='Completo',
+        ))
+        db.session.add(Corso(
+            titolo='Corso privato',
+            tipo='bls-d',
+            data='2099-09-21',
+            ora='09:00',
+            luogo='Azienda',
+            durata_ore=5,
+            stato='Chiuso',
+        ))
+        db.session.commit()
+
+    resp = client.get('/iscrizione-corsi')
+
+    assert resp.status_code == 200
+    assert 'Corsi e laboratori in calendario' in resp.text
+    assert 'Disostruzione settembre' in resp.text
+    assert '18/09/2099' in resp.text
+    assert 'Laboratorio completo' in resp.text
+    assert 'Corso privato' not in resp.text
+    assert f'/iscrizione-corsi/disostruzione-pediatrica?corso_id={corso_id}#modulo-iscrizione-corso' in resp.text
+
+    modulo = client.get(f'/iscrizione-corsi/disostruzione-pediatrica?corso_id={corso_id}')
+    assert f'<option value="{corso_id}" selected>' in modulo.text
+
+
 def test_testi_pubblici_mantengono_il_tu_senza_passare_al_voi(client):
     routes = ['/', '/chi-sono', '/consulenze-online', '/prenota-call-sonno']
 
@@ -1099,7 +1163,7 @@ def test_pagina_disostruzione_presenta_contenuti_e_foto_del_corso(client):
     assert 'Selene nello studio' not in resp.text
     assert 'Per approfondire:' not in resp.text
     assert 'href="#richiesta-ricontatto"' in resp.text
-    assert 'Vai al modulo' in resp.text
+    assert 'data-conversion="corso_disostruzione_modulo">Iscriviti ora</a>' in resp.text
     assert resp.text.count('<h1>') == 1
 
 
@@ -1984,6 +2048,80 @@ def test_admin_mostra_i_timestamp_persistiti_nel_fuso_italiano(client):
     assert '26/08/2026' in response.text
     assert '20:46 CEST' in response.text
     assert '18:46' not in response.text
+
+
+def test_dettaglio_appuntamento_esplicita_stato_pratica_e_calendar(client):
+    _login_admin(client)
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio='Medicazione semplice',
+            data='2099-09-18',
+            ora='10:00',
+            stato='Confermato',
+            sincronizzazione='mancante',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+
+    response = client.get(f'/admin/pratica/Appuntamento/{appuntamento_id}')
+
+    assert response.status_code == 200
+    assert '<small>Stato appuntamento</small><span class="badge">Confermato</span>' in response.text
+    assert '<small>Google Calendar</small><span class="sync-chip sync-mancante">mancante</span>' in response.text
+
+
+def test_admin_mostra_nome_accanto_all_id_nei_log_e_negli_errori(client):
+    _login_admin(client)
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Ada Persona',
+            telefono='3331234567',
+            email='ada@example.com',
+            servizio='Medicazione semplice',
+            data='2099-09-18',
+            ora='10:00',
+        )
+        db.session.add(appuntamento)
+        db.session.flush()
+        evento = RegistroEvento(
+            categoria='google_calendar',
+            esito='errore',
+            messaggio='Sincronizzazione non riuscita.',
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento.id,
+        )
+        db.session.add(evento)
+        db.session.commit()
+        riferimento = f'Appuntamento #{appuntamento.id} · Ada Persona'
+
+    response = client.get('/admin#admin-errori')
+
+    assert response.status_code == 200
+    assert riferimento in response.text
+    assert '<strong class="admin-primary">Appuntamento</strong>' in response.text
+    assert '<span>Ada Persona</span>' in response.text
+
+
+def test_admin_separa_nuovo_corso_e_propone_il_luogo_dello_studio(client):
+    _login_admin(client)
+
+    response = client.get('/admin#admin-nuovo-corso')
+
+    assert response.status_code == 200
+    assert 'data-admin-target="nuovo-corso"' in response.text
+    nuovo_corso = re.search(
+        r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="nuovo-corso" id="admin-nuovo-corso">(.*?)</section>',
+        response.text,
+        re.DOTALL,
+    ).group(1)
+    assert '<h2>Crea nuovo corso</h2>' in nuovo_corso
+    assert 'action="/admin/corso/aggiungi"' in nuovo_corso
+    assert 'id="course-place-admin" value="S.C. Studio Infermieristico"' in nuovo_corso
+    assert '<table' not in nuovo_corso
 
 
 # ─── Integrazione Google Calendar (Arzamed) ───

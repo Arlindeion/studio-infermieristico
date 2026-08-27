@@ -20,8 +20,8 @@
             </p>
         </div>
         <div class="admin-detail-statuses">
-            {% if entita.stato %}<span class="badge">{{ entita.stato }}</span>{% endif %}
-            {% if entita.sincronizzazione %}<span class="sync-chip sync-{{ entita.sincronizzazione }}">{{ entita.sincronizzazione|replace('_', ' ') }}</span>{% endif %}
+            {% if entita.stato %}<span class="admin-detail-status"><small>{{ 'Stato appuntamento' if tipo == 'Appuntamento' else 'Stato pratica' }}</small><span class="badge">{{ entita.stato }}</span></span>{% endif %}
+            {% if entita.sincronizzazione %}<span class="admin-detail-status"><small>Google Calendar</small><span class="sync-chip sync-{{ entita.sincronizzazione }}">{{ entita.sincronizzazione|replace('_', ' ') }}</span></span>{% endif %}
         </div>
     </header>
 

@@ -67,6 +67,12 @@ def _column_names(database_path, table_name):
     return {row[1] for row in rows}
 
 
+def _column_type(database_path, table_name, column_name):
+    with sqlite3.connect(database_path) as connection:
+        rows = connection.execute(f'PRAGMA table_info({table_name})').fetchall()
+    return next(row[2] for row in rows if row[1] == column_name)
+
+
 def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     database_path = tmp_path / 'empty.sqlite'
     env = _migration_env(database_path)
@@ -83,6 +89,7 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'duration_minutes' in appointment_columns
     assert 'scadenza_gestione' in appointment_columns
     assert 'sincronizzazione' in appointment_columns
+    assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
@@ -124,7 +131,60 @@ def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):
         ).fetchone()[0]
 
     assert row == ('Persona Test', 30)
-    assert revision == 'd91e6b4f2a30'
+    assert revision == 'e2f4a6b8c901'
+
+
+def test_upgrade_estende_data_corso_e_preserva_righe_esistenti(tmp_path):
+    database_path = tmp_path / 'pre_data_corso_length.sqlite'
+    env = _migration_env(database_path)
+
+    _run_flask(env, 'db', 'upgrade', 'd91e6b4f2a30')
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO iscrizione_corso
+                (corso_tipo, corso_titolo, nome, telefono, codice_fiscale,
+                 data_corso, tipo_richiesta, posti, consenso_privacy,
+                 consenso_immagini, stato, posti_richiesti)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                'disostruzione-pediatrica',
+                'Disostruzione pediatrica',
+                'Persona Test',
+                '0000000000',
+                'TSTPRS80A01G482X',
+                '02/01/2027',
+                'richiesta_iscrizione',
+                1,
+                1,
+                0,
+                'Nuova',
+                1,
+            ),
+        )
+        connection.commit()
+
+    _run_flask(env, 'db', 'upgrade')
+
+    etichetta = '02/01/2027 - ore 10:00 - S.C. Studio Infermieristico'
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            'UPDATE iscrizione_corso SET data_corso = ? WHERE nome = ?',
+            (etichetta, 'Persona Test'),
+        )
+        connection.commit()
+        data_corso = connection.execute(
+            'SELECT data_corso FROM iscrizione_corso WHERE nome = ?',
+            ('Persona Test',),
+        ).fetchone()[0]
+        revision = connection.execute(
+            'SELECT version_num FROM alembic_version'
+        ).fetchone()[0]
+
+    assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
+    assert data_corso == etichetta
+    assert revision == 'e2f4a6b8c901'
 
 
 def test_baseline_adotta_schema_rappresentativo_senza_perdere_dati(tmp_path):
@@ -166,4 +226,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == 'd91e6b4f2a30'
+    assert revision == 'e2f4a6b8c901'

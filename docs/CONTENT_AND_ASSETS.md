@@ -1,6 +1,6 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 4 agosto 2026.
+Ultimo aggiornamento: 27 agosto 2026.
 
 > Aggiornamento 13 agosto 2026: TikTok è accantonato fino a data da destinarsi. Le specifiche e le consegne TikTok presenti qui restano materiale storico o riutilizzabile, non un impegno corrente né un gate di lancio.
 
@@ -92,6 +92,8 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 ## CTA approvate
 
 - `Scopri i corsi`
+- `Guarda date e corsi` in homepage apre l’elenco delle edizioni future già organizzate; da ogni riga `Vai all’iscrizione` apre il modulo del corso con la data preselezionata.
+- `Iscriviti ora` è la CTA principale nella hero del corso di disostruzione pediatrica e tagli sicuri.
 - `Lascia il tuo interesse` apre il modulo unico per le prossime date quando il calendario è vuoto; l'azione finale del modulo è `Invia il tuo interesse`.
 - `Scopri la consulenza` nello snap sonno della homepage apre direttamente il confronto tra le tre formule in `/consulenze-online#formule`.
 - `Scopri la consulenza del sonno`
@@ -107,6 +109,7 @@ La pagina `Chi sono` termina con corsi e consulenza del sonno come scelte princi
 ## Microtesti dell'header
 
 - I due accessi principali sono `In studio · Corsi` e `Online · 0–12 mesi · Consulenza sonno`.
+- Il quiz `Da dove parto?` usa l’etichetta `Quiz` su desktop e `Quiz di orientamento` nel menu mobile, con la spiegazione `Tre domande per trovare il percorso più adatto.`.
 - Il pannello corsi introduce l'offerta con `Imparare insieme, provare davvero.` e rimanda alla panoramica con `Scopri tutti i corsi`.
 - Il menu mobile si apre con `Da dove vuoi partire?` e `Scegli il percorso più vicino a ciò che serve oggi.`.
 - `Prestazioni infermieristiche`, `Chi sono` e `Domande frequenti` restano collegamenti secondari, sempre accessibili.

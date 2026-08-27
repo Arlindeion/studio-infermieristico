@@ -350,6 +350,56 @@
     max-width: 14ch;
 }
 
+.page-iscrizione-corsi .course-schedule {
+    border-top: 3px solid var(--rosso-cuore);
+    margin: clamp(2.5rem, 6vw, 4.5rem) 0;
+    padding-top: clamp(1.4rem, 3vw, 2rem);
+}
+
+.page-iscrizione-corsi .course-schedule__list {
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    margin-top: 1.5rem;
+}
+
+.page-iscrizione-corsi .course-schedule__row {
+    align-items: center;
+    border-top: 1px solid var(--verde-scuro-a16);
+    display: grid;
+    gap: clamp(1rem, 3vw, 2rem);
+    grid-template-columns: minmax(125px, 0.65fr) minmax(0, 2fr) auto;
+    padding: 1.15rem 0;
+}
+
+.page-iscrizione-corsi .course-schedule__row time {
+    color: var(--verde-scuro);
+    display: grid;
+    gap: 0.18rem;
+}
+
+.page-iscrizione-corsi .course-schedule__row time strong {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+}
+
+.page-iscrizione-corsi .course-schedule__row time span,
+.page-iscrizione-corsi .course-schedule__row p {
+    color: var(--grigio);
+    font-size: 0.88rem;
+}
+
+.page-iscrizione-corsi .course-schedule__row h3,
+.page-iscrizione-corsi .course-schedule__row p {
+    margin: 0.18rem 0 0;
+}
+
+.page-iscrizione-corsi .course-schedule__status {
+    color: var(--rosso-cuore);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
 .page-iscrizione-corsi .course-overview-strip {
     background: transparent;
     border: 0;
@@ -661,6 +711,15 @@
         justify-self: start;
     }
 
+    .page-iscrizione-corsi .course-schedule__row {
+        grid-template-columns: 125px minmax(0, 1fr);
+    }
+
+    .page-iscrizione-corsi .course-schedule__row > .link-azione {
+        grid-column: 2;
+        justify-self: start;
+    }
+
 }
 
 @media (max-width: 620px) {
@@ -727,6 +786,15 @@
     }
 
     .page-iscrizione-corsi .course-directory-row > .link-azione {
+        grid-column: 1;
+    }
+
+    .page-iscrizione-corsi .course-schedule__row {
+        align-items: start;
+        grid-template-columns: 1fr;
+    }
+
+    .page-iscrizione-corsi .course-schedule__row > .link-azione {
         grid-column: 1;
     }
 

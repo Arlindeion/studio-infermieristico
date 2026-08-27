@@ -711,6 +711,33 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: i timestamp storici già prodotti dal servizio Render vengono interpretati come UTC e appaiono corretti senza migrazione o riscrittura distruttiva. `ZoneInfo` applica le regole CET/CEST; i test coprono il salto primaverile, le due diverse 02:30 autunnali e il rendering admin. Le scadenze relative e i confronti tecnici usano UTC, mentre le regole del calendario operativo usano la data locale italiana.
 - Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/admin_questionario_sonno.html`, `templates/accetta_lista_attesa.html`, `tests/test_app.py`, `OPERATIONS.md`, `ROADMAP.md`.
 
+## D-084 — Il collaudo reale chiude integrazioni, prestazioni e resilienza condivisa
+
+- Data: 2026-08-26.
+- Stato: approvata e verificata nella preproduzione privata.
+- Decisione: considerare superato il blocco P0 relativo a SMTP reale, Google Calendar, flusso delle prestazioni sanitarie e resilienza delle integrazioni condivise, sulla base del collaudo controllato svolto dal 24 al 26 agosto 2026 con dati sintetici. In `ROADMAP.md` gli step 8, 9 e 13 passano a `Completato`.
+- Motivo: la prova ha verificato consegna e tracciamento delle email, salvataggio locale durante un guasto SMTP, creazione, modifica e cancellazione Calendar senza duplicati, fuso `Europe/Rome`, rilevazione e decisione su modifiche o cancellazioni esterne, recupero automatico dopo indisponibilità e conservazione del dato principale. La build precedente aveva prodotto un `502`, errori TLS e crash del worker con code 139; dopo D-080, D-081 e D-082 il medesimo perimetro è stato riprovato con esito positivo e autoretry reale `1/1` riuscito.
+- Conseguenze: le richieste di deploy e collaudo reale ancora indicate negli stati storici di D-080, D-081 e D-082 risultano chiuse da questa evidenza, senza rimuovere la traccia del fallimento iniziale. Tutti gli appuntamenti sintetici sono stati eliminati; log tecnici e audit possono restare come evidenza. Questo esito non completa i flussi specifici di corsi o consulenza sonno, non valida privacy, testi legali, GA4, dominio o campagna e non autorizza `APP_ENV=production`, rimozione di Basic Auth/`noindex`, DNS o apertura pubblica. La verifica post-deploy del timestamp admin prevista da D-083 resta separata.
+- Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, D-071, D-079, D-080, D-081, D-082, D-083.
+
+## D-085 — Admin e directory corsi mostrano il contesto operativo
+
+- Data: 2026-08-27.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: distinguere nella scheda appuntamento lo stato della pratica dallo stato Google Calendar; mostrare nei log e negli errori il nome della persona, del corso o dell’attività accanto all’ID; separare nell’admin la creazione di una nuova edizione dalla gestione corsi e proporre `S.C. Studio Infermieristico` come luogo iniziale modificabile. Nel sito pubblico il quiz `Da dove parto?` riceve un richiamo dedicato nell’header, la CTA della disostruzione diventa `Iscriviti ora` e la directory corsi apre con tutte le edizioni pubbliche future già organizzate, collegate al modulo con data preselezionata.
+- Motivo: stati e identificativi privi di contesto rallentano la gestione quotidiana; nello stesso modo, una panoramica per sole tipologie obbliga chi arriva dalla homepage a cercare di nuovo una data già pubblicata.
+- Conseguenze: non cambia lo schema dati. I riferimenti dei log vengono risolti al momento della visualizzazione e, se la pratica non esiste più, resta disponibile l’ID storico. La lista pubblica include edizioni future `Aperto` o `Completo`, esclude corsi privati, annullati o archiviati e preseleziona soltanto date ancora aperte. Il collaudo con dati sintetici ha verificato assenza di overflow, leggibilità del richiamo quiz, lista edizioni, pannello nuovo corso, riferimenti negli errori ed etichette di stato appuntamento/Calendar.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_dettaglio.html`, `templates/base.html`, `templates/iscrizione_corsi.html`, `templates/iscrizione_corso.html`, `static/css/admin.css`, `static/css/base.css`, `static/css/internal-pages.css`, `static/js/admin-azioni.js`, `CONTENT_AND_ASSETS.md`, `ROADMAP.md`, `tests/test_app.py`.
+
+## D-086 — L’etichetta dell’edizione corso è un dato descrittivo esteso
+
+- Data: 2026-08-27.
+- Stato: approvata e implementata localmente; deploy della migrazione e ripetizione del collaudo PostgreSQL richiesti.
+- Decisione: portare `iscrizione_corso.data_corso` da `VARCHAR(20)` a `VARCHAR(255)` nel modello e tramite la revisione Alembic `e2f4a6b8c901`. Rendere inoltre la sticky bar di `base.html` indipendente dal contesto della pagina originaria: quando una pagina 500 deriva da `iscrizione_corso` ma non dispone della variabile `corso`, la barra viene disattivata.
+- Motivo: `data_corso` conserva un’etichetta leggibile composta da data, ora e luogo, oltre a valori come `Da ricontattare per prossime date` e `Percorso di 9 incontri`; il limite di 20 caratteri causava `StringDataRightTruncation` al primo inserimento reale su PostgreSQL. Durante lo stesso errore, il template 500 tentava di leggere `corso.has_open_dates` e generava un secondo errore Jinja.
+- Conseguenze: l’upgrade amplia la colonna senza trasformare né troncare i valori esistenti. Il downgrade a 20 caratteri non è sicuro dopo il salvataggio di etichette più lunghe e può richiedere una bonifica esplicita dei dati. Prima di riprendere il collaudo corsi bisogna distribuire il codice, applicare `flask db upgrade`, confermare la revisione `e2f4a6b8c901` con `flask db check` e ripetere l’iscrizione singola che aveva prodotto HTTP 500.
+- Collegamenti: `app.py`, `templates/base.html`, `migrations/versions/e2f4a6b8c901_estende_data_corso.py`, `tests/test_app.py`, `tests/test_migrations.py`, `OPERATIONS.md`, `ROADMAP.md`, D-085.
+
 ## Modello per nuove decisioni
 
 ```markdown

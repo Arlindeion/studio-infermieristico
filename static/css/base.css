@@ -212,6 +212,39 @@ p {
     white-space: normal;
 }
 
+.site-nav__link--guide {
+    align-content: center;
+    background: var(--carta-luminosa-a72);
+    border: 1px solid var(--verde-scuro-a18);
+    border-left: 3px solid var(--rosso-cuore);
+    box-shadow: 0 6px 14px var(--verde-scuro-a12);
+    display: grid;
+    gap: 0.12rem;
+    line-height: 1;
+    min-height: 58px;
+}
+
+.site-nav__link--guide small {
+    color: var(--rosso-cuore);
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.site-nav__link--guide strong {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+}
+
+.site-nav__link--guide:hover,
+.site-nav__link--guide:focus-visible {
+    background: var(--carta-luminosa-a92);
+    border-color: var(--verde-scuro-a20);
+    border-left-color: var(--rosso-cuore);
+    transform: translateY(-1px);
+}
+
 .site-nav__link.is-current {
     color: var(--verde-scuro);
 }
@@ -727,6 +760,36 @@ button.site-nav__pillar {
         color: var(--grigio);
     }
 
+    .mobile-nav__guide {
+        background: var(--rosa-chiaro);
+        border: 1px solid var(--corallo-medio-a22);
+        border-left: 4px solid var(--rosso-cuore);
+        border-radius: 10px;
+        color: var(--verde-scuro);
+        display: grid;
+        gap: 0.15rem;
+        margin-top: 0.75rem;
+        padding: 0.85rem 1rem;
+    }
+
+    .mobile-nav__guide small {
+        color: var(--rosso-cuore);
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .mobile-nav__guide strong {
+        font-family: var(--font-display);
+        font-size: 1.08rem;
+    }
+
+    .mobile-nav__guide span {
+        color: var(--grigio);
+        font-size: 0.8rem;
+    }
+
     .mobile-courses {
         border-bottom: 1px solid var(--verde-scuro-a14);
         margin-top: 0.9rem;
@@ -879,6 +942,7 @@ button.site-nav__pillar {
     .site-brand__mark img,
     .site-nav__thread,
     .site-nav__link,
+    .mobile-nav__guide,
     .site-nav__pillar,
     .site-nav__pillar svg,
     .course-menu,

@@ -1540,7 +1540,13 @@
 }
 
 .admin-error-row label strong,
-.admin-error-row label time { grid-column: 2; }
+.admin-error-row label time,
+.admin-error-reference { grid-column: 2; }
+.admin-error-reference {
+    color: var(--verde-scuro);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
 .admin-error-resolution { display: flex; gap: 0.6rem; }
 .admin-error-resolution input { flex: 1; }
 .admin-error-decision-note {
@@ -1677,6 +1683,17 @@
 .admin-detail-header { margin: 1.5rem 0; }
 .admin-detail-header h1 { margin: 0; }
 .admin-detail-header p { margin: 0.25rem 0 0; }
+.admin-detail-statuses { align-items: flex-end; }
+.admin-detail-status {
+    display: grid;
+    gap: 0.3rem;
+    justify-items: start;
+}
+.admin-detail-status small {
+    color: var(--grigio);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
 .admin-kicker,
 .admin-back { color: var(--verde-scuro); font-weight: 700; }
 .admin-detail-grid {

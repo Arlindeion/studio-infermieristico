@@ -123,10 +123,11 @@ inserito nel repository.
 Al controllo del 23 agosto il secret file non era ancora presente. I log live
 mostravano tentativi di autenticazione Calendar riferiti esclusivamente al file
 mancante quando veniva aperta l'agenda; non sono stati osservati indirizzi email
-o altri dati personali nei messaggi. Il difetto è stato corretto nel codice:
-con `APP_ENV=staging` e `STAGING_LIVE_INTEGRATIONS=false` l'app non autentica,
-legge o scrive su Calendar. La correzione resta da distribuire; gli invii email
-sono comunque soppressi.
+o altri dati personali nei messaggi. Quel rilievo è una fotografia storica:
+tra il 24 e il 26 agosto il secret file e la configurazione Zimbra sono stati
+attivati intenzionalmente nella preproduzione privata e usati nel collaudo reale
+descritto sotto. Con `APP_ENV=staging` e `STAGING_LIVE_INTEGRATIONS=false`
+l'app continua a non autenticare, leggere o scrivere su Calendar.
 
 Il 30 luglio 2026 sono stati verificati dal pannello Google il progetto Cloud,
 Google Calendar API abilitata, l'identità tecnica dedicata e la relativa chiave.
@@ -284,6 +285,37 @@ Senza l'opt-in esplicito la preproduzione continua a richiedere
 server `smtp.mail.ovh.net`, porta 587, TLS attivo, SSL disattivo, casella
 mittente approvata e presenza del secret file Google, senza mostrare valori
 sensibili.
+
+#### Esito del collaudo P0 del 24–26 agosto 2026
+
+La preproduzione privata è stata attivata intenzionalmente con dati e
+destinatari sintetici. Il collaudo reale ha verificato:
+
+- ricezione su Zimbra della notifica amministrativa e della conferma al
+  paziente, con mittente, destinatario, oggetto, servizio, data, ora, durata,
+  testo e tracciamento nell'admin corretti;
+- salvataggio e conferma della pratica anche con password SMTP temporaneamente
+  invalida, registrazione separata dei due errori email e nessun rollback del
+  dato principale;
+- creazione, modifica e cancellazione dello stesso evento Calendar, inclusa
+  una data invernale a `Europe/Rome`, senza slittamenti o duplicati;
+- rilevazione di una modifica esterna, confronto sito/Calendar e ripristino dei
+  dati locali tramite decisione amministrativa;
+- degradazione dopo indisponibilità Calendar, persistenza locale e retry
+  automatico reale del 25 agosto alle 19:19 con esito `1/1` riuscito, senza
+  duplicati;
+- riconoscimento di `status="cancelled"` come eliminazione esterna, avviso
+  prioritario, ripristino con nuovo evento oppure annullamento ordinario con
+  email al paziente.
+
+Il primo test Calendar della build precedente resta registrato come fallimento:
+un ID errato con accessi ripetuti aveva prodotto errori TLS, `502`, code 139 e
+riavvio del worker. Le prove successive a D-080, D-081 e D-082 hanno superato il
+perimetro corretto. Al termine tutti gli appuntamenti sintetici sono stati
+eliminati; log tecnici e audit restano conservabili come evidenza. D-084 chiude
+gli step 8, 9 e 13 della roadmap, ma non autorizza l'apertura pubblica e non
+sostituisce i collaudi specifici dei flussi corsi e consulenza sonno. Lo stato
+corrente del pannello dopo la prova va riconciliato prima del prossimo deploy.
 
 Prima dell'apertura pubblica la produzione richiede inoltre:
 
@@ -459,10 +491,10 @@ successivi non ne dipendono.
 
 ## Database e migrazioni
 
-La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente è
-`d91e6b4f2a30`. Le revisioni aggiungono qualificazione, UTM e stato dei
+La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente del repository è
+`e2f4a6b8c901`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
 promemoria email alla call sonno, rimuovono i campi del precedente promemoria
-WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin e normalizzano le difformità dei database SQLite legacy. Un nuovo
+WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin, normalizzano le difformità dei database SQLite legacy e portano `iscrizione_corso.data_corso` da 20 a 255 caratteri per contenere data, ora e luogo dell’edizione. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:
 
 ```bash
@@ -656,7 +688,7 @@ Dal 13 agosto 2026 il codice locale include:
 - conversione in corso privato con stato `Chiuso`, visibile in agenda e sincronizzato su Calendar ma escluso dalle date pubbliche;
 - quiz `/da-dove-parto` eseguito solo nel browser, senza richieste di rete o persistenza delle risposte, con passaggi avanti e indietro che riusano direzione, durata e giunzione visiva delle transizioni laterali del sito.
 
-La tabella è introdotta dalla revisione Alembic `c84f2d1a9e70`, successiva a `a13d8f7c2b40`. Prima di distribuire il codice eseguire `flask db upgrade` su una copia o su un database vuoto, quindi `flask db check`. Il collaudo con SMTP, Google Calendar e gli eventi provenienti da Arzamed resta un gate esterno separato: i test locali non provano lo stato live.
+La tabella è introdotta dalla revisione Alembic `c84f2d1a9e70`, successiva a `a13d8f7c2b40`. Prima di distribuire il codice eseguire `flask db upgrade` su una copia o su un database vuoto, quindi `flask db check`. D-084 prova l'infrastruttura SMTP/Calendar condivisa nella preproduzione privata, ma non il flusso organizzativo qui descritto: conversione, capienza, comunicazioni e Calendar del corso riservato conservano un collaudo specifico.
 
 ## Dati esclusi dalla documentazione
 

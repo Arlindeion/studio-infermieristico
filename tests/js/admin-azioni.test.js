@@ -23,6 +23,11 @@ test('registra una sola volta i collegamenti rapidi tra sezioni admin', () => {
     assert.doesNotMatch(funzioneCambioPannello[0], /data-admin-jump|addEventListener/);
 });
 
+test('apre il pannello separato per creare un nuovo corso', () => {
+    assert.match(script, /'#admin-nuovo-corso': 'nuovo-corso'/);
+    assert.match(script, /'nuovo-corso': '#admin-nuovo-corso'/);
+});
+
 test('apre fuori dal calendario i dettagli dopo un secondo continuato', () => {
     assert.match(script, /const HOVER_DELAY_MS = 1000;/);
     assert.match(script, /document\.body\.appendChild\(anteprima\)/);
