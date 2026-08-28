@@ -972,9 +972,7 @@ section[data-home-scene] {
 }
 
 .home-instagram-feed {
-    max-height: 500px;
     min-height: 360px;
-    overflow: hidden;
 }
 
 .home-depth-ready [data-home-scene].home-depth-scene .home-instagram-feed {
@@ -1713,7 +1711,6 @@ section[data-home-scene] {
     }
 
     .home-instagram-feed {
-        max-height: 500px;
         min-height: 320px;
     }
 }

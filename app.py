@@ -111,6 +111,7 @@ talisman = Talisman(
         'img-src': [
             "'self'",
             "data:",
+            "https://behold.pictures",
             "https://cdn2.behold.pictures",
             "https://*.cdninstagram.com",
             "https://www.google-analytics.com",

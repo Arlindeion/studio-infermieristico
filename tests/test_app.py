@@ -5703,11 +5703,17 @@ def test_calendario_homepage_usa_controlli_accessibili():
 def test_homepage_non_forza_il_layout_del_widget_instagram():
     stylesheet = (Path(app_module.__file__).resolve().parent / 'static' / 'css' / 'homepage.css').read_text()
     regola_widget = re.search(r'\.home-instagram-feed behold-widget\s*\{([^}]*)\}', stylesheet)
+    regole_contenitore = re.findall(r'\.home-instagram-feed\s*\{([^}]*)\}', stylesheet)
 
     assert regola_widget is not None
     assert 'transform:' not in regola_widget.group(1)
     assert 'width:' not in regola_widget.group(1)
     assert 'height:' not in regola_widget.group(1)
+    assert regole_contenitore
+    altezze_massime = re.findall(r'max-height:\s*([^;]+)', '\n'.join(regole_contenitore))
+    assert all(altezza.strip() == 'none' for altezza in altezze_massime)
+    assert all('overflow: hidden' not in regola for regola in regole_contenitore)
+
 
 def _csrf_richiesta_azienda(client):
     response = client.get('/aziende-e-gruppi')

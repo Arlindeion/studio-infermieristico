@@ -20,7 +20,7 @@
     display: grid;
     gap: clamp(2.5rem, 6vw, 5.5rem);
     grid-template-columns: minmax(0, 1.05fr) minmax(330px, 0.72fr);
-    padding-top: clamp(4.5rem, 8vw, 7rem);
+    padding-top: clamp(2.75rem, 5vw, 4.5rem);
 }
 
 .sleep-hero h1 {
