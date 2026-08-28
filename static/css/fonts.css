@@ -1,0 +1,49 @@
+/* Font serviti localmente. I file e le licenze sono in static/fonts/. */
+
+@font-face {
+    font-family: 'Atkinson Hyperlegible';
+    src: url('../fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Atkinson Hyperlegible';
+    src: url('../fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Bricolage Grotesque';
+    src: url('../fonts/bricolage-grotesque/BricolageGrotesque-Medium.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Bricolage Grotesque';
+    src: url('../fonts/bricolage-grotesque/BricolageGrotesque-SemiBold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Bricolage Grotesque';
+    src: url('../fonts/bricolage-grotesque/BricolageGrotesque-Bold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Bricolage Grotesque';
+    src: url('../fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}

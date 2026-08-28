@@ -1838,7 +1838,44 @@
 .admin-sync-diff,
 .admin-duplicate-warning,
 .admin-audit,
+.admin-privacy-history,
 .admin-person-history { margin-bottom: 1rem; }
+.admin-consent-list { display: grid; gap: 0.75rem; }
+.admin-consent-item {
+    align-items: center;
+    border: 1px solid var(--nero-a07);
+    border-radius: 10px;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.9rem;
+}
+.admin-consent-item h3 { margin: 0.35rem 0; }
+.admin-consent-item p { margin: 0.2rem 0; }
+.admin-consent-item .admin-inline-link {
+    align-items: center;
+    color: var(--verde-scuro);
+    display: inline-flex;
+    font-weight: 700;
+    min-height: 44px;
+}
+.admin-consent-status {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.3rem 0.55rem;
+}
+.admin-consent-status.is-accepted {
+    background: var(--verde-chiaro);
+    color: var(--verde-scuro);
+}
+.admin-consent-status.is-unrecorded {
+    background: var(--corallo-tenue-a14);
+    border-color: var(--corallo-tenue-a38);
+    color: var(--rosso-cuore);
+}
 .admin-history-links { display: grid; gap: 0.5rem; }
 .admin-history-links a { background: var(--verde-chiaro); border-radius: 8px; color: var(--testo); display: grid; padding: 0.7rem; text-decoration: none; }
 .admin-history-links span,
@@ -1868,7 +1905,8 @@
     .admin-fact-wide { grid-column: auto; }
     .admin-request-row,
     .admin-task-row,
-    .admin-detail-header { align-items: stretch; flex-direction: column; }
+    .admin-detail-header,
+    .admin-consent-item { align-items: stretch; flex-direction: column; }
     .admin-patient-contact-status { justify-content: flex-start; }
     .admin-error-resolution { flex-direction: column; }
     .admin-desktop-only { display: none; }

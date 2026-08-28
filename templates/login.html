@@ -8,9 +8,9 @@
     <link rel="icon" href="{{ url_for('static', filename='img/favicon-32.png') }}?v=1" type="image/png" sizes="32x32">
     <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}?v=1" sizes="16x16 32x32 48x48">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}?v=1" sizes="180x180">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="{{ url_for('static', filename='fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=4.5">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.3">

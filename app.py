@@ -99,7 +99,7 @@ talisman = Talisman(
     app,
     content_security_policy={
         'default-src': "'self'",
-        'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        'style-src': ["'self'", "'unsafe-inline'"],
         'script-src': ["'self'", "https://w.behold.so", "https://www.googletagmanager.com"],
         'connect-src': [
             "'self'",
@@ -116,7 +116,7 @@ talisman = Talisman(
             "https://www.google-analytics.com",
         ],
         'media-src': ["'self'", "https://*.cdninstagram.com"],
-        'font-src': ["'self'", "https://fonts.gstatic.com"],
+        'font-src': ["'self'"],
         'frame-src': ["'self'", "https://www.google.com"],
     },
     force_https=config_name == 'production',
@@ -1662,6 +1662,7 @@ class Appuntamento(db.Model):
         nullable=False,
     )
     note = db.Column(db.Text, nullable=True)
+    consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
     stato = db.Column(db.String(20), default='In attesa')
     creato_il = db.Column(db.DateTime, default=utc_now)
     # ID dell'evento creato su Google Calendar quando l'appuntamento viene
@@ -1970,6 +1971,27 @@ class CollegamentoPersona(db.Model):
     creato_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     persona = db.relationship('PersonaCorso', backref=db.backref('collegamenti_pratiche', lazy=True))
     __table_args__ = (db.UniqueConstraint('entita_tipo', 'entita_id', name='uq_collegamento_persona_pratica'),)
+
+
+class ConsensoPrivacyPaziente(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=False, index=True)
+    entita_tipo = db.Column(db.String(40), nullable=False, index=True)
+    entita_id = db.Column(db.Integer, nullable=False, index=True)
+    accettato = db.Column(db.Boolean, default=False, nullable=False)
+    accettato_il = db.Column(db.DateTime, nullable=True)
+    creato_il = db.Column(db.DateTime, default=utc_now, nullable=False)
+    persona = db.relationship(
+        'PersonaCorso',
+        backref=db.backref('consensi_privacy', lazy=True, cascade='all, delete-orphan'),
+    )
+    __table_args__ = (
+        db.UniqueConstraint(
+            'entita_tipo',
+            'entita_id',
+            name='uq_consenso_privacy_pratica',
+        ),
+    )
 
 
 def registra_evento(categoria, esito, messaggio, entita_tipo=None, entita_id=None, dettagli=None):
@@ -4093,6 +4115,60 @@ def _storico_persona_admin(persona):
     )
 
 
+def _sync_patient_privacy_consent(persona, entita_tipo, entita):
+    """Copy the practice consent evidence into the patient's consent history."""
+    db.session.flush()
+    consent = ConsensoPrivacyPaziente.query.filter_by(
+        entita_tipo=entita_tipo,
+        entita_id=entita.id,
+    ).first()
+    if consent is None:
+        consent = ConsensoPrivacyPaziente(
+            persona=persona,
+            entita_tipo=entita_tipo,
+            entita_id=entita.id,
+        )
+        db.session.add(consent)
+    else:
+        consent.persona = persona
+    consent.accettato = bool(getattr(entita, 'consenso_privacy', False))
+    consent.accettato_il = (
+        getattr(entita, 'creato_il', None) if consent.accettato else None
+    )
+    return consent
+
+
+def _patient_privacy_history(persona):
+    history = []
+    consents = ConsensoPrivacyPaziente.query.filter_by(
+        persona_id=persona.id,
+    ).order_by(
+        ConsensoPrivacyPaziente.accettato_il.desc(),
+        ConsensoPrivacyPaziente.creato_il.desc(),
+    ).all()
+    for consent in consents:
+        practice = _entita_admin(consent.entita_tipo, consent.entita_id)
+        if consent.entita_tipo == 'Appuntamento' and practice:
+            title = practice.servizio
+            practice_date = f'{practice.data} · ore {practice.ora}'
+        elif consent.entita_tipo == 'IscrizioneCorso' and practice:
+            title = practice.corso_titolo
+            practice_date = practice.data_corso or 'Data non indicata'
+        elif consent.entita_tipo == 'CallSonno' and practice:
+            title = 'Call sonno'
+            practice_date = f'{practice.data} · ore {practice.ora}'
+        else:
+            title = f'{consent.entita_tipo} #{consent.entita_id}'
+            practice_date = 'Pratica non più disponibile'
+        history.append({
+            'consent': consent,
+            'title': title,
+            'practice_date': practice_date,
+            'practice_available': practice is not None,
+        })
+    return history
+
+
 def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fiscale='',
                             nome_bambino='', eta_bambino='', note=''):
     if nome:
@@ -4145,6 +4221,80 @@ def _trova_o_crea_persona_corso(nome, telefono, email='', codice_fiscale='',
     )
     db.session.add(persona)
     return persona
+
+
+def _ensure_patient_for_appointment(appointment):
+    """Create and link a patient only when an appointment is confirmed."""
+    existing_link = CollegamentoPersona.query.filter_by(
+        entita_tipo='Appuntamento',
+        entita_id=appointment.id,
+    ).first()
+    if existing_link:
+        _sync_patient_privacy_consent(
+            existing_link.persona,
+            'Appuntamento',
+            appointment,
+        )
+        return existing_link.persona, False
+
+    patient = PersonaCorso(
+        nome=appointment.nome,
+        telefono=appointment.telefono or None,
+        email=appointment.email or None,
+    )
+    db.session.add(patient)
+    db.session.flush()
+    db.session.add(CollegamentoPersona(
+        persona=patient,
+        entita_tipo='Appuntamento',
+        entita_id=appointment.id,
+    ))
+    _sync_patient_privacy_consent(patient, 'Appuntamento', appointment)
+    return patient, True
+
+
+def _ensure_patient_for_course_registration(registration):
+    """Create or link the primary registrant when they enter the patient list."""
+    if registration.persona:
+        _sync_patient_privacy_consent(
+            registration.persona,
+            'IscrizioneCorso',
+            registration,
+        )
+        return registration.persona, False
+
+    extra = registration.extra_dict()
+    existing_patient = _persona_corso_da_contatti(
+        codice_fiscale=registration.codice_fiscale,
+    )
+    patient = _trova_o_crea_persona_corso(
+        nome=registration.nome,
+        telefono=registration.telefono,
+        email=registration.email or '',
+        codice_fiscale=registration.codice_fiscale,
+        nome_bambino=extra.get('nome_bambino', ''),
+        eta_bambino=extra.get('eta_bambino', ''),
+    )
+    registration.persona = patient
+    _sync_patient_privacy_consent(patient, 'IscrizioneCorso', registration)
+    return patient, existing_patient is None
+
+
+def _audit_automatic_course_patient_link(registration, patient, patient_created,
+                                         creation_action):
+    registra_modifica(
+        'collegamento_paziente_automatico',
+        'IscrizioneCorso',
+        registration.id,
+        {'persona_id': patient.id, 'nuova_anagrafica': patient_created},
+    )
+    if patient_created:
+        registra_modifica(
+            creation_action,
+            'PersonaCorso',
+            patient.id,
+            {'tipo_pratica': 'IscrizioneCorso', 'pratica_id': registration.id},
+        )
 
 
 def _slugify(value):
@@ -4509,14 +4659,8 @@ def course_interest():
         if not privacy_consent:
             return _render_course_interest_error('Devi autorizzare il trattamento dei dati personali.')
 
-        person = _trova_o_crea_persona_corso(
-            nome=name,
-            telefono=phone,
-            email=email,
-        )
         interest = IscrizioneCorso(
             corso_id=None,
-            persona=person,
             corso_tipo=topic['course_type'],
             corso_titolo=topic['label'],
             nome=name,
@@ -4754,18 +4898,8 @@ def iscrizione_corso(corso_tipo):
                 posti_richiesti,
             )
 
-        persona = _trova_o_crea_persona_corso(
-            nome=nome,
-            telefono=telefono,
-            email=email,
-            codice_fiscale=codice_fiscale,
-            nome_bambino=nome_bambino,
-            eta_bambino=eta_bambino,
-        )
-
         iscrizione = IscrizioneCorso(
             corso_id=corso_id,
-            persona=persona,
             corso_tipo=corso_tipo,
             corso_titolo=corso['titolo'],
             nome=nome,
@@ -4786,7 +4920,18 @@ def iscrizione_corso(corso_tipo):
             token_lista_attesa=secrets.token_urlsafe(48) if in_lista_attesa else None,
         )
         db.session.add(iscrizione)
+        patient = None
+        patient_created = False
+        if in_lista_attesa:
+            patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
         db.session.commit()
+        if patient:
+            _audit_automatic_course_patient_link(
+                iscrizione,
+                patient,
+                patient_created,
+                'creazione_anagrafica_da_lista_attesa',
+            )
         invia_email_alert_nuova_iscrizione(iscrizione)
         if in_lista_attesa:
             return redirect(url_for('conferma_iscrizione_corso', lista_attesa='1'))
@@ -4922,12 +5067,6 @@ def iscrizione_accompagnamento_privata(slug):
                 'Il percorso ha raggiunto la capienza massima.'
             )
 
-        persona = _trova_o_crea_persona_corso(
-            nome=nome,
-            telefono=telefono,
-            email=email,
-            codice_fiscale=codice_fiscale,
-        )
         extra = {
             'iscrizione_privata_accompagnamento': True,
             'data_presunta_parto': data_presunta_parto,
@@ -4935,7 +5074,6 @@ def iscrizione_accompagnamento_privata(slug):
         }
         iscrizione = IscrizioneCorso(
             percorso_accompagnamento=percorso,
-            persona=persona,
             corso_tipo='accompagnamento-nascita',
             corso_titolo=percorso.titolo,
             nome=nome,
@@ -5314,6 +5452,7 @@ def prenota():
             data=data_scelta,
             ora=ora,
             note=note,
+            consenso_privacy=True,
             scadenza_gestione=prossima_scadenza_lavorativa(),
         )
         db.session.add(nuovo)
@@ -5773,7 +5912,8 @@ def aggiungi_nota_admin(tipo, entita_id):
 def collega_persona_admin(tipo, entita_id):
     if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
         abort(400)
-    if _entita_admin(tipo, entita_id) is None:
+    pratica = _entita_admin(tipo, entita_id)
+    if pratica is None:
         abort(404)
     persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int))
     if not persona:
@@ -5784,6 +5924,7 @@ def collega_persona_admin(tipo, entita_id):
         collegamento.persona = persona
     else:
         db.session.add(CollegamentoPersona(persona=persona, entita_tipo=tipo, entita_id=entita_id))
+    _sync_patient_privacy_consent(persona, tipo, pratica)
     db.session.commit()
     registra_modifica('collegamento_persona', tipo, entita_id, {'persona_id': persona.id})
     flash('Pratica collegata manualmente alla persona.', 'success')
@@ -5824,6 +5965,7 @@ def crea_paziente_da_pratica_admin(tipo, entita_id):
         entita_tipo=tipo,
         entita_id=entita_id,
     ))
+    _sync_patient_privacy_consent(paziente, tipo, pratica)
     db.session.commit()
     registra_modifica(
         'creazione_anagrafica_da_pratica',
@@ -5878,11 +6020,16 @@ def aggiungi_paziente_admin():
 @login_required
 def dettaglio_paziente_admin(id):
     paziente = db.get_or_404(PersonaCorso, id)
+    consensi_privacy = _patient_privacy_history(paziente)
     return render_template(
         'admin_paziente.html',
         paziente=paziente,
         duplicati=_possibili_duplicati_persona(paziente),
         storico_persona=_storico_persona_admin(paziente),
+        consensi_privacy=consensi_privacy,
+        privacy_accettata=any(
+            item['consent'].accettato for item in consensi_privacy
+        ),
     )
 
 
@@ -6185,6 +6332,7 @@ def aggiungi_appuntamento_admin():
         ora=ora,
         duration_minutes=durata,
         note=request.form.get('note', '').strip(),
+        consenso_privacy=_checkbox_checked('consenso_privacy'),
         stato='In attesa',
         scadenza_gestione=_scadenza_da_form(request.form.get('scadenza_gestione')),
         creato_da_admin=True,
@@ -6198,6 +6346,7 @@ def aggiungi_appuntamento_admin():
             entita_tipo='Appuntamento',
             entita_id=appuntamento.id,
         ))
+        _sync_patient_privacy_consent(persona, 'Appuntamento', appuntamento)
     db.session.commit()
     registra_modifica(
         'creazione_admin',
@@ -6990,9 +7139,27 @@ def aggiorna_stato(id, stato):
             return redirect(url_for('admin', filtro=request.form.get('filtro', 'in_attesa')))
         appuntamento.duration_minutes = duration_minutes
 
+    patient = None
+    patient_created = False
     appuntamento.stato = stato
+    if stato == 'Confermato':
+        patient, patient_created = _ensure_patient_for_appointment(appuntamento)
     db.session.commit()
     registra_modifica('cambio_stato', 'Appuntamento', appuntamento.id, {'stato': stato})
+    if patient:
+        registra_modifica(
+            'collegamento_paziente_automatico',
+            'Appuntamento',
+            appuntamento.id,
+            {'persona_id': patient.id, 'nuova_anagrafica': patient_created},
+        )
+    if patient_created:
+        registra_modifica(
+            'creazione_anagrafica_da_conferma',
+            'PersonaCorso',
+            patient.id,
+            {'tipo_pratica': 'Appuntamento', 'pratica_id': appuntamento.id},
+        )
     if stato == 'Confermato':
         email_inviata = invia_email_conferma(appuntamento)
         calendar_aggiornato = crea_o_aggiorna_evento_calendario(appuntamento)
@@ -7493,6 +7660,8 @@ def aggiungi_iscrizione_corso_manuale():
         superamento_capienza_motivo=motivo_superamento or None,
     )
     db.session.add(iscrizione)
+    db.session.flush()
+    _sync_patient_privacy_consent(persona, 'IscrizioneCorso', iscrizione)
     db.session.commit()
     if stato == 'Confermato' and tipo_richiesta != 'ricontatto':
         email_inviata = invia_email_conferma_iscrizione_corso(iscrizione)
@@ -7785,6 +7954,19 @@ def aggiorna_stato_iscrizione_corso(id, stato):
         return redirect(url_for('admin'))
     iscrizione = db.get_or_404(IscrizioneCorso, id)
     stato_precedente = iscrizione.stato
+    patient = None
+    patient_created = False
+    if stato == stato_precedente and stato in STATI_LISTA_ATTESA and not iscrizione.persona:
+        patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+        db.session.commit()
+        _audit_automatic_course_patient_link(
+            iscrizione,
+            patient,
+            patient_created,
+            'creazione_anagrafica_da_lista_attesa',
+        )
+        flash('Stato invariato; scheda paziente collegata alla lista d’attesa.', 'success')
+        return redirect(url_for('admin'))
     if stato == stato_precedente:
         flash('Stato invariato; nessuna nuova email inviata.', 'success')
         return redirect(url_for('admin'))
@@ -7799,8 +7981,21 @@ def aggiorna_stato_iscrizione_corso(id, stato):
     iscrizione.stato = stato
     if stato not in {'Lista attesa', 'Invitato'} and iscrizione.posti == 0:
         iscrizione.posti = iscrizione.posti_richiesti or 1
+    if stato == 'Confermato' or stato in STATI_LISTA_ATTESA:
+        patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
     db.session.commit()
     registra_modifica('cambio_stato', 'IscrizioneCorso', iscrizione.id, {'da': stato_precedente, 'a': stato})
+    if patient:
+        _audit_automatic_course_patient_link(
+            iscrizione,
+            patient,
+            patient_created,
+            (
+                'creazione_anagrafica_da_conferma'
+                if stato == 'Confermato'
+                else 'creazione_anagrafica_da_lista_attesa'
+            ),
+        )
     email_inviata = None
     if stato == 'Confermato':
         email_inviata = invia_email_conferma_iscrizione_corso(iscrizione)

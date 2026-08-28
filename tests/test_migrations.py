@@ -26,8 +26,11 @@ EXPECTED_TABLES = {
     'blocco_agenda',
     'registro_modifica',
     'collegamento_persona',
+    'consenso_privacy_paziente',
     'richiesta_azienda',
 }
+
+LATEST_REVISION = 'a6c9e1f4b802'
 
 
 def _migration_env(database_path):
@@ -93,6 +96,7 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'promemoria_whatsapp_2h_il' not in call_columns
     appointment_columns = _column_names(database_path, 'appuntamento')
     assert 'duration_minutes' in appointment_columns
+    assert 'consenso_privacy' in appointment_columns
     assert 'scadenza_gestione' in appointment_columns
     assert 'sincronizzazione' in appointment_columns
     assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
@@ -138,7 +142,7 @@ def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):
         ).fetchone()[0]
 
     assert row == ('Persona Test', 30)
-    assert revision == 'f4c8a2d7e901'
+    assert revision == LATEST_REVISION
 
 
 def test_upgrade_estende_data_corso_e_preserva_righe_esistenti(tmp_path):
@@ -191,7 +195,7 @@ def test_upgrade_estende_data_corso_e_preserva_righe_esistenti(tmp_path):
 
     assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
     assert data_corso == etichetta
-    assert revision == 'f4c8a2d7e901'
+    assert revision == LATEST_REVISION
 
 
 def test_upgrade_rende_opzionale_telefono_paziente_e_preserva_righe(tmp_path):
@@ -226,7 +230,96 @@ def test_upgrade_rende_opzionale_telefono_paziente_e_preserva_righe(tmp_path):
 
     assert _column_nullable(database_path, 'persona_corso', 'telefono') is True
     assert row == ('Persona Test', None, 'test@example.invalid')
-    assert revision == 'f4c8a2d7e901'
+    assert revision == LATEST_REVISION
+
+
+def test_upgrade_traccia_consensi_collegati_senza_inventare_quelli_appuntamento(tmp_path):
+    database_path = tmp_path / 'pre_patient_privacy.sqlite'
+    env = _migration_env(database_path)
+
+    _run_flask(env, 'db', 'upgrade', 'f4c8a2d7e901')
+    with sqlite3.connect(database_path) as connection:
+        patient_id = connection.execute(
+            "INSERT INTO persona_corso (nome, telefono, email) VALUES (?, ?, ?)",
+            ('Persona Test', '0000000000', 'test@example.invalid'),
+        ).lastrowid
+        appointment_id = connection.execute(
+            """
+            INSERT INTO appuntamento
+                (nome, telefono, email, servizio, data, ora, stato, creato_il)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                'Persona Test',
+                '0000000000',
+                'test@example.invalid',
+                'Prestazione test',
+                '2099-01-01',
+                '10:00',
+                'In attesa',
+                '2026-08-28 08:00:00',
+            ),
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO collegamento_persona
+                (persona_id, entita_tipo, entita_id, creato_il)
+            VALUES (?, ?, ?, ?)
+            """,
+            (patient_id, 'Appuntamento', appointment_id, '2026-08-28 08:05:00'),
+        )
+        registration_id = connection.execute(
+            """
+            INSERT INTO iscrizione_corso
+                (persona_id, corso_tipo, corso_titolo, nome, telefono,
+                 codice_fiscale, data_corso, tipo_richiesta, posti,
+                 consenso_privacy, consenso_immagini, stato, posti_richiesti,
+                 creato_il)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                patient_id,
+                'blsd',
+                'BLSD',
+                'Persona Test',
+                '0000000000',
+                'TSTPRS80A01G482X',
+                '02/01/2099',
+                'richiesta_iscrizione',
+                1,
+                1,
+                0,
+                'Confermato',
+                1,
+                '2026-08-28 09:00:00',
+            ),
+        ).lastrowid
+        connection.commit()
+
+    _run_flask(env, 'db', 'upgrade')
+
+    with sqlite3.connect(database_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT entita_tipo, entita_id, accettato, accettato_il
+            FROM consenso_privacy_paziente
+            ORDER BY entita_tipo
+            """
+        ).fetchall()
+        appointment_consent = connection.execute(
+            'SELECT consenso_privacy FROM appuntamento WHERE id = ?',
+            (appointment_id,),
+        ).fetchone()[0]
+        revision = connection.execute(
+            'SELECT version_num FROM alembic_version'
+        ).fetchone()[0]
+
+    assert rows == [
+        ('Appuntamento', appointment_id, 0, None),
+        ('IscrizioneCorso', registration_id, 1, '2026-08-28 09:00:00'),
+    ]
+    assert appointment_consent == 0
+    assert revision == LATEST_REVISION
 
 
 def test_baseline_adotta_schema_rappresentativo_senza_perdere_dati(tmp_path):
@@ -268,4 +361,4 @@ with app.app_context():
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
-    assert revision == 'f4c8a2d7e901'
+    assert revision == LATEST_REVISION

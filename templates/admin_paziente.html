@@ -63,10 +63,36 @@
             <dl class="admin-facts">
                 <div><dt>Creata</dt><dd>{{ paziente.creato_il|local_timestamp }}</dd></div>
                 <div><dt>Aggiornata</dt><dd>{{ paziente.aggiornato_il|local_timestamp }}</dd></div>
+                <div><dt>Privacy</dt><dd>{{ 'Accettata' if privacy_accettata else 'Non registrata' }}</dd></div>
                 <div class="admin-fact-wide"><dt>Pratiche collegate</dt><dd>{{ storico_persona|length }}</dd></div>
             </dl>
         </aside>
     </div>
+
+    <section class="admin-surface admin-privacy-history" id="consensi-privacy">
+        <div class="admin-section-heading">
+            <div><p class="admin-eyebrow">Tracciabilità</p><h2>Consensi privacy</h2></div>
+            <span class="admin-total">{{ consensi_privacy|length }}</span>
+        </div>
+        <p class="filtro-descrizione">Ogni stato resta associato alla pratica nella quale è stata presentata l’informativa.</p>
+        <div class="admin-consent-list">
+            {% for item in consensi_privacy %}
+            <article class="admin-consent-item">
+                <div>
+                    <span class="admin-consent-status {% if item.consent.accettato %}is-accepted{% else %}is-unrecorded{% endif %}">{{ 'Accettata' if item.consent.accettato else 'Non registrata' }}</span>
+                    <h3>{{ item.title }}</h3>
+                    <p><strong>Pratica:</strong> {{ item.consent.entita_tipo }} #{{ item.consent.entita_id }} · {{ item.practice_date }}</p>
+                    <p><strong>Data consenso:</strong> {{ item.consent.accettato_il|local_timestamp if item.consent.accettato_il else 'Non disponibile' }}</p>
+                </div>
+                {% if item.practice_available %}
+                <a class="admin-inline-link" href="{{ url_for('dettaglio_admin', tipo=item.consent.entita_tipo, entita_id=item.consent.entita_id) }}">Apri pratica</a>
+                {% endif %}
+            </article>
+            {% else %}
+            <p class="nota nota-lg">Nessun consenso privacy registrato per questa anagrafica.</p>
+            {% endfor %}
+        </div>
+    </section>
 
     <section class="admin-surface admin-person-history" id="storico-paziente">
         <div class="admin-section-heading">

@@ -801,6 +801,42 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: gli inviti pubblici già emessi prima di questa decisione restano validi fino alla loro scadenza, ma il sistema non ne genera di nuovi. Le persone in attesa sono escluse anche dall’anteprima destinatari e dagli aggiornamenti dell’edizione; il passaggio esplicito a `Confermato` invia la normale conferma. Database e Calendar vengono aggiornati prima e indipendentemente dalle comunicazioni. Questa decisione sostituisce D-072 limitatamente all’invito automatico di 24 ore. Non cambia lo schema dati.
 - Collegamenti: `app.py`, `templates/admin_dettaglio.html`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, D-072, D-088, D-090.
 
+## D-094 — I font del brand sono serviti dal sito
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: distribuire Atkinson Hyperlegible 400/700 e Bricolage Grotesque 500/600/700/800 come file WOFF2 locali, caricati da un modulo `fonts.css` condiviso dal sito pubblico e dal login admin. Conservare nel repository origine, revisione e licenza OFL delle due famiglie.
+- Motivo: il rendering tipografico non deve dipendere da richieste a Google Fonts; il self-hosting riduce le dipendenze esterne e mantiene sotto il controllo del sito i file effettivamente utilizzati.
+- Conseguenze: famiglie e pesi approvati non cambiano. `base.html` e `login.html` precaricano i due file usati nel primo rendering; la Content Security Policy limita font e fogli di stile del brand a `'self'` e non ammette più `fonts.googleapis.com` o `fonts.gstatic.com`. Il controllo browser ha verificato famiglie calcolate, caricamento completato, assenza di overflow ed errori console su homepage e login; la suite locale passa con 243 test. Aggiornamenti futuri dei font richiedono una revisione esplicita dei file, delle licenze e della provenienza registrata.
+- Collegamenti: `BRAND_SYSTEM.md`, `static/css/fonts.css`, `static/fonts/README.md`, `templates/base.html`, `templates/login.html`, `app.py`, `tests/test_app.py`.
+
+## D-095 — La conferma genera e collega la scheda paziente
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente.
+- Decisione: creare e collegare automaticamente la scheda paziente nello stesso salvataggio che porta a `Confermato` una richiesta di appuntamento o un’iscrizione corso. Le richieste corso pubbliche, i ricontatti e le iscrizioni al percorso nascita restano senza anagrafica finché non vengono confermati. Per i corsi il codice fiscale riusa una scheda esistente; per gli appuntamenti una pratica non collegata genera una nuova scheda.
+- Motivo: l’anagrafica deve rappresentare persone con un appuntamento o un posto effettivamente confermato, senza richiedere un secondo comando amministrativo e senza riempirsi di richieste ancora da valutare.
+- Conseguenze: nome, telefono, email, codice fiscale e dati del bambino disponibili nella richiesta vengono riportati nella scheda; note e dati specifici della pratica restano nello storico originario. Telefono ed email non uniscono automaticamente due pazienti e continuano soltanto a segnalare possibili duplicati. Stato, anagrafica e collegamento vengono salvati prima di email e Calendar, quindi un guasto secondario non perde il dato. I test coprono appuntamenti, corsi, percorso nascita, riuso per codice fiscale, corrispondenze deboli, validazione e guasti secondari; la suite locale passa con 245 test. Non cambia lo schema del database. Questa decisione sostituisce D-092 limitatamente alla creazione manuale della scheda per un appuntamento che viene confermato e precisa il momento di creazione delle anagrafiche corso.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `app.py`, `tests/test_app.py`, D-073, D-084, D-088, D-092.
+
+## D-096 — La lista d’attesa registra subito il paziente
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente.
+- Decisione: quando una richiesta corso entra in `Lista attesa`, creare e collegare immediatamente la scheda paziente del richiedente principale. Applicare la stessa regola sia all’invio pubblico su un’edizione piena sia a un passaggio amministrativo negli stati di lista d’attesa. Lo stato dell’iscrizione, la capienza e le comunicazioni restano invariati: l’anagrafica non equivale alla conferma del posto.
+- Motivo: l’elenco `Pazienti` deve includere anche le persone che attendono un posto, così lo studio può riconoscerle e gestirne lo storico senza doverle confermare prima.
+- Conseguenze: il codice fiscale esatto riusa e aggiorna una scheda esistente; telefono ed email non causano unione automatica. La persona in attesa resta nello stato `Lista attesa` o `Invitato`, non occupa capienza online e non riceve email automatica. Le richieste `Nuova`, i ricontatti senza edizione e le iscrizioni al percorso nascita continuano a creare l’anagrafica soltanto al passaggio a `Confermato`. Una pratica storica in lista d’attesa ancora priva di collegamento viene regolarizzata anche ripetendo lo stesso stato dall’admin. I test coprono creazione, riuso per codice fiscale, passaggio admin e regolarizzazione; la suite locale passa con 248 test. Non cambia lo schema del database. Questa decisione sostituisce D-095 limitatamente al momento di creazione dell’anagrafica per la lista d’attesa corso.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `app.py`, `tests/test_app.py`, D-088, D-093, D-095.
+
+## D-097 — Il consenso privacy resta collegato alla pratica di origine
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: mostrare nella scheda paziente uno storico dei consensi privacy separato per pratica, con stato `Accettata` o `Non registrata`, data dell’accettazione e collegamento all’appuntamento, iscrizione corso o call di origine. Conservare il consenso della richiesta pubblica di appuntamento, che prima veniva validato ma non persistito. Negli inserimenti amministrativi registrare l’accettazione soltanto quando l’operatore seleziona esplicitamente il relativo controllo.
+- Motivo: un unico flag nell’anagrafica perderebbe l’origine e verrebbe sovrascritto da pratiche successive; la tracciabilità deve invece indicare per quale richiesta è stata presentata e accettata l’informativa.
+- Conseguenze: la revisione Alembic `a6c9e1f4b802` aggiunge `appuntamento.consenso_privacy` e la tabella `consenso_privacy_paziente`, univoca per pratica. Iscrizioni corso e call già collegate vengono riportate nella nuova tabella usando il consenso e la data già presenti. Per gli appuntamenti storici la migrazione usa prudentemente `Non registrata`, perché il database precedente non conservava l’evidenza del checkbox; non attribuisce quindi consensi retroattivi. La suite locale passa con 249 test; il controllo browser non rileva overflow o errori console e conferma target touch da 44 px. Questa tracciabilità tecnica non sostituisce la verifica professionale ancora aperta su informative, basi giuridiche e conservazione.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, `app.py`, `templates/admin.html`, `templates/admin_paziente.html`, `static/css/admin.css`, `migrations/versions/a6c9e1f4b802_traccia_consensi_privacy_paziente.py`, `tests/test_app.py`, `tests/test_migrations.py`, D-092, D-095, D-096.
+
 ## Modello per nuove decisioni
 
 ```markdown

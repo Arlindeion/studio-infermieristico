@@ -407,11 +407,12 @@ passaggi CET/CEST.
 ## Modelli principali
 
 - `Admin`: utente dell'area riservata.
-- `Appuntamento`: prenotazione sanitaria e relativo stato.
+- `Appuntamento`: prenotazione sanitaria, relativo stato e accettazione privacy raccolta dal modulo.
 - `CallSonno`: richiesta breve, stato, slot Calendar e invito al questionario.
 - `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
 - `PersonaCorso`: anagrafica pazienti, partecipanti e famiglie esposta nell’admin come `Pazienti`; il nome tecnico e la tabella restano invariati per compatibilità.
+- `ConsensoPrivacyPaziente`: stato e data del consenso associati alla scheda paziente e alla specifica pratica di origine.
 - `IscrizioneCorso`: richiesta collegata, quando possibile, a corso e persona.
 - `PercorsoAccompagnamento`: edizione del corso nascita completo.
 - `IncontroAccompagnamento`: incontro di una specifica edizione.
@@ -523,7 +524,7 @@ successivi non ne dipendono.
 ## Database e migrazioni
 
 La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente del repository è
-`f4c8a2d7e901`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
+`a6c9e1f4b802`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
 promemoria email alla call sonno, rimuovono i campi del precedente promemoria
 WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin, normalizzano le difformità dei database SQLite legacy, portano `iscrizione_corso.data_corso` da 20 a 255 caratteri per contenere data, ora e luogo dell’edizione e rendono facoltativo `persona_corso.telefono` per consentire anagrafiche con recapiti ancora da completare. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:

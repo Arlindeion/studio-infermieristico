@@ -33,6 +33,7 @@ from app import (
     Corso,
     IscrizioneCorso,
     PersonaCorso,
+    ConsensoPrivacyPaziente,
     PercorsoAccompagnamento,
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
@@ -491,6 +492,7 @@ def test_database_empty(app):
         assert RegistroEvento.query.count() == 0
         assert CallSonno.query.count() == 0
         assert QuestionarioSonno.query.count() == 0
+        assert ConsensoPrivacyPaziente.query.count() == 0
 
 
 def _csrf_call_sonno(client):
@@ -939,6 +941,7 @@ def test_css_core_e_modulo_homepage(client):
     resp = client.get('/')
 
     assert resp.status_code == 200
+    assert 'css/fonts.css' in resp.text
     assert 'css/tokens.css' in resp.text
     assert 'css/base.css' in resp.text
     assert 'css/components.css' in resp.text
@@ -947,6 +950,42 @@ def test_css_core_e_modulo_homepage(client):
     assert 'css/consulenza.css' not in resp.text
     assert 'css/admin.css' not in resp.text
     assert 'css/stile.css' not in resp.text
+
+
+def test_font_sono_self_hosted_e_csp_non_ammette_google_fonts(client):
+    homepage = client.get('/')
+    login = client.get('/admin/login')
+    fonts_css = client.get('/static/css/fonts.css')
+
+    for resp in (homepage, login):
+        assert resp.status_code == 200
+        assert 'css/fonts.css' in resp.text
+        assert 'fonts.googleapis.com' not in resp.text
+        assert 'fonts.gstatic.com' not in resp.text
+
+        csp = resp.headers['Content-Security-Policy']
+        assert "font-src 'self'" in csp
+        assert 'fonts.googleapis.com' not in csp
+        assert 'fonts.gstatic.com' not in csp
+
+    assert fonts_css.status_code == 200
+    assert fonts_css.text.count('@font-face') == 6
+    assert "font-family: 'Atkinson Hyperlegible'" in fonts_css.text
+    assert "font-family: 'Bricolage Grotesque'" in fonts_css.text
+    assert 'font-display: swap' in fonts_css.text
+
+    font_paths = [
+        '/static/fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2',
+        '/static/fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2',
+        '/static/fonts/bricolage-grotesque/BricolageGrotesque-Medium.woff2',
+        '/static/fonts/bricolage-grotesque/BricolageGrotesque-SemiBold.woff2',
+        '/static/fonts/bricolage-grotesque/BricolageGrotesque-Bold.woff2',
+        '/static/fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.woff2',
+    ]
+    for font_path in font_paths:
+        font_response = client.get(font_path)
+        assert font_response.status_code == 200
+        assert font_response.mimetype == 'font/woff2'
 
 
 @pytest.mark.parametrize(
@@ -1517,15 +1556,14 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.corso_id == int(data_corso_id)
         assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
         assert iscrizione.posti == 1
-        assert iscrizione.persona is not None
-        assert iscrizione.persona.nome_bambino == 'Luca'
-        assert iscrizione.persona.eta_bambino == '3 anni'
+        assert iscrizione.persona is None
         assert iscrizione.extra_dict()['nome_bambino'] == 'Luca'
+        assert iscrizione.extra_dict()['eta_bambino'] == '3 anni'
         assert iscrizione.extra_dict()['nome_secondo_partecipante'] == ''
         assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
-        assert PersonaCorso.query.count() == 1
+        assert PersonaCorso.query.count() == 0
 
 
 def test_invio_modulo_corso_notifica_solo_lo_studio_e_chiarisce_che_il_posto_non_e_confermato(client):
@@ -1642,7 +1680,84 @@ def test_admin_conferma_e_annulla_iscrizione_inviando_una_sola_mail_per_transizi
     assert annullamento_msg.recipients == ['mario@example.com']
     assert annullamento_msg.subject == 'Iscrizione annullata - Disostruzione pediatrica'
     with flask_app.app_context():
-        assert db.session.get(IscrizioneCorso, iscrizione_id).stato == 'Annullato'
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.stato == 'Annullato'
+        patient = PersonaCorso.query.one()
+        assert iscrizione.persona_id == patient.id
+        assert patient.nome == 'Mario Rossi'
+        assert patient.telefono == '3331234567'
+        assert patient.email == 'mario@example.com'
+        assert patient.codice_fiscale == 'RSSMRA80A01G482X'
+        audit = app_module.RegistroModifica.query.filter_by(
+            azione='creazione_anagrafica_da_conferma',
+            entita_tipo='PersonaCorso',
+            entita_id=patient.id,
+        ).one()
+        assert json.loads(audit.dettagli)['pratica_id'] == iscrizione_id
+
+
+def test_conferma_iscrizione_riusa_il_paziente_solo_con_codice_fiscale(client):
+    data_corso_id = _crea_data_corso(
+        'laboratorio-infanzia',
+        "Laboratorio per l'infanzia",
+        data='2099-09-20',
+    )
+    with flask_app.app_context():
+        patient = PersonaCorso(
+            nome='Anna Neri',
+            telefono='3330000000',
+            email='vecchia@example.com',
+            codice_fiscale='NRENNA90A41G482Z',
+        )
+        registration = IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='laboratorio-infanzia',
+            corso_titolo="Laboratorio per l'infanzia",
+            nome='Anna Neri aggiornata',
+            telefono='3331234567',
+            email='anna@example.com',
+            codice_fiscale='NRENNA90A41G482Z',
+            data_corso='20/09/2099 - ore 18:00 - S.C. Studio Infermieristico',
+            partecipazione='Iscrizione individuale',
+            dati_extra=json.dumps({
+                'nome_bambino': 'Leo',
+                'eta_bambino': '18 mesi',
+            }),
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add_all([patient, registration])
+        db.session.commit()
+        patient_id = patient.id
+        registration_id = registration.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send'):
+        response = client.post(
+            f'/admin/iscrizione-corso/{registration_id}/Confermato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        assert PersonaCorso.query.count() == 1
+        registration = db.session.get(IscrizioneCorso, registration_id)
+        patient = db.session.get(PersonaCorso, patient_id)
+        assert registration.persona_id == patient_id
+        assert patient.nome == 'Anna Neri aggiornata'
+        assert patient.telefono == '3331234567'
+        assert patient.email == 'anna@example.com'
+        assert patient.nome_bambino == 'Leo'
+        assert patient.eta_bambino == '18 mesi'
+        link_audit = app_module.RegistroModifica.query.filter_by(
+            azione='collegamento_paziente_automatico',
+            entita_tipo='IscrizioneCorso',
+            entita_id=registration_id,
+        ).one()
+        assert json.loads(link_audit.dettagli)['nuova_anagrafica'] is False
 
 
 def test_errore_mail_conferma_non_annulla_lo_stato_salvato(client):
@@ -1684,6 +1799,9 @@ def test_errore_mail_conferma_non_annulla_lo_stato_salvato(client):
     with flask_app.app_context():
         iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
         assert iscrizione.stato == 'Confermato'
+        assert iscrizione.persona is not None
+        assert iscrizione.persona.nome == 'Giulia Bianchi'
+        assert PersonaCorso.query.count() == 1
         email = EmailOperativa.query.filter_by(
             entita_tipo='IscrizioneCorso',
             entita_id=iscrizione_id,
@@ -1820,8 +1938,10 @@ def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
         assert iscrizione.corso_titolo == 'Laboratori svezzamento, gioco e sviluppo'
         assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
         assert iscrizione.posti == 1
-        assert iscrizione.persona.nome_bambino == 'Leo'
-        assert iscrizione.persona.eta_bambino == '18 mesi'
+        assert iscrizione.persona is None
+        assert iscrizione.extra_dict()['nome_bambino'] == 'Leo'
+        assert iscrizione.extra_dict()['eta_bambino'] == '18 mesi'
+        assert PersonaCorso.query.count() == 0
 
 
 def test_iscrizione_blsd_salva_richiesta_individuale(client):
@@ -2013,7 +2133,8 @@ def test_modulo_interesse_corsi_salva_ricontatto_senza_occupare_posti(client):
         assert interesse.consenso_privacy is True
         assert interesse.note == 'Preferenza per il sabato mattina.'
         assert interesse.extra_dict()['tematica_interesse'] == 'gioco-sviluppo'
-        assert interesse.persona.codice_fiscale is None
+        assert interesse.persona is None
+        assert PersonaCorso.query.count() == 0
 
 
 def test_modulo_interesse_corsi_rifiuta_tematica_non_prevista(client):
@@ -2289,6 +2410,157 @@ def test_data_piena_senza_successiva_crea_lista_attesa(client):
         assert iscrizione.stato == 'Lista attesa'
         assert iscrizione.posti == 0
         assert iscrizione.posti_richiesti == 1
+        assert iscrizione.persona is not None
+        assert iscrizione.persona.nome == 'Luisa Verdi'
+        assert iscrizione.persona.telefono == '3337654321'
+        assert iscrizione.persona.email == 'luisa@example.com'
+        assert iscrizione.persona.codice_fiscale == 'VRDLSU90A41G482Y'
+        assert PersonaCorso.query.count() == 1
+        consent = ConsensoPrivacyPaziente.query.one()
+        assert consent.persona_id == iscrizione.persona_id
+        assert consent.entita_tipo == 'IscrizioneCorso'
+        assert consent.entita_id == iscrizione.id
+        assert consent.accettato is True
+        assert consent.accettato_il == iscrizione.creato_il
+        audit = app_module.RegistroModifica.query.filter_by(
+            azione='creazione_anagrafica_da_lista_attesa',
+            entita_tipo='PersonaCorso',
+            entita_id=iscrizione.persona_id,
+        ).one()
+        assert json.loads(audit.dettagli)['pratica_id'] == iscrizione.id
+
+
+def test_lista_attesa_riusa_paziente_con_codice_fiscale_esatto(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        capienza_massima=1,
+    )
+    with flask_app.app_context():
+        existing_patient = PersonaCorso(
+            nome='Luisa Verdi precedente',
+            telefono='3330000000',
+            email='precedente@example.com',
+            codice_fiscale='VRDLSU90A41G482Y',
+        )
+        registration = IscrizioneCorso(
+            corso_id=int(data_corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Persona già iscritta',
+            telefono='3331234567',
+            email='iscritta@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add_all([existing_patient, registration])
+        db.session.commit()
+        existing_patient_id = existing_patient.id
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    response = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Luisa Verdi',
+        'codice_fiscale': 'vrdlsu90a41g482y',
+        'telefono': '3337654321',
+        'email': 'luisa@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
+        patient = db.session.get(PersonaCorso, existing_patient_id)
+        assert iscrizione.stato == 'Lista attesa'
+        assert iscrizione.persona_id == existing_patient_id
+        assert PersonaCorso.query.count() == 1
+        assert patient.nome == 'Luisa Verdi'
+        assert patient.telefono == '3337654321'
+        assert patient.email == 'luisa@example.com'
+        assert app_module.RegistroModifica.query.filter_by(
+            azione='creazione_anagrafica_da_lista_attesa',
+        ).count() == 0
+
+
+def test_passaggio_admin_a_lista_attesa_crea_e_collega_il_paziente(client):
+    with flask_app.app_context():
+        registration = IscrizioneCorso(
+            corso_tipo='blsd',
+            corso_titolo='BLSD',
+            nome='Paolo Blu',
+            telefono='3339876543',
+            email='paolo@example.com',
+            codice_fiscale='BLUPLA80A01G482X',
+            data_corso='Da definire',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Nuova',
+        )
+        db.session.add(registration)
+        db.session.commit()
+        registration_id = registration.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/iscrizione-corso/{registration_id}/Lista attesa',
+        data={'_csrf_token': csrf},
+    )
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        registration = db.session.get(IscrizioneCorso, registration_id)
+        assert registration.stato == 'Lista attesa'
+        assert registration.posti == 1
+        assert registration.persona is not None
+        assert registration.persona.nome == 'Paolo Blu'
+        assert PersonaCorso.query.count() == 1
+
+
+def test_stato_lista_attesa_ripetuto_collega_una_pratica_storica(client):
+    with flask_app.app_context():
+        registration = IscrizioneCorso(
+            corso_tipo='blsd',
+            corso_titolo='BLSD',
+            nome='Marta Viola',
+            telefono='3331112233',
+            email='marta@example.com',
+            codice_fiscale='VLIMRT80A41G482X',
+            data_corso='Da definire',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=0,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Lista attesa',
+        )
+        db.session.add(registration)
+        db.session.commit()
+        registration_id = registration.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/iscrizione-corso/{registration_id}/Lista attesa',
+        data={'_csrf_token': csrf},
+    )
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        registration = db.session.get(IscrizioneCorso, registration_id)
+        assert registration.stato == 'Lista attesa'
+        assert registration.persona is not None
+        assert registration.persona.nome == 'Marta Viola'
+        assert PersonaCorso.query.count() == 1
 
 
 def test_admin_mostra_panoramica_iscritti_per_corso(client):
@@ -2509,6 +2781,7 @@ def test_errore_email_non_perde_prenotazione_e_viene_registrato(client):
             entita_id=appuntamento.id,
         ).one()
         assert appuntamento.stato == 'In attesa'
+        assert appuntamento.consenso_privacy is True
         assert 'non inviata' in evento.messaggio
 
 
@@ -3051,7 +3324,8 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert extra['data_presunta_parto'] == '2100-01-10'
         assert extra['partner_presente'] == 'Si'
         assert iscrizione.consenso_immagini is True
-        assert PersonaCorso.query.count() == 1
+        assert iscrizione.persona is None
+        assert PersonaCorso.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 9
 
     csrf = _login_admin(client)
@@ -3067,7 +3341,12 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
     assert messaggio.recipients == ['luisa@example.com']
     assert 'Iscrizione confermata' in messaggio.subject
     with flask_app.app_context():
-        assert db.session.get(IscrizioneCorso, iscrizione_id).stato == 'Confermato'
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.stato == 'Confermato'
+        assert iscrizione.persona is not None
+        assert iscrizione.persona.nome == 'Luisa Verdi'
+        assert iscrizione.persona.codice_fiscale == 'VRDLSU90A41G482Y'
+        assert PersonaCorso.query.count() == 1
 
 
 def test_capienza_percorso_privato_blocca_e_annullamento_riapre(client):
@@ -3567,8 +3846,15 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
     mock_servizio.events().insert().execute.return_value = {'id': 'evento-abc-123'}
 
     with flask_app.app_context():
-        appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Lavaggio auricolare', data='2026-09-01', ora='10:00')
+        appt = Appuntamento(
+            nome='Mario Rossi',
+            telefono='333',
+            email='m@example.com',
+            servizio='Lavaggio auricolare',
+            data='2026-09-01',
+            ora='10:00',
+            consenso_privacy=True,
+        )
         db.session.add(appt)
         db.session.commit()
         appt_id = appt.id
@@ -3588,6 +3874,63 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.google_event_id == 'evento-abc-123'
         assert aggiornato.duration_minutes == 75
+        patient = PersonaCorso.query.one()
+        link = app_module.CollegamentoPersona.query.one()
+        assert patient.nome == 'Mario Rossi'
+        assert patient.telefono == '333'
+        assert patient.email == 'm@example.com'
+        assert link.persona_id == patient.id
+        assert link.entita_tipo == 'Appuntamento'
+        assert link.entita_id == appt_id
+        consent = ConsensoPrivacyPaziente.query.one()
+        assert consent.persona_id == patient.id
+        assert consent.entita_tipo == 'Appuntamento'
+        assert consent.entita_id == appt_id
+        assert consent.accettato is True
+        assert consent.accettato_il == aggiornato.creato_il
+
+
+def test_conferma_appuntamento_non_unisce_pazienti_solo_per_contatti_uguali(
+    client,
+    google_calendar_scrittura_finto,
+):
+    google_calendar_scrittura_finto.events().insert().execute.return_value = {
+        'id': 'evento-contatti-uguali'
+    }
+    with flask_app.app_context():
+        existing_patient = PersonaCorso(
+            nome='Mario Rossi esistente',
+            telefono='3331234567',
+            email='mario@example.com',
+        )
+        appointment = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio='Lavaggio auricolare',
+            data='2026-09-01',
+            ora='10:00',
+        )
+        db.session.add_all([existing_patient, appointment])
+        db.session.commit()
+        existing_patient_id = existing_patient.id
+        appointment_id = appointment.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/aggiorna/{appointment_id}/Confermato',
+        data={'_csrf_token': csrf, 'duration_minutes': '30'},
+    )
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        assert PersonaCorso.query.count() == 2
+        link = app_module.CollegamentoPersona.query.filter_by(
+            entita_tipo='Appuntamento',
+            entita_id=appointment_id,
+        ).one()
+        assert link.persona_id != existing_patient_id
+        assert link.persona.nome == 'Mario Rossi'
 
 
 def test_conferma_richiede_durata_manuale(client, google_calendar_scrittura_finto):
@@ -3617,6 +3960,8 @@ def test_conferma_richiede_durata_manuale(client, google_calendar_scrittura_fint
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.stato == 'In attesa'
+        assert PersonaCorso.query.count() == 0
+        assert app_module.CollegamentoPersona.query.count() == 0
 
 
 def test_conferma_rifiuta_durata_che_invade_un_altro_appuntamento(
@@ -3699,6 +4044,11 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(
         ).one()
         assert aggiornato.stato == 'Confermato'
         assert aggiornato.google_event_id is None
+        link = app_module.CollegamentoPersona.query.filter_by(
+            entita_tipo='Appuntamento',
+            entita_id=appt_id,
+        ).one()
+        assert link.persona.nome == 'Mario Rossi'
         assert 'sincronizzazione' in evento.messaggio
 
     admin_resp = client.get('/admin')
@@ -4349,7 +4699,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=5.3' in scheda.text
+    assert '/static/css/admin.css?v=5.4' in scheda.text
 
     csrf = _csrf_admin(client)
     resp = client.post(f'/admin/paziente/{paziente_id}/modifica', data={
@@ -4417,6 +4767,7 @@ def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
             servizio='Medicazione semplice',
             data='2099-09-01',
             ora='10:00',
+            consenso_privacy=True,
         )
         db.session.add(appuntamento)
         db.session.commit()
@@ -4436,11 +4787,19 @@ def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
         assert collegamento.persona_id == paziente.id
         assert collegamento.entita_tipo == 'Appuntamento'
         assert collegamento.entita_id == appuntamento_id
+        consenso = ConsensoPrivacyPaziente.query.one()
+        assert consenso.persona_id == paziente.id
+        assert consenso.accettato is True
+        assert consenso.accettato_il == appuntamento.creato_il
         paziente_id = paziente.id
 
     scheda = client.get(f'/admin/paziente/{paziente_id}')
     assert 'Pratiche collegate' in scheda.text
     assert 'Medicazione semplice' in scheda.text
+    assert 'Consensi privacy' in scheda.text
+    assert 'Accettata' in scheda.text
+    assert 'Appuntamento #' in scheda.text
+    assert 'Data consenso:' in scheda.text
 
 
 def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
@@ -4465,6 +4824,7 @@ def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
         'data': '2099-09-01',
         'ora': '10:00',
         'duration_minutes': '45',
+        'consenso_privacy': 'on',
     })
 
     assert resp.status_code == 302
@@ -4478,6 +4838,10 @@ def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
         assert collegamento.persona_id == paziente_id
         assert collegamento.entita_tipo == 'Appuntamento'
         assert collegamento.entita_id == appuntamento.id
+        consenso = ConsensoPrivacyPaziente.query.one()
+        assert consenso.persona_id == paziente_id
+        assert consenso.accettato is True
+        assert consenso.accettato_il == appuntamento.creato_il
 
 
 def test_admin_chiede_conferma_json_se_mancano_i_contatti(client):

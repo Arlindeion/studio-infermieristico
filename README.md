@@ -180,7 +180,7 @@ I fogli di stile sono separati per responsabilità: `tokens.css`, `base.css` e `
 
 Il login locale è disponibile su `http://127.0.0.1:5000/admin/login`.
 
-L’area apre sull’agenda mensile e comprende viste settimanale e giornaliera, coda unica, richieste dedicate ad aziende e gruppi, corsi, anagrafica pazienti modificabile, attività, errori e impostazioni operative. La scheda paziente raccoglie recapiti, note e storico delle pratiche collegate; le richieste organizzative possono avanzare per stato, generare la prossima attività, inviare una proposta tracciata e diventare un corso riservato.
+L’area apre sull’agenda mensile e comprende viste settimanale e giornaliera, coda unica, richieste dedicate ad aziende e gruppi, corsi, anagrafica pazienti modificabile, attività, errori e impostazioni operative. La scheda paziente raccoglie recapiti, note, storico delle pratiche collegate e consensi privacy associati alla relativa pratica; le richieste organizzative possono avanzare per stato, generare la prossima attività, inviare una proposta tracciata e diventare un corso riservato.
 
 Google Calendar resta il ponte con Arzamed: prima del lancio eseguire la riconciliazione e una giornata simulata completa; non usare dati reali nei test. Le route pubbliche `/da-dove-parto` e `/aziende-e-gruppi` offrono rispettivamente orientamento locale senza persistenza e richiesta organizzativa separata dai moduli individuali.
 
