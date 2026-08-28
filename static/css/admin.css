@@ -637,6 +637,115 @@
     font-size: 0.78rem;
 }
 
+.admin-patient-create {
+    margin-top: 1.25rem;
+}
+
+.admin-patient-create summary {
+    align-items: center;
+    color: var(--verde-scuro);
+    cursor: pointer;
+    display: flex;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    min-height: 44px;
+}
+
+.admin-patient-create[open] summary {
+    margin-bottom: 1rem;
+}
+
+.admin-patient-list-heading {
+    align-items: baseline;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 1.75rem;
+}
+
+.admin-patient-list-heading h3 {
+    margin-bottom: 0;
+}
+
+.admin-patient-list-heading a {
+    align-items: center;
+    color: var(--verde-scuro);
+    display: inline-flex;
+    font-weight: 700;
+    min-height: 44px;
+}
+
+.admin-patient-table-wrap {
+    margin-top: 0.75rem;
+}
+
+.admin-patient-table td {
+    vertical-align: middle;
+}
+
+.admin-patient-table a:not(.btn-azione) {
+    color: var(--verde-scuro);
+    overflow-wrap: anywhere;
+}
+
+.admin-secondary {
+    color: var(--grigio);
+    display: block;
+    font-size: 0.76rem;
+    margin-top: 0.2rem;
+}
+
+.admin-missing-contact {
+    color: var(--rosso-cuore);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.admin-patient-practice-results {
+    border-top: 1px solid var(--salvia-bordo-a16);
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+}
+
+.admin-patient-contact-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-patient-contact-status span {
+    border: 1px solid var(--salvia-bordo-a16);
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.45rem 0.7rem;
+}
+
+.admin-patient-contact-status .is-complete {
+    background: var(--verde-chiaro);
+    color: var(--verde-scuro);
+}
+
+.admin-patient-contact-status .is-missing {
+    background: var(--corallo-tenue-a14);
+    border-color: var(--corallo-tenue-a38);
+    color: var(--rosso-cuore);
+}
+
+.admin-patient-form-section h2,
+.admin-patient-record-meta h2 {
+    margin-top: 0;
+}
+
+.admin-patient-record-meta .admin-facts {
+    grid-template-columns: 1fr;
+}
+
+.admin-patient-record-meta .admin-fact-wide {
+    grid-column: auto;
+}
+
 .admin-section-heading {
     display: flex;
     align-items: flex-end;
@@ -1105,6 +1214,10 @@
     }
 
     .tabella-desktop {
+        display: none;
+    }
+
+    .admin-patient-table-wrap {
         display: none;
     }
 
@@ -1756,6 +1869,7 @@
     .admin-request-row,
     .admin-task-row,
     .admin-detail-header { align-items: stretch; flex-direction: column; }
+    .admin-patient-contact-status { justify-content: flex-start; }
     .admin-error-resolution { flex-direction: column; }
     .admin-desktop-only { display: none; }
 }

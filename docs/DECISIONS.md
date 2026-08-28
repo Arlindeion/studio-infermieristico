@@ -783,6 +783,24 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: un superamento produce una risposta `429` italiana con `Retry-After`; il log conserva endpoint, metodo e soglia senza IP o dati personali. I test verificano configurazione, tutti i decoratori, separazione GET/POST, aggregazione tra endpoint, esclusione degli statici e risposta HTML/JSON. La suite locale passa con 236 test Python. Lo storage resta `memory://` perché il servizio usa un solo worker; più worker o istanze richiederanno uno storage condiviso. Non cambia lo schema dati.
 - Collegamenti: `app.py`, `tests/test_app.py`, `OPERATIONS.md`, D-073, D-074.
 
+## D-092 — “Pazienti” è l’anagrafica modificabile dell’admin
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px; deploy ancora richiesto.
+- Decisione: sostituire la sezione admin `Persone` con `Pazienti` e renderla un’anagrafica operativa: elenco ricercabile, creazione di una scheda anche con recapiti ancora mancanti, modifica di nome, telefono, email, codice fiscale, dati del bambino e note, controllo dei possibili duplicati e accesso allo storico delle pratiche collegate. Una prenotazione o call non collegata può generare esplicitamente una nuova scheda paziente; la scelta di un paziente durante la creazione manuale di un appuntamento salva anche il collegamento.
+- Motivo: la ricerca trasversale precedente restituiva pratiche, mentre la rubrica era nascosta negli strumenti dei corsi e non offriva una scheda modificabile. Correggere un recapito richiedeva quindi di intervenire sulla singola pratica senza una fonte anagrafica riconoscibile.
+- Conseguenze: la classe e la tabella tecnica `PersonaCorso` restano invariate per evitare una migrazione puramente nominale; la revisione `f4c8a2d7e901` rende però facoltativa la colonna `telefono`, così un recapito può essere aggiunto in seguito. Il codice fiscale continua a impedire duplicati esatti; telefono ed email segnalano possibili duplicati ma non uniscono automaticamente le anagrafiche. Le modifiche aggiornano la scheda paziente e sono registrate indicando soltanto i campi toccati, senza copiare i valori nell’audit. Appuntamenti, call e iscrizioni già registrati mantengono i recapiti originali come fotografia storica. Il collaudo sintetico ha verificato elenco, scheda, campi e target di azione senza overflow a 1440×900 e 390×844 px; la suite passa con 240 test Python e 35 test JavaScript. Questa decisione sostituisce D-073 soltanto nel nome e nel comportamento della sezione `Persone`.
+- Collegamenti: `app.py`, `migrations/versions/f4c8a2d7e901_telefono_paziente_opzionale.py`, `templates/admin.html`, `templates/admin_paziente.html`, `templates/admin_dettaglio.html`, `static/css/admin.css`, `static/js/admin-azioni.js`, `README.md`, `OPERATIONS.md`, `ROADMAP.md`, `tests/test_app.py`, `tests/test_migrations.py`, D-073.
+
+## D-093 — Lista d’attesa telefonica e salvataggio corso indipendente dalle email
+
+- Data: 2026-08-28.
+- Stato: approvata, implementata e verificata localmente; collaudo reale del flusso corsi ancora richiesto.
+- Decisione: non inviare email alle persone che si trovano negli stati `Lista attesa` o `Invitato`. Quando si libera capienza, mantenere la prima persona nello stato corrente e creare un’attività amministrativa per contattarla telefonicamente. Nella modifica di un’edizione, salvare sempre titolo, data, ora, luogo e gli altri campi validi; la selezione `Invia l’aggiornamento` controlla soltanto le email ai destinatari ammessi.
+- Motivo: la lista d’attesa viene gestita direttamente al telefono e non deve ricevere inviti, annullamenti o spostamenti automatici. La mancata selezione dei destinatari non è un errore di validazione del corso e non deve annullare una modifica organizzativa già richiesta dall’admin.
+- Conseguenze: gli inviti pubblici già emessi prima di questa decisione restano validi fino alla loro scadenza, ma il sistema non ne genera di nuovi. Le persone in attesa sono escluse anche dall’anteprima destinatari e dagli aggiornamenti dell’edizione; il passaggio esplicito a `Confermato` invia la normale conferma. Database e Calendar vengono aggiornati prima e indipendentemente dalle comunicazioni. Questa decisione sostituisce D-072 limitatamente all’invito automatico di 24 ore. Non cambia lo schema dati.
+- Collegamenti: `app.py`, `templates/admin_dettaglio.html`, `tests/test_app.py`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, D-072, D-088, D-090.
+
 ## Modello per nuove decisioni
 
 ```markdown

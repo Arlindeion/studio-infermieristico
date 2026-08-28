@@ -48,8 +48,8 @@
     {% elif page_endpoint in ['prestazioni', 'prenota'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.5">
     {% endif %}
-    {% if page_endpoint in ['admin', 'dettaglio_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=5.2">
+    {% if page_endpoint in ['admin', 'dettaglio_admin', 'dettaglio_paziente_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=5.3">
     {% endif %}
     {% if page_endpoint in ['da_dove_parto', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.1">

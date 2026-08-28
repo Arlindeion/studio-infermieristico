@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block titolo %}{{ paziente.nome }} · Pazienti admin{% endblock %}
+{% block contenuto %}
+<main class="pagina-interna admin-page admin-detail-page admin-patient-detail">
+    <div class="admin-detail-topbar">
+        <a class="admin-back" href="{{ url_for('admin') }}#admin-pazienti">← Torna ai pazienti</a>
+        <span class="admin-kicker">Anagrafica paziente</span>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}<div class="admin-flash-stack" role="status">{% for category, message in messages %}<p class="admin-flash admin-flash-{{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% endwith %}
+
+    <header class="admin-detail-header admin-patient-header">
+        <div>
+            <p class="admin-eyebrow">Paziente #{{ paziente.id }}</p>
+            <h1>{{ paziente.nome }}</h1>
+            <p>
+                {% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% endif %}
+                {% if paziente.email %} · <a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% endif %}
+            </p>
+        </div>
+        <div class="admin-patient-contact-status" aria-label="Completezza recapiti">
+            <span class="{% if paziente.telefono %}is-complete{% else %}is-missing{% endif %}">Telefono {% if paziente.telefono %}presente{% else %}mancante{% endif %}</span>
+            <span class="{% if paziente.email %}is-complete{% else %}is-missing{% endif %}">Email {% if paziente.email %}presente{% else %}mancante{% endif %}</span>
+        </div>
+    </header>
+
+    {% if duplicati %}
+    <section class="admin-surface admin-duplicate-warning" aria-labelledby="duplicate-patient-title">
+        <p class="admin-eyebrow">Verifica manuale</p>
+        <h2 id="duplicate-patient-title">Possibili anagrafiche duplicate</h2>
+        <p>Telefono o email coincidono. I record non vengono uniti automaticamente.</p>
+        <div class="admin-history-links">
+            {% for duplicato in duplicati %}
+            <a href="{{ url_for('dettaglio_paziente_admin', id=duplicato.id) }}"><span>Paziente #{{ duplicato.id }}</span><strong>{{ duplicato.nome }}</strong><small>{{ duplicato.telefono }}{% if duplicato.email %} · {{ duplicato.email }}{% endif %}</small></a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="admin-detail-grid admin-patient-detail-grid">
+        <section class="admin-surface admin-patient-form-section">
+            <p class="admin-eyebrow">Dati correnti</p>
+            <h2>Modifica anagrafica</h2>
+            <p class="filtro-descrizione">Le modifiche aggiornano questa scheda paziente. Appuntamenti, call e iscrizioni già registrati conservano i dati originari.</p>
+            <form class="admin-form-grid" method="post" action="{{ url_for('modifica_paziente_admin', id=paziente.id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label>Nome e cognome *<input name="nome" value="{{ paziente.nome }}" maxlength="100" autocomplete="name" required></label>
+                <label>Telefono<input type="tel" name="telefono" value="{{ paziente.telefono or '' }}" maxlength="20" autocomplete="tel"></label>
+                <label>Email<input type="email" name="email" value="{{ paziente.email or '' }}" maxlength="100" autocomplete="email"></label>
+                <label>Codice fiscale<input name="codice_fiscale" value="{{ paziente.codice_fiscale or '' }}" maxlength="32" autocapitalize="characters"></label>
+                <label>Nome bambino<input name="nome_bambino" value="{{ paziente.nome_bambino or '' }}" maxlength="100"></label>
+                <label>Età bambino<input name="eta_bambino" value="{{ paziente.eta_bambino or '' }}" maxlength="40"></label>
+                <label class="admin-form-wide">Note anagrafica<textarea name="note" rows="5" maxlength="4000">{{ paziente.note or '' }}</textarea></label>
+                <button class="btn" type="submit">Salva modifiche</button>
+            </form>
+        </section>
+
+        <aside class="admin-surface admin-patient-record-meta">
+            <p class="admin-eyebrow">Registro</p>
+            <h2>Scheda paziente</h2>
+            <dl class="admin-facts">
+                <div><dt>Creata</dt><dd>{{ paziente.creato_il|local_timestamp }}</dd></div>
+                <div><dt>Aggiornata</dt><dd>{{ paziente.aggiornato_il|local_timestamp }}</dd></div>
+                <div class="admin-fact-wide"><dt>Pratiche collegate</dt><dd>{{ storico_persona|length }}</dd></div>
+            </dl>
+        </aside>
+    </div>
+
+    <section class="admin-surface admin-person-history" id="storico-paziente">
+        <div class="admin-section-heading">
+            <div><p class="admin-eyebrow">Cronologia</p><h2>Pratiche collegate</h2></div>
+            <span class="admin-total">{{ storico_persona|length }}</span>
+        </div>
+        <div class="admin-history-links">
+            {% for voce in storico_persona %}
+            <a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}"><span>{{ voce.tipo }}</span><strong>{{ voce.titolo }}</strong><small>{{ voce.data or 'Data non indicata' }}</small></a>
+            {% else %}
+            <p class="nota nota-lg">Nessuna pratica collegata a questa anagrafica.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+{% endblock %}

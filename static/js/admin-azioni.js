@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
             '#admin-corsi': 'corsi',
             '#admin-nuovo-corso': 'nuovo-corso',
             '#admin-aziende': 'aziende',
-            '#admin-persone': 'persone',
+            '#admin-pazienti': 'pazienti',
+            '#admin-persone': 'pazienti',
             '#admin-attivita': 'attivita',
             '#admin-errori': 'errori',
             '#admin-impostazioni': 'impostazioni',
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             corsi: '#admin-corsi',
             'nuovo-corso': '#admin-nuovo-corso',
             aziende: '#admin-aziende',
-            persone: '#admin-persone',
+            pazienti: '#admin-pazienti',
             attivita: '#admin-attivita',
             errori: '#admin-errori',
             impostazioni: '#admin-impostazioni',
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'call-sonno': '#admin-call-sonno',
         };
         const haRicerca = new URLSearchParams(window.location.search).has('q');
-        const pannelloIniziale = pannelliPerHash[window.location.hash] || (haRicerca ? 'persone' : 'agenda');
+        const pannelloIniziale = pannelliPerHash[window.location.hash] || (haRicerca ? 'pazienti' : 'agenda');
         mostraPannelloAdmin(pannelloIniziale);
 
         adminViewButtons.forEach(button => {

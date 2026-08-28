@@ -411,7 +411,7 @@ passaggi CET/CEST.
 - `CallSonno`: richiesta breve, stato, slot Calendar e invito al questionario.
 - `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
-- `PersonaCorso`: rubrica dei partecipanti e delle famiglie.
+- `PersonaCorso`: anagrafica pazienti, partecipanti e famiglie esposta nell’admin come `Pazienti`; il nome tecnico e la tabella restano invariati per compatibilità.
 - `IscrizioneCorso`: richiesta collegata, quando possibile, a corso e persona.
 - `PercorsoAccompagnamento`: edizione del corso nascita completo.
 - `IncontroAccompagnamento`: incontro di una specifica edizione.
@@ -420,7 +420,7 @@ passaggi CET/CEST.
 - `AttivitaAdmin`, `NotaAdmin`: prossime azioni e note cronologiche.
 - `EmailOperativa`: copia esatta di destinatario, oggetto, corpo ed esito per 24 mesi.
 - `PropostaSlot`, `BloccoAgenda`: proposte accettabili e pause/chiusure sincronizzate.
-- `RegistroModifica`, `CollegamentoPersona`: audit amministrativo e collegamenti manuali tra pratiche.
+- `RegistroModifica`, `CollegamentoPersona`: audit amministrativo e collegamenti manuali tra pratiche e anagrafiche paziente.
 
 Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.md`.
 
@@ -440,6 +440,8 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
 - Per una richiesta collegata a una data, l’email del partecipante è obbligatoria perché costituisce il canale della successiva conferma.
 - Il passaggio admin a `Confermato` invia la mail con corso, edizione e tipo di partecipazione. Un secondo passaggio sullo stesso stato non reinvia nulla.
 - Il passaggio ad `Annullato` e lo spostamento individuale verso un’altra edizione inviano le relative comunicazioni. Lo spostamento di una richiesta ancora `Nuova` chiarisce che il posto resta non confermato.
+- Gli stati `Lista attesa` e `Invitato` non ricevono email: quando si libera un posto viene creata un’attività admin per il contatto telefonico. Il passaggio successivo a `Confermato` invia la normale conferma del posto.
+- La modifica organizzativa di un’edizione viene salvata anche senza selezionare l’invio ai destinatari; la checkbox controlla soltanto la comunicazione e non la persistenza o la sincronizzazione Calendar.
 - Stato e nuova edizione vengono salvati prima dell’invio SMTP. Un errore email non annulla l’operazione: resta tracciato in `EmailOperativa` e `RegistroEvento` e viene mostrato nell’admin.
 
 ## Google Calendar e Arzamed
@@ -521,9 +523,9 @@ successivi non ne dipendono.
 ## Database e migrazioni
 
 La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente del repository è
-`e2f4a6b8c901`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
+`f4c8a2d7e901`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
 promemoria email alla call sonno, rimuovono i campi del precedente promemoria
-WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin, normalizzano le difformità dei database SQLite legacy e portano `iscrizione_corso.data_corso` da 20 a 255 caratteri per contenere data, ora e luogo dell’edizione. Un nuovo
+WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin, normalizzano le difformità dei database SQLite legacy, portano `iscrizione_corso.data_corso` da 20 a 255 caratteri per contenere data, ora e luogo dell’edizione e rendono facoltativo `persona_corso.telefono` per consentire anagrafiche con recapiti ancora da completare. Un nuovo
 database, SQLite o PostgreSQL, si prepara esclusivamente con:
 
 ```bash

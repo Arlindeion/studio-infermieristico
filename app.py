@@ -278,6 +278,7 @@ ORARI_CALL_SONNO = [
     for minuto in [0, 30]
 ]
 STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Lista attesa', 'Invitato', 'Annullato']
+STATI_LISTA_ATTESA = {'Lista attesa', 'Invitato'}
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
 STATI_RICHIESTA_AZIENDA = [
@@ -1748,7 +1749,7 @@ class Corso(db.Model):
 class PersonaCorso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
-    telefono = db.Column(db.String(20), nullable=False)
+    telefono = db.Column(db.String(20), nullable=True)
     email = db.Column(db.String(100), nullable=True)
     codice_fiscale = db.Column(db.String(32), nullable=True)
     nome_bambino = db.Column(db.String(100), nullable=True)
@@ -3483,6 +3484,8 @@ def invia_email_alert_nuova_iscrizione(iscrizione):
 
 def _invia_email_partecipante_corso(iscrizione, subject, body, failure_message):
     """Invia una comunicazione successiva alla richiesta senza modificare il dato principale."""
+    if iscrizione.stato in STATI_LISTA_ATTESA:
+        return None
     if not iscrizione.email:
         return None
     msg = Message(subject=subject, recipients=[iscrizione.email], body=body)
@@ -4054,6 +4057,40 @@ def _possibili_duplicati_persona(persona):
         if stessa_email or stesso_telefono:
             duplicati.append(candidata)
     return duplicati
+
+
+def _storico_persona_admin(persona):
+    """Restituisce le pratiche collegate senza modificare i recapiti storici."""
+    storico = [
+        {
+            'tipo': 'IscrizioneCorso',
+            'id': iscrizione.id,
+            'titolo': iscrizione.corso_titolo,
+            'data': iscrizione.data_corso or '',
+            'creato_il': iscrizione.creato_il,
+        }
+        for iscrizione in persona.iscrizioni
+    ]
+    for collegamento in persona.collegamenti_pratiche:
+        pratica = _entita_admin(collegamento.entita_tipo, collegamento.entita_id)
+        if pratica:
+            titolo = (
+                getattr(pratica, 'servizio', None)
+                or ('Call sonno' if collegamento.entita_tipo == 'CallSonno' else None)
+                or _nome_entita_admin(collegamento.entita_tipo, pratica)
+            )
+            storico.append({
+                'tipo': collegamento.entita_tipo,
+                'id': pratica.id,
+                'titolo': titolo,
+                'data': getattr(pratica, 'data', '') or '',
+                'creato_il': getattr(pratica, 'creato_il', collegamento.creato_il),
+            })
+    return sorted(
+        storico,
+        key=lambda voce: voce['creato_il'] or datetime.min,
+        reverse=True,
+    )
 
 
 def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fiscale='',
@@ -5472,8 +5509,15 @@ def admin():
 
     ricerca = request.args.get('q', '').strip()
     risultati_ricerca = []
+    pazienti_query = PersonaCorso.query
     if ricerca:
         criterio = f'%{ricerca}%'
+        pazienti_query = pazienti_query.filter(db.or_(
+            PersonaCorso.nome.ilike(criterio),
+            PersonaCorso.telefono.ilike(criterio),
+            PersonaCorso.email.ilike(criterio),
+            PersonaCorso.codice_fiscale.ilike(criterio),
+        ))
         for elemento in Appuntamento.query.filter(db.or_(Appuntamento.nome.ilike(criterio), Appuntamento.telefono.ilike(criterio), Appuntamento.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'Appuntamento', 'id': elemento.id, 'nome': elemento.nome, 'dettaglio': f'{elemento.telefono} · {elemento.servizio}'})
         for elemento in CallSonno.query.filter(db.or_(CallSonno.nome.ilike(criterio), CallSonno.telefono.ilike(criterio), CallSonno.email.ilike(criterio))).limit(20):
@@ -5483,6 +5527,7 @@ def admin():
 
         for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
+    pazienti = pazienti_query.order_by(PersonaCorso.nome).all()
     # Query gli appuntamenti in base al filtro
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
@@ -5601,6 +5646,7 @@ def admin():
                            ),
                            ricerca=ricerca,
                            risultati_ricerca=risultati_ricerca,
+                           pazienti=pazienti,
                            calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
                            mail_soppressa=bool(app.config.get('MAIL_SUPPRESS_SEND')),
                            eventi_oggi_count=sum(len(eventi) for giorno, eventi in agenda_per_giorno.items() if giorno == local_today()),
@@ -5619,6 +5665,7 @@ def admin():
                            iscrizioni_corsi=iscrizioni_corsi,
                            iscrizioni_totali_count=iscrizioni_totali_count,
                            persone_corsi_count=len(persone_corsi),
+                           pazienti_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
                            call_sonno=call_sonno,
                            call_sonno_in_attesa_count=call_sonno_in_attesa_count,
@@ -5669,18 +5716,19 @@ def dettaglio_admin(tipo, entita_id):
     corsi_disponibili = Corso.query.filter(Corso.archiviato_il.is_(None)).order_by(Corso.data).all()
     collegamento_persona = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
     persona_collegata = entita.persona if tipo == 'IscrizioneCorso' else (collegamento_persona.persona if collegamento_persona else None)
-    storico_persona = []
-    if persona_collegata:
-        storico_persona.extend([{'tipo': 'IscrizioneCorso', 'id': i.id, 'titolo': i.corso_titolo, 'data': i.data_corso or ''} for i in persona_collegata.iscrizioni])
-        for collegamento in persona_collegata.collegamenti_pratiche:
-            pratica = _entita_admin(collegamento.entita_tipo, collegamento.entita_id)
-            if pratica:
-                storico_persona.append({'tipo': collegamento.entita_tipo, 'id': pratica.id, 'titolo': _nome_entita_admin(collegamento.entita_tipo, pratica), 'data': getattr(pratica, 'data', '')})
+    storico_persona = _storico_persona_admin(persona_collegata) if persona_collegata else []
     iscrizioni_corso = (
         IscrizioneCorso.query.filter_by(corso_id=entita.id).order_by(IscrizioneCorso.nome).all()
         if tipo == 'Corso'
         else []
     )
+    destinatari_aggiornamento_corso = [
+        iscrizione
+        for iscrizione in iscrizioni_corso
+        if iscrizione.email
+        and iscrizione.stato not in STATI_LISTA_ATTESA | {'Annullato'}
+        and iscrizione.archiviata_il is None
+    ]
     return render_template(
         'admin_dettaglio.html',
         tipo=tipo,
@@ -5693,6 +5741,7 @@ def dettaglio_admin(tipo, entita_id):
         duplicati=duplicati,
         corsi_disponibili=corsi_disponibili,
         iscrizioni_corso=iscrizioni_corso,
+        destinatari_aggiornamento_corso=destinatari_aggiornamento_corso,
         persone_disponibili=PersonaCorso.query.order_by(PersonaCorso.nome).all(),
         persona_collegata=persona_collegata,
         storico_persona=storico_persona,
@@ -5739,6 +5788,163 @@ def collega_persona_admin(tipo, entita_id):
     registra_modifica('collegamento_persona', tipo, entita_id, {'persona_id': persona.id})
     flash('Pratica collegata manualmente alla persona.', 'success')
     return redirect(_url_dettaglio_admin(tipo, entita_id))
+
+
+@app.route('/admin/pratica/<tipo>/<int:entita_id>/crea-paziente', methods=['POST'])
+@login_required
+def crea_paziente_da_pratica_admin(tipo, entita_id):
+    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+        abort(400)
+    pratica = _entita_admin(tipo, entita_id)
+    if pratica is None:
+        abort(404)
+    if CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first():
+        flash('La pratica è già collegata a un paziente.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    if pratica.telefono and not _telefono_valido(pratica.telefono):
+        flash('Correggi prima il numero di telefono della pratica.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    if pratica.email and not _email_valida(pratica.email):
+        flash('Correggi prima l’indirizzo email della pratica.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    paziente = PersonaCorso(
+        nome=pratica.nome,
+        telefono=pratica.telefono,
+        email=pratica.email or None,
+        eta_bambino=(
+            f'{pratica.eta_bambino_mesi} mesi'
+            if tipo == 'CallSonno' and pratica.eta_bambino_mesi is not None
+            else None
+        ),
+    )
+    db.session.add(paziente)
+    db.session.flush()
+    db.session.add(CollegamentoPersona(
+        persona=paziente,
+        entita_tipo=tipo,
+        entita_id=entita_id,
+    ))
+    db.session.commit()
+    registra_modifica(
+        'creazione_anagrafica_da_pratica',
+        'PersonaCorso',
+        paziente.id,
+        {'tipo_pratica': tipo, 'pratica_id': entita_id},
+    )
+    flash('Paziente creato e pratica collegata.', 'success')
+    return redirect(url_for('dettaglio_paziente_admin', id=paziente.id))
+
+
+@app.route('/admin/paziente/aggiungi', methods=['POST'])
+@login_required
+def aggiungi_paziente_admin():
+    if not _csrf_admin_valido():
+        abort(400)
+    nome = request.form.get('nome', '').strip()
+    telefono = request.form.get('telefono', '').strip()
+    email = request.form.get('email', '').strip()
+    codice_fiscale = re.sub(r'\s+', '', request.form.get('codice_fiscale', '')).upper()
+    if not nome or len(nome) > 100:
+        flash('Inserisci nome e cognome del paziente (massimo 100 caratteri).', 'error')
+        return redirect(url_for('admin') + '#admin-pazienti')
+    if telefono and not _telefono_valido(telefono):
+        flash('Inserisci un numero di telefono valido oppure lascia il campo vuoto.', 'error')
+        return redirect(url_for('admin') + '#admin-pazienti')
+    if email and not _email_valida(email):
+        flash('Inserisci un indirizzo email valido.', 'error')
+        return redirect(url_for('admin') + '#admin-pazienti')
+    if len(codice_fiscale) > 32:
+        flash('Il codice fiscale è troppo lungo.', 'error')
+        return redirect(url_for('admin') + '#admin-pazienti')
+    if codice_fiscale:
+        esistente = _persona_corso_da_contatti(codice_fiscale=codice_fiscale)
+        if esistente:
+            flash('Esiste già un paziente con questo codice fiscale.', 'error')
+            return redirect(url_for('dettaglio_paziente_admin', id=esistente.id))
+    paziente = PersonaCorso(
+        nome=nome,
+        telefono=telefono or None,
+        email=email or None,
+        codice_fiscale=codice_fiscale or None,
+    )
+    db.session.add(paziente)
+    db.session.commit()
+    registra_modifica('creazione_anagrafica', 'PersonaCorso', paziente.id)
+    flash('Paziente aggiunto all’anagrafica.', 'success')
+    return redirect(url_for('dettaglio_paziente_admin', id=paziente.id))
+
+
+@app.route('/admin/paziente/<int:id>')
+@login_required
+def dettaglio_paziente_admin(id):
+    paziente = db.get_or_404(PersonaCorso, id)
+    return render_template(
+        'admin_paziente.html',
+        paziente=paziente,
+        duplicati=_possibili_duplicati_persona(paziente),
+        storico_persona=_storico_persona_admin(paziente),
+    )
+
+
+@app.route('/admin/paziente/<int:id>/modifica', methods=['POST'])
+@login_required
+def modifica_paziente_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    paziente = db.get_or_404(PersonaCorso, id)
+    valori = {
+        'nome': request.form.get('nome', '').strip(),
+        'telefono': request.form.get('telefono', '').strip(),
+        'email': request.form.get('email', '').strip(),
+        'codice_fiscale': re.sub(r'\s+', '', request.form.get('codice_fiscale', '')).upper(),
+        'nome_bambino': request.form.get('nome_bambino', '').strip(),
+        'eta_bambino': request.form.get('eta_bambino', '').strip(),
+        'note': request.form.get('note', '').strip(),
+    }
+    if not valori['nome'] or len(valori['nome']) > 100:
+        flash('Inserisci nome e cognome del paziente (massimo 100 caratteri).', 'error')
+        return redirect(url_for('dettaglio_paziente_admin', id=id))
+    if valori['telefono'] and not _telefono_valido(valori['telefono']):
+        flash('Inserisci un numero di telefono valido oppure lascia il campo vuoto.', 'error')
+        return redirect(url_for('dettaglio_paziente_admin', id=id))
+    if valori['email'] and not _email_valida(valori['email']):
+        flash('Inserisci un indirizzo email valido.', 'error')
+        return redirect(url_for('dettaglio_paziente_admin', id=id))
+    limiti = {
+        'email': 100,
+        'codice_fiscale': 32,
+        'nome_bambino': 100,
+        'eta_bambino': 40,
+        'note': 4000,
+    }
+    for campo, limite in limiti.items():
+        if len(valori[campo]) > limite:
+            flash(f'Il campo {campo.replace("_", " ")} supera il limite consentito.', 'error')
+            return redirect(url_for('dettaglio_paziente_admin', id=id))
+    if valori['codice_fiscale']:
+        esistente = PersonaCorso.query.filter(
+            PersonaCorso.id != paziente.id,
+            db.func.upper(PersonaCorso.codice_fiscale) == valori['codice_fiscale'],
+        ).first()
+        if esistente:
+            flash('Il codice fiscale appartiene già a un’altra anagrafica.', 'error')
+            return redirect(url_for('dettaglio_paziente_admin', id=id))
+    campi_modificati = [
+        campo for campo, valore in valori.items()
+        if (getattr(paziente, campo) or '') != valore
+    ]
+    for campo, valore in valori.items():
+        setattr(paziente, campo, valore or None)
+    db.session.commit()
+    if campi_modificati:
+        registra_modifica(
+            'modifica_anagrafica',
+            'PersonaCorso',
+            paziente.id,
+            {'campi': campi_modificati},
+        )
+    flash('Anagrafica del paziente aggiornata.', 'success')
+    return redirect(url_for('dettaglio_paziente_admin', id=id))
 
 
 @app.route('/admin/pratica/<tipo>/<int:entita_id>/azione', methods=['POST'])
@@ -5985,6 +6191,13 @@ def aggiungi_appuntamento_admin():
         sincronizzazione='non_collegato',
     )
     db.session.add(appuntamento)
+    db.session.flush()
+    if persona:
+        db.session.add(CollegamentoPersona(
+            persona=persona,
+            entita_tipo='Appuntamento',
+            entita_id=appuntamento.id,
+        ))
     db.session.commit()
     registra_modifica(
         'creazione_admin',
@@ -6515,41 +6728,29 @@ def accetta_proposta_slot(token):
     return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=valida)
 
 
-def _invita_prossimo_lista_attesa(corso):
+def _segnala_prossimo_lista_attesa(corso):
     candidato = IscrizioneCorso.query.filter_by(
         corso_id=corso.id,
         stato='Lista attesa',
     ).order_by(IscrizioneCorso.creato_il).first()
     if not candidato or not _corso_accetta_prenotazione_online(corso, candidato.posti_richiesti or 1):
         return None
-    candidato.stato = 'Invitato'
-    candidato.token_lista_attesa = candidato.token_lista_attesa or secrets.token_urlsafe(48)
-    candidato.invito_lista_attesa_il = utc_now()
-    candidato.scadenza_invito_lista_attesa = utc_now() + timedelta(hours=24)
-    db.session.commit()
-    if candidato.email:
-        link = public_url(url_for('accetta_invito_lista_attesa', token=candidato.token_lista_attesa))
-        msg = Message(
-            subject=f'Posto disponibile · {corso.titolo}',
-            recipients=[candidato.email],
-            body=(
-                f'Buongiorno {candidato.nome},\n\nsi è liberato un posto per {corso.titolo} '
-                f'({_etichetta_data_corso(corso)}). Puoi accettare entro 24 ore:\n{link}\n\n'
-                'Studio infermieristico'
-            ),
-        )
-        try:
-            _invia_email_tracciata(msg, 'IscrizioneCorso', candidato.id)
-        except Exception:
-            registra_evento('email', 'errore', 'Invito lista d’attesa non inviato.', 'IscrizioneCorso', candidato.id)
-    else:
+    scadenza = prossima_scadenza_lavorativa()
+    candidato.scadenza_gestione = scadenza
+    attivita_esistente = AttivitaAdmin.query.filter_by(
+        stato='Aperta',
+        entita_tipo='IscrizioneCorso',
+        entita_id=candidato.id,
+    ).first()
+    if not attivita_esistente:
         db.session.add(AttivitaAdmin(
             titolo=f'Contattare {candidato.nome}: posto disponibile in {corso.titolo}',
-            scadenza=candidato.scadenza_invito_lista_attesa,
+            scadenza=scadenza,
             entita_tipo='IscrizioneCorso',
             entita_id=candidato.id,
+            note='Contatto telefonico: non inviare email alle persone in lista d’attesa.',
         ))
-        db.session.commit()
+    db.session.commit()
     return candidato
 
 
@@ -7419,17 +7620,19 @@ def modifica_corso_admin(id):
     modifiche_organizzative = any(precedente[campo] != dopo[campo] for campo in ['titolo', 'data', 'ora', 'luogo'])
     destinatari = IscrizioneCorso.query.filter(
         IscrizioneCorso.corso_id == corso.id,
-        IscrizioneCorso.stato.notin_(['Annullato', 'Lista attesa']),
+        IscrizioneCorso.stato.notin_(['Annullato', 'Lista attesa', 'Invitato']),
         IscrizioneCorso.email != '',
+        IscrizioneCorso.archiviata_il.is_(None),
     ).all()
-    if modifiche_organizzative and destinatari and request.form.get('conferma_notifiche') != '1':
-        db.session.rollback()
-        flash(f'Conferma l’invio dell’aggiornamento ai {len(destinatari)} destinatari mostrati.', 'error')
-        return redirect(url_for('admin') + '#admin-corsi')
+    invia_aggiornamento = (
+        modifiche_organizzative
+        and bool(destinatari)
+        and request.form.get('conferma_notifiche') == '1'
+    )
     db.session.commit()
     calendar_ok = crea_o_aggiorna_evento_calendario_corso(corso)
     registra_modifica('modifica', 'Corso', corso.id, {'prima': precedente, 'dopo': dopo})
-    if modifiche_organizzative:
+    if invia_aggiornamento:
         for iscrizione in destinatari:
             msg = Message(
                 subject=f'Aggiornamento · {corso.titolo}',
@@ -7447,7 +7650,13 @@ def modifica_corso_admin(id):
                 _invia_email_tracciata(msg, 'IscrizioneCorso', iscrizione.id)
             except Exception:
                 registra_evento('email', 'errore', 'Aggiornamento corso non inviato a un partecipante.', 'IscrizioneCorso', iscrizione.id)
-    flash('Corso aggiornato.' if calendar_ok else 'Corso aggiornato; sincronizzazione Calendar da verificare.', 'success' if calendar_ok else 'error')
+    if modifiche_organizzative and destinatari and not invia_aggiornamento:
+        messaggio = 'Corso aggiornato; nessuna email inviata ai partecipanti.'
+    else:
+        messaggio = 'Corso aggiornato.'
+    if not calendar_ok:
+        messaggio += ' Sincronizzazione Calendar da verificare.'
+    flash(messaggio, 'success' if calendar_ok else 'error')
     return redirect(url_for('admin') + '#admin-corsi')
 
 
@@ -7525,12 +7734,15 @@ def sposta_iscrizione_corso_admin(id):
     if origine_id:
         origine = db.session.get(Corso, origine_id)
         if origine:
-            _invita_prossimo_lista_attesa(origine)
-    email_inviata = invia_email_spostamento_iscrizione_corso(
+            _segnala_prossimo_lista_attesa(origine)
+    in_lista_attesa = iscrizione.stato in STATI_LISTA_ATTESA
+    email_inviata = None if in_lista_attesa else invia_email_spostamento_iscrizione_corso(
         iscrizione,
         edizione_precedente,
     )
-    if email_inviata is True:
+    if in_lista_attesa:
+        flash('Persona spostata; nessuna email inviata perché è in lista d’attesa. Contattala telefonicamente.', 'success')
+    elif email_inviata is True:
         flash('Partecipante spostato; email inviata con la nuova edizione.', 'success')
     elif email_inviata is None:
         flash('Partecipante spostato, ma l’email è mancante: contattalo manualmente.', 'error')
@@ -7592,16 +7804,18 @@ def aggiorna_stato_iscrizione_corso(id, stato):
     email_inviata = None
     if stato == 'Confermato':
         email_inviata = invia_email_conferma_iscrizione_corso(iscrizione)
-    elif stato == 'Annullato':
+    elif stato == 'Annullato' and stato_precedente not in STATI_LISTA_ATTESA:
         email_inviata = invia_email_annullamento_iscrizione_corso(
             iscrizione,
             stato_precedente,
         )
     if stato == 'Annullato' and iscrizione.corso:
-        _invita_prossimo_lista_attesa(iscrizione.corso)
+        _segnala_prossimo_lista_attesa(iscrizione.corso)
     if stato in {'Confermato', 'Annullato'}:
         azione = 'confermata' if stato == 'Confermato' else 'annullata'
-        if email_inviata is True:
+        if stato == 'Annullato' and stato_precedente in STATI_LISTA_ATTESA:
+            flash('Iscrizione annullata; nessuna email inviata perché era in lista d’attesa.', 'success')
+        elif email_inviata is True:
             flash(f'Iscrizione {azione}; email inviata al partecipante.', 'success')
         elif email_inviata is None:
             flash(f'Iscrizione {azione}, ma l’email è mancante: contatta il partecipante manualmente.', 'error')

@@ -129,9 +129,9 @@
     </dialog>
     {% endif %}
 
-    <form class="admin-global-search" method="get" action="{{ url_for('admin') }}">
-        <label class="visually-hidden" for="admin-search">Cerca per nome, telefono, email o codice fiscale</label>
-        <input id="admin-search" type="search" name="q" value="{{ ricerca }}" placeholder="Cerca nome, telefono, email o codice fiscale">
+    <form class="admin-global-search" method="get" action="{{ url_for('admin') }}#admin-pazienti">
+        <label class="visually-hidden" for="admin-search">Cerca un paziente o una pratica per nome, telefono, email o codice fiscale</label>
+        <input id="admin-search" type="search" name="q" value="{{ ricerca }}" placeholder="Cerca paziente o pratica">
         <button type="submit">Cerca</button>
     </form>
 
@@ -141,7 +141,7 @@
         <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false"><span>Corsi</span>{% if iscrizioni_nuove_count %}<strong>{{ iscrizioni_nuove_count }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="nuovo-corso" role="tab" aria-selected="false"><span>Nuovo corso</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="aziende" role="tab" aria-selected="false"><span>Aziende e gruppi</span>{% if richieste_azienda_aperte_count %}<strong>{{ richieste_azienda_aperte_count }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="persone" role="tab" aria-selected="false"><span>Persone</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="pazienti" role="tab" aria-selected="false"><span>Pazienti</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="attivita" role="tab" aria-selected="false"><span>Attività</span>{% if attivita_admin %}<strong>{{ attivita_admin|length }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="errori" role="tab" aria-selected="false"><span>Errori</span>{% if errori_aperti %}<strong>{{ errori_aperti|length }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="impostazioni" role="tab" aria-selected="false"><span>Impostazioni</span></button>
@@ -300,10 +300,71 @@
 </section>
 
 
-<section class="pagina-interna admin-page admin-panel" data-admin-panel="persone" id="admin-persone">
-    <div class="admin-section-heading"><div><p class="admin-eyebrow">Ricerca trasversale</p><h2>Persone e pratiche</h2></div></div>
-    <p class="filtro-descrizione">Cerca per nome, telefono, email o codice fiscale. Il codice fiscale unisce automaticamente; telefono ed email mostrano solo possibili duplicati.</p>
-    {% if ricerca %}<h3>Risultati per “{{ ricerca }}”</h3><div class="admin-request-list">{% for item in risultati_ricerca %}<a class="admin-request-row" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo }}</span><strong>{{ item.nome }}</strong><p>{{ item.dettaglio }}</p></div></a>{% else %}<p class="nota">Nessun risultato.</p>{% endfor %}</div>{% else %}<p class="nota nota-lg">Usa la ricerca in alto per aprire la cronologia di una persona.</p>{% endif %}
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="pazienti" id="admin-pazienti">
+    <div class="admin-section-heading">
+        <div><p class="admin-eyebrow">Anagrafica operativa</p><h2>Pazienti</h2></div>
+        <span class="admin-total">{{ pazienti_count }} in anagrafica</span>
+    </div>
+    <p class="filtro-descrizione">Apri una scheda per correggere telefono, email e dati anagrafici. Le pratiche già registrate conservano i recapiti originali come storico.</p>
+
+    <details class="admin-surface admin-patient-create">
+        <summary>Aggiungi paziente</summary>
+        <form class="admin-form-grid" method="post" action="{{ url_for('aggiungi_paziente_admin') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Nome e cognome *<input name="nome" maxlength="100" autocomplete="name" required></label>
+            <label>Telefono<input type="tel" name="telefono" maxlength="20" autocomplete="tel"></label>
+            <label>Email<input type="email" name="email" maxlength="100" autocomplete="email"></label>
+            <label>Codice fiscale<input name="codice_fiscale" maxlength="32" autocapitalize="characters"></label>
+            <button class="btn" type="submit">Salva paziente</button>
+        </form>
+    </details>
+
+    <div class="admin-patient-list-heading">
+        <h3>{% if ricerca %}Pazienti trovati per “{{ ricerca }}”{% else %}Elenco pazienti{% endif %}</h3>
+        {% if ricerca %}<a href="{{ url_for('admin') }}#admin-pazienti">Azzera ricerca</a>{% endif %}
+    </div>
+    {% if pazienti %}
+    <div class="admin-table-wrap admin-patient-table-wrap">
+        <table class="tabella-admin tabella-desktop admin-patient-table">
+            <thead><tr><th scope="col">Paziente</th><th scope="col">Telefono</th><th scope="col">Email</th><th scope="col">Pratiche</th><th scope="col">Aggiornamento</th><th scope="col">Azione</th></tr></thead>
+            <tbody>
+                {% for paziente in pazienti %}
+                <tr>
+                    <td><strong class="admin-primary">{{ paziente.nome }}</strong>{% if paziente.codice_fiscale %}<span class="admin-secondary">CF {{ paziente.codice_fiscale }}</span>{% endif %}</td>
+                    <td>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
+                    <td>{% if paziente.email %}<a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
+                    <td>{{ paziente.iscrizioni|length + paziente.collegamenti_pratiche|length }}</td>
+                    <td>{{ paziente.aggiornato_il|local_timestamp }}</td>
+                    <td><a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-admin-lista admin-patient-cards">
+        {% for paziente in pazienti %}
+        <article class="card-admin">
+            <div class="card-admin-header"><strong>{{ paziente.nome }}</strong><span class="badge">{{ paziente.iscrizioni|length + paziente.collegamenti_pratiche|length }} pratiche</span></div>
+            <div class="card-admin-body">
+                <p><span>Telefono</span> {{ paziente.telefono or 'Da aggiungere' }}</p>
+                <p><span>Email</span> {{ paziente.email or 'Da aggiungere' }}</p>
+                {% if paziente.codice_fiscale %}<p><span>Codice fiscale</span> {{ paziente.codice_fiscale }}</p>{% endif %}
+            </div>
+            <div class="card-admin-azioni"><a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a></div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="nota nota-lg">{% if ricerca %}Nessun paziente corrisponde alla ricerca.{% else %}Nessun paziente in anagrafica. Usa “Aggiungi paziente” per creare la prima scheda.{% endif %}</p>
+    {% endif %}
+
+    {% if ricerca %}
+    <div class="admin-patient-practice-results">
+        <h3>Pratiche trovate</h3>
+        <p class="filtro-descrizione">Questi risultati possono non essere ancora collegati a un’anagrafica paziente.</p>
+        <div class="admin-request-list">{% for item in risultati_ricerca %}<a class="admin-request-row" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo }}</span><strong>{{ item.nome }}</strong><p>{{ item.dettaglio }}</p></div></a>{% else %}<p class="nota">Nessuna pratica corrisponde alla ricerca.</p>{% endfor %}</div>
+    </div>
+    {% endif %}
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="attivita" id="admin-attivita">
@@ -697,7 +758,7 @@
                             {% for p in persone_corsi %}
                             <option value="{{ p.id }}"
                                     data-nome="{{ p.nome }}"
-                                    data-telefono="{{ p.telefono }}"
+                                    data-telefono="{{ p.telefono or '' }}"
                                     data-email="{{ p.email or '' }}"
                                     data-codice-fiscale="{{ p.codice_fiscale or '' }}"
                                     data-nome-bambino="{{ p.nome_bambino or '' }}"
@@ -814,7 +875,7 @@
                 <article class="rubrica-corsi-card">
                     <div>
                         <strong>{{ p.nome }}</strong>
-                        <span>{{ p.telefono }}</span>
+                        <span>{{ p.telefono or 'Telefono non indicato' }}</span>
                     </div>
                     <p>{{ p.email or 'Email non indicata' }}</p>
                     {% if p.nome_bambino or p.eta_bambino %}

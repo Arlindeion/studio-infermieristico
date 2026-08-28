@@ -4081,10 +4081,51 @@ def test_modifica_edizione_invia_recapiti_corretti_ai_partecipanti(
             stato='Confermato',
         )
         db.session.add(iscrizione)
+        db.session.add_all([
+            IscrizioneCorso(
+                corso_id=corso.id,
+                corso_tipo=corso.tipo,
+                corso_titolo=corso.titolo,
+                nome='Luisa Verdi',
+                telefono='3337654321',
+                email='luisa@example.com',
+                codice_fiscale='VRDLSU90A41G482Y',
+                data_corso='10/11/2099 - ore 16:00 - S.C. Studio Infermieristico',
+                partecipazione='Iscrizione individuale',
+                tipo_richiesta='richiesta_iscrizione',
+                posti=0,
+                posti_richiesti=1,
+                consenso_privacy=True,
+                stato='Lista attesa',
+            ),
+            IscrizioneCorso(
+                corso_id=corso.id,
+                corso_tipo=corso.tipo,
+                corso_titolo=corso.titolo,
+                nome='Anna Neri',
+                telefono='3339876543',
+                email='anna@example.com',
+                codice_fiscale='NRENNA90A41G482U',
+                data_corso='10/11/2099 - ore 16:00 - S.C. Studio Infermieristico',
+                partecipazione='Iscrizione individuale',
+                tipo_richiesta='richiesta_iscrizione',
+                posti=0,
+                posti_richiesti=1,
+                consenso_privacy=True,
+                stato='Invitato',
+            ),
+        ])
         db.session.commit()
         corso_id = corso.id
 
     csrf = _login_admin(client)
+    dettaglio = client.get(f'/admin/pratica/Corso/{corso_id}')
+    anteprima_destinatari = dettaglio.text.split('admin-recipient-preview', 1)[1].split('</div>', 1)[0]
+    assert 'Destinatari aggiornamento (1)' in anteprima_destinatari
+    assert 'mario@example.com' in anteprima_destinatari
+    assert 'luisa@example.com' not in anteprima_destinatari
+    assert 'anna@example.com' not in anteprima_destinatari
+    assert 'le modifiche al corso vengono comunque salvate' in anteprima_destinatari
     with patch.object(app_module.mail, 'send') as send_mock:
         resp = client.post(
             f'/admin/corso/{corso_id}/modifica',
@@ -4109,6 +4150,135 @@ def test_modifica_edizione_invia_recapiti_corretti_ai_partecipanti(
     assert 'Data e luogo: 17/11/2099 - ore 17:00 - S.C. Studio Infermieristico' in messaggio.body
     assert 'Telefono: 380 631 7175' in messaggio.body
     assert 'Email: info@scstudioinfermieristico.it' in messaggio.body
+
+
+def test_modifica_ora_corso_salva_senza_destinatari_selezionati(
+    client,
+    google_calendar_scrittura_finto,
+):
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='Corso BLSD',
+            tipo='bls-d',
+            data='2099-11-10',
+            ora='16:00',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=5,
+            stato='Aperto',
+            google_event_id='evento-blsd',
+        )
+        db.session.add(corso)
+        db.session.flush()
+        db.session.add(IscrizioneCorso(
+            corso_id=corso.id,
+            corso_tipo=corso.tipo,
+            corso_titolo=corso.titolo,
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='10/11/2099 - ore 16:00 - S.C. Studio Infermieristico',
+            partecipazione='Iscrizione individuale',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        ))
+        db.session.commit()
+        corso_id = corso.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/corso/{corso_id}/modifica',
+            data={
+                '_csrf_token': csrf,
+                'titolo': 'Corso BLSD',
+                'data': '2099-11-10',
+                'ora': '17:30',
+                'luogo': 'S.C. Studio Infermieristico',
+                'durata_ore': '5',
+                'capienza_massima': '8',
+                'stato': 'Aperto',
+            },
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == 200
+    assert 'Corso aggiornato; nessuna email inviata ai partecipanti.' in resp.text
+    send_mock.assert_not_called()
+    with flask_app.app_context():
+        corso = db.session.get(Corso, corso_id)
+        assert corso.ora == '17:30'
+
+
+def test_posto_liberato_crea_contatto_telefonico_senza_email_alla_lista_attesa(client):
+    corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+        capienza_massima=1,
+    )
+    with flask_app.app_context():
+        confermata = IscrizioneCorso(
+            corso_id=int(corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            codice_fiscale='RSSMRA80A01G482X',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Confermato',
+        )
+        attesa = IscrizioneCorso(
+            corso_id=int(corso_id),
+            corso_tipo='disostruzione-pediatrica',
+            corso_titolo='Disostruzione pediatrica',
+            nome='Luisa Verdi',
+            telefono='3337654321',
+            email='luisa@example.com',
+            codice_fiscale='VRDLSU90A41G482Y',
+            data_corso='16/07/2099',
+            partecipazione='Singolo 34 euro',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=0,
+            posti_richiesti=1,
+            consenso_privacy=True,
+            stato='Lista attesa',
+        )
+        db.session.add_all([confermata, attesa])
+        db.session.commit()
+        confermata_id = confermata.id
+        attesa_id = attesa.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/iscrizione-corso/{confermata_id}/Annullato',
+            data={'_csrf_token': csrf},
+        )
+
+    assert resp.status_code == 302
+    assert send_mock.call_count == 1
+    assert send_mock.call_args.args[0].recipients == ['mario@example.com']
+    with flask_app.app_context():
+        attesa = db.session.get(IscrizioneCorso, attesa_id)
+        assert attesa.stato == 'Lista attesa'
+        assert attesa.invito_lista_attesa_il is None
+        assert attesa.scadenza_invito_lista_attesa is None
+        attivita = app_module.AttivitaAdmin.query.filter_by(
+            entita_tipo='IscrizioneCorso',
+            entita_id=attesa_id,
+            stato='Aperta',
+        ).one()
+        assert 'Contattare Luisa Verdi' in attivita.titolo
+        assert 'Contatto telefonico' in attivita.note
 
 
 def test_spostamento_rifiuta_orario_non_prenotabile(client, google_calendar_scrittura_finto):
@@ -4147,17 +4317,147 @@ def test_admin_espone_le_sezioni_operative_richieste(client):
     resp = client.get('/admin')
 
     assert resp.status_code == 200
-    for etichetta in ['Agenda', 'Richieste', 'Corsi', 'Persone', 'Attività', 'Errori', 'Impostazioni']:
+    for etichetta in ['Agenda', 'Richieste', 'Corsi', 'Pazienti', 'Attività', 'Errori', 'Impostazioni']:
         assert f'<span>{etichetta}</span>' in resp.text
+    assert '<span>Persone</span>' not in resp.text
+    assert 'id="admin-pazienti"' in resp.text
     assert 'Nuove richieste in attesa' in resp.text
     assert 'Riconciliazione automatica: ogni ora.' in resp.text
 
 
+def test_admin_crea_e_modifica_anagrafica_paziente(client):
+    csrf = _login_admin(client)
+
+    resp = client.post('/admin/paziente/aggiungi', data={
+        '_csrf_token': csrf,
+        'nome': 'Anna Neri',
+        'telefono': '',
+        'email': '',
+        'codice_fiscale': 'nrena80a41g482x',
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        paziente = PersonaCorso.query.one()
+        paziente_id = paziente.id
+        assert paziente.codice_fiscale == 'NRENA80A41G482X'
+        assert paziente.telefono is None
+        assert paziente.email is None
+
+    scheda = client.get(f'/admin/paziente/{paziente_id}')
+    assert scheda.status_code == 200
+    assert 'Modifica anagrafica' in scheda.text
+    assert 'Telefono mancante' in scheda.text
+    assert 'Email mancante' in scheda.text
+    assert '/static/css/admin.css?v=5.3' in scheda.text
+
+    csrf = _csrf_admin(client)
+    resp = client.post(f'/admin/paziente/{paziente_id}/modifica', data={
+        '_csrf_token': csrf,
+        'nome': 'Anna Neri',
+        'telefono': '3337654321',
+        'email': 'anna@example.com',
+        'codice_fiscale': 'NRENA80A41G482X',
+        'nome_bambino': 'Leo',
+        'eta_bambino': '18 mesi',
+        'note': 'Preferisce essere contattata nel pomeriggio.',
+    })
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        aggiornato = db.session.get(PersonaCorso, paziente_id)
+        assert aggiornato.telefono == '3337654321'
+        assert aggiornato.email == 'anna@example.com'
+        assert aggiornato.nome_bambino == 'Leo'
+        modifica = app_module.RegistroModifica.query.filter_by(
+            azione='modifica_anagrafica',
+            entita_tipo='PersonaCorso',
+            entita_id=paziente_id,
+        ).one()
+        dettagli = json.loads(modifica.dettagli)
+        assert 'telefono' in dettagli['campi']
+        assert 'email' in dettagli['campi']
+        assert 'anna@example.com' not in modifica.dettagli
+
+
+def test_admin_pazienti_filtra_anagrafica_e_mantiene_ricerca_pratiche(client):
+    with flask_app.app_context():
+        db.session.add_all([
+            PersonaCorso(nome='Anna Neri', telefono='3331234567', email='anna@example.com'),
+            PersonaCorso(nome='Giulia Bianchi', telefono='3337654321', email='giulia@example.com'),
+            Appuntamento(
+                nome='Anna Neri',
+                telefono='3331234567',
+                email='anna@example.com',
+                servizio='Medicazione semplice',
+                data='2099-09-01',
+                ora='10:00',
+            ),
+        ])
+        db.session.commit()
+
+    _login_admin(client)
+    resp = client.get('/admin?q=Anna')
+
+    assert resp.status_code == 200
+    sezione_pazienti = resp.text.split('id="admin-pazienti"', 1)[1].split('</section>', 1)[0]
+    assert 'Pazienti trovati per “Anna”' in sezione_pazienti
+    assert 'Anna Neri' in sezione_pazienti
+    assert 'Giulia Bianchi' not in sezione_pazienti
+    assert 'Pratiche trovate' in sezione_pazienti
+    assert 'Medicazione semplice' in sezione_pazienti
+
+
+def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
+    with flask_app.app_context():
+        appuntamento = Appuntamento(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+            servizio='Medicazione semplice',
+            data='2099-09-01',
+            ora='10:00',
+        )
+        db.session.add(appuntamento)
+        db.session.commit()
+        appuntamento_id = appuntamento.id
+
+    csrf = _login_admin(client)
+    resp = client.post(
+        f'/admin/pratica/Appuntamento/{appuntamento_id}/crea-paziente',
+        data={'_csrf_token': csrf},
+    )
+
+    assert resp.status_code == 302
+    with flask_app.app_context():
+        paziente = PersonaCorso.query.one()
+        collegamento = app_module.CollegamentoPersona.query.one()
+        assert paziente.nome == 'Mario Rossi'
+        assert collegamento.persona_id == paziente.id
+        assert collegamento.entita_tipo == 'Appuntamento'
+        assert collegamento.entita_id == appuntamento_id
+        paziente_id = paziente.id
+
+    scheda = client.get(f'/admin/paziente/{paziente_id}')
+    assert 'Pratiche collegate' in scheda.text
+    assert 'Medicazione semplice' in scheda.text
+
+
 def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
+    with flask_app.app_context():
+        paziente = PersonaCorso(
+            nome='Mario Rossi',
+            telefono='3331234567',
+            email='mario@example.com',
+        )
+        db.session.add(paziente)
+        db.session.commit()
+        paziente_id = paziente.id
     csrf = _login_admin(client)
 
     resp = client.post('/admin/appuntamento/aggiungi', data={
         '_csrf_token': csrf,
+        'persona_id': str(paziente_id),
         'nome': 'Mario Rossi',
         'telefono': '3331234567',
         'email': 'mario@example.com',
@@ -4174,6 +4474,10 @@ def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
         assert appuntamento.creato_da_admin is True
         assert appuntamento.duration_minutes == 45
         assert appuntamento.scadenza_gestione is not None
+        collegamento = app_module.CollegamentoPersona.query.one()
+        assert collegamento.persona_id == paziente_id
+        assert collegamento.entita_tipo == 'Appuntamento'
+        assert collegamento.entita_id == appuntamento.id
 
 
 def test_admin_chiede_conferma_json_se_mancano_i_contatti(client):
