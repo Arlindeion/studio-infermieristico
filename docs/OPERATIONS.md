@@ -441,8 +441,9 @@ Le richieste corso senza data usano `tipo_richiesta = ricontatto`, mostrato in a
 - Per una richiesta collegata a una data, l’email del partecipante è obbligatoria perché costituisce il canale della successiva conferma.
 - Il passaggio admin a `Confermato` invia la mail con corso, edizione e tipo di partecipazione. Un secondo passaggio sullo stesso stato non reinvia nulla.
 - Il passaggio ad `Annullato` e lo spostamento individuale verso un’altra edizione inviano le relative comunicazioni. Lo spostamento di una richiesta ancora `Nuova` chiarisce che il posto resta non confermato.
+- Il passaggio dell’intera edizione a `Annullato`, anche dal modulo di modifica, registra il timestamp di archiviazione, elimina l’evento Calendar e invia automaticamente l’avviso ai soli partecipanti `Confermato`; ripetere lo stesso stato non reinvia la mail. Il comando `Archivia` applica lo stesso flusso. Se manca il `google_event_id` locale, il sistema cerca prima l’evento tramite le proprietà private `studioEntity` e `studioEntityId`, evitando di dichiarare conclusa la cancellazione mentre l’evento remoto esiste ancora.
 - Gli stati `Lista attesa` e `Invitato` non ricevono email: quando si libera un posto viene creata un’attività admin per il contatto telefonico. Il passaggio successivo a `Confermato` invia la normale conferma del posto.
-- La modifica organizzativa di un’edizione viene salvata anche senza selezionare l’invio ai destinatari; la checkbox controlla soltanto la comunicazione e non la persistenza o la sincronizzazione Calendar.
+- La modifica organizzativa di un’edizione viene salvata anche senza selezionare l’invio ai destinatari; la checkbox controlla soltanto gli aggiornamenti ordinari e non la persistenza o la sincronizzazione Calendar. L’avviso dovuto all’annullamento dell’intera edizione è automatico e indipendente dalla checkbox.
 - Stato e nuova edizione vengono salvati prima dell’invio SMTP. Un errore email non annulla l’operazione: resta tracciato in `EmailOperativa` e `RegistroEvento` e viene mostrato nell’admin.
 
 ## Google Calendar e Arzamed

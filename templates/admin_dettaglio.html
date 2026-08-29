@@ -257,7 +257,7 @@ S.C. Studio Infermieristico</textarea></label>
     <section class="admin-surface">
         <p class="admin-eyebrow">Edizione e partecipanti</p>
         <h2>Modifica corso</h2>
-        <form class="admin-form-grid" method="post" action="{{ url_for('modifica_corso_admin', id=entita.id) }}" data-confirm="Confermare le modifiche? Le comunicazioni verranno inviate soltanto se hai selezionato l’opzione dedicata.">
+        <form class="admin-form-grid" method="post" action="{{ url_for('modifica_corso_admin', id=entita.id) }}" data-confirm="Confermare le modifiche? Se imposti lo stato Annullato, i partecipanti confermati riceveranno automaticamente l’avviso; per gli altri aggiornamenti serve l’opzione dedicata.">
 
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <label>Titolo<input name="titolo" value="{{ entita.titolo }}" required></label>
@@ -268,7 +268,7 @@ S.C. Studio Infermieristico</textarea></label>
             <label>Capienza nominale<input type="number" name="capienza_massima" min="1" value="{{ entita.capienza_massima or '' }}"></label>
             <label>Stato<select name="stato">{% for stato in ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso'] %}<option {% if entita.stato == stato %}selected{% endif %}>{{ stato }}</option>{% endfor %}</select></label>
             <label class="admin-form-wide">Descrizione<textarea name="descrizione" rows="3">{{ entita.descrizione or '' }}</textarea></label>
-            <div class="admin-form-wide admin-recipient-preview"><strong>Destinatari aggiornamento ({{ destinatari_aggiornamento_corso|length }})</strong><p>{% for iscrizione in destinatari_aggiornamento_corso %}{{ iscrizione.nome }} &lt;{{ iscrizione.email }}&gt;{% if not loop.last %}; {% endif %}{% else %}Nessun destinatario attivo. Le persone in lista d’attesa vengono contattate telefonicamente.{% endfor %}</p>{% if destinatari_aggiornamento_corso %}<label><input type="checkbox" name="conferma_notifiche" value="1"> Invia l’aggiornamento ai destinatari elencati</label><small>Se non selezioni questa opzione, le modifiche al corso vengono comunque salvate.</small>{% endif %}</div>
+            <div class="admin-form-wide admin-recipient-preview"><strong>Destinatari aggiornamento ({{ destinatari_aggiornamento_corso|length }})</strong><p>{% for iscrizione in destinatari_aggiornamento_corso %}{{ iscrizione.nome }} &lt;{{ iscrizione.email }}&gt;{% if not loop.last %}; {% endif %}{% else %}Nessun destinatario attivo. Le persone in lista d’attesa vengono contattate telefonicamente.{% endfor %}</p>{% if destinatari_aggiornamento_corso %}<label><input type="checkbox" name="conferma_notifiche" value="1"> Invia l’aggiornamento ai destinatari elencati</label><small>Se non selezioni questa opzione, le modifiche al corso vengono comunque salvate. Il passaggio ad Annullato invia invece sempre l’avviso ai soli partecipanti confermati.</small>{% endif %}</div>
             <button class="btn" type="submit">Salva corso e sincronizza</button>
         </form>
         <div class="admin-export-actions"><a class="btn-azione blu" href="{{ url_for('esporta_corso_csv', id=entita.id) }}">Esporta CSV</a><a class="btn-azione blu" href="{{ url_for('esporta_corso_pdf', id=entita.id) }}">Esporta PDF</a></div>

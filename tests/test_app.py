@@ -4402,6 +4402,166 @@ def test_aggiunta_corso_usa_durata_modificata_su_calendario(client, google_calen
         assert corso.durata_ore == 4
 
 
+@pytest.mark.parametrize('stato_iniziale', ['Aperto', 'Annullato'])
+def test_modifica_stato_corso_annullato_avvisa_solo_i_confermati_una_volta(
+    client,
+    google_calendar_scrittura_finto,
+    stato_iniziale,
+):
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='Disostruzione pediatrica',
+            tipo='disostruzione-pediatrica',
+            data='2099-11-07',
+            ora='17:30',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=2,
+            capienza_massima=8,
+            stato=stato_iniziale,
+            google_event_id='evento-da-annullare',
+        )
+        db.session.add(corso)
+        db.session.flush()
+
+        def iscrizione(nome, email, stato):
+            return IscrizioneCorso(
+                corso_id=corso.id,
+                corso_tipo=corso.tipo,
+                corso_titolo=corso.titolo,
+                nome=nome,
+                telefono='3331234567',
+                email=email,
+                codice_fiscale='RSSMRA80A01G482X',
+                data_corso='07/11/2099 - ore 17:30 - S.C. Studio Infermieristico',
+                partecipazione='Iscrizione individuale',
+                tipo_richiesta='richiesta_iscrizione',
+                posti=1 if stato == 'Confermato' else 0,
+                posti_richiesti=1,
+                consenso_privacy=True,
+                stato=stato,
+            )
+
+        db.session.add_all([
+            iscrizione('Mario Rossi', 'mario@example.com', 'Confermato'),
+            iscrizione('Giulia Bianchi', 'giulia@example.com', 'Nuova'),
+            iscrizione('Luca Verdi', 'luca@example.com', 'Lista attesa'),
+        ])
+        db.session.commit()
+        corso_id = corso.id
+
+    csrf = _login_admin(client)
+    dati_modifica = {
+        '_csrf_token': csrf,
+        'titolo': 'Disostruzione pediatrica',
+        'data': '2099-11-07',
+        'ora': '17:30',
+        'luogo': 'S.C. Studio Infermieristico',
+        'durata_ore': '2',
+        'capienza_massima': '8',
+        'stato': 'Annullato',
+    }
+    with patch.object(app_module.mail, 'send') as send_mock:
+        resp = client.post(
+            f'/admin/corso/{corso_id}/modifica',
+            data=dati_modifica,
+            follow_redirects=True,
+        )
+        ripetizione = client.post(
+            f'/admin/corso/{corso_id}/modifica',
+            data=dati_modifica,
+            follow_redirects=True,
+        )
+
+    assert resp.status_code == ripetizione.status_code == 200
+    assert 'Corso annullato e partecipanti confermati avvisati via email (1).' in resp.text
+    assert send_mock.call_count == 1
+    messaggio = send_mock.call_args.args[0]
+    assert messaggio.recipients == ['mario@example.com']
+    assert messaggio.subject == 'Edizione annullata - Disostruzione pediatrica'
+    assert '07/11/2099 - ore 17:30 - S.C. Studio Infermieristico' in messaggio.body
+    mock_servizio.events().delete.assert_called_once_with(
+        calendarId='finto@group.calendar.google.com',
+        eventId='evento-da-annullare',
+    )
+    mock_servizio.events().patch.assert_not_called()
+    mock_servizio.events().insert.assert_not_called()
+    with flask_app.app_context():
+        corso = db.session.get(Corso, corso_id)
+        assert corso.stato == 'Annullato'
+        assert corso.archiviato_il is not None
+        assert corso.google_event_id is None
+
+
+def test_annullamento_corso_recupera_ed_elimina_evento_calendar_senza_id_locale(
+    client,
+    google_calendar_scrittura_finto,
+):
+    mock_servizio = google_calendar_scrittura_finto
+
+    with flask_app.app_context():
+        corso = Corso(
+            titolo='BLSD',
+            tipo='bls-d',
+            data='2099-11-06',
+            ora='09:00',
+            luogo='S.C. Studio Infermieristico',
+            durata_ore=5,
+            stato='Annullato',
+            google_event_id=None,
+        )
+        db.session.add(corso)
+        db.session.commit()
+        corso_id = corso.id
+
+    mock_servizio.events.return_value.list.return_value.execute.return_value = {
+        'items': [{
+            'id': 'evento-remoto-recuperato',
+            'extendedProperties': {'private': {
+                'studioEntity': 'Corso',
+                'studioEntityId': str(corso_id),
+            }},
+        }],
+    }
+    csrf = _login_admin(client)
+    resp = client.post(
+        f'/admin/corso/{corso_id}/modifica',
+        data={
+            '_csrf_token': csrf,
+            'titolo': 'BLSD',
+            'data': '2099-11-06',
+            'ora': '09:00',
+            'luogo': 'S.C. Studio Infermieristico',
+            'durata_ore': '5',
+            'stato': 'Annullato',
+        },
+        follow_redirects=True,
+    )
+
+    assert resp.status_code == 200
+    mock_servizio.events().list.assert_any_call(
+        calendarId='finto@group.calendar.google.com',
+        privateExtendedProperty=f'studioEntityId={corso_id}',
+        showDeleted=False,
+        maxResults=10,
+    )
+    mock_servizio.events().delete.assert_called_once_with(
+        calendarId='finto@group.calendar.google.com',
+        eventId='evento-remoto-recuperato',
+    )
+    with flask_app.app_context():
+        corso = db.session.get(Corso, corso_id)
+        assert corso.archiviato_il is not None
+        assert corso.google_event_id is None
+        recupero = RegistroEvento.query.filter_by(
+            categoria='google_calendar',
+            entita_tipo='Corso',
+            entita_id=corso_id,
+        ).filter(RegistroEvento.messaggio.contains('recuperato')).one()
+        assert recupero.esito == 'avviso'
+
+
 def test_archiviazione_corso_elimina_evento_ma_conserva_storico(client, google_calendar_scrittura_finto):
     """Archiviare un corso cancella l'evento ma conserva la pratica."""
     mock_servizio = google_calendar_scrittura_finto

@@ -1464,7 +1464,7 @@ def elimina_evento_calendario_corso(corso):
     """Elimina l'evento Google Calendar collegato a un corso (se esiste)."""
     calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
     servizio = _ottieni_servizio_calendario()
-    if not corso.google_event_id:
+    if not corso.google_event_id and not calendar_id:
         return True
     if not calendar_id or servizio is None:
         registra_evento(
@@ -1476,6 +1476,32 @@ def elimina_evento_calendario_corso(corso):
             {'google_event_id': corso.google_event_id},
         )
         return False
+
+    if not corso.google_event_id:
+        try:
+            evento_recuperato = _recupera_evento_calendar_esistente('Corso', corso.id)
+        except Exception as errore:
+            registra_evento(
+                'google_calendar',
+                'errore',
+                'Impossibile verificare l’evento Calendar del corso prima dell’annullamento.',
+                'Corso',
+                corso.id,
+                {'errore': str(errore)},
+            )
+            return False
+        if not evento_recuperato:
+            return True
+        corso.google_event_id = evento_recuperato
+        db.session.commit()
+        registra_evento(
+            'google_calendar',
+            'avviso',
+            'Collegamento all’evento corso recuperato prima dell’annullamento.',
+            'Corso',
+            corso.id,
+            {'google_event_id': evento_recuperato},
+        )
 
     eliminato = False
     try:
@@ -3623,6 +3649,64 @@ def invia_email_annullamento_edizione_corso(iscrizione, corso, etichetta_edizion
         ),
         'Email di annullamento corso non inviata al partecipante.',
     )
+
+
+def _invia_annullamento_corso_ai_confermati(corso, etichetta_edizione):
+    """Invia una sola comunicazione per ogni iscrizione confermata e non archiviata."""
+    destinatari = IscrizioneCorso.query.filter(
+        IscrizioneCorso.corso_id == corso.id,
+        IscrizioneCorso.stato == 'Confermato',
+        IscrizioneCorso.archiviata_il.is_(None),
+    ).all()
+    esito = {
+        'destinatari': len(destinatari),
+        'inviate': 0,
+        'fallite': 0,
+        'mancanti': 0,
+    }
+    for iscrizione in destinatari:
+        risultato = invia_email_annullamento_edizione_corso(
+            iscrizione,
+            corso,
+            etichetta_edizione,
+        )
+        if risultato is True:
+            esito['inviate'] += 1
+        elif risultato is False:
+            esito['fallite'] += 1
+        else:
+            esito['mancanti'] += 1
+    return esito
+
+
+def _flash_annullamento_corso(prefisso, esito_email, calendar_ok):
+    """Mostra all'operatore l'esito reale dell'annullamento e degli avvisi."""
+    if not calendar_ok or esito_email['fallite'] or esito_email['mancanti']:
+        problemi = []
+        if not calendar_ok:
+            problemi.append('Calendar richiede verifica.')
+        if esito_email['fallite'] or esito_email['mancanti']:
+            problemi.append(
+                'Controlla il registro eventi e contatta manualmente chi non ha ricevuto l’avviso.'
+            )
+        flash(
+            f'{prefisso}. Email inviate: {esito_email["inviate"]}; '
+            f'email non inviate: {esito_email["fallite"]}; '
+            f'email mancanti: {esito_email["mancanti"]}. '
+            f'{" ".join(problemi)}',
+            'error',
+        )
+    elif esito_email['destinatari']:
+        flash(
+            f'{prefisso} e partecipanti confermati avvisati '
+            f'via email ({esito_email["inviate"]}).',
+            'success',
+        )
+    else:
+        flash(
+            f'{prefisso}; non risultano partecipanti confermati da avvisare.',
+            'success',
+        )
 
 
 def invia_email_richiesta_azienda(richiesta):
@@ -7737,13 +7821,6 @@ def elimina_corso(id):
     # Salva i dati dell'edizione prima dell'archiviazione.
     etichetta_edizione = _etichetta_data_corso(corso)
 
-    # Recupera i partecipanti che avevano già un posto confermato.
-    destinatari = IscrizioneCorso.query.filter(
-        IscrizioneCorso.corso_id == corso.id,
-        IscrizioneCorso.stato == 'Confermato',
-        IscrizioneCorso.archiviata_il.is_(None),
-    ).all()
-
     # L'annullamento del corso deve essere salvato anche se Calendar
     # o l'invio delle email dovessero successivamente fallire.
     corso.archiviato_il = utc_now()
@@ -7759,51 +7836,8 @@ def elimina_corso(id):
         {'stato': 'Annullato'}
     )
 
-    # Avvisa tutti i partecipanti con posto già confermato.
-    email_inviate = 0
-    email_fallite = 0
-    email_mancanti = 0
-
-    for iscrizione in destinatari:
-        risultato_email = invia_email_annullamento_edizione_corso(
-            iscrizione,
-            corso,
-            etichetta_edizione,
-        )
-
-        if risultato_email is True:
-            email_inviate += 1
-        elif risultato_email is False:
-            email_fallite += 1
-        else:
-            email_mancanti += 1
-
-    if not calendar_ok or email_fallite or email_mancanti:
-        problemi = []
-        if not calendar_ok:
-            problemi.append('Calendar richiede verifica.')
-        if email_fallite or email_mancanti:
-            problemi.append(
-                'Controlla il registro eventi e contatta manualmente chi non ha ricevuto l’avviso.'
-            )
-        flash(
-            f'Edizione archiviata. Email inviate: {email_inviate}; '
-            f'email non inviate: {email_fallite}; '
-            f'email mancanti: {email_mancanti}. '
-            f'{" ".join(problemi)}',
-            'error'
-        )
-    elif destinatari:
-        flash(
-            f'Edizione archiviata e partecipanti confermati avvisati '
-            f'via email ({email_inviate}).',
-            'success'
-        )
-    else:
-        flash(
-            'Edizione archiviata; non risultano partecipanti confermati da avvisare.',
-            'success'
-        )
+    esito_email = _invia_annullamento_corso_ai_confermati(corso, etichetta_edizione)
+    _flash_annullamento_corso('Edizione archiviata', esito_email, calendar_ok)
 
     return redirect(url_for('admin') + '#admin-corsi')
 
@@ -7814,6 +7848,7 @@ def modifica_corso_admin(id):
     if not _csrf_admin_valido():
         abort(400)
     corso = db.get_or_404(Corso, id)
+    archiviato_precedente = corso.archiviato_il
     precedente = {campo: getattr(corso, campo) for campo in ['titolo', 'data', 'ora', 'luogo', 'durata_ore', 'capienza_massima', 'stato']}
     corso.titolo = request.form.get('titolo', '').strip()
     corso.data = request.form.get('data', '').strip()
@@ -7829,7 +7864,15 @@ def modifica_corso_admin(id):
         db.session.rollback()
         flash('Titolo e data del corso sono obbligatori.', 'error')
         return redirect(url_for('admin') + '#admin-corsi')
+    annullamento_edizione = corso.stato == 'Annullato' and (
+        precedente['stato'] != 'Annullato' or archiviato_precedente is None
+    )
+    if corso.stato == 'Annullato' and corso.archiviato_il is None:
+        corso.archiviato_il = utc_now()
+    elif precedente['stato'] == 'Annullato' and corso.stato != 'Annullato':
+        corso.archiviato_il = None
     dopo = {campo: getattr(corso, campo) for campo in precedente}
+    etichetta_edizione = _etichetta_data_corso(corso)
     modifiche_organizzative = any(precedente[campo] != dopo[campo] for campo in ['titolo', 'data', 'ora', 'luogo'])
     destinatari = IscrizioneCorso.query.filter(
         IscrizioneCorso.corso_id == corso.id,
@@ -7838,13 +7881,23 @@ def modifica_corso_admin(id):
         IscrizioneCorso.archiviata_il.is_(None),
     ).all()
     invia_aggiornamento = (
-        modifiche_organizzative
+        not annullamento_edizione
+        and corso.stato != 'Annullato'
+        and modifiche_organizzative
         and bool(destinatari)
         and request.form.get('conferma_notifiche') == '1'
     )
     db.session.commit()
-    calendar_ok = crea_o_aggiorna_evento_calendario_corso(corso)
+    calendar_ok = (
+        elimina_evento_calendario_corso(corso)
+        if corso.stato == 'Annullato'
+        else crea_o_aggiorna_evento_calendario_corso(corso)
+    )
     registra_modifica('modifica', 'Corso', corso.id, {'prima': precedente, 'dopo': dopo})
+    if annullamento_edizione:
+        esito_email = _invia_annullamento_corso_ai_confermati(corso, etichetta_edizione)
+        _flash_annullamento_corso('Corso annullato', esito_email, calendar_ok)
+        return redirect(url_for('admin') + '#admin-corsi')
     if invia_aggiornamento:
         for iscrizione in destinatari:
             msg = Message(

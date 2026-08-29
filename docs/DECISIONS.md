@@ -855,6 +855,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: conteggi generali e per tipologia riflettono soltanto la coda operativa; i ricontatti restano visibili anche se una pratica storica è stata marcata `Confermato`, purché non annullata. Parametri URL incoerenti per `Open day` vengono ignorati e il server rifiuta inserimenti manuali open day su altre tipologie prima di creare una persona o una pratica. Il controllo responsive ha verificato assenza di overflow globale, tabella archivio scorrevole, target da 44 px, filtro nascita condizionale e nessun errore console; la suite passa con 253 test Python e 37 test JavaScript. Non cambia lo schema del database.
 - Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `ROADMAP.md`, `tests/test_app.py`, `tests/js/admin-azioni.test.js`, D-088, D-089, D-093, D-098.
 
+## D-100 — L’annullamento di un’edizione avvisa sempre i partecipanti confermati
+
+- Data: 2026-08-29.
+- Stato: approvata, implementata e verificata localmente.
+- Decisione: applicare lo stesso flusso di annullamento sia quando l’admin seleziona lo stato `Annullato` nel modulo di modifica del corso sia quando usa il comando `Archivia`. Salvare prima il nuovo stato, eliminare l’evento Calendar e inviare automaticamente l’avviso ai soli partecipanti `Confermato` e non archiviati, senza dipendere dalla checkbox degli aggiornamenti ordinari.
+- Motivo: entrambe le azioni spostano l’edizione nell’archivio e comunicano la stessa cancellazione; non è accettabile che la scelta del controllo usato determini se i partecipanti ricevono o meno l’avviso.
+- Conseguenze: le persone in `Nuova`, `Contattato`, `Lista attesa`, `Invitato` o con pratica archiviata non ricevono la mail di annullamento dell’edizione. Un indirizzo mancante o un errore SMTP viene riportato all’admin e registrato senza ripristinare il corso. Il primo salvataggio di un corso già `Annullato` ma privo del timestamp storico completa il flusso e invia gli avvisi mancanti; i salvataggi successivi non reinviano l’avviso e non ricreano l’evento Calendar. Se manca il collegamento locale, l’evento viene cercato tramite le proprietà private della pratica prima della cancellazione; zero corrispondenze equivale a evento assente, mentre una ricerca ambigua o fallita resta un errore visibile. Riportare esplicitamente l’edizione a uno stato attivo rimuove il timestamp, consentendo un eventuale nuovo ciclo. La suite passa con 256 test Python e 37 test JavaScript. Non cambia lo schema del database.
+- Collegamenti: `app.py`, `templates/admin_dettaglio.html`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, `tests/test_app.py`, D-084, D-093, D-098, D-099.
+
 ## Modello per nuove decisioni
 
 ```markdown
