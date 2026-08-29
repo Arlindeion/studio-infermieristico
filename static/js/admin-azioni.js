@@ -124,6 +124,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const personaCorsoSelect = document.getElementById('persona-corso-select');
+    const corsoManualeSelect = document.getElementById('manual-course-id');
+    const tipoRichiestaManuale = document.getElementById('manual-request-type');
+    const opzioneOpenDayManuale = document.getElementById('manual-request-type-open-day');
+
+    function aggiornaDisponibilitaOpenDay() {
+        if (!corsoManualeSelect || !tipoRichiestaManuale || !opzioneOpenDayManuale) return;
+        const corsoSelezionato = corsoManualeSelect.selectedOptions[0];
+        const openDayDisponibile = corsoSelezionato?.dataset.corsoTipo === 'accompagnamento-nascita';
+        opzioneOpenDayManuale.hidden = !openDayDisponibile;
+        opzioneOpenDayManuale.disabled = !openDayDisponibile;
+        if (!openDayDisponibile && tipoRichiestaManuale.value === 'open_day') {
+            tipoRichiestaManuale.value = 'richiesta_iscrizione';
+        }
+    }
+
+    if (corsoManualeSelect && tipoRichiestaManuale && opzioneOpenDayManuale) {
+        corsoManualeSelect.addEventListener('change', aggiornaDisponibilitaOpenDay);
+        aggiornaDisponibilitaOpenDay();
+    }
+
     const campiPersonaCorso = {
         nome: document.getElementById('persona-corso-nome'),
         telefono: document.getElementById('persona-corso-telefono'),

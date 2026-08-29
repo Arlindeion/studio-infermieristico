@@ -33,6 +33,12 @@ test('apre il pannello separato per l’archivio corsi', () => {
     assert.match(script, /'archivio-corsi': '#admin-archivio-corsi'/);
 });
 
+test('limita il flusso open day al corso di accompagnamento alla nascita', () => {
+    assert.match(script, /dataset\.corsoTipo === 'accompagnamento-nascita'/);
+    assert.match(script, /opzioneOpenDayManuale\.disabled = !openDayDisponibile/);
+    assert.match(script, /tipoRichiestaManuale\.value = 'richiesta_iscrizione'/);
+});
+
 test('apre fuori dal calendario i dettagli dopo un secondo continuato', () => {
     assert.match(script, /const HOVER_DELAY_MS = 1000;/);
     assert.match(script, /document\.body\.appendChild\(anteprima\)/);

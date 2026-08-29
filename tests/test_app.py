@@ -2584,7 +2584,7 @@ def test_admin_mostra_panoramica_iscritti_per_corso(client):
     _login_admin(client)
     resp = client.get(f'/admin?corso_id={data_corso_id}')
     assert resp.status_code == 200
-    assert 'Panoramica corsi e iscritti' in resp.text
+    assert 'Corsi attivi e richieste da gestire' in resp.text
     assert 'Disostruzione pediatrica' in resp.text
     assert 'posti stimati' in resp.text
     assert 'Richiesta iscrizione' in resp.text
@@ -2630,7 +2630,7 @@ def test_admin_filtra_iscritti_per_tipologia_corso(client):
     _login_admin(client)
     resp = client.get('/admin?tipo_corso=disostruzione-pediatrica')
     assert resp.status_code == 200
-    assert 'Visualizza iscritti per tipologia' in resp.text
+    assert 'Visualizza richieste per tipologia' in resp.text
     assert 'Disostruzione pediatrica' in resp.text
     assert 'Mario Rossi' in resp.text
     assert 'Giulia Bianchi' not in resp.text
@@ -2682,6 +2682,25 @@ def test_admin_aggiunge_iscritto_manualmente_e_crea_rubrica(client):
         assert iscrizione.posti == 1
         assert iscrizione.codice_fiscale == ''
         assert iscrizione.extra_dict()['inserimento_admin'] is True
+
+
+def test_admin_rifiuta_open_day_manuale_per_corsi_diversi_da_accompagnamento(client):
+    corso_id = _crea_data_corso('bls-d', 'BLSD', data='2099-07-21')
+    csrf = _login_admin(client)
+
+    response = client.post('/admin/iscrizione-corso/aggiungi', data={
+        'corso_id': corso_id,
+        'tipo_richiesta': 'open_day',
+        'nome': 'Anna Neri',
+        'telefono': '3331234567',
+        '_csrf_token': csrf,
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert 'Il flusso open day è disponibile soltanto per il corso di accompagnamento alla nascita.' in response.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
+        assert PersonaCorso.query.count() == 0
 
 
 def test_admin_richiama_persona_da_rubrica_senza_duplicarla(client):
@@ -2933,6 +2952,136 @@ def test_admin_separa_corsi_attivi_da_passati_e_annullati(client):
     assert 'Edizione annullata' in archivio_corsi
     assert 'Corso di oggi' not in archivio_corsi
     assert 'Edizione futura attiva' not in archivio_corsi
+
+
+def test_admin_mostra_solo_richieste_da_gestire_e_conserva_confermate_nell_archivio(client):
+    with flask_app.app_context():
+        corso_archiviato = Corso(
+            titolo='Edizione storica disostruzione',
+            tipo='disostruzione-pediatrica',
+            data='2000-05-20',
+            stato='Concluso',
+            capienza_massima=12,
+        )
+        corso_attivo = Corso(
+            titolo='Edizione futura disostruzione',
+            tipo='disostruzione-pediatrica',
+            data='2099-05-20',
+            stato='Aperto',
+            capienza_massima=12,
+        )
+        db.session.add_all([corso_archiviato, corso_attivo])
+        db.session.flush()
+
+        def iscrizione(nome, stato, corso=None, tipo_richiesta='richiesta_iscrizione', posti=1):
+            return IscrizioneCorso(
+                corso_id=corso.id if corso else None,
+                corso_tipo=corso.tipo if corso else 'disostruzione-pediatrica',
+                corso_titolo=corso.titolo if corso else 'Prossime date disostruzione',
+                nome=nome,
+                telefono='3331234567',
+                email=f'{nome.lower().replace(" ", ".")}@example.com',
+                codice_fiscale='',
+                data_corso=corso.data if corso else 'Da ricontattare per prossime date',
+                tipo_richiesta=tipo_richiesta,
+                posti=posti,
+                posti_richiesti=posti,
+                consenso_privacy=True,
+                stato=stato,
+            )
+
+        db.session.add_all([
+            iscrizione('Confermata storica', 'Confermato', corso_archiviato, posti=2),
+            iscrizione('Nuova storica', 'Nuova', corso_archiviato),
+            iscrizione('Confermata futura', 'Confermato', corso_attivo),
+            iscrizione('Persona in attesa', 'Lista attesa', corso_attivo, posti=0),
+            iscrizione('Persona da ricontattare', 'Confermato', tipo_richiesta='ricontatto', posti=0),
+            iscrizione('Richiesta annullata', 'Annullato', corso_attivo),
+        ])
+        db.session.commit()
+        corso_archiviato_id = corso_archiviato.id
+
+    _login_admin(client)
+    response = client.get('/admin#admin-corsi')
+
+    assert response.status_code == 200
+    corsi_panel = re.search(
+        r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi" id="admin-corsi">(.*?)</section>',
+        response.text,
+        re.DOTALL,
+    ).group(1)
+    assert '3 richieste da gestire' in corsi_panel
+    assert 'Nuova storica' in corsi_panel
+    assert 'Persona in attesa' in corsi_panel
+    assert 'Persona da ricontattare' in corsi_panel
+    assert 'Confermata storica' not in corsi_panel
+    assert 'Confermata futura' not in corsi_panel
+    assert 'Richiesta annullata' not in corsi_panel
+
+    archivio_corsi = re.search(
+        r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="archivio-corsi" id="admin-archivio-corsi">(.*?)</section>',
+        response.text,
+        re.DOTALL,
+    ).group(1)
+    assert 'Edizione storica disostruzione' in archivio_corsi
+    assert '<strong>1</strong> richiesta confermata' in archivio_corsi
+    assert '2 posti confermati' in archivio_corsi
+
+    dettaglio = client.get(f'/admin/pratica/Corso/{corso_archiviato_id}')
+    assert dettaglio.status_code == 200
+    assert 'Confermata storica' in dettaglio.text
+
+
+def test_admin_mostra_filtro_open_day_solo_per_accompagnamento_nascita(client):
+    with flask_app.app_context():
+        def richiesta(nome, corso_tipo, tipo_richiesta):
+            return IscrizioneCorso(
+                corso_tipo=corso_tipo,
+                corso_titolo='Richiesta corso',
+                nome=nome,
+                telefono='3331234567',
+                email='',
+                codice_fiscale='',
+                tipo_richiesta=tipo_richiesta,
+                posti=1,
+                posti_richiesti=1,
+                consenso_privacy=True,
+                stato='Nuova',
+            )
+
+        db.session.add_all([
+            richiesta('Open day nascita', 'accompagnamento-nascita', 'open_day'),
+            richiesta('Richiesta nascita standard', 'accompagnamento-nascita', 'richiesta_iscrizione'),
+            richiesta('Dato storico open day BLSD', 'bls-d', 'open_day'),
+        ])
+        db.session.commit()
+
+    _login_admin(client)
+    default_response = client.get('/admin#admin-corsi')
+    blsd_response = client.get('/admin?tipo_corso=bls-d#admin-corsi')
+    nascita_response = client.get('/admin?tipo_corso=accompagnamento-nascita#admin-corsi')
+    open_day_response = client.get(
+        '/admin?tipo_corso=accompagnamento-nascita&iscrizioni=open_day#admin-corsi'
+    )
+    open_day_blsd_response = client.get('/admin?tipo_corso=bls-d&iscrizioni=open_day#admin-corsi')
+
+    def pannello_corsi(response):
+        return re.search(
+            r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi" id="admin-corsi">(.*?)</section>',
+            response.text,
+            re.DOTALL,
+        ).group(1)
+
+    link_open_day = (
+        'href="/admin?tipo_corso=accompagnamento-nascita&amp;iscrizioni=open_day#admin-corsi"'
+    )
+    assert link_open_day not in pannello_corsi(default_response)
+    assert link_open_day not in pannello_corsi(blsd_response)
+    assert link_open_day in pannello_corsi(nascita_response)
+    assert 'Open day nascita' in pannello_corsi(open_day_response)
+    assert 'Richiesta nascita standard' not in pannello_corsi(open_day_response)
+    assert 'Dato storico open day BLSD' in pannello_corsi(open_day_blsd_response)
+    assert 'Stai vedendo solo le iscrizioni agli open day.' not in pannello_corsi(open_day_blsd_response)
 
 
 # ─── Integrazione Google Calendar (Arzamed) ───

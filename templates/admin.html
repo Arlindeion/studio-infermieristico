@@ -654,14 +654,14 @@
     <div class="admin-section-heading">
         <div>
             <p class="admin-eyebrow">Area formazione</p>
-            <h2>Panoramica corsi e iscritti</h2>
+            <h2>Corsi attivi e richieste da gestire</h2>
         </div>
-        <span class="admin-total">{{ iscrizioni_totali_count }} richieste totali</span>
+        <span class="admin-total">{{ iscrizioni_totali_count }} richieste da gestire</span>
     </div>
 
     <form class="course-type-selector" method="GET" action="{{ url_for('admin') }}#admin-corsi">
         <div>
-            <label for="admin-course-type-filter">Visualizza iscritti per tipologia</label>
+            <label for="admin-course-type-filter">Visualizza richieste per tipologia</label>
             <select id="admin-course-type-filter" name="tipo_corso">
                 <option value="">Tutte le tipologie ({{ iscrizioni_totali_count }})</option>
                 {% for valore, corso_tipo in corsi_admin_tipi.items() %}
@@ -705,10 +705,10 @@
                     <strong>{{ item.posti_attivi }}</strong>
                     <span>posti stimati</span>
                 </div>
-                <div>
+                {% if c.tipo == 'accompagnamento-nascita' %}<div>
                     <strong>{{ item.open_day_count }}</strong>
                     <span>open day</span>
-                </div>
+                </div>{% endif %}
             </div>
             <p class="course-dashboard-capacity">
                 {% if item.capienza %}
@@ -747,7 +747,7 @@
                         <select name="corso_id" id="manual-course-id" required>
                             <option value="">Seleziona corso</option>
                             {% for c in corsi %}
-                            <option value="{{ c.id }}" {% if corso_filtro_attivo and corso_filtro_attivo.id == c.id %}selected{% endif %}>
+                            <option value="{{ c.id }}" data-corso-tipo="{{ c.tipo or '' }}" {% if corso_filtro_attivo and corso_filtro_attivo.id == c.id %}selected{% endif %}>
                                 {{ c.titolo }} - {{ c.data }}{% if c.ora %} ore {{ c.ora }}{% endif %}
                             </option>
                             {% endfor %}
@@ -811,7 +811,7 @@
                         <select name="tipo_richiesta" id="manual-request-type">
                             <option value="iscrizione_effettiva">Iscrizione effettiva</option>
                             <option value="richiesta_iscrizione">Richiesta iscrizione</option>
-                            <option value="open_day">Open day</option>
+                            <option value="open_day" id="manual-request-type-open-day">Open day</option>
                             <option value="ricontatto">Da ricontattare</option>
                         </select>
                     </div>
@@ -1126,9 +1126,9 @@
     {% endif %}
 
     <div class="admin-filtri admin-filtri-corsi">
-        <a href="/admin#admin-corsi" class="filtro-btn {% if not corso_filtro_attivo and not filtro_iscrizioni %}attivo{% endif %}">Tutte</a>
-        <a href="/admin?iscrizioni=open_day#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'open_day' %}attivo{% endif %}">Open day</a>
-        <a href="/admin?iscrizioni=ricontatto#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'ricontatto' %}attivo{% endif %}">Da ricontattare</a>
+        <a href="{{ url_for('admin', tipo_corso=filtro_tipo_corso or None) }}#admin-corsi" class="filtro-btn {% if not corso_filtro_attivo and not filtro_iscrizioni %}attivo{% endif %}">Tutte da gestire</a>
+        {% if filtro_tipo_corso == 'accompagnamento-nascita' %}<a href="{{ url_for('admin', tipo_corso=filtro_tipo_corso, iscrizioni='open_day') }}#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'open_day' %}attivo{% endif %}">Open day</a>{% endif %}
+        <a href="{{ url_for('admin', tipo_corso=filtro_tipo_corso or None, iscrizioni='ricontatto') }}#admin-corsi" class="filtro-btn {% if filtro_iscrizioni == 'ricontatto' %}attivo{% endif %}">Da ricontattare</a>
     </div>
 
     {% if corso_filtro_attivo %}
@@ -1247,7 +1247,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="nota nota-lg">Nessuna iscrizione corso ricevuta.</p>
+    <p class="nota nota-lg">Nessuna richiesta corso da gestire.</p>
     {% endif %}
 </section>
 
@@ -1402,7 +1402,7 @@
                 <th>Data</th>
                 <th>Ora</th>
                 <th>Durata</th>
-                <th>Iscritti</th>
+                <th>Confermati</th>
                 <th>Luogo</th>
                 <th>Descrizione</th>
                 <th>Operazioni</th>
@@ -1419,8 +1419,8 @@
                 <td>{{ c.ora or '—' }}</td>
                 <td>{{ c.durata_ore|int if c.durata_ore == c.durata_ore|int else c.durata_ore }} ore</td>
                 <td>
-                    <strong>{{ item.attive_count }}</strong> richieste<br>
-                    <span class="text-muted">{{ item.posti_attivi }} posti{% if item.capienza %} / {{ item.capienza }}{% endif %}</span>
+                    <strong>{{ item.confermate_count }}</strong> richiest{% if item.confermate_count == 1 %}a{% else %}e{% endif %} confermat{% if item.confermate_count == 1 %}a{% else %}e{% endif %}<br>
+                    <span class="text-muted">{{ item.posti_confermati }} post{% if item.posti_confermati == 1 %}o{% else %}i{% endif %} confermat{% if item.posti_confermati == 1 %}o{% else %}i{% endif %}</span>
                 </td>
                 <td>{{ c.luogo or '—' }}</td>
                 <td>{{ c.descrizione or '—' }}</td>
@@ -1435,5 +1435,5 @@
     {% endif %}
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.6"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.7"></script>
 {% endblock %}

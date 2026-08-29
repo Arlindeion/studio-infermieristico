@@ -846,6 +846,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: panoramica, gestione, inserimento manuale e destinazioni per spostamento o unione usano soltanto corsi attivi. L’archivio conserva accesso alla scheda, agli iscritti e alle esportazioni senza modificare lo stato dei corsi passati. La classificazione cambia automaticamente al cambio di data e non richiede una migrazione del database. Il controllo responsive ha verificato pannelli, titoli, contenuti, target da 44 px, scorrimento interno delle tabelle e assenza di overflow globale o errori console; la suite passa con 250 test Python e 36 test JavaScript.
 - Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `ROADMAP.md`, `tests/test_app.py`, `tests/js/admin-azioni.test.js`, D-073, D-089, D-090.
 
+## D-099 — Le richieste corso confermate restano nel riepilogo dell’edizione
+
+- Data: 2026-08-29.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: usare la lista generale di `/admin#admin-corsi` come coda operativa, mostrando soltanto richieste `Nuova`, `Contattato`, `Lista attesa`, `Invitato` e ricontatti non annullati indipendentemente dallo stato. Le iscrizioni `Confermato` collegate a un’edizione, le richieste annullate e le pratiche archiviate non compaiono nella coda; quando l’edizione passa in `Archivio corsi`, il suo riepilogo mostra separatamente richieste e posti confermati e la scheda dell’edizione conserva l’elenco completo. Rendere filtro, metrica e inserimento manuale `Open day` disponibili soltanto per `Corso di accompagnamento alla nascita`.
+- Motivo: una conferma già assegnata a un’edizione non è più una richiesta da lavorare e non deve duplicarsi nella coda generale. L’open day è un passaggio specifico del percorso nascita e non rappresenta BLSD, disostruzione o laboratori per l’infanzia.
+- Conseguenze: conteggi generali e per tipologia riflettono soltanto la coda operativa; i ricontatti restano visibili anche se una pratica storica è stata marcata `Confermato`, purché non annullata. Parametri URL incoerenti per `Open day` vengono ignorati e il server rifiuta inserimenti manuali open day su altre tipologie prima di creare una persona o una pratica. Il controllo responsive ha verificato assenza di overflow globale, tabella archivio scorrevole, target da 44 px, filtro nascita condizionale e nessun errore console; la suite passa con 253 test Python e 37 test JavaScript. Non cambia lo schema del database.
+- Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `ROADMAP.md`, `tests/test_app.py`, `tests/js/admin-azioni.test.js`, D-088, D-089, D-093, D-098.
+
 ## Modello per nuove decisioni
 
 ```markdown

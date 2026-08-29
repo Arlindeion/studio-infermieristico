@@ -280,6 +280,7 @@ ORARI_CALL_SONNO = [
 ]
 STATI_ISCRIZIONE_VALIDI = ['Nuova', 'Contattato', 'Confermato', 'Lista attesa', 'Invitato', 'Annullato']
 STATI_LISTA_ATTESA = {'Lista attesa', 'Invitato'}
+STATI_ISCRIZIONE_DA_GESTIRE = {'Nuova', 'Contattato', 'Lista attesa', 'Invitato'}
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
 STATI_RICHIESTA_AZIENDA = [
@@ -5328,6 +5329,12 @@ def _panoramica_corsi(corsi):
             if i.tipo_richiesta in ['richiesta_iscrizione', 'iscrizione_effettiva']
         ]
         posti_attivi = _posti_attivi_corso(corso.id)
+        posti_confermati = sum(
+            iscrizione.posti
+            if iscrizione.posti is not None
+            else _posti_iscrizione_da_partecipazione(iscrizione.partecipazione)
+            for iscrizione in confermate
+        )
         capienza = corso.capienza_massima
         posti_liberi = None if capienza is None else max(capienza - posti_attivi, 0)
         stato = corso.stato or 'Aperto'
@@ -5343,6 +5350,7 @@ def _panoramica_corsi(corsi):
             'effettive_count': len(effettive),
             'richieste_count': len(richieste),
             'posti_attivi': posti_attivi,
+            'posti_confermati': posti_confermati,
             'capienza': capienza,
             'posti_liberi': posti_liberi,
             'stato': stato,
@@ -5723,6 +5731,10 @@ def admin():
     filtro_tipo_corso = request.args.get('tipo_corso', '').strip()
     if filtro_tipo_corso not in CORSI_ADMIN_TIPI:
         filtro_tipo_corso = ''
+    if filtro_iscrizioni not in {'', 'ricontatto', 'open_day'}:
+        filtro_iscrizioni = ''
+    if filtro_iscrizioni == 'open_day' and filtro_tipo_corso != 'accompagnamento-nascita':
+        filtro_iscrizioni = ''
     filtro_tipo_corso_label = (
         CORSI_ADMIN_TIPI[filtro_tipo_corso]['label']
         if filtro_tipo_corso
@@ -5733,15 +5745,25 @@ def admin():
         tipo: 0
         for tipo in CORSI_ADMIN_TIPI
     }
+    filtri_iscrizioni_da_gestire = (
+        IscrizioneCorso.archiviata_il.is_(None),
+        db.or_(
+            IscrizioneCorso.stato.in_(STATI_ISCRIZIONE_DA_GESTIRE),
+            db.and_(
+                IscrizioneCorso.tipo_richiesta == 'ricontatto',
+                IscrizioneCorso.stato != 'Annullato',
+            ),
+        ),
+    )
     conteggi_tipo = db.session.query(
         IscrizioneCorso.corso_tipo,
         db.func.count(IscrizioneCorso.id)
-    ).group_by(IscrizioneCorso.corso_tipo).all()
+    ).filter(*filtri_iscrizioni_da_gestire).group_by(IscrizioneCorso.corso_tipo).all()
     for tipo, count in conteggi_tipo:
         if tipo in iscrizioni_per_tipo_count:
             iscrizioni_per_tipo_count[tipo] = count
 
-    iscrizioni_query = IscrizioneCorso.query
+    iscrizioni_query = IscrizioneCorso.query.filter(*filtri_iscrizioni_da_gestire)
     if corso_filtro_attivo:
         iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.corso_id == corso_filtro_attivo.id)
     else:
@@ -5753,8 +5775,11 @@ def admin():
             iscrizioni_query = iscrizioni_query.filter(IscrizioneCorso.tipo_richiesta == 'open_day')
 
     iscrizioni_corsi = iscrizioni_query.order_by(IscrizioneCorso.creato_il.desc()).all()
-    iscrizioni_totali_count = IscrizioneCorso.query.count()
-    iscrizioni_nuove_count = IscrizioneCorso.query.filter_by(stato='Nuova').count()
+    iscrizioni_totali_count = IscrizioneCorso.query.filter(*filtri_iscrizioni_da_gestire).count()
+    iscrizioni_nuove_count = IscrizioneCorso.query.filter(
+        IscrizioneCorso.stato == 'Nuova',
+        IscrizioneCorso.archiviata_il.is_(None),
+    ).count()
     call_sonno = CallSonno.query.order_by(CallSonno.data, CallSonno.ora).all()
     call_sonno_in_attesa_count = CallSonno.query.filter_by(stato='In attesa').count()
     registro_eventi = RegistroEvento.query.order_by(RegistroEvento.creato_il.desc()).limit(30).all()
@@ -7557,6 +7582,12 @@ def aggiungi_iscrizione_corso_manuale():
     if not corso:
         flash('Seleziona un corso o laboratorio valido.', 'error')
         return redirect(url_for('admin') + '#admin-corsi')
+    tipo_richiesta = request.form.get('tipo_richiesta', 'iscrizione_effettiva').strip()
+    if tipo_richiesta not in TIPI_RICHIESTA_CORSO:
+        tipo_richiesta = 'iscrizione_effettiva'
+    if tipo_richiesta == 'open_day' and corso.tipo != 'accompagnamento-nascita':
+        flash('Il flusso open day è disponibile soltanto per il corso di accompagnamento alla nascita.', 'error')
+        return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
     persona_id = request.form.get('persona_id', type=int)
     persona = db.session.get(PersonaCorso, persona_id) if persona_id else None
@@ -7622,10 +7653,6 @@ def aggiungi_iscrizione_corso_manuale():
     if len(eta_bambino) > 40:
         flash('L\'età del bambino è troppo lunga.', 'error')
         return redirect(url_for('admin') + '#admin-corsi')
-
-    tipo_richiesta = request.form.get('tipo_richiesta', 'iscrizione_effettiva').strip()
-    if tipo_richiesta not in TIPI_RICHIESTA_CORSO:
-        tipo_richiesta = 'iscrizione_effettiva'
 
     stato = request.form.get('stato', 'Confermato').strip()
     if stato not in STATI_ISCRIZIONE_VALIDI:
