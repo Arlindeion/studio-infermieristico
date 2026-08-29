@@ -146,6 +146,7 @@
         <button type="button" class="admin-view-btn" data-admin-target="errori" role="tab" aria-selected="false"><span>Errori</span>{% if errori_aperti %}<strong>{{ errori_aperti|length }}</strong>{% endif %}</button>
         <button type="button" class="admin-view-btn" data-admin-target="impostazioni" role="tab" aria-selected="false"><span>Impostazioni</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="prenotazioni" role="tab" aria-selected="false"><span>Archivio appuntamenti</span></button>
+        <button type="button" class="admin-view-btn" data-admin-target="archivio-corsi" role="tab" aria-selected="false"><span>Archivio corsi</span></button>
         <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false"><span>Archivio sonno</span></button>
     </div>
 
@@ -1329,11 +1330,12 @@
     <div class="admin-section-heading">
         <div>
             <p class="admin-eyebrow">Edizioni programmate</p>
-            <h2>Gestione corsi</h2>
+            <h2>Corsi attivi</h2>
         </div>
-        <span class="admin-total">{{ corsi|length }} corsi</span>
+        <span class="admin-total">{{ corsi|length }} corsi attivi</span>
     </div>
     {% if corsi %}
+    <div class="admin-table-wrap">
     <table class="tabella-admin">
         <thead>
             <tr>
@@ -1373,11 +1375,65 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
-    <p class="nota">Nessun corso inserito.</p>
+    <p class="nota">Nessun corso attivo dalla data corrente in avanti.</p>
     {% endif %}
 
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.5"></script>
+<section class="pagina-interna admin-page admin-panel" data-admin-panel="archivio-corsi" id="admin-archivio-corsi">
+    <div class="admin-section-heading">
+        <div>
+            <p class="admin-eyebrow">Storico delle edizioni</p>
+            <h2>Archivio corsi</h2>
+        </div>
+        <span class="admin-total">{{ corsi_archivio|length }} corsi archiviati</span>
+    </div>
+    <p class="filtro-descrizione">Comprende i corsi con data passata e tutte le edizioni annullate.</p>
+    {% if corsi_archivio %}
+    <div class="admin-table-wrap">
+    <table class="tabella-admin">
+        <thead>
+            <tr>
+                <th>Titolo</th>
+                <th>Tipo</th>
+                <th>Stato</th>
+                <th>Data</th>
+                <th>Ora</th>
+                <th>Durata</th>
+                <th>Iscritti</th>
+                <th>Luogo</th>
+                <th>Descrizione</th>
+                <th>Operazioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in panoramica_corsi_archivio %}
+            {% set c = item.corso %}
+            <tr>
+                <td>{{ c.titolo }}</td>
+                <td>{{ corsi_admin_tipi.get(c.tipo, {}).get('label', c.tipo or '—') }}</td>
+                <td><span class="badge">{{ item.stato }}</span></td>
+                <td>{{ c.data }}</td>
+                <td>{{ c.ora or '—' }}</td>
+                <td>{{ c.durata_ore|int if c.durata_ore == c.durata_ore|int else c.durata_ore }} ore</td>
+                <td>
+                    <strong>{{ item.attive_count }}</strong> richieste<br>
+                    <span class="text-muted">{{ item.posti_attivi }} posti{% if item.capienza %} / {{ item.capienza }}{% endif %}</span>
+                </td>
+                <td>{{ c.luogo or '—' }}</td>
+                <td>{{ c.descrizione or '—' }}</td>
+                <td><a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='Corso', entita_id=c.id) }}">Apri</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="nota">Nessun corso passato o annullato.</p>
+    {% endif %}
+</section>
+
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.6"></script>
 {% endblock %}

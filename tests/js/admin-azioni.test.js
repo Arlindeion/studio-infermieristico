@@ -28,6 +28,11 @@ test('apre il pannello separato per creare un nuovo corso', () => {
     assert.match(script, /'nuovo-corso': '#admin-nuovo-corso'/);
 });
 
+test('apre il pannello separato per l’archivio corsi', () => {
+    assert.match(script, /'#admin-archivio-corsi': 'archivio-corsi'/);
+    assert.match(script, /'archivio-corsi': '#admin-archivio-corsi'/);
+});
+
 test('apre fuori dal calendario i dettagli dopo un secondo continuato', () => {
     assert.match(script, /const HOVER_DELAY_MS = 1000;/);
     assert.match(script, /document\.body\.appendChild\(anteprima\)/);

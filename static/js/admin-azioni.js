@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '#admin-impostazioni': 'impostazioni',
             '#admin-eventi': 'eventi',
             '#admin-prenotazioni': 'prenotazioni',
+            '#admin-archivio-corsi': 'archivio-corsi',
             '#admin-call-sonno': 'call-sonno',
         };
         const hashPerPannello = {
@@ -47,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
             impostazioni: '#admin-impostazioni',
             eventi: '#admin-eventi',
             prenotazioni: '#admin-prenotazioni',
+            'archivio-corsi': '#admin-archivio-corsi',
             'call-sonno': '#admin-call-sonno',
         };
         const haRicerca = new URLSearchParams(window.location.search).has('q');

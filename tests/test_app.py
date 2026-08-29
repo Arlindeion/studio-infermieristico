@@ -2898,6 +2898,43 @@ def test_admin_separa_nuovo_corso_e_propone_il_luogo_dello_studio(client):
     assert '<table' not in nuovo_corso
 
 
+def test_admin_separa_corsi_attivi_da_passati_e_annullati(client):
+    oggi = app_module.local_today().isoformat()
+    with flask_app.app_context():
+        db.session.add_all([
+            Corso(titolo='Corso di oggi', tipo='bls-d', data=oggi, stato='Aperto'),
+            Corso(titolo='Edizione futura attiva', tipo='bls-d', data='2099-12-01', stato='Completo'),
+            Corso(titolo='Corso passato', tipo='bls-d', data='2000-01-01', stato='Concluso'),
+            Corso(titolo='Edizione annullata', tipo='bls-d', data='2099-12-02', stato='Annullato'),
+        ])
+        db.session.commit()
+
+    _login_admin(client)
+    response = client.get('/admin#admin-corsi')
+
+    assert response.status_code == 200
+    assert 'data-admin-target="archivio-corsi"' in response.text
+    corsi_attivi = re.search(
+        r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="corsi">(.*?)</section>',
+        response.text,
+        re.DOTALL,
+    ).group(1)
+    archivio_corsi = re.search(
+        r'<section class="pagina-interna admin-page admin-panel" data-admin-panel="archivio-corsi" id="admin-archivio-corsi">(.*?)</section>',
+        response.text,
+        re.DOTALL,
+    ).group(1)
+
+    assert 'Corso di oggi' in corsi_attivi
+    assert 'Edizione futura attiva' in corsi_attivi
+    assert 'Corso passato' not in corsi_attivi
+    assert 'Edizione annullata' not in corsi_attivi
+    assert 'Corso passato' in archivio_corsi
+    assert 'Edizione annullata' in archivio_corsi
+    assert 'Corso di oggi' not in archivio_corsi
+    assert 'Edizione futura attiva' not in archivio_corsi
+
+
 # ─── Integrazione Google Calendar (Arzamed) ───
 
 @pytest.fixture

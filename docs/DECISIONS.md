@@ -837,6 +837,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: la revisione Alembic `a6c9e1f4b802` aggiunge `appuntamento.consenso_privacy` e la tabella `consenso_privacy_paziente`, univoca per pratica. Iscrizioni corso e call già collegate vengono riportate nella nuova tabella usando il consenso e la data già presenti. Per gli appuntamenti storici la migrazione usa prudentemente `Non registrata`, perché il database precedente non conservava l’evidenza del checkbox; non attribuisce quindi consensi retroattivi. La suite locale passa con 249 test; il controllo browser non rileva overflow o errori console e conferma target touch da 44 px. Questa tracciabilità tecnica non sostituisce la verifica professionale ancora aperta su informative, basi giuridiche e conservazione.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `ROADMAP.md`, `app.py`, `templates/admin.html`, `templates/admin_paziente.html`, `static/css/admin.css`, `migrations/versions/a6c9e1f4b802_traccia_consensi_privacy_paziente.py`, `tests/test_app.py`, `tests/test_migrations.py`, D-092, D-095, D-096.
 
+## D-098 — Corsi attivi e archivio corsi sono viste separate
+
+- Data: 2026-08-29.
+- Stato: approvata, implementata e verificata localmente a 1440×900 e 390×844 px.
+- Decisione: mostrare nella sezione admin `Corsi` soltanto le edizioni non annullate con data uguale o successiva alla data locale corrente. Raccogliere in una sezione distinta `Archivio corsi` tutte le edizioni con data passata oppure annullate, comprese quelle archiviate manualmente.
+- Motivo: le edizioni da gestire non devono essere mescolate allo storico; l’operatore deve distinguere subito le date ancora operative dai corsi conclusi o annullati.
+- Conseguenze: panoramica, gestione, inserimento manuale e destinazioni per spostamento o unione usano soltanto corsi attivi. L’archivio conserva accesso alla scheda, agli iscritti e alle esportazioni senza modificare lo stato dei corsi passati. La classificazione cambia automaticamente al cambio di data e non richiede una migrazione del database. Il controllo responsive ha verificato pannelli, titoli, contenuti, target da 44 px, scorrimento interno delle tabelle e assenza di overflow globale o errori console; la suite passa con 250 test Python e 36 test JavaScript.
+- Collegamenti: `app.py`, `templates/admin.html`, `static/js/admin-azioni.js`, `ROADMAP.md`, `tests/test_app.py`, `tests/js/admin-azioni.test.js`, D-073, D-089, D-090.
+
 ## Modello per nuove decisioni
 
 ```markdown

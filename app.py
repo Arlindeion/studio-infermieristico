@@ -5696,8 +5696,18 @@ def admin():
         else:
             appuntamenti = []
 
-    corsi = Corso.query.order_by(Corso.data).all()
+    corsi = Corso.query.filter(
+        Corso.data >= oggi,
+        Corso.stato != 'Annullato',
+        Corso.archiviato_il.is_(None),
+    ).order_by(Corso.data, Corso.ora).all()
+    corsi_archivio = Corso.query.filter(db.or_(
+        Corso.data < oggi,
+        Corso.stato == 'Annullato',
+        Corso.archiviato_il.is_not(None),
+    )).order_by(Corso.data.desc(), Corso.ora.desc()).all()
     panoramica_corsi = _panoramica_corsi(corsi)
+    panoramica_corsi_archivio = _panoramica_corsi(corsi_archivio)
     persone_corsi = PersonaCorso.query.order_by(PersonaCorso.nome).all()
     percorsi_accompagnamento = PercorsoAccompagnamento.query.order_by(PercorsoAccompagnamento.creato_il.desc()).all()
     panoramica_percorsi_accompagnamento = _panoramica_percorsi_accompagnamento(percorsi_accompagnamento)
@@ -5796,7 +5806,9 @@ def admin():
                            funnel_sonno=funnel_sonno,
                            appuntamenti=appuntamenti,
                            corsi=corsi,
+                           corsi_archivio=corsi_archivio,
                            panoramica_corsi=panoramica_corsi,
+                           panoramica_corsi_archivio=panoramica_corsi_archivio,
                            corsi_admin_tipi=CORSI_ADMIN_TIPI,
                            persone_corsi=persone_corsi,
                            panoramica_percorsi_accompagnamento=panoramica_percorsi_accompagnamento,
@@ -5853,7 +5865,11 @@ def dettaglio_admin(tipo, entita_id):
     }:
         difformita = _dettagli_anomalia_calendar(tipo, entita)
     duplicati = _possibili_duplicati_persona(entita.persona) if tipo == 'IscrizioneCorso' and entita.persona else []
-    corsi_disponibili = Corso.query.filter(Corso.archiviato_il.is_(None)).order_by(Corso.data).all()
+    corsi_disponibili = Corso.query.filter(
+        Corso.data >= local_today().isoformat(),
+        Corso.stato != 'Annullato',
+        Corso.archiviato_il.is_(None),
+    ).order_by(Corso.data, Corso.ora).all()
     collegamento_persona = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
     persona_collegata = entita.persona if tipo == 'IscrizioneCorso' else (collegamento_persona.persona if collegamento_persona else None)
     storico_persona = _storico_persona_admin(persona_collegata) if persona_collegata else []
