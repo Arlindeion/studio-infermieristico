@@ -45,10 +45,16 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 - I testi pubblici sono stati rivisti per rendere la voce più naturale, concreta e coerente tra pagine commerciali, moduli e conferme.
 - Sono stati preservati fatti, prezzi, durate, CTA canoniche, confini clinici e testimonianze autorizzate.
 - La revisione della pagina `/chi-sono` è stata approvata e applicata integralmente il 28 luglio 2026.
-- Nell'informativa privacy il contatto operativo è
-  `info@scstudioinfermieristico.it` e l'indirizzo usa la forma approvata
-  `Via C. D'Agnese 43, 65015 Montesilvano (PE)`. L'allineamento dei recapiti
-  non sostituisce la validazione professionale dell'informativa.
+- L’informativa privacy pubblicata il 29 agosto 2026 usa il testo completo
+  fornito per il sito: identifica Selene Campetta quale titolare di S.C. Studio
+  Infermieristico, riporta `info@scstudioinfermieristico.it`, Via C. D’Agnese
+  43, P. IVA 02439230687 e telefono 380 631 7175, e distingue finalità, basi
+  giuridiche, destinatari, conservazione, cookie, diritti e trattamenti dei dati
+  sanitari. Moduli e schede amministrative distinguono ora la presa visione
+  dai consensi facoltativi, registrano separatamente dati della gravidanza,
+  immagini e consegna dell’informativa ai terzi, e applicano i termini di
+  conservazione dichiarati. La pubblicazione e l’allineamento tecnico non
+  sostituiscono la validazione professionale dell’informativa e delle procedure.
 
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
 - Firma della hero: `Selene Campetta · infermiera e consulente del sonno infantile`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.

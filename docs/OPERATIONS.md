@@ -407,23 +407,36 @@ passaggi CET/CEST.
 ## Modelli principali
 
 - `Admin`: utente dell'area riservata.
-- `Appuntamento`: prenotazione sanitaria, relativo stato e accettazione privacy raccolta dal modulo.
+- `Appuntamento`: prenotazione sanitaria, relativo stato e presa visione dell’informativa raccolta dal modulo.
 - `CallSonno`: richiesta breve, stato, slot Calendar e invito al questionario.
 - `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
 - `PersonaCorso`: anagrafica pazienti, partecipanti e famiglie esposta nell’admin come `Pazienti`; il nome tecnico e la tabella restano invariati per compatibilità.
-- `ConsensoPrivacyPaziente`: stato e data del consenso associati alla scheda paziente e alla specifica pratica di origine.
+- `ConsensoPrivacyPaziente`: nome tecnico storico della tabella che conserva stato e data della presa visione associata alla scheda paziente e alla specifica pratica di origine.
+- `AutorizzazioneImmagini`: consenso facoltativo per una singola persona, con finalità, canali, responsabilità genitoriale, versione dell’informativa e revoca.
 - `IscrizioneCorso`: richiesta collegata, quando possibile, a corso e persona.
 - `PercorsoAccompagnamento`: edizione del corso nascita completo.
 - `IncontroAccompagnamento`: incontro di una specifica edizione.
 - `PresenzaAccompagnamento`: registro presenze.
 - `RegistroEvento`: log di email, sincronizzazioni ed errori parziali.
 - `AttivitaAdmin`, `NotaAdmin`: prossime azioni e note cronologiche.
-- `EmailOperativa`: copia esatta di destinatario, oggetto, corpo ed esito per 24 mesi.
+- `EmailOperativa`: copia esatta di destinatario, oggetto, corpo ed esito fino al termine applicabile alla pratica collegata.
 - `PropostaSlot`, `BloccoAgenda`: proposte accettabili e pause/chiusure sincronizzate.
 - `RegistroModifica`, `CollegamentoPersona`: audit amministrativo e collegamenti manuali tra pratiche e anagrafiche paziente.
 
 Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.md`.
+
+## Conservazione privacy
+
+La revisione Alembic `b7d2e4f6a810` introduce la tracciabilità delle autorizzazioni immagini, del consenso specifico ai dati della gravidanza, della consegna in presenza dell’informativa ai terzi e dell’anonimizzazione. Il job giornaliero applica termini distinti senza cancellare i riepiloghi operativi:
+
+- 6 mesi dalla chiusura per ricontatti senza prenotazione e richieste aziendali;
+- 12 mesi dalla conclusione per iscrizioni a corsi, percorsi nascita e consulenze educative sul sonno;
+- 24 mesi dalla conclusione per i dati organizzativi degli appuntamenti sanitari.
+
+Alla scadenza vengono rimossi recapiti, codici fiscali, note, questionari, token e dati extra identificativi; corso, data, stato, posti e conteggi restano disponibili in forma anonima. Note amministrative e dettagli tecnici collegati vengono rimossi o minimizzati. Le copie email seguono lo stesso termine della pratica, salvo il termine di 24 mesi per le tipologie senza un termine più breve. Le autorizzazioni immagini restano separate perché devono documentare il consenso finché l’immagine è utilizzabile e la revoca interrompe ogni nuovo utilizzo.
+
+La procedura tratta soltanto pratiche concluse, annullate, archiviate o attività terminate da almeno il relativo periodo. Documentazione sanitaria e fiscale soggetta a obblighi autonomi non viene rappresentata dalle tabelle organizzative anonimizzate e deve restare nei sistemi professionali competenti. Ogni esecuzione che modifica dati crea un evento aggregato `privacy`, privo di dati personali.
 
 ## Stati
 
@@ -568,8 +581,8 @@ Non eseguire migrazioni una tantum alla cieca su dati reali. Fare prima un backu
 
 `migrazione_call_sonno.py` è idempotente anche quando `call_sonno` o
 `questionario_sonno` esistono già: aggiunge soltanto le colonne additive
-mancanti, conserva le righe presenti e non attribuisce retroattivamente il
-consenso privacy, che resta falso se non era stato registrato.
+mancanti, conserva le righe presenti e non attribuisce retroattivamente la
+presa visione dell’informativa, che resta falsa se non era stata registrata.
 
 
 Se un database legacy possiede già le tabelle ma `alembic_version` è vuota,

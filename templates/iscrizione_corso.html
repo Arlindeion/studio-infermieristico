@@ -399,7 +399,7 @@
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="buono_stato_salute" required {{ 'checked' if form_data.get('buono_stato_salute') }}>
-                <span>Dichiaro di essere in buono stato di salute per la partecipazione alle prove pratiche *</span>
+                <span>Dichiaro di essere in buono stato di salute per le prove pratiche e acconsento esplicitamente al trattamento di questa informazione per la sicurezza dell’attività. *</span>
             </label>
         </div>
         <div class="form-gruppo checkbox-stack">
@@ -411,15 +411,8 @@
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di iscrizione. *</span>
             </label>
-        </div>
-        <div class="form-gruppo checkbox-stack">
-            <label>
-                <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
-                <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
-            </label>
-            <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
         </div>
         <div class="form-gruppo">
             <label class="privacy-label">
@@ -476,13 +469,13 @@
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="buono_stato_salute" required {{ 'checked' if form_data.get('buono_stato_salute') }}>
-                <span>Dichiaro di essere in buono stato di salute per la partecipazione alle prove pratiche *</span>
+                <span>Dichiaro di essere in buono stato di salute per le prove pratiche e acconsento esplicitamente al trattamento di questa informazione per la sicurezza dell’attività. *</span>
             </label>
         </div>
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di iscrizione. *</span>
             </label>
         </div>
         {% elif corso_tipo == 'accompagnamento-nascita' %}
@@ -558,15 +551,14 @@
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                <span>Acconsento al trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati anagrafici e organizzativi sono trattati per gestire l’open day. *</span>
             </label>
         </div>
         <div class="form-gruppo checkbox-stack">
             <label>
-                <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
-                <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
+                <input type="checkbox" name="consenso_dati_gravidanza" required {{ 'checked' if form_data.get('consenso_dati_gravidanza') }}>
+                <span>Acconsento esplicitamente al trattamento della data presunta del parto e della settimana di gravidanza per verificare l’adeguatezza dell’edizione, come descritto nell’informativa privacy. *</span>
             </label>
-            <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
         </div>
         <div class="form-gruppo">
             <label class="privacy-label">
@@ -587,15 +579,8 @@
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di partecipazione. *</span>
             </label>
-        </div>
-        <div class="form-gruppo checkbox-stack">
-            <label>
-                <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
-                <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
-            </label>
-            <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
         </div>
         <div class="form-gruppo">
             <label class="privacy-label">

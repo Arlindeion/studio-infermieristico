@@ -118,7 +118,7 @@
             </label>
             <label class="privacy-label">
                 <input type="checkbox" name="consenso_privacy" required class="privacy-checkbox" {% if form_data.get('consenso_privacy') %}checked{% endif %}>
-                <span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link">informativa privacy</a> e acconsento al trattamento dei dati inviati per gestire la richiesta. *</span>
+                <span class="privacy-text">Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" class="privacy-link" rel="noopener">informativa privacy</a>. I dati inviati sono necessari per gestire la richiesta della call. *</span>
             </label>
         </div>
 

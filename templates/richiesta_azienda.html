@@ -84,7 +84,7 @@
                 </label>
             </fieldset>
 
-            <label class="orientation-consent"><input type="checkbox" name="consenso_privacy" required {% if form_data.get('consenso_privacy') %}checked{% endif %}> <span>Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank">informativa privacy</a> e autorizzo il trattamento dei dati per gestire la richiesta.</span></label>
+            <label class="orientation-consent"><input type="checkbox" name="consenso_privacy" required {% if form_data.get('consenso_privacy') %}checked{% endif %}> <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta organizzativa. *</span></label>
             <button class="btn" type="submit">Invia la richiesta organizzativa</button>
             <p class="orientation-secondary-contact">Preferisci anticipare il contesto a voce? <a href="https://wa.me/393806317175?text=Ciao%2C%20vorrei%20valutare%20un%20corso%20per%20un%27azienda%20o%20un%20gruppo." target="_blank" rel="noopener noreferrer">Scrivi su WhatsApp</a>.</p>
         </form>

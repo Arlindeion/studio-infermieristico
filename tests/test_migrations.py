@@ -28,9 +28,10 @@ EXPECTED_TABLES = {
     'collegamento_persona',
     'consenso_privacy_paziente',
     'richiesta_azienda',
+    'autorizzazione_immagini',
 }
 
-LATEST_REVISION = 'a6c9e1f4b802'
+LATEST_REVISION = 'b7d2e4f6a810'
 
 
 def _migration_env(database_path):
@@ -99,6 +100,13 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'consenso_privacy' in appointment_columns
     assert 'scadenza_gestione' in appointment_columns
     assert 'sincronizzazione' in appointment_columns
+    assert 'dati_anonimizzati_il' in appointment_columns
+    registration_columns = _column_names(database_path, 'iscrizione_corso')
+    assert 'consenso_dati_gravidanza' in registration_columns
+    assert 'consenso_dati_gravidanza_il' in registration_columns
+    assert 'informativa_terzi_consegnata_il' in registration_columns
+    assert 'informativa_terzi_destinatario' in registration_columns
+    assert 'dati_anonimizzati_il' in registration_columns
     assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
     assert _column_nullable(database_path, 'persona_corso', 'telefono') is True
 

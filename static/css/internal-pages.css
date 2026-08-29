@@ -480,6 +480,12 @@
     padding: 0;
 }
 
+.page-privacy .privacy-blocco h3 {
+    color: var(--verde-scuro);
+    font-size: 1.05rem;
+    margin: 1.6rem 0 0.65rem;
+}
+
 .page-privacy .privacy-blocco p,
 .page-privacy .privacy-blocco ul {
     color: var(--verde-scuro-a82);

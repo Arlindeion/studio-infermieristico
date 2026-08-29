@@ -269,7 +269,7 @@
                     </fieldset>
                     <label>Durata <span class="admin-input-suffix"><input name="duration_minutes" type="number" min="1" max="480" value="30" required><span>minuti</span></span></label>
                     <label>Note<textarea name="note" rows="3"></textarea></label>
-                    <div class="manual-consensi"><label><input type="checkbox" name="consenso_privacy"><span>Consenso privacy raccolto</span></label></div>
+                    <div class="manual-consensi"><label><input type="checkbox" name="consenso_privacy"><span>Presa visione dell’informativa registrata</span></label></div>
                     <button class="btn" type="submit">Crea in attesa</button>
                 </form>
             </details>
@@ -849,12 +849,9 @@
                 <div class="manual-consensi">
                     <label>
                         <input type="checkbox" name="consenso_privacy" checked>
-                        <span>Privacy/contatto raccolto</span>
+                        <span>Presa visione dell’informativa registrata</span>
                     </label>
-                    <label>
-                        <input type="checkbox" name="consenso_immagini">
-                        <span>Consenso immagini raccolto</span>
-                    </label>
+                    <small>L’eventuale autorizzazione immagini si registra nella scheda dell’iscrizione, separatamente per ogni persona.</small>
                 </div>
                 <div class="manual-consensi admin-capacity-override">
                     <label><input type="checkbox" name="conferma_superamento_capienza" value="1"><span>Autorizzo l’eventuale superamento del limite online</span></label>
@@ -1067,7 +1064,7 @@
                                     <td>{{ iscrizione.telefono }}<br><span class="text-muted">{{ iscrizione.email }}</span></td>
                                     <td>{{ extra.get('data_presunta_parto', '—') }}</td>
                                     <td>{{ extra.get('partner_presente', '—') }}</td>
-                                    <td>{{ 'Si' if iscrizione.consenso_immagini else 'No' }}</td>
+                                    <td>{{ iscrizione.autorizzazioni_immagini_attive|length }} attive{% if iscrizione.consenso_immagini %} · storico da verificare{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -1197,7 +1194,7 @@
                 </td>
                 <td>
                     <p>Privacy: {{ 'Si' if i.consenso_privacy else 'No' }}</p>
-                    <p>Immagini: {{ 'Si' if i.consenso_immagini else 'No' }}</p>
+                    <p>Immagini: {{ i.autorizzazioni_immagini_attive|length }} autorizzazioni attive{% if i.consenso_immagini %} · storico precedente da verificare{% endif %}</p>
                 </td>
                 <td><span class="badge">{{ i.stato }}</span></td>
                 <td class="azioni">

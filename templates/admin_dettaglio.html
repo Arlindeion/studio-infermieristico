@@ -91,6 +91,7 @@
                 {% if entita.data_corso %}<div><dt>Edizione</dt><dd>{{ entita.data_corso }}</dd></div>{% endif %}
                 {% if entita.partecipazione %}<div><dt>Partecipazione</dt><dd>{{ entita.partecipazione }}</dd></div>{% endif %}
                 {% if entita.posti_richiesti %}<div><dt>Posti richiesti</dt><dd>{{ entita.posti_richiesti }}</dd></div>{% endif %}
+                {% if tipo == 'IscrizioneCorso' and entita.extra_dict().get('data_presunta_parto') %}<div><dt>Dati gravidanza</dt><dd>{{ 'Consenso esplicito registrato il ' ~ (entita.consenso_dati_gravidanza_il|local_timestamp) if entita.consenso_dati_gravidanza else 'Consenso non registrato' }}</dd></div>{% endif %}
                 {% if entita.scadenza_gestione %}<div><dt>Prossima azione entro</dt><dd>{{ entita.scadenza_gestione.strftime('%d/%m/%Y %H:%M') }}</dd></div>{% endif %}
                 {% if entita.note %}<div class="admin-fact-wide"><dt>Note iniziali</dt><dd>{{ entita.note }}</dd></div>{% endif %}
             </dl>
@@ -281,6 +282,45 @@ S.C. Studio Infermieristico</textarea></label>
 
     {% if tipo == 'IscrizioneCorso' %}
     <section class="admin-surface"><p class="admin-eyebrow">Cambio edizione</p><h2>Sposta partecipante</h2><form class="admin-form-grid" method="post" action="{{ url_for('sposta_iscrizione_corso_admin', id=entita.id) }}" data-confirm="Spostare questa iscrizione nella nuova edizione e inviare la comunicazione a {{ entita.email or 'email non indicata' }}?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Nuova edizione<select name="corso_destinazione_id" required><option value="">Seleziona</option>{% for corso in corsi_disponibili if corso.id != entita.corso_id %}<option value="{{ corso.id }}">{{ corso.titolo }} · {{ corso.data }}</option>{% endfor %}</select></label><button class="btn-azione verde" type="submit">Sposta</button></form></section>
+
+    <section class="admin-surface admin-image-consents">
+        <p class="admin-eyebrow">Consenso facoltativo e revocabile</p>
+        <h2>Autorizzazioni immagini per persona</h2>
+        <p class="filtro-descrizione">Registra soltanto un’autorizzazione acquisita direttamente dall’adulto interessato o dagli esercenti la responsabilità genitoriale. Il partecipante principale non autorizza altri adulti.</p>
+        {% if entita.consenso_immagini %}<p class="admin-flash admin-flash-error">Esiste una spunta immagini del vecchio modulo: non usarla come autorizzazione finché non viene registrata nuovamente qui.</p>{% endif %}
+        <ol class="admin-timeline">
+            {% for autorizzazione in entita.autorizzazioni_immagini %}
+            <li>
+                <time>{{ autorizzazione.prestato_il|local_timestamp }}</time>
+                <p><strong>{{ autorizzazione.soggetto_nome }}</strong> · {{ autorizzazione.soggetto_tipo }} · {% if autorizzazione.revocato_il %}Revocata il {{ autorizzazione.revocato_il|local_timestamp }}{% else %}Attiva{% endif %}</p>
+                <p>Finalità: {% if autorizzazione.finalita_didattica %}didattica {% endif %}{% if autorizzazione.finalita_informativa %}informativa {% endif %}{% if autorizzazione.finalita_promozionale %}promozionale{% endif %}<br>Canali: {% if autorizzazione.canale_sito %}sito {% endif %}{% if autorizzazione.canale_social %}social {% endif %}{% if autorizzazione.canale_materiali %}materiali{% endif %}</p>
+                {% if autorizzazione.soggetto_tipo == 'Minore' %}<p>Responsabilità genitoriale: {{ autorizzazione.primo_genitore_nome }}{% if autorizzazione.secondo_genitore_nome %} e {{ autorizzazione.secondo_genitore_nome }}{% else %} · dichiarata esclusiva{% endif %}</p>{% endif %}
+                {% if not autorizzazione.revocato_il %}<form method="post" action="{{ url_for('revoca_autorizzazione_immagini_admin', id=autorizzazione.id) }}" data-confirm="Registrare la revoca e interrompere ogni nuovo utilizzo delle immagini?"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Registra revoca</button></form>{% endif %}
+            </li>
+            {% else %}<li>Nessuna autorizzazione immagini registrata.</li>{% endfor %}
+        </ol>
+        <form class="admin-form-stack" method="post" action="{{ url_for('aggiungi_autorizzazione_immagini_admin', id=entita.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Persona fotografabile<input name="soggetto_nome" maxlength="160" required></label>
+            <label>Tipo di persona<select name="soggetto_tipo" required><option value="Adulto">Adulto</option><option value="Minore">Minore</option></select></label>
+            <fieldset><legend>Finalità autorizzate</legend><label><input type="checkbox" name="finalita_didattica"> Didattica</label><label><input type="checkbox" name="finalita_informativa"> Informativa</label><label><input type="checkbox" name="finalita_promozionale"> Promozionale</label></fieldset>
+            <fieldset><legend>Canali autorizzati</legend><label><input type="checkbox" name="canale_sito"> Sito</label><label><input type="checkbox" name="canale_social"> Social</label><label><input type="checkbox" name="canale_materiali"> Materiali informativi o promozionali</label></fieldset>
+            <fieldset><legend>Solo per un minore</legend><label>Primo esercente la responsabilità genitoriale<input name="primo_genitore_nome" maxlength="160"></label><label>Secondo esercente<input name="secondo_genitore_nome" maxlength="160"></label><label><input type="checkbox" name="responsabilita_esclusiva"> È stata dichiarata la responsabilità genitoriale esclusiva</label></fieldset>
+            <label>Note facoltative<textarea name="note" rows="3" maxlength="2000"></textarea></label>
+            <button class="btn" type="submit">Registra autorizzazione</button>
+        </form>
+    </section>
+
+    <section class="admin-surface">
+        <p class="admin-eyebrow">Partner e secondo partecipante</p>
+        <h2>Consegna dell’informativa in presenza</h2>
+        {% if entita.informativa_terzi_consegnata_il %}<p>Registrata per <strong>{{ entita.informativa_terzi_destinatario }}</strong> il {{ entita.informativa_terzi_consegnata_il|local_timestamp }}.</p>{% else %}<p class="filtro-descrizione">Da compilare quando consegni personalmente l’informativa al partner o al secondo partecipante.</p>{% endif %}
+        <form class="admin-form-grid" method="post" action="{{ url_for('registra_informativa_terzo_admin', id=entita.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label>Persona informata<input name="destinatario" maxlength="160" value="{{ entita.informativa_terzi_destinatario or entita.extra_dict().get('nome_secondo_partecipante', '') }}" required></label>
+            <button class="btn-azione verde" type="submit">Registra consegna in presenza</button>
+        </form>
+    </section>
     {% endif %}
 
     {% if duplicati %}

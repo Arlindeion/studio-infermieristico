@@ -37,6 +37,7 @@ from app import (
     PercorsoAccompagnamento,
     IncontroAccompagnamento,
     PresenzaAccompagnamento,
+    AutorizzazioneImmagini,
     RegistroEvento,
     EmailOperativa,
     CallSonno,
@@ -974,6 +975,12 @@ def test_font_sono_self_hosted_e_csp_non_ammette_google_fonts(client):
     assert "font-family: 'Bricolage Grotesque'" in fonts_css.text
     assert 'font-display: swap' in fonts_css.text
 
+    assert 'AtkinsonHyperlegible-Regular.woff2' in homepage.text
+    assert 'BricolageGrotesque-ExtraBold.woff2' in homepage.text
+    assert 'AtkinsonHyperlegible-Regular.woff2' in login.text
+    assert 'BricolageGrotesque-Bold.woff2' in login.text
+    assert 'BricolageGrotesque-ExtraBold.woff2' not in login.text
+
     font_paths = [
         '/static/fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2',
         '/static/fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2',
@@ -986,6 +993,184 @@ def test_font_sono_self_hosted_e_csp_non_ammette_google_fonts(client):
         font_response = client.get(font_path)
         assert font_response.status_code == 200
         assert font_response.mimetype == 'font/woff2'
+
+
+def test_privacy_policy_pubblica_il_testo_aggiornato(client):
+    response = client.get('/privacy')
+
+    assert response.status_code == 200
+    assert 'Informativa sul trattamento dei dati personali' in response.text
+    assert 'Ultimo aggiornamento: 29 agosto 2026' in response.text
+    assert response.text.count('class="privacy-blocco') == 21
+    assert 'Selene Campetta, titolare di S.C. Studio Infermieristico' in response.text
+    assert 'P. IVA 02439230687' in response.text
+    assert 'art. 9, par. 2, lett. h) GDPR' in response.text
+    assert 'non è pertanto richiesto il consenso dell’interessato' in response.text
+    assert 'data presunta del parto' in response.text
+    assert 'settimana di gravidanza attuale' in response.text
+    assert 'massimo <strong>6 mesi</strong>' in response.text
+    assert 'massimo <strong>12 mesi</strong>' in response.text
+    assert 'di regola massimo <strong>24 mesi</strong>' in response.text
+    assert 'Render, Zimbra, Google, ArzaMed, PayPal, Meta/WhatsApp, Meta Pixel e Behold' in response.text
+    assert 'il loro caricamento non richiede una connessione a Google Fonts' in response.text
+    assert 'richieste di revoca' in response.text
+    assert 'mailto:info@scstudioinfermieristico.it' in response.text
+    assert 'Erogazione della prestazione sanitaria:</strong> necessaria' not in response.text
+    assert 'Ultimo aggiornamento:</strong> Luglio 2026' not in response.text
+
+
+def test_checkbox_obbligatorie_distinguono_presa_visione_e_consensi_specifici(client):
+    prenotazione = client.get('/prenota')
+    call = client.get('/prenota-call-sonno')
+    corso = client.get('/iscrizione-corsi/disostruzione-pediatrica')
+    nascita = client.get('/iscrizione-corsi/accompagnamento-nascita')
+
+    assert 'Dichiaro di aver letto' in prenotazione.text
+    assert 'Dichiaro di aver letto' in call.text
+    assert 'Dichiaro di aver letto' in corso.text
+    assert 'name="consenso_immagini"' not in corso.text
+    assert 'name="consenso_dati_gravidanza" required' in nascita.text
+    assert 'Acconsento esplicitamente' in nascita.text
+
+
+def test_scheda_iscrizione_registra_revoca_immagini_e_informativa_in_presenza(client):
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso(
+            corso_tipo='laboratorio-infanzia',
+            corso_titolo='Laboratorio infanzia',
+            nome='Genitore Test',
+            telefono='3331234567',
+            email='genitore@example.com',
+            codice_fiscale='TSTGTR80A01G482X',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            consenso_privacy=True,
+        )
+        db.session.add(iscrizione)
+        db.session.commit()
+        iscrizione_id = iscrizione.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/iscrizione-corso/{iscrizione_id}/autorizzazione-immagini',
+        data={
+            '_csrf_token': csrf,
+            'soggetto_nome': 'Bambino Test',
+            'soggetto_tipo': 'Minore',
+            'finalita_didattica': 'on',
+            'canale_materiali': 'on',
+            'primo_genitore_nome': 'Genitore Uno',
+            'secondo_genitore_nome': 'Genitore Due',
+        },
+    )
+    assert response.status_code == 302
+
+    response = client.post(
+        f'/admin/iscrizione-corso/{iscrizione_id}/informativa-terzo',
+        data={'_csrf_token': csrf, 'destinatario': 'Secondo Partecipante'},
+    )
+    assert response.status_code == 302
+
+    with flask_app.app_context():
+        autorizzazione = AutorizzazioneImmagini.query.one()
+        assert autorizzazione.secondo_genitore_nome == 'Genitore Due'
+        assert autorizzazione.versione_informativa == '2026-08-29'
+        autorizzazione_id = autorizzazione.id
+        iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
+        assert iscrizione.informativa_terzi_destinatario == 'Secondo Partecipante'
+        assert iscrizione.informativa_terzi_consegnata_il is not None
+
+    response = client.post(
+        f'/admin/autorizzazione-immagini/{autorizzazione_id}/revoca',
+        data={'_csrf_token': csrf},
+    )
+    assert response.status_code == 302
+    with flask_app.app_context():
+        assert db.session.get(AutorizzazioneImmagini, autorizzazione_id).revocato_il is not None
+
+
+def test_conservazione_privacy_anonimizza_dati_scaduti_e_mantiene_riepiloghi(client):
+    riferimento = datetime(2026, 8, 29, 12, 0, 0)
+    with flask_app.app_context():
+        persona = PersonaCorso(
+            nome='Persona Scaduta',
+            telefono='3331234567',
+            email='persona@example.com',
+            aggiornato_il=datetime(2024, 1, 1),
+        )
+        corso = Corso(
+            titolo='Corso storico',
+            tipo='bls-d',
+            data='2025-01-01',
+            stato='Concluso',
+        )
+        appuntamento = Appuntamento(
+            nome='Paziente Scaduto',
+            telefono='3331234567',
+            email='paziente@example.com',
+            servizio='Medicazione semplice',
+            data='2024-01-01',
+            ora='10:00',
+            stato='Concluso',
+        )
+        call = CallSonno(
+            nome='Famiglia Scaduta',
+            telefono='3331234567',
+            email='famiglia@example.com',
+            eta_bambino_mesi=6,
+            difficolta_principale='Risvegli',
+            data='2025-01-01',
+            ora='10:00',
+            stato='Conclusa',
+            aggiornato_il=datetime(2025, 1, 1),
+        )
+        iscrizione = IscrizioneCorso(
+            corso=corso,
+            persona=persona,
+            corso_tipo='bls-d',
+            corso_titolo='Corso storico',
+            nome='Persona Scaduta',
+            telefono='3331234567',
+            email='persona@example.com',
+            codice_fiscale='TSTPRS80A01G482X',
+            tipo_richiesta='richiesta_iscrizione',
+            posti=1,
+            posti_richiesti=1,
+            stato='Confermato',
+            dati_extra=json.dumps({'dato': 'personale'}),
+        )
+        db.session.add_all([persona, corso, appuntamento, call, iscrizione])
+        db.session.flush()
+        db.session.add(QuestionarioSonno(
+            call_sonno=call,
+            risposte=json.dumps({'condizioni_note': 'dato sanitario'}),
+            consenso_dati_sanitari=True,
+        ))
+        db.session.commit()
+        ids = {
+            'persona': persona.id,
+            'corso': corso.id,
+            'appuntamento': appuntamento.id,
+            'call': call.id,
+            'iscrizione': iscrizione.id,
+        }
+
+        conteggi = app_module.applica_conservazione_privacy(riferimento)
+
+        assert conteggi == {
+            'appuntamenti': 1,
+            'call_sonno': 1,
+            'iscrizioni_corso': 1,
+            'persone': 1,
+        }
+        assert db.session.get(Appuntamento, ids['appuntamento']).nome == '[dati anonimizzati]'
+        assert db.session.get(CallSonno, ids['call']).nome == '[dati anonimizzati]'
+        assert db.session.get(IscrizioneCorso, ids['iscrizione']).nome == '[dati anonimizzati]'
+        assert db.session.get(IscrizioneCorso, ids['iscrizione']).posti == 1
+        assert db.session.get(Corso, ids['corso']).titolo == 'Corso storico'
+        assert db.session.get(PersonaCorso, ids['persona']).nome == '[dati anonimizzati]'
+        assert QuestionarioSonno.query.count() == 0
 
 
 @pytest.mark.parametrize(
@@ -2048,6 +2233,7 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
         'gravidanza_regolare': 'Si',
         'data_corso': data_corso_id,
         'consenso_privacy': 'on',
+        'consenso_dati_gravidanza': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -3486,7 +3672,7 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
             'data_presunta_parto': '2100-01-10',
             'partner_presente': 'Si',
             'consenso_privacy': 'on',
-            'consenso_immagini': 'ACCONSENTO',
+            'consenso_dati_gravidanza': 'on',
             '_csrf_token': token,
         })
 
@@ -3509,7 +3695,9 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert iscrizione.partecipazione == 'Coppia - partner si'
         assert extra['data_presunta_parto'] == '2100-01-10'
         assert extra['partner_presente'] == 'Si'
-        assert iscrizione.consenso_immagini is True
+        assert iscrizione.consenso_immagini is False
+        assert iscrizione.consenso_dati_gravidanza is True
+        assert iscrizione.consenso_dati_gravidanza_il is not None
         assert iscrizione.persona is None
         assert PersonaCorso.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 9
@@ -3593,6 +3781,7 @@ def test_errori_email_non_perdono_iscrizione_e_presenze_del_percorso(client):
             'data_presunta_parto': '2100-01-10',
             'partner_presente': 'Si',
             'consenso_privacy': 'on',
+            'consenso_dati_gravidanza': 'on',
             '_csrf_token': token,
         })
 
@@ -5142,10 +5331,10 @@ def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
     scheda = client.get(f'/admin/paziente/{paziente_id}')
     assert 'Pratiche collegate' in scheda.text
     assert 'Medicazione semplice' in scheda.text
-    assert 'Consensi privacy' in scheda.text
-    assert 'Accettata' in scheda.text
+    assert 'Prese visioni privacy' in scheda.text
+    assert 'Presa visione registrata' in scheda.text
     assert 'Appuntamento #' in scheda.text
-    assert 'Data consenso:' in scheda.text
+    assert 'Data presa visione:' in scheda.text
 
 
 def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):

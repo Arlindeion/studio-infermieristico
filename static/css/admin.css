@@ -1490,6 +1490,36 @@
 
 .admin-form-wide { grid-column: 1 / -1; }
 
+.admin-image-consents fieldset {
+    border: 1px solid var(--verde-scuro-a14);
+    border-radius: 8px;
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0.85rem;
+}
+
+.admin-image-consents legend {
+    color: var(--verde-scuro);
+    font-weight: 800;
+    padding: 0 0.35rem;
+}
+
+.admin-image-consents fieldset label {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    min-height: 44px;
+}
+
+.admin-image-consents input[type="checkbox"] {
+    flex: 0 0 18px;
+    min-height: 18px;
+    padding: 0;
+    width: 18px;
+}
+
 .admin-inline-form-message {
     background: #fde2df;
     border-left: 4px solid var(--rosa-antico);

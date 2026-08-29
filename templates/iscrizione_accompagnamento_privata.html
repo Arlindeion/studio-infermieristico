@@ -98,15 +98,14 @@
                 <div class="form-gruppo checkbox-stack">
                     <label>
                         <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                        <span>Autorizzo il trattamento dei dati personali per finalità organizzative e amministrative *</span>
+                        <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati anagrafici e organizzativi sono trattati per gestire l’iscrizione. *</span>
                     </label>
                 </div>
                 <div class="form-gruppo checkbox-stack">
                     <label>
-                        <input type="checkbox" name="consenso_immagini" value="ACCONSENTO" {{ 'checked' if form_data.get('consenso_immagini') in ['ACCONSENTO', 'on', 'si'] }}>
-                        <span>Autorizzo la realizzazione e l'utilizzo di immagini e/o riprese per finalità didattiche e comunicative</span>
+                        <input type="checkbox" name="consenso_dati_gravidanza" required {{ 'checked' if form_data.get('consenso_dati_gravidanza') }}>
+                        <span>Acconsento esplicitamente al trattamento della data presunta del parto per verificare l’adeguatezza del percorso, come descritto nell’informativa privacy. *</span>
                     </label>
-                    <small>Facoltativo: se non la spunti, il consenso immagini non viene registrato.</small>
                 </div>
 
                 <button type="submit" class="btn" data-conversion="birth_private_registration_submit">Conferma iscrizione</button>

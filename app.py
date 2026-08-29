@@ -283,6 +283,11 @@ STATI_LISTA_ATTESA = {'Lista attesa', 'Invitato'}
 STATI_ISCRIZIONE_DA_GESTIRE = {'Nuova', 'Contattato', 'Lista attesa', 'Invitato'}
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
+VERSIONE_INFORMATIVA_PRIVACY = '2026-08-29'
+GIORNI_CONSERVAZIONE_RICHIESTE = 180
+GIORNI_CONSERVAZIONE_CORSI_E_SONNO = 365
+GIORNI_CONSERVAZIONE_PRENOTAZIONI = 730
+TIPI_SOGGETTO_IMMAGINI = {'Adulto', 'Minore'}
 STATI_RICHIESTA_AZIENDA = [
     'Nuova',
     'Contattata',
@@ -1702,6 +1707,7 @@ class Appuntamento(db.Model):
     difformita_calendario = db.Column(db.Text, nullable=True)
     creato_da_admin = db.Column(db.Boolean, default=False, nullable=False)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class CallSonno(db.Model):
@@ -1737,6 +1743,7 @@ class CallSonno(db.Model):
     sincronizzazione = db.Column(db.String(30), default='da_sincronizzare', nullable=False, index=True)
     difformita_calendario = db.Column(db.Text, nullable=True)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class QuestionarioSonno(db.Model):
@@ -1786,6 +1793,7 @@ class PersonaCorso(db.Model):
     note = db.Column(db.Text, nullable=True)
     creato_il = db.Column(db.DateTime, default=utc_now)
     aggiornato_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
 class PercorsoAccompagnamento(db.Model):
@@ -1836,6 +1844,10 @@ class IscrizioneCorso(db.Model):
     posti = db.Column(db.Integer, default=1, nullable=False)
     consenso_privacy = db.Column(db.Boolean, default=False, nullable=False)
     consenso_immagini = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_dati_gravidanza = db.Column(db.Boolean, default=False, nullable=False)
+    consenso_dati_gravidanza_il = db.Column(db.DateTime, nullable=True)
+    informativa_terzi_consegnata_il = db.Column(db.DateTime, nullable=True)
+    informativa_terzi_destinatario = db.Column(db.String(160), nullable=True)
     stato = db.Column(db.String(20), default='Nuova', nullable=False)
     creato_il = db.Column(db.DateTime, default=utc_now)
     scadenza_gestione = db.Column(db.DateTime, nullable=True, index=True)
@@ -1845,6 +1857,7 @@ class IscrizioneCorso(db.Model):
     scadenza_invito_lista_attesa = db.Column(db.DateTime, nullable=True, index=True)
     superamento_capienza_motivo = db.Column(db.Text, nullable=True)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
     corso = db.relationship('Corso', backref=db.backref('iscrizioni', lazy=True))
     persona = db.relationship('PersonaCorso', backref=db.backref('iscrizioni', lazy=True))
     percorso_accompagnamento = db.relationship(
@@ -1859,6 +1872,14 @@ class IscrizioneCorso(db.Model):
             return json.loads(self.dati_extra)
         except json.JSONDecodeError:
             return {}
+
+    @property
+    def autorizzazioni_immagini_attive(self):
+        return [
+            autorizzazione
+            for autorizzazione in self.autorizzazioni_immagini
+            if autorizzazione.revocato_il is None
+        ]
 
 
 class RichiestaAzienda(db.Model):
@@ -1880,10 +1901,44 @@ class RichiestaAzienda(db.Model):
     creato_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
     aggiornato_il = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
     corso_generato = db.relationship(
         'Corso',
         foreign_keys=[corso_generato_id],
         backref=db.backref('richiesta_azienda_origine', uselist=False),
+    )
+
+
+class AutorizzazioneImmagini(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    iscrizione_id = db.Column(
+        db.Integer,
+        db.ForeignKey('iscrizione_corso.id'),
+        nullable=False,
+        index=True,
+    )
+    soggetto_nome = db.Column(db.String(160), nullable=False)
+    soggetto_tipo = db.Column(db.String(20), nullable=False)
+    finalita_didattica = db.Column(db.Boolean, default=False, nullable=False)
+    finalita_informativa = db.Column(db.Boolean, default=False, nullable=False)
+    finalita_promozionale = db.Column(db.Boolean, default=False, nullable=False)
+    canale_sito = db.Column(db.Boolean, default=False, nullable=False)
+    canale_social = db.Column(db.Boolean, default=False, nullable=False)
+    canale_materiali = db.Column(db.Boolean, default=False, nullable=False)
+    primo_genitore_nome = db.Column(db.String(160), nullable=True)
+    secondo_genitore_nome = db.Column(db.String(160), nullable=True)
+    responsabilita_esclusiva = db.Column(db.Boolean, default=False, nullable=False)
+    versione_informativa = db.Column(db.String(20), nullable=False)
+    prestato_il = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
+    revocato_il = db.Column(db.DateTime, nullable=True, index=True)
+    note = db.Column(db.Text, nullable=True)
+    iscrizione = db.relationship(
+        'IscrizioneCorso',
+        backref=db.backref(
+            'autorizzazioni_immagini',
+            lazy=True,
+            cascade='all, delete-orphan',
+        ),
     )
 
 
@@ -2076,8 +2131,13 @@ def _scadenza_da_form(valore, fallback=None):
 
 
 def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
-    """Invia via SMTP e conserva per 24 mesi la copia esatta collegata alla pratica."""
+    """Invia via SMTP e conserva la copia per il termine della pratica collegata."""
     destinatario = ', '.join(str(destinatario or '') for destinatario in (msg.recipients or []))
+    giorni_conservazione = {
+        'RichiestaAzienda': GIORNI_CONSERVAZIONE_RICHIESTE,
+        'CallSonno': GIORNI_CONSERVAZIONE_CORSI_E_SONNO,
+        'IscrizioneCorso': GIORNI_CONSERVAZIONE_CORSI_E_SONNO,
+    }.get(entita_tipo, GIORNI_CONSERVAZIONE_PRENOTAZIONI)
     record = EmailOperativa(
         entita_tipo=entita_tipo,
         entita_id=entita_id,
@@ -2085,7 +2145,7 @@ def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
         oggetto=msg.subject or '',
         corpo=msg.body or '',
         stato='in_preparazione',
-        scade_il=utc_now() + timedelta(days=730),
+        scade_il=utc_now() + timedelta(days=giorni_conservazione),
     )
     db.session.add(record)
     db.session.commit()
@@ -2103,14 +2163,226 @@ def _invia_email_tracciata(msg, entita_tipo=None, entita_id=None):
 
 
 def elimina_email_scadute(adesso=None):
-    """Applica la conservazione di 24 mesi senza toccare le pratiche collegate."""
+    """Elimina le copie operative al termine previsto per la relativa pratica."""
     limite = adesso or utc_now()
-    eliminate = EmailOperativa.query.filter(EmailOperativa.scade_il <= limite).delete(
+    eliminate = 0
+    termini_per_tipo = {
+        'RichiestaAzienda': GIORNI_CONSERVAZIONE_RICHIESTE,
+        'CallSonno': GIORNI_CONSERVAZIONE_CORSI_E_SONNO,
+        'IscrizioneCorso': GIORNI_CONSERVAZIONE_CORSI_E_SONNO,
+    }
+    for entita_tipo, giorni in termini_per_tipo.items():
+        eliminate += EmailOperativa.query.filter(
+            EmailOperativa.entita_tipo == entita_tipo,
+            EmailOperativa.creata_il <= limite - timedelta(days=giorni),
+        ).delete(synchronize_session=False)
+    eliminate += EmailOperativa.query.filter(EmailOperativa.scade_il <= limite).delete(
         synchronize_session=False
     )
-    if eliminate:
-        db.session.commit()
+    db.session.commit()
     return eliminate
+
+
+def _data_iso_scaduta(valore, limite):
+    if not valore:
+        return False
+    try:
+        return date.fromisoformat(str(valore)[:10]) <= limite
+    except (TypeError, ValueError):
+        return False
+
+
+def _pulisci_dati_operativi_collegati(entita_tipo, entita_id):
+    NotaAdmin.query.filter_by(entita_tipo=entita_tipo, entita_id=entita_id).delete(
+        synchronize_session=False
+    )
+    AttivitaAdmin.query.filter_by(entita_tipo=entita_tipo, entita_id=entita_id).delete(
+        synchronize_session=False
+    )
+    PropostaSlot.query.filter_by(entita_tipo=entita_tipo, entita_id=entita_id).delete(
+        synchronize_session=False
+    )
+    RegistroModifica.query.filter_by(entita_tipo=entita_tipo, entita_id=entita_id).update(
+        {'dettagli': None},
+        synchronize_session=False,
+    )
+    RegistroEvento.query.filter_by(entita_tipo=entita_tipo, entita_id=entita_id).update(
+        {'dettagli': None},
+        synchronize_session=False,
+    )
+
+
+def _anonimizza_appuntamento(appuntamento, adesso):
+    appuntamento.nome = '[dati anonimizzati]'
+    appuntamento.telefono = ''
+    appuntamento.email = 'privacy-deleted@example.invalid'
+    appuntamento.note = None
+    appuntamento.google_event_id = None
+    appuntamento.difformita_calendario = None
+    appuntamento.dati_anonimizzati_il = adesso
+    CollegamentoPersona.query.filter_by(
+        entita_tipo='Appuntamento',
+        entita_id=appuntamento.id,
+    ).delete(synchronize_session=False)
+    _pulisci_dati_operativi_collegati('Appuntamento', appuntamento.id)
+
+
+def _anonimizza_call_sonno(call, adesso):
+    if call.questionario:
+        db.session.delete(call.questionario)
+    call.nome = '[dati anonimizzati]'
+    call.telefono = ''
+    call.email = 'privacy-deleted@example.invalid'
+    call.eta_bambino_mesi = 0
+    call.difficolta_principale = '[dati anonimizzati]'
+    call.difficolta_altro = None
+    call.ruolo_richiedente = None
+    call.durata_difficolta = None
+    call.obiettivo_call = None
+    call.token_questionario = None
+    call.google_event_id = None
+    call.difformita_calendario = None
+    call.utm_source = None
+    call.utm_medium = None
+    call.utm_campaign = None
+    call.utm_content = None
+    call.dati_anonimizzati_il = adesso
+    CollegamentoPersona.query.filter_by(
+        entita_tipo='CallSonno',
+        entita_id=call.id,
+    ).delete(synchronize_session=False)
+    _pulisci_dati_operativi_collegati('CallSonno', call.id)
+
+
+def _anonimizza_iscrizione(iscrizione, adesso):
+    iscrizione.nome = '[dati anonimizzati]'
+    iscrizione.telefono = ''
+    iscrizione.email = None
+    iscrizione.codice_fiscale = ''
+    iscrizione.note = None
+    iscrizione.dati_extra = None
+    iscrizione.persona_id = None
+    iscrizione.token_lista_attesa = None
+    iscrizione.superamento_capienza_motivo = None
+    iscrizione.consenso_immagini = False
+    iscrizione.dati_anonimizzati_il = adesso
+    _pulisci_dati_operativi_collegati('IscrizioneCorso', iscrizione.id)
+
+
+def _anonimizza_richiesta_azienda(richiesta, adesso):
+    richiesta.organizzazione = '[dati anonimizzati]'
+    richiesta.referente = '[dati anonimizzati]'
+    richiesta.telefono = ''
+    richiesta.email = 'privacy-deleted@example.invalid'
+    richiesta.periodo_preferito = None
+    richiesta.note = None
+    richiesta.dati_anonimizzati_il = adesso
+    _pulisci_dati_operativi_collegati('RichiestaAzienda', richiesta.id)
+
+
+def _persona_ha_pratiche_identificabili(persona):
+    if IscrizioneCorso.query.filter_by(
+        persona_id=persona.id,
+        dati_anonimizzati_il=None,
+    ).first():
+        return True
+    for collegamento in CollegamentoPersona.query.filter_by(persona_id=persona.id):
+        modello = {'Appuntamento': Appuntamento, 'CallSonno': CallSonno}.get(
+            collegamento.entita_tipo
+        )
+        pratica = db.session.get(modello, collegamento.entita_id) if modello else None
+        if pratica and pratica.dati_anonimizzati_il is None:
+            return True
+    return False
+
+
+def applica_conservazione_privacy(adesso=None):
+    """Anonimizza i dati scaduti mantenendo riepiloghi e prove necessarie."""
+    riferimento = adesso or utc_now()
+    oggi = riferimento.date()
+    conteggi = defaultdict(int)
+
+    limite_prenotazioni = oggi - timedelta(days=GIORNI_CONSERVAZIONE_PRENOTAZIONI)
+    for appuntamento in Appuntamento.query.filter(
+        Appuntamento.dati_anonimizzati_il.is_(None),
+        Appuntamento.stato.in_(['Concluso', 'Assente', 'Annullato']),
+    ):
+        if _data_iso_scaduta(appuntamento.data, limite_prenotazioni):
+            _anonimizza_appuntamento(appuntamento, riferimento)
+            conteggi['appuntamenti'] += 1
+
+    limite_annuale = riferimento - timedelta(days=GIORNI_CONSERVAZIONE_CORSI_E_SONNO)
+    for call in CallSonno.query.filter(
+        CallSonno.dati_anonimizzati_il.is_(None),
+        CallSonno.stato.in_(['Conclusa', 'Annullata']),
+        CallSonno.aggiornato_il <= limite_annuale,
+    ):
+        _anonimizza_call_sonno(call, riferimento)
+        conteggi['call_sonno'] += 1
+
+    limite_corsi = oggi - timedelta(days=GIORNI_CONSERVAZIONE_CORSI_E_SONNO)
+    limite_richieste = riferimento - timedelta(days=GIORNI_CONSERVAZIONE_RICHIESTE)
+    for iscrizione in IscrizioneCorso.query.filter(
+        IscrizioneCorso.dati_anonimizzati_il.is_(None)
+    ):
+        scaduta = False
+        if iscrizione.tipo_richiesta == 'ricontatto':
+            scaduta = bool(
+                iscrizione.archiviata_il
+                and iscrizione.archiviata_il <= limite_richieste
+            )
+        elif iscrizione.corso:
+            scaduta = _data_iso_scaduta(iscrizione.corso.data, limite_corsi)
+        elif iscrizione.percorso_accompagnamento:
+            date_incontri = [
+                incontro.data
+                for incontro in iscrizione.percorso_accompagnamento.incontri
+                if incontro.data
+            ]
+            scaduta = bool(date_incontri) and all(
+                _data_iso_scaduta(data_incontro, limite_corsi)
+                for data_incontro in date_incontri
+            )
+        elif iscrizione.archiviata_il:
+            scaduta = iscrizione.archiviata_il <= limite_annuale
+        if scaduta:
+            _anonimizza_iscrizione(iscrizione, riferimento)
+            conteggi['iscrizioni_corso'] += 1
+
+    for richiesta in RichiestaAzienda.query.filter(
+        RichiestaAzienda.dati_anonimizzati_il.is_(None),
+        RichiestaAzienda.archiviata_il.is_not(None),
+        RichiestaAzienda.archiviata_il <= limite_richieste,
+    ):
+        _anonimizza_richiesta_azienda(richiesta, riferimento)
+        conteggi['richieste_azienda'] += 1
+
+    limite_persone = riferimento - timedelta(days=GIORNI_CONSERVAZIONE_PRENOTAZIONI)
+    for persona in PersonaCorso.query.filter(
+        PersonaCorso.dati_anonimizzati_il.is_(None),
+        PersonaCorso.aggiornato_il <= limite_persone,
+    ):
+        if _persona_ha_pratiche_identificabili(persona):
+            continue
+        persona.nome = '[dati anonimizzati]'
+        persona.telefono = None
+        persona.email = None
+        persona.codice_fiscale = None
+        persona.nome_bambino = None
+        persona.eta_bambino = None
+        persona.note = None
+        persona.dati_anonimizzati_il = riferimento
+        conteggi['persone'] += 1
+
+    db.session.commit()
+    if any(conteggi.values()):
+        registra_evento(
+            'privacy',
+            'successo',
+            'Conservazione privacy applicata ai dati scaduti.',
+            dettagli=dict(conteggi),
+        )
+    return dict(conteggi)
 
 
 def genera_promemoria_richieste(adesso=None):
@@ -3954,6 +4226,7 @@ def esegui_riconciliazione_con_contesto():
 def esegui_manutenzione_admin_con_contesto():
     with app.app_context():
         elimina_email_scadute()
+        applica_conservazione_privacy()
 
 
 def esegui_promemoria_richieste_con_contesto():
@@ -4013,7 +4286,7 @@ if (
         trigger='interval',
         days=1,
         id='manutenzione_admin_job',
-        name='Pulizia email operative oltre 24 mesi',
+        name='Conservazione privacy e pulizia email operative',
         replace_existing=True,
     )
     scheduler.start()
@@ -4663,7 +4936,7 @@ def richiesta_azienda():
         if len(periodo_preferito) > 160 or len(note) > 2000:
             return _render_richiesta_azienda_error('Riduci la lunghezza del periodo o delle note.')
         if not _checkbox_checked('consenso_privacy'):
-            return _render_richiesta_azienda_error('Devi autorizzare il trattamento dei dati personali.')
+            return _render_richiesta_azienda_error('Devi dichiarare di aver letto l’informativa privacy.')
 
         scadenza = prossima_scadenza_lavorativa()
         nuova = RichiestaAzienda(
@@ -4743,7 +5016,7 @@ def course_interest():
         if len(notes) > 2000:
             return _render_course_interest_error('Le note sono troppo lunghe.')
         if not privacy_consent:
-            return _render_course_interest_error('Devi autorizzare il trattamento dei dati personali.')
+            return _render_course_interest_error('Devi dichiarare di aver letto l’informativa privacy.')
 
         interest = IscrizioneCorso(
             corso_id=None,
@@ -4833,7 +5106,7 @@ def iscrizione_corso(corso_tipo):
             extra['richiesta_prossime_date'] = True
         partecipazione = request.form.get('partecipazione', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
-        consenso_immagini = _checkbox_checked('consenso_immagini')
+        consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
         tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
 
         if not nome or len(nome) > 100:
@@ -4876,7 +5149,7 @@ def iscrizione_corso(corso_tipo):
                     campo_mancante,
                 )
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
@@ -4917,7 +5190,7 @@ def iscrizione_corso(corso_tipo):
                     campo_mancante,
                 )
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
 
             extra = {
                 **extra,
@@ -4941,7 +5214,13 @@ def iscrizione_corso(corso_tipo):
                 if not request.form.get(field_name, '').strip():
                     return _render_iscrizione_con_errore(corso_tipo, error_message, field_name)
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi acconsentire al trattamento dei dati personali.', 'consenso_privacy')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
+            if not consenso_dati_gravidanza:
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Per procedere serve il consenso esplicito al trattamento dei dati della gravidanza richiesti.',
+                    'consenso_dati_gravidanza',
+                )
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
@@ -4964,7 +5243,7 @@ def iscrizione_corso(corso_tipo):
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.', 'partecipazione')
             if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi autorizzare il trattamento dei dati personali.', 'consenso_privacy')
+                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.', 'conferma_finale')
 
@@ -5001,7 +5280,9 @@ def iscrizione_corso(corso_tipo):
             posti_richiesti=posti_richiesti,
             scadenza_gestione=prossima_scadenza_lavorativa(),
             consenso_privacy=consenso_privacy,
-            consenso_immagini=consenso_immagini,
+            consenso_immagini=False,
+            consenso_dati_gravidanza=consenso_dati_gravidanza,
+            consenso_dati_gravidanza_il=(utc_now() if consenso_dati_gravidanza else None),
             stato='Lista attesa' if in_lista_attesa else 'Nuova',
             token_lista_attesa=secrets.token_urlsafe(48) if in_lista_attesa else None,
         )
@@ -5121,7 +5402,7 @@ def iscrizione_accompagnamento_privata(slug):
         partner_presente = request.form.get('partner_presente', '').strip()
         note = request.form.get('note', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
-        consenso_immagini = _checkbox_checked('consenso_immagini')
+        consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
 
         if not nome or len(nome) > 100:
             return _render_accompagnamento_privato(percorso, 'Inserisci nome e cognome.')
@@ -5136,7 +5417,12 @@ def iscrizione_accompagnamento_privata(slug):
         if partner_presente not in ['Si', 'No']:
             return _render_accompagnamento_privato(percorso, 'Indica se il partner sarà presente.')
         if not consenso_privacy:
-            return _render_accompagnamento_privato(percorso, 'Devi autorizzare il trattamento dei dati personali.')
+            return _render_accompagnamento_privato(percorso, 'Devi dichiarare di aver letto l’informativa privacy.')
+        if not consenso_dati_gravidanza:
+            return _render_accompagnamento_privato(
+                percorso,
+                'Per procedere serve il consenso esplicito al trattamento della data presunta del parto.',
+            )
 
         percorso = PercorsoAccompagnamento.query.filter_by(
             id=percorso.id
@@ -5173,7 +5459,9 @@ def iscrizione_accompagnamento_privata(slug):
             tipo_richiesta='iscrizione_effettiva',
             posti=1,
             consenso_privacy=consenso_privacy,
-            consenso_immagini=consenso_immagini,
+            consenso_immagini=False,
+            consenso_dati_gravidanza=True,
+            consenso_dati_gravidanza_il=utc_now(),
             stato='Nuova',
             scadenza_gestione=prossima_scadenza_lavorativa(),
         )
@@ -5267,7 +5555,7 @@ def prenota_call_sonno():
         if not request.form.get('conferma_ambito'):
             errori.append('Conferma che la richiesta non riguarda un’urgenza o una diagnosi.')
         if not request.form.get('consenso_privacy'):
-            errori.append('Devi accettare l’informativa privacy per procedere.')
+            errori.append('Devi dichiarare di aver letto l’informativa privacy per procedere.')
         if not orario_call_prenotabile(data_scelta, ora):
             errori.append('Scegli un giorno lavorativo e uno degli orari disponibili.')
         elif (
@@ -5453,7 +5741,7 @@ def prenota():
             return render_template('prenota.html', form_data=request.form)
 
         if not request.form.get('consenso_privacy'):
-            flash('Devi accettare l\'informativa privacy per procedere.')
+            flash('Devi dichiarare di aver letto l\'informativa privacy per procedere.')
             return render_template('prenota.html', form_data=request.form)
 
         # Estrai i dati del modulo
@@ -6017,6 +6305,123 @@ def dettaglio_admin(tipo, entita_id):
     )
 
 
+@app.route('/admin/iscrizione-corso/<int:id>/autorizzazione-immagini', methods=['POST'])
+@login_required
+def aggiungi_autorizzazione_immagini_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    iscrizione = db.get_or_404(IscrizioneCorso, id)
+    soggetto_nome = request.form.get('soggetto_nome', '').strip()
+    soggetto_tipo = request.form.get('soggetto_tipo', '').strip()
+    primo_genitore = request.form.get('primo_genitore_nome', '').strip()
+    secondo_genitore = request.form.get('secondo_genitore_nome', '').strip()
+    responsabilita_esclusiva = _checkbox_checked('responsabilita_esclusiva')
+    finalita = {
+        'finalita_didattica': _checkbox_checked('finalita_didattica'),
+        'finalita_informativa': _checkbox_checked('finalita_informativa'),
+        'finalita_promozionale': _checkbox_checked('finalita_promozionale'),
+    }
+    canali = {
+        'canale_sito': _checkbox_checked('canale_sito'),
+        'canale_social': _checkbox_checked('canale_social'),
+        'canale_materiali': _checkbox_checked('canale_materiali'),
+    }
+    note = request.form.get('note', '').strip()
+    if not soggetto_nome or len(soggetto_nome) > 160:
+        flash('Indica la persona a cui si riferisce l’autorizzazione.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    if soggetto_tipo not in TIPI_SOGGETTO_IMMAGINI:
+        flash('Seleziona se l’autorizzazione riguarda un adulto o un minore.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    if not any(finalita.values()) or not any(canali.values()):
+        flash('Seleziona almeno una finalità e un canale autorizzato.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    if len(note) > 2000:
+        flash('Le note dell’autorizzazione sono troppo lunghe.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    if soggetto_tipo == 'Minore':
+        if not primo_genitore:
+            flash('Indica il primo esercente la responsabilità genitoriale.', 'error')
+            return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+        if responsabilita_esclusiva == bool(secondo_genitore):
+            flash(
+                'Per un minore indica il secondo genitore oppure dichiara la responsabilità esclusiva.',
+                'error',
+            )
+            return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    else:
+        primo_genitore = ''
+        secondo_genitore = ''
+        responsabilita_esclusiva = False
+
+    autorizzazione = AutorizzazioneImmagini(
+        iscrizione=iscrizione,
+        soggetto_nome=soggetto_nome,
+        soggetto_tipo=soggetto_tipo,
+        primo_genitore_nome=primo_genitore or None,
+        secondo_genitore_nome=secondo_genitore or None,
+        responsabilita_esclusiva=responsabilita_esclusiva,
+        versione_informativa=VERSIONE_INFORMATIVA_PRIVACY,
+        note=note or None,
+        **finalita,
+        **canali,
+    )
+    db.session.add(autorizzazione)
+    db.session.commit()
+    registra_modifica(
+        'autorizzazione_immagini_registrata',
+        'IscrizioneCorso',
+        iscrizione.id,
+        {'autorizzazione_id': autorizzazione.id, 'soggetto_tipo': soggetto_tipo},
+    )
+    flash('Autorizzazione immagini registrata per la persona indicata.', 'success')
+    return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+
+
+@app.route('/admin/autorizzazione-immagini/<int:id>/revoca', methods=['POST'])
+@login_required
+def revoca_autorizzazione_immagini_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    autorizzazione = db.get_or_404(AutorizzazioneImmagini, id)
+    if autorizzazione.revocato_il is None:
+        autorizzazione.revocato_il = utc_now()
+        db.session.commit()
+        registra_modifica(
+            'autorizzazione_immagini_revocata',
+            'IscrizioneCorso',
+            autorizzazione.iscrizione_id,
+            {'autorizzazione_id': autorizzazione.id},
+        )
+        flash('Revoca registrata: interrompi ogni nuovo utilizzo delle immagini.', 'success')
+    else:
+        flash('La revoca era già stata registrata.', 'success')
+    return redirect(_url_dettaglio_admin('IscrizioneCorso', autorizzazione.iscrizione_id))
+
+
+@app.route('/admin/iscrizione-corso/<int:id>/informativa-terzo', methods=['POST'])
+@login_required
+def registra_informativa_terzo_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    iscrizione = db.get_or_404(IscrizioneCorso, id)
+    destinatario = request.form.get('destinatario', '').strip()
+    if not destinatario or len(destinatario) > 160:
+        flash('Indica il partner o secondo partecipante informato.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+    iscrizione.informativa_terzi_destinatario = destinatario
+    iscrizione.informativa_terzi_consegnata_il = utc_now()
+    db.session.commit()
+    registra_modifica(
+        'informativa_privacy_terzo_consegnata',
+        'IscrizioneCorso',
+        iscrizione.id,
+        {'modalita': 'in presenza'},
+    )
+    flash('Consegna in presenza dell’informativa registrata.', 'success')
+    return redirect(_url_dettaglio_admin('IscrizioneCorso', id))
+
+
 @app.route('/admin/pratica/<tipo>/<int:entita_id>/nota', methods=['POST'])
 @login_required
 def aggiungi_nota_admin(tipo, entita_id):
@@ -6243,6 +6648,7 @@ def azione_rapida_admin(tipo, entita_id):
         entita.scadenza_gestione = None if azione == 'chiuso' else scadenza
     if tipo == 'RichiestaAzienda' and azione == 'chiuso':
         entita.stato = 'Chiusa'
+        entita.archiviata_il = entita.archiviata_il or utc_now()
         _sostituisci_attivita_azienda(entita)
 
     if azione == 'richiamare':
@@ -6294,6 +6700,11 @@ def aggiorna_stato_richiesta_azienda(id):
     stato_precedente = richiesta.stato
     richiesta.stato = nuovo_stato
     richiesta.scadenza_gestione = None if nuovo_stato == 'Chiusa' else scadenza
+    richiesta.archiviata_il = (
+        richiesta.archiviata_il or utc_now()
+        if nuovo_stato == 'Chiusa'
+        else None
+    )
     titolo = prossime_azioni.get(nuovo_stato)
     if nuovo_stato == 'Confermata' and richiesta.corso_generato_id:
         titolo = None
@@ -7627,7 +8038,11 @@ def esporta_percorso_accompagnamento_pdf(id):
     righe.extend(['', 'Iscritti:'])
     for iscrizione in iscrizioni:
         extra = iscrizione.extra_dict()
-        consenso_immagini = 'Si' if iscrizione.consenso_immagini else 'No'
+        consenso_immagini = (
+            f'{len(iscrizione.autorizzazioni_immagini_attive)} autorizzazioni attive'
+            if iscrizione.autorizzazioni_immagini_attive
+            else 'Nessuna autorizzazione attiva'
+        )
         righe.append(
             f'- {iscrizione.nome} | Tel {iscrizione.telefono} | Email {iscrizione.email or "non indicata"} | '
             f'DPP {extra.get("data_presunta_parto", "non indicata")} | Partner {extra.get("partner_presente", "non indicato")} | '
@@ -7781,7 +8196,7 @@ def aggiungi_iscrizione_corso_manuale():
         tipo_richiesta=tipo_richiesta,
         posti=posti,
         consenso_privacy=_checkbox_checked('consenso_privacy'),
-        consenso_immagini=_checkbox_checked('consenso_immagini'),
+        consenso_immagini=False,
         stato=stato,
         posti_richiesti=posti,
         scadenza_gestione=prossima_scadenza_lavorativa() if stato in {'Nuova', 'Contattato'} else None,
@@ -8076,6 +8491,10 @@ def aggiorna_stato_iscrizione_corso(id, stato):
         flash('Collega prima la richiesta di interesse a un’edizione: il posto non può ancora essere confermato.', 'error')
         return redirect(url_for('admin'))
     iscrizione.stato = stato
+    if stato == 'Annullato':
+        iscrizione.archiviata_il = iscrizione.archiviata_il or utc_now()
+    elif stato_precedente == 'Annullato':
+        iscrizione.archiviata_il = None
     if stato not in {'Lista attesa', 'Invitato'} and iscrizione.posti == 0:
         iscrizione.posti = iscrizione.posti_richiesti or 1
     if stato == 'Confermato' or stato in STATI_LISTA_ATTESA:
