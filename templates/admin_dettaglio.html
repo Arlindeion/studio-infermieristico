@@ -91,6 +91,7 @@
                 {% if entita.data_corso %}<div><dt>Edizione</dt><dd>{{ entita.data_corso }}</dd></div>{% endif %}
                 {% if entita.partecipazione %}<div><dt>Partecipazione</dt><dd>{{ entita.partecipazione }}</dd></div>{% endif %}
                 {% if entita.posti_richiesti %}<div><dt>Posti richiesti</dt><dd>{{ entita.posti_richiesti }}</dd></div>{% endif %}
+                {% if tipo == 'IscrizioneCorso' %}<div><dt>Condizioni corsi</dt><dd>{% if entita.extra_dict().get('condizioni_corso_versione') %}Accettate · versione {{ entita.extra_dict().get('condizioni_corso_versione') }}{% else %}Accettazione non registrata{% endif %}</dd></div>{% endif %}
                 {% if tipo == 'IscrizioneCorso' and entita.extra_dict().get('data_presunta_parto') %}<div><dt>Dati gravidanza</dt><dd>{{ 'Consenso esplicito registrato il ' ~ (entita.consenso_dati_gravidanza_il|local_timestamp) if entita.consenso_dati_gravidanza else 'Consenso non registrato' }}</dd></div>{% endif %}
                 {% if entita.scadenza_gestione %}<div><dt>Prossima azione entro</dt><dd>{{ entita.scadenza_gestione.strftime('%d/%m/%Y %H:%M') }}</dd></div>{% endif %}
                 {% if entita.note %}<div class="admin-fact-wide"><dt>Note iniziali</dt><dd>{{ entita.note }}</dd></div>{% endif %}

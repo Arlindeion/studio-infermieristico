@@ -1024,13 +1024,39 @@ def test_checkbox_obbligatorie_distinguono_presa_visione_e_consensi_specifici(cl
     call = client.get('/prenota-call-sonno')
     corso = client.get('/iscrizione-corsi/disostruzione-pediatrica')
     nascita = client.get('/iscrizione-corsi/accompagnamento-nascita')
+    blsd = client.get('/iscrizione-corsi/blsd')
+    laboratorio = client.get('/iscrizione-corsi/laboratorio-infanzia')
+    interesse = client.get('/iscrizione-corsi/interesse')
 
     assert 'Dichiaro di aver letto' in prenotazione.text
     assert 'Dichiaro di aver letto' in call.text
     assert 'Dichiaro di aver letto' in corso.text
+    for modulo_corso in [corso, nascita, blsd, laboratorio]:
+        assert modulo_corso.text.count('name="condizioni_corso" required') == 1
+        assert 'Dichiaro di aver letto e accettato le' in modulo_corso.text
+        assert 'href="/condizioni-iscrizione-corsi"' in modulo_corso.text
+    assert 'name="condizioni_corso"' not in interesse.text
+    assert 'name="condizioni_corso"' not in call.text
+    assert 'name="condizioni_corso"' not in prenotazione.text
     assert 'name="consenso_immagini"' not in corso.text
     assert 'name="consenso_dati_gravidanza" required' in nascita.text
     assert 'Acconsento esplicitamente' in nascita.text
+
+
+def test_condizioni_iscrizione_corsi_pubblica_testo_integrale(client):
+    response = client.get('/condizioni-iscrizione-corsi')
+
+    assert response.status_code == 200
+    assert response.text.count('<h1>') == 1
+    assert '<h1>Condizioni di iscrizione ai corsi</h1>' in response.text
+    assert 'pagamento è previsto in presenza il giorno dell’attività' in response.text
+    assert 'L’invio del modulo online costituisce una richiesta di iscrizione' in response.text
+    assert 'Non è richiesto alcun pagamento anticipato' in response.text
+    assert 'senza costi e senza penali' in response.text
+    assert 'di richiedere il pagamento anticipato della quota di partecipazione' in response.text
+    assert 'La richiesta di spostamento non comporta automaticamente la prenotazione' in response.text
+    assert 'in caso di annullamento precedente allo svolgimento non vi sono somme anticipate da rimborsare' in response.text
+    assert 'Tali indicazioni costituiscono parte integrante delle condizioni di partecipazione' in response.text
 
 
 def test_scheda_iscrizione_registra_revoca_immagini_e_informativa_in_presenza(client):
@@ -1729,6 +1755,7 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -1746,9 +1773,39 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.extra_dict()['eta_bambino'] == '3 anni'
         assert iscrizione.extra_dict()['nome_secondo_partecipante'] == ''
         assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
+        assert iscrizione.extra_dict()['condizioni_corso_versione'] == '2026-08-30'
+        assert iscrizione.extra_dict()['condizioni_corso_accettate_il']
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
         assert PersonaCorso.query.count() == 0
+
+
+def test_iscrizione_corso_senza_condizioni_viene_rifiutata_lato_server(client):
+    data_corso_id = _crea_data_corso(
+        'disostruzione-pediatrica',
+        'Disostruzione pediatrica',
+    )
+    token = _csrf_iscrizione(client, 'disostruzione-pediatrica')
+
+    response = client.post('/iscrizione-corsi/disostruzione-pediatrica', data={
+        'nome': 'Mario Rossi',
+        'codice_fiscale': 'RSSMRA80A01G482X',
+        'telefono': '3331234567',
+        'email': 'mario@example.com',
+        'partecipazione': 'Singolo 34 euro',
+        'data_corso': data_corso_id,
+        'scopo_informativo': 'on',
+        'no_certificazione': 'on',
+        'buono_stato_salute': 'on',
+        'consenso_privacy': 'on',
+        '_csrf_token': token,
+    })
+
+    assert response.status_code == 200
+    assert 'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.' in response.text
+    assert 'data-course-form-error data-error-field="condizioni_corso"' in response.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
 
 
 def test_invio_modulo_corso_notifica_solo_lo_studio_e_chiarisce_che_il_posto_non_e_confermato(client):
@@ -1770,6 +1827,7 @@ def test_invio_modulo_corso_notifica_solo_lo_studio_e_chiarisce_che_il_posto_non
             'no_certificazione': 'on',
             'buono_stato_salute': 'on',
             'consenso_privacy': 'on',
+            'condizioni_corso': 'on',
             '_csrf_token': token,
         })
 
@@ -1803,6 +1861,7 @@ def test_iscrizione_con_data_richiede_email_per_la_conferma_successiva(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2077,6 +2136,7 @@ def test_errore_email_non_perde_iscrizione_corso(client):
             'no_certificazione': 'on',
             'buono_stato_salute': 'on',
             'consenso_privacy': 'on',
+            'condizioni_corso': 'on',
             '_csrf_token': token,
         })
 
@@ -2111,6 +2171,7 @@ def test_iscrizione_laboratorio_infanzia_salva_richiesta(client):
         'partecipazione': 'Iscrizione individuale',
         'data_corso': data_corso_id,
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -2144,6 +2205,7 @@ def test_iscrizione_blsd_salva_richiesta_individuale(client):
         'buono_stato_salute': 'on',
         'richiesta_non_conferma': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -2198,6 +2260,7 @@ def test_iscrizione_blsd_non_accetta_azienda_da_form(client):
         'buono_stato_salute': 'on',
         'richiesta_non_conferma': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
     })
@@ -2233,6 +2296,7 @@ def test_iscrizione_accompagnamento_compare_in_admin(client):
         'gravidanza_regolare': 'Si',
         'data_corso': data_corso_id,
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         'consenso_dati_gravidanza': 'on',
         'conferma_finale': 'on',
         '_csrf_token': token,
@@ -2265,6 +2329,7 @@ def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2375,6 +2440,7 @@ def test_iscrizione_coppia_occupa_due_posti(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2414,6 +2480,7 @@ def test_errore_iscrizione_corso_indica_e_riporta_al_campo_telefono(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2507,6 +2574,7 @@ def test_coppia_ammessa_con_un_posto_residuo(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2586,6 +2654,7 @@ def test_data_piena_senza_successiva_crea_lista_attesa(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2660,6 +2729,7 @@ def test_lista_attesa_riusa_paziente_con_codice_fiscale_esatto(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -2764,6 +2834,7 @@ def test_admin_mostra_panoramica_iscritti_per_corso(client):
         'no_certificazione': 'on',
         'buono_stato_salute': 'on',
         'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
         '_csrf_token': token,
     })
 
@@ -3655,11 +3726,37 @@ def _csrf_admin(client):
     return token
 
 
+def test_modulo_privato_accompagnamento_rifiuta_condizioni_mancanti(client):
+    slug, _ = _crea_percorso_accompagnamento(slug='percorso-condizioni-test')
+    response = client.get(f'/iscrizione-accompagnamento/{slug}')
+    token = re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
+
+    response = client.post(f'/iscrizione-accompagnamento/{slug}', data={
+        'nome': 'Luisa Verdi',
+        'telefono': '3331234567',
+        'email': 'luisa@example.com',
+        'codice_fiscale': 'VRDLSU90A41G482Y',
+        'data_presunta_parto': '2100-01-10',
+        'partner_presente': 'Si',
+        'consenso_privacy': 'on',
+        'consenso_dati_gravidanza': 'on',
+        '_csrf_token': token,
+    })
+
+    assert response.status_code == 200
+    assert 'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.' in response.text
+    with flask_app.app_context():
+        assert IscrizioneCorso.query.count() == 0
+        assert PresenzaAccompagnamento.query.count() == 0
+
+
 def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
     slug, percorso_id = _crea_percorso_accompagnamento()
     resp = client.get(f'/iscrizione-accompagnamento/{slug}')
     assert resp.status_code == 200
     assert 'infermiera, ostetrica, psicologa, osteopata e nutrizionista' in resp.text
+    assert 'name="condizioni_corso" required' in resp.text
+    assert 'href="/condizioni-iscrizione-corsi"' in resp.text
     import re
     token = re.search(r'name="_csrf_token" value="([^"]+)"', resp.text).group(1)
 
@@ -3672,6 +3769,7 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
             'data_presunta_parto': '2100-01-10',
             'partner_presente': 'Si',
             'consenso_privacy': 'on',
+            'condizioni_corso': 'on',
             'consenso_dati_gravidanza': 'on',
             '_csrf_token': token,
         })
@@ -3688,6 +3786,8 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         iscrizione = IscrizioneCorso.query.one()
         iscrizione_id = iscrizione.id
         extra = iscrizione.extra_dict()
+        assert extra['condizioni_corso_versione'] == '2026-08-30'
+        assert extra['condizioni_corso_accettate_il']
         assert iscrizione.percorso_accompagnamento_id == percorso_id
         assert iscrizione.stato == 'Nuova'
         assert iscrizione.tipo_richiesta == 'iscrizione_effettiva'
@@ -3703,6 +3803,9 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert PresenzaAccompagnamento.query.count() == 9
 
     csrf = _login_admin(client)
+    dettaglio = client.get(f'/admin/pratica/IscrizioneCorso/{iscrizione_id}')
+    assert 'Condizioni corsi' in dettaglio.text
+    assert 'Accettate · versione 2026-08-30' in dettaglio.text
     with patch.object(app_module.mail, 'send') as confirmation_send:
         stato_resp = client.post(
             f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',
@@ -3781,6 +3884,7 @@ def test_errori_email_non_perdono_iscrizione_e_presenze_del_percorso(client):
             'data_presunta_parto': '2100-01-10',
             'partner_presente': 'Si',
             'consenso_privacy': 'on',
+            'condizioni_corso': 'on',
             'consenso_dati_gravidanza': 'on',
             '_csrf_token': token,
         })

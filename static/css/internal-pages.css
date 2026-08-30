@@ -449,21 +449,25 @@
     font-size: clamp(1.25rem, 2vw, 1.55rem);
 }
 
-/* Privacy: a readable legal document, not a stack of promotional cards. */
-.page-privacy .pagina-interna {
+/* Legal pages: readable documents, not stacks of promotional cards. */
+.page-privacy .pagina-interna,
+.page-condizioni-iscrizione-corsi .pagina-interna {
     max-width: 1040px;
 }
 
-.page-privacy .pagina-interna > h1 {
+.page-privacy .pagina-interna > h1,
+.page-condizioni-iscrizione-corsi .pagina-interna > h1 {
     max-width: 13ch;
 }
 
-.page-privacy .privacy-contenuto {
+.page-privacy .privacy-contenuto,
+.page-condizioni-iscrizione-corsi .privacy-contenuto {
     border-top: 3px solid var(--rosso-cuore);
     margin-top: clamp(2.5rem, 6vw, 4.5rem);
 }
 
-.page-privacy .privacy-blocco {
+.page-privacy .privacy-blocco,
+.page-condizioni-iscrizione-corsi .privacy-blocco {
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--verde-scuro-a16);
@@ -473,21 +477,25 @@
     padding: clamp(1.8rem, 4vw, 2.8rem) 0;
 }
 
-.page-privacy .privacy-blocco h2 {
+.page-privacy .privacy-blocco h2,
+.page-condizioni-iscrizione-corsi .privacy-blocco h2 {
     border: 0;
     font-size: clamp(1.25rem, 2.2vw, 1.65rem);
     margin-bottom: 1rem;
     padding: 0;
 }
 
-.page-privacy .privacy-blocco h3 {
+.page-privacy .privacy-blocco h3,
+.page-condizioni-iscrizione-corsi .privacy-blocco h3 {
     color: var(--verde-scuro);
     font-size: 1.05rem;
     margin: 1.6rem 0 0.65rem;
 }
 
 .page-privacy .privacy-blocco p,
-.page-privacy .privacy-blocco ul {
+.page-privacy .privacy-blocco ul,
+.page-condizioni-iscrizione-corsi .privacy-blocco p,
+.page-condizioni-iscrizione-corsi .privacy-blocco ul {
     color: var(--verde-scuro-a82);
     font-size: 1rem;
     line-height: 1.78;

@@ -414,6 +414,7 @@
                 <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di iscrizione. *</span>
             </label>
         </div>
+        {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
         <div class="form-gruppo">
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
@@ -478,6 +479,7 @@
                 <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di iscrizione. *</span>
             </label>
         </div>
+        {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
         {% elif corso_tipo == 'accompagnamento-nascita' %}
         <h3>Dati anagrafici</h3>
         <div class="form-riga">
@@ -560,6 +562,7 @@
                 <span>Acconsento esplicitamente al trattamento della data presunta del parto e della settimana di gravidanza per verificare l’adeguatezza dell’edizione, come descritto nell’informativa privacy. *</span>
             </label>
         </div>
+        {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
         <div class="form-gruppo">
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
@@ -582,6 +585,7 @@
                 <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di partecipazione. *</span>
             </label>
         </div>
+        {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
         <div class="form-gruppo">
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">

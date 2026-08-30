@@ -32,6 +32,7 @@ Le priorità commerciali sono:
 | `/aziende-e-gruppi` | Raccogliere una richiesta organizzativa separata | Inviare contesto, partecipanti, sede e periodo da qualificare |
 | `/faq` | Rimuovere dubbi senza moltiplicare CTA | Proseguire nel flusso appropriato |
 | `/privacy` | Informativa sul trattamento dei dati | Nessuna CTA commerciale |
+| `/condizioni-iscrizione-corsi` | Condizioni applicabili alle iscrizioni ai corsi con pagamento in presenza | Tornare al modulo di iscrizione aperto in un’altra scheda |
 
 La bozza dedicata a eventuali servizi dopo la nascita non appartiene al perimetro pubblico attuale: non ha una route, non compare nella navigazione e non deve essere indicizzata finché l'offerta non sarà definita e approvata.
 
@@ -75,6 +76,7 @@ Homepage/pagina corsi
 ```
 
 - L'iscrizione è una richiesta finché non viene introdotto il pagamento anticipato.
+- Ogni modulo che invia una richiesta di iscrizione a un corso, compresi open day e percorso nascita privato, richiede l’accettazione esplicita delle `Condizioni di iscrizione ai corsi`; il collegamento apre `/condizioni-iscrizione-corsi` in una nuova scheda. La sola raccolta di interesse e i flussi sonno non usano questa accettazione. La pratica salva versione e istante dell’accettazione.
 - La pagina successiva all’invio deve dire esplicitamente che la richiesta è stata ricevuta ma il posto non è ancora confermato. L’alert iniziale è destinato soltanto allo studio; la prima mail al partecipante parte quando l’admin imposta lo stato `Confermato` e riporta l’edizione effettiva senza la precedente dicitura `lista d’attesa`. Ripetere lo stesso stato non reinvia la comunicazione. Le persone ancora in `Lista attesa` o `Invitato` non ricevono comunicazioni email: vengono contattate telefonicamente. Per gli altri stati, annullamento e spostamento inviano il relativo aggiornamento, sempre dopo il salvataggio locale dell’operazione.
 - Una richiesta che entra in `Lista attesa` crea e collega subito la scheda paziente, pur restando senza posto confermato e senza email al partecipante. Le altre richieste pubbliche e i ricontatti restano senza anagrafica fino al primo passaggio admin a `Confermato`. In entrambi i momenti, se il codice fiscale corrisponde esattamente a una scheda esistente, il sistema la riutilizza e la aggiorna con i dati del modulo; telefono ed email restano corrispondenze deboli e non causano unione automatica.
 - Quando l’iscrizione viene collegata alla scheda paziente, la presa visione dell’informativa della richiesta viene registrata nello storico con stato, data e riferimento alla specifica iscrizione. Un inserimento amministrativo senza evidenza selezionata resta esplicitamente `Non registrato`.

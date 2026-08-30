@@ -55,6 +55,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
   immagini e consegna dell’informativa ai terzi, e applicano i termini di
   conservazione dichiarati. La pubblicazione e l’allineamento tecnico non
   sostituiscono la validazione professionale dell’informativa e delle procedure.
+- Le `Condizioni di iscrizione ai corsi`, approvate il 30 agosto 2026, sono pubblicate integralmente su `/condizioni-iscrizione-corsi`. I moduli di iscrizione a BLSD, disostruzione, open day, laboratori e percorso nascita privato richiedono la formula `Dichiaro di aver letto e accettato le Condizioni di iscrizione ai corsi.`; raccolta di interesse, percorso sonno e call sonno restano esclusi.
 
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
 - Firma della hero: `Selene Campetta · infermiera e consulente del sonno infantile`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.

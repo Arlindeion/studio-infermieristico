@@ -284,6 +284,7 @@ STATI_ISCRIZIONE_DA_GESTIRE = {'Nuova', 'Contattato', 'Lista attesa', 'Invitato'
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
 VERSIONE_INFORMATIVA_PRIVACY = '2026-08-29'
+VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI = '2026-08-30'
 GIORNI_CONSERVAZIONE_RICHIESTE = 180
 GIORNI_CONSERVAZIONE_CORSI_E_SONNO = 365
 GIORNI_CONSERVAZIONE_PRENOTAZIONI = 730
@@ -5106,6 +5107,7 @@ def iscrizione_corso(corso_tipo):
             extra['richiesta_prossime_date'] = True
         partecipazione = request.form.get('partecipazione', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
+        condizioni_corso_accettate = _checkbox_checked('condizioni_corso')
         consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
         tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
 
@@ -5127,6 +5129,14 @@ def iscrizione_corso(corso_tipo):
             return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.', 'nome_bambino')
         if len(eta_bambino) > 40:
             return _render_iscrizione_con_errore(corso_tipo, 'L\'età del bambino è troppo lunga.', 'eta_bambino')
+        if not consenso_privacy:
+            return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
+        if not condizioni_corso_accettate:
+            return _render_iscrizione_con_errore(
+                corso_tipo,
+                'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.',
+                'condizioni_corso',
+            )
 
         if nome_bambino:
             extra['nome_bambino'] = nome_bambino
@@ -5148,8 +5158,6 @@ def iscrizione_corso(corso_tipo):
                     'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
                     campo_mancante,
                 )
-            if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
@@ -5189,9 +5197,6 @@ def iscrizione_corso(corso_tipo):
                     'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
                     campo_mancante,
                 )
-            if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
-
             extra = {
                 **extra,
                 'nome_secondo_partecipante': nome_secondo,
@@ -5213,8 +5218,6 @@ def iscrizione_corso(corso_tipo):
             for field_name, error_message in required_fields.items():
                 if not request.form.get(field_name, '').strip():
                     return _render_iscrizione_con_errore(corso_tipo, error_message, field_name)
-            if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
             if not consenso_dati_gravidanza:
                 return _render_iscrizione_con_errore(
                     corso_tipo,
@@ -5242,10 +5245,11 @@ def iscrizione_corso(corso_tipo):
         elif corso_tipo == 'laboratorio-infanzia':
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.', 'partecipazione')
-            if not consenso_privacy:
-                return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
             if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al laboratorio.', 'conferma_finale')
+
+        extra['condizioni_corso_versione'] = VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI
+        extra['condizioni_corso_accettate_il'] = utc_now().isoformat()
 
         posti_richiesti = 0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione)
         in_lista_attesa = False
@@ -5402,6 +5406,7 @@ def iscrizione_accompagnamento_privata(slug):
         partner_presente = request.form.get('partner_presente', '').strip()
         note = request.form.get('note', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
+        condizioni_corso_accettate = _checkbox_checked('condizioni_corso')
         consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
 
         if not nome or len(nome) > 100:
@@ -5418,6 +5423,11 @@ def iscrizione_accompagnamento_privata(slug):
             return _render_accompagnamento_privato(percorso, 'Indica se il partner sarà presente.')
         if not consenso_privacy:
             return _render_accompagnamento_privato(percorso, 'Devi dichiarare di aver letto l’informativa privacy.')
+        if not condizioni_corso_accettate:
+            return _render_accompagnamento_privato(
+                percorso,
+                'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.',
+            )
         if not consenso_dati_gravidanza:
             return _render_accompagnamento_privato(
                 percorso,
@@ -5443,6 +5453,8 @@ def iscrizione_accompagnamento_privata(slug):
             'iscrizione_privata_accompagnamento': True,
             'data_presunta_parto': data_presunta_parto,
             'partner_presente': partner_presente,
+            'condizioni_corso_versione': VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI,
+            'condizioni_corso_accettate_il': utc_now().isoformat(),
         }
         iscrizione = IscrizioneCorso(
             percorso_accompagnamento=percorso,
@@ -5852,6 +5864,11 @@ def conferma():
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
+
+
+@app.route('/condizioni-iscrizione-corsi')
+def condizioni_iscrizione_corsi():
+    return render_template('condizioni_iscrizione_corsi.html')
 
 
 # ─── LOGIN / LOGOUT ───

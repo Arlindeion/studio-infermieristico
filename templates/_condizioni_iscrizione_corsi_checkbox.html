@@ -1,0 +1,6 @@
+<div class="form-gruppo checkbox-stack">
+    <label>
+        <input type="checkbox" name="condizioni_corso" required {{ 'checked' if form_data.get('condizioni_corso') }}>
+        <span>Dichiaro di aver letto e accettato le <a href="{{ url_for('condizioni_iscrizione_corsi') }}" target="_blank" rel="noopener">Condizioni di iscrizione ai corsi</a>. *</span>
+    </label>
+</div>
