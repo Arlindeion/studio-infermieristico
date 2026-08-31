@@ -28,8 +28,8 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% set page_endpoint = request.endpoint or '' %}
-    {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'condizioni_iscrizione_corsi', 'da_dove_parto'] %}
-    {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
+    {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno', 'da_dove_parto'] %}
+    {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'offerta_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
     {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
@@ -39,8 +39,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transitions.css') }}?v=1.8">
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.6">
-    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.4">
+    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'offerta_sonno', 'questionario_sonno'] %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.5">
     {% elif page_endpoint == 'prima_della_nascita' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">
     {% elif page_endpoint == 'iscrizione_corso' and corso_tipo == 'laboratorio-infanzia' %}
@@ -90,7 +90,7 @@
 
 {% set current_endpoint = request.endpoint or '' %}
 {% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'condizioni_iscrizione_corsi', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
-{% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'questionario_sonno'] %}
+    {% set sleep_active = current_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'offerta_sonno', 'questionario_sonno', 'condizioni_consulenza_sonno'] %}
 {% set nursing_active = current_endpoint in ['prestazioni', 'prenota', 'modifica_appuntamento', 'conferma'] %}
 
 <a class="skip-link" href="#contenuto-principale">Vai al contenuto</a>

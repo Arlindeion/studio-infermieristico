@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block titolo %}La tua proposta per la consulenza sonno | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Pagina privata per scegliere e pagare la consulenza sul sonno concordata con S.C. Studio Infermieristico.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+
+{% block contenuto %}
+<section class="sleep-offer-page">
+    <header class="sleep-offer-page__intro">
+        <p class="eyebrow">Proposta privata · valida 7 giorni</p>
+        <h1>{{ call.nome }}, scegli come proseguire.</h1>
+        <p>Dopo la call trovi qui soltanto le formule che Selene ha ritenuto appropriate. Il questionario personale arriverà quando lo Studio avrà verificato il pagamento.</p>
+    </header>
+
+    {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-message" role="alert">{{ messages[0] }}</div>{% endif %}{% endwith %}
+
+    {% if payment_confirmed %}
+    <div class="sleep-payment-state sleep-payment-state--confirmed">
+        <p class="eyebrow">Pagamento confermato</p>
+        <h2>La pratica è pronta.</h2>
+        <p>Il riepilogo, le condizioni e il collegamento al questionario sono stati inviati a <strong>{{ call.email }}</strong>.</p>
+    </div>
+    {% elif not proposal_valid %}
+    <div class="sleep-payment-state sleep-payment-state--expired">
+        <p class="eyebrow">Proposta non disponibile</p>
+        <h2>Il collegamento è scaduto o è stato revocato.</h2>
+        <p>Contatta S.C. Studio Infermieristico per ricevere una nuova proposta privata.</p>
+    </div>
+    {% else %}
+        {% if call.condizioni_accettate_il %}
+        <div class="sleep-payment-state">
+            <p class="eyebrow">Pagamento da verificare</p>
+            <h2>{{ formula_labels.get(call.formula_scelta, call.formula_scelta) }}</h2>
+            <p>Hai scelto {{ call.metodo_pagamento }}. La prenotazione diventa effettiva soltanto quando lo Studio conferma il pagamento.</p>
+            {% if call.metodo_pagamento == 'bonifico' and bank_transfer_available %}
+            <dl class="sleep-payment-details">
+                <div><dt>Intestatario</dt><dd>{{ bank_holder }}</dd></div>
+                <div><dt>IBAN</dt><dd>{{ bank_iban }}</dd></div>
+                <div><dt>Causale</dt><dd>{{ offer_reference }}</dd></div>
+            </dl>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    <form method="post" class="sleep-offer-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        <fieldset class="sleep-choice-fieldset">
+            <legend>1. Scegli la formula</legend>
+            <div class="sleep-purchase-options">
+                {% for formula in formula_details %}
+                <label class="sleep-purchase-option">
+                    <input type="radio" name="formula_scelta" value="{{ formula.value }}" {% if form_data.get('formula_scelta', call.formula_scelta) == formula.value %}checked{% endif %} required>
+                    <span>
+                        <strong>{{ formula.label }}</strong>
+                        <b>{{ format_euro(formula.price) }}</b>
+                        {% if formula.value == 'mirata' %}<small>Una call su una difficoltà circoscritta.</small>{% elif formula.value == 'percorso' %}<small>Tre call, diario e lavoro personalizzato.</small>{% else %}<small>Percorso personalizzato e 60 giorni di WhatsApp.</small>{% endif %}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="sleep-choice-fieldset">
+            <legend>2. Scegli il pagamento</legend>
+            <div class="sleep-payment-methods">
+                <label class="sleep-payment-method{% if not paypal_available %} is-disabled{% endif %}">
+                    <input type="radio" name="metodo_pagamento" value="paypal" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'paypal' %}checked{% endif %} {% if not paypal_available %}disabled{% endif %} required>
+                    <span><strong>PayPal</strong><small>Pagamento sul sito PayPal. “Paga in 3 rate” compare soltanto se PayPal lo rende disponibile.</small></span>
+                </label>
+                <label class="sleep-payment-method{% if not bank_transfer_available %} is-disabled{% endif %}">
+                    <input type="radio" name="metodo_pagamento" value="bonifico" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'bonifico' %}checked{% endif %} {% if not bank_transfer_available %}disabled{% endif %} required>
+                    <span><strong>Bonifico bancario</strong><small>La conferma arriva dopo la verifica dell’accredito o della documentazione richiesta.</small></span>
+                </label>
+            </div>
+            {% if not bank_transfer_available and not paypal_available %}<p class="sleep-payment-unavailable">I metodi di pagamento non sono ancora attivi. La proposta resta consultabile, ma l’acquisto non può essere completato.</p>{% endif %}
+        </fieldset>
+
+        <div class="sleep-contract-checks">
+            <label class="sleep-contract-check">
+                <input type="checkbox" name="condizioni_sonno" required>
+                <span>Dichiaro di aver letto e accettato le <a href="{{ url_for('condizioni_consulenza_sonno') }}" target="_blank" rel="noopener">Condizioni della consulenza sonno</a>, versione {{ terms_version }}. *</span>
+            </label>
+            <label class="sleep-contract-check sleep-contract-check--optional">
+                <input type="checkbox" name="avvio_anticipato" {% if form_data.get('avvio_anticipato') or call.avvio_anticipato %}checked{% endif %}>
+                <span>Richiedo espressamente che il lavoro professionale possa iniziare prima della scadenza dei 14 giorni, quando lo Studio riceverà il questionario compilato. So che, in caso di recesso successivo all’inizio, potrà essere trattenuto il valore del lavoro già svolto. <strong>Scelta facoltativa.</strong></span>
+            </label>
+            <p><strong>Se non selezioni la seconda casella, riceverai comunque subito il questionario, ma analisi e lavoro professionale non inizieranno prima che siano trascorsi 14 giorni dalla conferma del pagamento.</strong></p>
+        </div>
+
+        <button class="btn" type="submit" {% if not bank_transfer_available and not paypal_available %}disabled{% endif %}>Conferma l’acquisto con obbligo di pagamento</button>
+        <p class="sleep-payment-note">Formula, prezzo e dichiarazioni vengono registrati prima dell’accesso al metodo di pagamento. Il pagamento resta soggetto alla verifica dello Studio.</p>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

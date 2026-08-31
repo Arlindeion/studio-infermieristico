@@ -461,13 +461,15 @@
 }
 
 .page-privacy .privacy-contenuto,
-.page-condizioni-iscrizione-corsi .privacy-contenuto {
+.page-condizioni-iscrizione-corsi .privacy-contenuto,
+.page-condizioni-consulenza-sonno .privacy-contenuto {
     border-top: 3px solid var(--rosso-cuore);
     margin-top: clamp(2.5rem, 6vw, 4.5rem);
 }
 
 .page-privacy .privacy-blocco,
-.page-condizioni-iscrizione-corsi .privacy-blocco {
+.page-condizioni-iscrizione-corsi .privacy-blocco,
+.page-condizioni-consulenza-sonno .privacy-blocco {
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--verde-scuro-a16);
@@ -478,7 +480,8 @@
 }
 
 .page-privacy .privacy-blocco h2,
-.page-condizioni-iscrizione-corsi .privacy-blocco h2 {
+.page-condizioni-iscrizione-corsi .privacy-blocco h2,
+.page-condizioni-consulenza-sonno .privacy-blocco h2 {
     border: 0;
     font-size: clamp(1.25rem, 2.2vw, 1.65rem);
     margin-bottom: 1rem;
@@ -486,7 +489,8 @@
 }
 
 .page-privacy .privacy-blocco h3,
-.page-condizioni-iscrizione-corsi .privacy-blocco h3 {
+.page-condizioni-iscrizione-corsi .privacy-blocco h3,
+.page-condizioni-consulenza-sonno .privacy-blocco h3 {
     color: var(--verde-scuro);
     font-size: 1.05rem;
     margin: 1.6rem 0 0.65rem;
@@ -495,7 +499,9 @@
 .page-privacy .privacy-blocco p,
 .page-privacy .privacy-blocco ul,
 .page-condizioni-iscrizione-corsi .privacy-blocco p,
-.page-condizioni-iscrizione-corsi .privacy-blocco ul {
+.page-condizioni-iscrizione-corsi .privacy-blocco ul,
+.page-condizioni-consulenza-sonno .privacy-blocco p,
+.page-condizioni-consulenza-sonno .privacy-blocco ul {
     color: var(--verde-scuro-a82);
     font-size: 1rem;
     line-height: 1.78;

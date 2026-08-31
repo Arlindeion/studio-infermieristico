@@ -185,11 +185,11 @@ def page_one(c):
     c.drawString(card_x + 13, card_y + card_h - 17, "PERCORSO SONNO PERSONALIZZATO")
     c.setFillColor(INK)
     c.setFont("NewYork", 30)
-    c.drawString(card_x + 13, card_y + 38, "180 €")
+    c.drawString(card_x + 13, card_y + 38, "200 €")
     c.setFillColor(MUTED)
     c.setFont("Helvetica", 8.2)
     c.drawString(card_x + 105, card_y + 52, "Tre call · diario · analisi")
-    c.drawString(card_x + 105, card_y + 39, "circa 60 giorni · massimo 75")
+    c.drawString(card_x + 105, card_y + 39, "terza call entro 75 gg dal questionario")
     c.setFillColor(SAGE)
     c.roundRect(card_x + 105, card_y + 12, card_w - 118, 17, 8.5, fill=1, stroke=0)
     c.setFillColor(DEEP_GREEN)
@@ -223,7 +223,7 @@ def page_two(c):
         ("1", "Osserviamo", "Raccogliamo le informazioni iniziali e il diario del sonno."),
         ("2", "Ci incontriamo", "Prima call da 60-75 minuti per leggere ritmi, risvegli e routine."),
         ("3", "Verifichiamo", "Seconda call orientativamente dopo 30 giorni."),
-        ("4", "Concludiamo", "Terza call entro 75 giorni dall'avvio, salvo indisponibilità di Selene."),
+        ("4", "Concludiamo", "Terza call entro 75 giorni dall'invio del questionario compilato."),
     ]
     for number, title, body in steps:
         c.setFillColor(SOFT_RED)

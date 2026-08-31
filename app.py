@@ -5,6 +5,8 @@ import csv
 import io
 import json
 import re
+import textwrap
+from html import unescape
 from urllib.parse import urlsplit
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify, Response
 from dotenv import load_dotenv
@@ -37,6 +39,11 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from sqlalchemy import text as sql_text
+from sleep_terms import (
+    SLEEP_TERMS_SECTIONS,
+    SLEEP_TERMS_UPDATED_LABEL,
+    SLEEP_TERMS_VERSION,
+)
 
 # Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
 # locale resta disponibile in sviluppo e non viene mai usato come archivio.
@@ -220,6 +227,24 @@ FORMULE_SONNO = {
     'percorso': 'Percorso sonno personalizzato',
     'affiancamento': 'Percorso sonno con affiancamento',
 }
+PREZZI_SONNO_CENTESIMI = {
+    'mirata': 7500,
+    'percorso': 20000,
+    'affiancamento': 32000,
+}
+TIPI_PROPOSTA_SONNO = {
+    'mirata': 'Consulenza mirata',
+    'percorso': 'Percorso di 60 giorni',
+}
+STATI_PAGAMENTO_SONNO = ['Non avviato', 'In attesa', 'Confermato', 'Rimborsato parziale', 'Rimborsato']
+FASI_PERCORSO_SONNO = {
+    'non_avviato': ('Lavoro non iniziato', 20000),
+    'diario_preparato': ('Diario elaborato, prima call non svolta', 15000),
+    'prima_call': ('Prima call svolta e diario consegnato', 10000),
+    'seconda_call': ('Prima e seconda call svolte', 5000),
+    'terza_call': ('Terza call svolta', 0),
+}
+GIORNI_VALIDITA_PROPOSTA_SONNO = 7
 DIFFICOLTA_SONNO = [
     'Addormentamento difficile la sera',
     'Risvegli notturni frequenti',
@@ -552,6 +577,94 @@ UTC_TIMEZONE = timezone.utc
 def utc_now():
     """Return an unambiguous UTC instant for timezone-naive DB columns."""
     return datetime.now(UTC_TIMEZONE).replace(tzinfo=None)
+
+
+def format_euro(cents):
+    if cents is None:
+        return ''
+    euros = cents / 100
+    return f'{euros:,.2f} €'.replace(',', 'X').replace('.', ',').replace('X', '.')
+
+
+def _formule_per_proposta_sonno(proposal_type):
+    if proposal_type == 'mirata':
+        return ['mirata']
+    if proposal_type == 'percorso':
+        return ['percorso', 'affiancamento']
+    return []
+
+
+def _paypal_link_sonno(formula):
+    config_key = {
+        'mirata': 'PAYPAL_LINK_SONNO_MIRATA',
+        'percorso': 'PAYPAL_LINK_SONNO_PERCORSO',
+        'affiancamento': 'PAYPAL_LINK_SONNO_AFFIANCAMENTO',
+    }.get(formula)
+    value = app.config.get(config_key) if config_key else None
+    if not value:
+        return None
+    parsed = urlsplit(value)
+    return value if parsed.scheme == 'https' and parsed.netloc else None
+
+
+def _bonifico_sonno_configurato():
+    return bool(app.config.get('BONIFICO_INTESTATARIO') and app.config.get('BONIFICO_IBAN'))
+
+
+def _proposta_sonno_valida(call):
+    return bool(
+        call.proposta_token
+        and call.proposta_scade_il
+        and call.proposta_scade_il >= utc_now()
+        and call.proposta_revocata_il is None
+    )
+
+
+def _data_avvio_lavoro_sonno(call):
+    if not call.pagamento_confermato_il or not call.questionario:
+        return None
+    questionario_compilato_il = call.questionario.compilato_il
+    if call.avvio_anticipato:
+        return questionario_compilato_il
+    return max(
+        questionario_compilato_il,
+        call.pagamento_confermato_il + timedelta(days=14),
+    )
+
+
+def _rimborso_whatsapp_centesimi(call, reference_time=None):
+    if call.formula_scelta != 'affiancamento':
+        return 0
+    if not call.supporto_whatsapp_attivato_il:
+        return 12000
+    elapsed = max(
+        1,
+        ((reference_time or utc_now()).date() - call.supporto_whatsapp_attivato_il.date()).days + 1,
+    )
+    if elapsed <= 15:
+        return 9000
+    if elapsed <= 30:
+        return 6000
+    if elapsed <= 45:
+        return 3000
+    return 0
+
+
+def _rimborso_sonno_centesimi(call, reference_time=None):
+    reference_time = reference_time or utc_now()
+    if (
+        call.pagamento_confermato_il
+        and not call.avvio_anticipato
+        and reference_time < call.pagamento_confermato_il + timedelta(days=14)
+    ):
+        return call.prezzo_centesimi or PREZZI_SONNO_CENTESIMI.get(call.formula_scelta)
+    if call.formula_scelta == 'mirata':
+        return None
+    percorso = FASI_PERCORSO_SONNO.get(
+        call.fase_percorso or 'non_avviato',
+        FASI_PERCORSO_SONNO['non_avviato'],
+    )[1]
+    return percorso + _rimborso_whatsapp_centesimi(call, reference_time)
 
 
 def local_now():
@@ -1730,6 +1843,22 @@ class CallSonno(db.Model):
     stato = db.Column(db.String(20), default='In attesa', nullable=False, index=True)
     google_event_id = db.Column(db.String(255), nullable=True)
     formula_scelta = db.Column(db.String(30), nullable=True)
+    proposta_tipo = db.Column(db.String(20), nullable=True)
+    proposta_token = db.Column(db.String(96), unique=True, nullable=True, index=True)
+    proposta_scade_il = db.Column(db.DateTime, nullable=True)
+    proposta_inviata_il = db.Column(db.DateTime, nullable=True)
+    proposta_revocata_il = db.Column(db.DateTime, nullable=True)
+    prezzo_centesimi = db.Column(db.Integer, nullable=True)
+    metodo_pagamento = db.Column(db.String(20), nullable=True)
+    stato_pagamento = db.Column(db.String(30), default='Non avviato', nullable=False, index=True)
+    riferimento_pagamento = db.Column(db.String(120), nullable=True)
+    pagamento_confermato_il = db.Column(db.DateTime, nullable=True)
+    condizioni_versione = db.Column(db.String(20), nullable=True)
+    condizioni_accettate_il = db.Column(db.DateTime, nullable=True)
+    avvio_anticipato = db.Column(db.Boolean, default=False, nullable=False)
+    avvio_anticipato_accettato_il = db.Column(db.DateTime, nullable=True)
+    fase_percorso = db.Column(db.String(30), default='non_avviato', nullable=False)
+    supporto_whatsapp_attivato_il = db.Column(db.DateTime, nullable=True)
     token_questionario = db.Column(db.String(96), unique=True, nullable=True, index=True)
     questionario_inviato_il = db.Column(db.DateTime, nullable=True)
     promemoria_email_24h_il = db.Column(db.DateTime, nullable=True)
@@ -2240,6 +2369,8 @@ def _anonimizza_call_sonno(call, adesso):
     call.ruolo_richiedente = None
     call.durata_difficolta = None
     call.obiettivo_call = None
+    call.proposta_token = None
+    call.riferimento_pagamento = None
     call.token_questionario = None
     call.google_event_id = None
     call.difformita_calendario = None
@@ -3539,20 +3670,106 @@ def invia_email_annullamento_call_sonno(call):
         return False
 
 
+def invia_email_offerta_sonno(call):
+    try:
+        link = public_url(url_for('offerta_sonno', token=call.proposta_token))
+        proposta = TIPI_PROPOSTA_SONNO.get(call.proposta_tipo, 'consulenza sonno')
+        scadenza = as_local_time(call.proposta_scade_il).strftime('%d/%m/%Y alle %H:%M')
+        msg = Message(
+            subject='La proposta per la consulenza sonno',
+            recipients=[call.email],
+            body=(
+                f'Gentile {call.nome},\n\n'
+                f'come concordato dopo la call, puoi consultare la proposta per {proposta}, '
+                f'scegliere la formula disponibile e indicare il metodo di pagamento.\n\n'
+                f'Apri la proposta privata: {link}\n'
+                f'Il collegamento è personale e resta valido fino al {scadenza}.\n\n'
+                f'Prima del pagamento troverai prezzi, condizioni contrattuali e la scelta facoltativa '
+                f'sull’avvio del lavoro prima dei 14 giorni.\n\n'
+                f'S.C. Studio Infermieristico'
+            ),
+        )
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            'Email proposta consulenza sonno non inviata.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
+        return False
+
+
+def _testo_legale_semplice(value):
+    plain = re.sub(r'<[^>]+>', '', value or '')
+    return unescape(plain).replace('€', 'EUR').replace('–', '-').replace('—', '-')
+
+
+def crea_pdf_condizioni_sonno(call):
+    righe = [
+        f'Versione: {SLEEP_TERMS_VERSION}',
+        f'Formula: {FORMULE_SONNO.get(call.formula_scelta, call.formula_scelta)}',
+        f'Prezzo: {format_euro(call.prezzo_centesimi).replace("€", "EUR")}',
+        f'Metodo di pagamento: {call.metodo_pagamento or "Non indicato"}',
+        (
+            'Avvio prima dei 14 giorni: richiesto'
+            if call.avvio_anticipato
+            else 'Avvio prima dei 14 giorni: non richiesto'
+        ),
+        '',
+        'Le presenti condizioni disciplinano la prenotazione, il pagamento e lo svolgimento dei servizi di consulenza sul sonno proposti da S.C. Studio Infermieristico.',
+        '',
+    ]
+    for section in SLEEP_TERMS_SECTIONS:
+        righe.append(section['title'])
+        righe.extend(_testo_legale_semplice(item) for item in section.get('paragraphs', []))
+        righe.extend(f'- {_testo_legale_semplice(item)}' for item in section.get('items', []))
+        righe.extend(_testo_legale_semplice(item) for item in section.get('paragraphs_after', []))
+        righe.append('')
+    return _crea_pdf_testuale('Condizioni della consulenza sonno', righe)
+
+
 def invia_email_questionario_sonno(call):
     try:
         link = public_url(url_for('questionario_sonno', token=call.token_questionario))
         formula = FORMULE_SONNO.get(call.formula_scelta, 'percorso scelto')
+        if call.avvio_anticipato:
+            avvio = (
+                'Hai richiesto l’avvio prima dei 14 giorni: il lavoro professionale potrà iniziare '
+                'quando riceverò il questionario compilato.'
+            )
+        else:
+            data_avvio = as_local_time(call.pagamento_confermato_il + timedelta(days=14)).strftime('%d/%m/%Y')
+            avvio = (
+                f'Non hai richiesto l’avvio anticipato: l’analisi e il lavoro professionale non '
+                f'inizieranno prima del {data_avvio}, anche se compili subito il questionario.'
+            )
         msg = Message(
-            subject='Il questionario per iniziare il percorso sul sonno',
+            subject='Pagamento confermato e questionario per la consulenza sonno',
             recipients=[call.email],
             body=(
-                f'Gentile {call.nome},\n\ncome concordato dopo la call, puoi compilare il questionario '
-                f'riservato per {formula}. Le risposte mi permetteranno di preparare il lavoro sulla vostra situazione reale.\n\n'
+                f'Gentile {call.nome},\n\nil pagamento è stato confermato.\n\n'
+                f'Formula: {formula}\n'
+                f'Prezzo: {format_euro(call.prezzo_centesimi)}\n'
+                f'Metodo: {call.metodo_pagamento}\n'
+                f'Condizioni accettate: versione {call.condizioni_versione}\n\n'
+                f'{avvio}\n\n'
+                f'Puoi compilare subito il questionario riservato. I 75 giorni entro cui completare '
+                f'il percorso decorrono dal suo invio.\n\n'
                 f'Compila il questionario: {link}\n\n'
-                f'Il collegamento è personale: non inoltrarlo. Se hai dubbi, scrivimi su WhatsApp.\n\n'
+                f'Il collegamento è personale: non inoltrarlo. In allegato trovi la copia delle '
+                f'condizioni applicabili all’acquisto.\n\n'
                 f'S.C. Studio Infermieristico'
             ),
+        )
+        msg.attach(
+            f'condizioni-consulenza-sonno-{SLEEP_TERMS_VERSION}.pdf',
+            'application/pdf',
+            crea_pdf_condizioni_sonno(call),
+            disposition='attachment',
         )
         _invia_email_tracciata(msg, 'CallSonno', call.id)
         return True
@@ -4755,7 +4972,13 @@ def _escape_pdf_text(value):
 
 
 def _crea_pdf_testuale(titolo, righe):
-    righe_pdf = [titolo, ''] + [str(riga) for riga in righe]
+    righe_pdf = [titolo, '']
+    for riga in righe:
+        testo = str(riga)
+        if not testo:
+            righe_pdf.append('')
+            continue
+        righe_pdf.extend(textwrap.wrap(testo, width=86, break_long_words=False) or [''])
     righe_per_pagina = 42
     pagine = [righe_pdf[i:i + righe_per_pagina] for i in range(0, len(righe_pdf), righe_per_pagina)] or [[]]
     objects = [
@@ -5648,6 +5871,9 @@ def questionario_sonno(token):
     call = CallSonno.query.filter_by(token_questionario=token).first_or_404()
     if not call.formula_scelta:
         abort(404)
+    legacy_invite = call.questionario_inviato_il and call.condizioni_versione is None
+    if not call.pagamento_confermato_il and not legacy_invite:
+        abort(404)
     if call.questionario:
         return render_template('questionario_sonno_completato.html', call=call)
 
@@ -5869,6 +6095,112 @@ def privacy():
 @app.route('/condizioni-iscrizione-corsi')
 def condizioni_iscrizione_corsi():
     return render_template('condizioni_iscrizione_corsi.html')
+
+
+@app.route('/condizioni-consulenza-sonno')
+def condizioni_consulenza_sonno():
+    return render_template(
+        'condizioni_consulenza_sonno.html',
+        terms_sections=SLEEP_TERMS_SECTIONS,
+        terms_version=SLEEP_TERMS_VERSION,
+        terms_updated_label=SLEEP_TERMS_UPDATED_LABEL,
+    )
+
+
+@app.route('/offerta-sonno/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour', methods=['POST'])
+def offerta_sonno(token):
+    if not re.match(r'^[A-Za-z0-9_-]{32,96}$', token):
+        abort(404)
+    call = CallSonno.query.filter_by(proposta_token=token).first_or_404()
+    paid = call.pagamento_confermato_il is not None
+    valid = _proposta_sonno_valida(call)
+    formulas = _formule_per_proposta_sonno(call.proposta_tipo)
+
+    def render_offer(form_data=None, status_code=200):
+        formula_details = [
+            {
+                'value': formula,
+                'label': FORMULE_SONNO[formula],
+                'price': PREZZI_SONNO_CENTESIMI[formula],
+                'paypal_available': _paypal_link_sonno(formula) is not None,
+            }
+            for formula in formulas
+        ]
+        paypal_available = bool(formula_details) and all(
+            item['paypal_available'] for item in formula_details
+        )
+        return render_template(
+            'offerta_sonno.html',
+            call=call,
+            form_data=form_data or {},
+            formula_details=formula_details,
+            paypal_available=paypal_available,
+            proposal_valid=valid,
+            payment_confirmed=paid,
+            bank_transfer_available=_bonifico_sonno_configurato(),
+            bank_holder=app.config.get('BONIFICO_INTESTATARIO'),
+            bank_iban=app.config.get('BONIFICO_IBAN'),
+            offer_reference=f'SONNO-{call.id}',
+            terms_version=SLEEP_TERMS_VERSION,
+            formula_labels=FORMULE_SONNO,
+            format_euro=format_euro,
+        ), status_code
+
+    if request.method == 'POST':
+        if paid:
+            flash('Il pagamento risulta già confermato.', 'error')
+            return render_offer(request.form, 400)
+        if not valid:
+            flash('La proposta non è più valida. Contatta lo Studio per ricevere un nuovo collegamento.', 'error')
+            return render_offer(request.form, 410)
+        csrf = session.pop('_csrf_token', None)
+        if not csrf or csrf != request.form.get('_csrf_token'):
+            flash('Richiesta non valida. Riprova.', 'error')
+            return render_offer(request.form, 400)
+
+        formula = request.form.get('formula_scelta', '').strip()
+        payment_method = request.form.get('metodo_pagamento', '').strip()
+        errors = []
+        if formula not in formulas:
+            errors.append('Seleziona una delle formule proposte.')
+        if not _checkbox_checked('condizioni_sonno'):
+            errors.append('Devi dichiarare di aver letto e accettato le Condizioni della consulenza sonno.')
+        if payment_method not in {'paypal', 'bonifico'}:
+            errors.append('Seleziona un metodo di pagamento disponibile.')
+        elif payment_method == 'paypal' and (formula not in formulas or not _paypal_link_sonno(formula)):
+            errors.append('Il pagamento PayPal non è ancora disponibile per questa formula.')
+        elif payment_method == 'bonifico' and not _bonifico_sonno_configurato():
+            errors.append('Il pagamento tramite bonifico non è ancora disponibile.')
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_offer(request.form, 400)
+
+        accepted_at = utc_now()
+        early_start = _checkbox_checked('avvio_anticipato')
+        call.formula_scelta = formula
+        call.prezzo_centesimi = PREZZI_SONNO_CENTESIMI[formula]
+        call.metodo_pagamento = payment_method
+        call.stato_pagamento = 'In attesa'
+        call.condizioni_versione = SLEEP_TERMS_VERSION
+        call.condizioni_accettate_il = accepted_at
+        call.avvio_anticipato = early_start
+        call.avvio_anticipato_accettato_il = accepted_at if early_start else None
+        db.session.commit()
+        registra_evento(
+            'pagamento_sonno',
+            'successo',
+            'Offerta sonno accettata; pagamento in attesa di conferma.',
+            'CallSonno',
+            call.id,
+            {'formula': formula, 'metodo': payment_method, 'condizioni': SLEEP_TERMS_VERSION},
+        )
+        if payment_method == 'paypal':
+            return redirect(_paypal_link_sonno(formula))
+        return redirect(url_for('offerta_sonno', token=token))
+
+    return render_offer()
 
 
 # ─── LOGIN / LOGOUT ───
@@ -6299,6 +6631,16 @@ def dettaglio_admin(tipo, entita_id):
         and iscrizione.stato not in STATI_LISTA_ATTESA | {'Annullato'}
         and iscrizione.archiviata_il is None
     ]
+    rimborso_sonno_centesimi = (
+        _rimborso_sonno_centesimi(entita)
+        if tipo == 'CallSonno' and entita.pagamento_confermato_il
+        else None
+    )
+    avvio_lavoro_sonno = (
+        _data_avvio_lavoro_sonno(entita)
+        if tipo == 'CallSonno'
+        else None
+    )
     return render_template(
         'admin_dettaglio.html',
         tipo=tipo,
@@ -6319,6 +6661,13 @@ def dettaglio_admin(tipo, entita_id):
         stati_richiesta_azienda=STATI_RICHIESTA_AZIENDA,
         corsi_admin_tipi=CORSI_ADMIN_TIPI,
         formazione_azienda_tipi=FORMAZIONE_AZIENDA_TIPI,
+        tipi_proposta_sonno=TIPI_PROPOSTA_SONNO,
+        formule_sonno=FORMULE_SONNO,
+        fasi_percorso_sonno=FASI_PERCORSO_SONNO,
+        stati_pagamento_sonno=STATI_PAGAMENTO_SONNO,
+        rimborso_sonno_centesimi=rimborso_sonno_centesimi,
+        avvio_lavoro_sonno=avvio_lavoro_sonno,
+        format_euro=format_euro,
     )
 
 
@@ -7622,21 +7971,201 @@ def invia_questionario_sonno_admin(id):
     if not _csrf_admin_valido():
         abort(400)
     call = db.get_or_404(CallSonno, id)
-    formula = request.form.get('formula_scelta', '').strip()
-    if formula not in FORMULE_SONNO:
-        flash('Seleziona la formula concordata.', 'error')
-        return redirect(url_for('admin') + '#admin-call-sonno')
-    call.formula_scelta = formula
-    call.stato = 'Conclusa'
-    if not call.token_questionario:
-        call.token_questionario = secrets.token_urlsafe(48)
+    if not call.pagamento_confermato_il or not call.token_questionario:
+        flash('Conferma prima il pagamento della consulenza.', 'error')
+        return redirect(_url_dettaglio_admin('CallSonno', call.id))
     call.questionario_inviato_il = utc_now()
     db.session.commit()
     if invia_email_questionario_sonno(call):
-        flash('Questionario privato inviato.', 'success')
+        flash('Riepilogo, condizioni e questionario reinviati.', 'success')
     else:
-        flash('Il link è stato creato, ma l’email non è partita. Controlla il registro eventi.', 'error')
-    return redirect(url_for('admin') + '#admin-call-sonno')
+        flash('La pratica è salva, ma l’email non è partita. Controlla il registro eventi.', 'error')
+    return redirect(_url_dettaglio_admin('CallSonno', call.id))
+
+
+@app.route('/admin/call-sonno/<int:id>/offerta', methods=['POST'])
+@login_required
+def gestisci_offerta_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    action = request.form.get('azione', '').strip()
+    detail_url = _url_dettaglio_admin('CallSonno', call.id)
+
+    if call.pagamento_confermato_il:
+        flash('Non puoi modificare la proposta dopo la conferma del pagamento.', 'error')
+        return redirect(detail_url)
+
+    if action == 'revoca':
+        if not call.proposta_token or call.proposta_revocata_il:
+            flash('Non esiste una proposta attiva da revocare.', 'error')
+            return redirect(detail_url)
+        call.proposta_revocata_il = utc_now()
+        db.session.commit()
+        registra_modifica('revoca_offerta_sonno', 'CallSonno', call.id)
+        registra_evento(
+            'offerta_sonno', 'successo', 'Proposta sonno revocata.',
+            'CallSonno', call.id,
+        )
+        flash('Proposta revocata. Il collegamento non è più utilizzabile.', 'success')
+        return redirect(detail_url)
+
+    if action == 'reinvia':
+        if not _proposta_sonno_valida(call):
+            flash('La proposta non è più valida: rigenerala prima di reinviarla.', 'error')
+            return redirect(detail_url)
+        call.proposta_inviata_il = utc_now()
+        db.session.commit()
+        registra_modifica('reinvio_offerta_sonno', 'CallSonno', call.id)
+        if invia_email_offerta_sonno(call):
+            flash('Proposta reinviata.', 'success')
+        else:
+            flash('La proposta resta valida, ma l’email non è partita. Controlla il registro eventi.', 'error')
+        return redirect(detail_url)
+
+    if action not in {'crea', 'rigenera'}:
+        abort(400)
+    proposal_type = request.form.get('proposta_tipo', '').strip()
+    if proposal_type not in TIPI_PROPOSTA_SONNO:
+        flash('Seleziona il tipo di proposta concordato.', 'error')
+        return redirect(detail_url)
+
+    now = utc_now()
+    call.proposta_tipo = proposal_type
+    call.proposta_token = secrets.token_urlsafe(48)
+    call.proposta_scade_il = now + timedelta(days=GIORNI_VALIDITA_PROPOSTA_SONNO)
+    call.proposta_inviata_il = now
+    call.proposta_revocata_il = None
+    call.formula_scelta = None
+    call.prezzo_centesimi = None
+    call.metodo_pagamento = None
+    call.stato_pagamento = 'Non avviato'
+    call.riferimento_pagamento = None
+    call.condizioni_versione = None
+    call.condizioni_accettate_il = None
+    call.avvio_anticipato = False
+    call.avvio_anticipato_accettato_il = None
+    call.fase_percorso = 'non_avviato'
+    call.supporto_whatsapp_attivato_il = None
+    call.stato = 'Conclusa'
+    db.session.commit()
+    registra_modifica(
+        'generazione_offerta_sonno', 'CallSonno', call.id,
+        {'tipo': proposal_type, 'validita_giorni': GIORNI_VALIDITA_PROPOSTA_SONNO},
+    )
+    if invia_email_offerta_sonno(call):
+        flash('Proposta privata generata e inviata. È valida per 7 giorni.', 'success')
+    else:
+        flash('Proposta generata e salvata, ma l’email non è partita. Puoi reinviarla.', 'error')
+    return redirect(detail_url)
+
+
+@app.route('/admin/call-sonno/<int:id>/conferma-pagamento', methods=['POST'])
+@login_required
+def conferma_pagamento_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    detail_url = _url_dettaglio_admin('CallSonno', call.id)
+    reference = request.form.get('riferimento_pagamento', '').strip()
+    if call.pagamento_confermato_il:
+        flash('Il pagamento risulta già confermato.', 'error')
+        return redirect(detail_url)
+    if (
+        call.stato_pagamento != 'In attesa'
+        or call.formula_scelta not in FORMULE_SONNO
+        or not call.condizioni_accettate_il
+        or not call.condizioni_versione
+    ):
+        flash('Manca un acquisto accettato da confermare.', 'error')
+        return redirect(detail_url)
+    if not reference or len(reference) > 120:
+        flash('Inserisci un riferimento di pagamento valido (massimo 120 caratteri).', 'error')
+        return redirect(detail_url)
+
+    confirmed_at = utc_now()
+    call.stato_pagamento = 'Confermato'
+    call.riferimento_pagamento = reference
+    call.pagamento_confermato_il = confirmed_at
+    call.token_questionario = call.token_questionario or secrets.token_urlsafe(48)
+    call.questionario_inviato_il = confirmed_at
+    db.session.commit()
+    registra_modifica(
+        'conferma_pagamento_sonno', 'CallSonno', call.id,
+        {
+            'formula': call.formula_scelta,
+            'prezzo_centesimi': call.prezzo_centesimi,
+            'metodo': call.metodo_pagamento,
+            'riferimento': reference,
+        },
+    )
+    if invia_email_questionario_sonno(call):
+        flash('Pagamento confermato. Riepilogo, condizioni e questionario inviati.', 'success')
+    else:
+        flash('Pagamento e questionario sono salvati, ma l’email non è partita. Puoi reinviarla.', 'error')
+    return redirect(detail_url)
+
+
+@app.route('/admin/call-sonno/<int:id>/percorso', methods=['POST'])
+@login_required
+def aggiorna_percorso_sonno_admin(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    call = db.get_or_404(CallSonno, id)
+    detail_url = _url_dettaglio_admin('CallSonno', call.id)
+    if not call.pagamento_confermato_il or call.formula_scelta not in {'percorso', 'affiancamento'}:
+        flash('Il percorso deve avere un pagamento confermato.', 'error')
+        return redirect(detail_url)
+
+    phase = request.form.get('fase_percorso', '').strip()
+    payment_status = request.form.get('stato_pagamento', '').strip()
+    if phase not in FASI_PERCORSO_SONNO:
+        flash('Seleziona una fase valida del percorso.', 'error')
+        return redirect(detail_url)
+    if payment_status not in {'Confermato', 'Rimborsato parziale', 'Rimborsato'}:
+        flash('Seleziona uno stato di pagamento valido.', 'error')
+        return redirect(detail_url)
+
+    whatsapp_date = request.form.get('supporto_whatsapp_attivato_il', '').strip()
+    whatsapp_started_at = None
+    if call.formula_scelta == 'affiancamento' and whatsapp_date:
+        try:
+            local_date = datetime.strptime(whatsapp_date, '%Y-%m-%d').date()
+            whatsapp_started_at = datetime.combine(
+                local_date, datetime_time(hour=12), tzinfo=FUSO_ORARIO,
+            ).astimezone(UTC_TIMEZONE).replace(tzinfo=None)
+        except ValueError:
+            flash('La data di attivazione WhatsApp non è valida.', 'error')
+            return redirect(detail_url)
+
+    avvio_lavoro = _data_avvio_lavoro_sonno(call)
+    lavoro_richiesto = phase != 'non_avviato' or whatsapp_started_at is not None
+    if lavoro_richiesto and (not avvio_lavoro or utc_now() < avvio_lavoro):
+        flash(
+            'Il lavoro professionale non può iniziare prima della compilazione '
+            'del questionario e della data di avvio prevista.',
+            'error',
+        )
+        return redirect(detail_url)
+    if whatsapp_started_at and whatsapp_started_at.date() < avvio_lavoro.date():
+        flash('L’affiancamento WhatsApp non può risultare attivo prima dell’avvio del lavoro.', 'error')
+        return redirect(detail_url)
+
+    call.fase_percorso = phase
+    call.stato_pagamento = payment_status
+    call.supporto_whatsapp_attivato_il = whatsapp_started_at
+    db.session.commit()
+    registra_modifica(
+        'aggiornamento_percorso_sonno', 'CallSonno', call.id,
+        {
+            'fase': phase,
+            'stato_pagamento': payment_status,
+            'supporto_whatsapp_attivato_il': whatsapp_date or None,
+            'rimborso_teorico_centesimi': _rimborso_sonno_centesimi(call),
+        },
+    )
+    flash('Stato del percorso aggiornato.', 'success')
+    return redirect(detail_url)
 
 
 @app.route('/admin/aggiorna/<int:id>/<stato>', methods=['POST'])

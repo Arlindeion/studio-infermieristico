@@ -63,7 +63,7 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Laboratori alimentari/gioco | 20-25 € a bambino | Circa 4 al mese; gruppi di 4-6 bambini | I bambini che ritornano sono il pubblico più ricorrente. |
 | Corso di accompagnamento alla nascita | 225 € a coppia | 9 incontri; media 5 coppie; capienza 7-8 | Il prezzo è per coppia. Una coppia conta come un posto nel percorso. |
 | Consulenza mirata sul sonno | 75 € | Singola difficoltà circoscritta | Formula breve, non sostitutiva del percorso quando più fattori si influenzano. |
-| Percorso sonno personalizzato | 180 € | Tre call da 60-75 minuti e diario | Prezzo di lancio; durata prevista 60 giorni, chiusura entro 75 salvo indisponibilità di Selene. |
+| Percorso sonno personalizzato | 200 € | Tre call da 60-75 minuti e diario | Prezzo di lancio; durata prevista 60 giorni, terza call entro 75 giorni dall’invio del questionario. |
 | Percorso sonno con affiancamento | 320 € | Percorso personalizzato e WhatsApp per 60 giorni | Prezzo di lancio; massimo tre confronti raggruppati a settimana, risposta entro il giorno lavorativo successivo. |
 | Prestazioni infermieristiche | Variabile | Frequenza variabile | Da circa 12 € per un'iniezione a circa 60 € per un Holter; prezzi delle piattaforme esterne maggiorati dalle commissioni. |
 

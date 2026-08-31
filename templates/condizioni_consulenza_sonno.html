@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titolo %}Condizioni della consulenza sonno — S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Condizioni applicabili alla consulenza mirata e ai percorsi sul sonno infantile di S.C. Studio Infermieristico.{% endblock %}
+
+{% block contenuto %}
+<section class="pagina-interna">
+    <h1>Condizioni della consulenza sonno</h1>
+    <p class="sottotitolo">Queste condizioni disciplinano proposta, pagamento e svolgimento della consulenza sul sonno infantile.</p>
+    <p><strong>Ultimo aggiornamento: {{ terms_updated_label }}</strong></p>
+
+    <div class="privacy-contenuto">
+        {% for section in terms_sections %}
+        <div class="privacy-blocco">
+            <h2>{{ section.title }}</h2>
+            {% for paragraph in section.get('paragraphs', []) %}<p>{{ paragraph|safe }}</p>{% endfor %}
+            {% if section.get('items') %}<ul>{% for item in section.get('items') %}<li>{{ item|safe }}</li>{% endfor %}</ul>{% endif %}
+            {% for paragraph in section.get('paragraphs_after', []) %}<p>{{ paragraph|safe }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

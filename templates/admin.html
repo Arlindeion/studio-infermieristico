@@ -544,10 +544,10 @@
             <tbody>
             {% for call in call_sonno %}
             <tr class="stato-{{ call.stato|lower|replace(' ', '-') }}">
-                <td><strong class="admin-primary">{{ call.nome }}</strong><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
+                <td><a class="admin-primary" href="{{ url_for('dettaglio_admin', tipo='CallSonno', entita_id=call.id) }}"><strong>{{ call.nome }}</strong></a><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
                 <td><strong class="admin-primary">{{ call.eta_bambino_mesi }} mesi</strong><span class="admin-secondary">{{ call.difficolta_altro or call.difficolta_principale }}</span></td>
                 <td><strong class="admin-primary">{{ call.data }}</strong><span class="admin-secondary">ore {{ call.ora }} · call 20 min · blocco 30 min</span></td>
-                <td><span class="badge">{{ call.stato }}</span>{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
+                <td><span class="badge">{{ call.stato }}</span>{% if call.stato_pagamento != 'Non avviato' %}<span class="admin-secondary">Pagamento: {{ call.stato_pagamento|lower }}</span>{% endif %}{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
                 <td class="azioni admin-call-actions">
                     {% if call.questionario %}<a class="btn-azione blu" href="{{ url_for('visualizza_questionario_sonno_admin', id=call.id) }}">Leggi questionario</a>{% endif %}
                     {% if call.stato == 'In attesa' %}
@@ -557,14 +557,7 @@
                     {% if call.stato not in ['Annullata', 'Conclusa'] %}
                     <form method="post" action="{{ url_for('annulla_call_sonno_admin', id=call.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione rosso" type="submit">Annulla</button></form>
                     {% endif %}
-                    {% if call.stato in ['Confermata', 'Conclusa'] and not call.questionario %}
-                    <form class="admin-questionnaire-send" method="post" action="{{ url_for('invia_questionario_sonno_admin', id=call.id) }}">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <label for="formula-{{ call.id }}">Dopo la call</label>
-                        <select id="formula-{{ call.id }}" name="formula_scelta" required><option value="">Formula concordata</option>{% for valore, etichetta in formule_sonno.items() %}<option value="{{ valore }}" {% if call.formula_scelta == valore %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}</select>
-                        <button class="btn-azione verde" type="submit">{% if call.questionario_inviato_il %}Reinvia questionario{% else %}Invia questionario{% endif %}</button>
-                    </form>
-                    {% endif %}
+                    <a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo='CallSonno', entita_id=call.id) }}">Apri pratica e offerta</a>
                 </td>
             </tr>
             {% endfor %}

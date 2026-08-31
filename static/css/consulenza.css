@@ -799,6 +799,224 @@
     background: var(--carta-luminosa-a72);
 }
 
+.sleep-offer-page {
+    margin: 0 auto;
+    max-width: 1040px;
+    padding: clamp(3.5rem, 7vw, 6rem) 2rem;
+}
+
+.sleep-offer-page__intro {
+    border-bottom: 1px solid var(--verde-scuro-a16);
+    padding-bottom: clamp(1.8rem, 4vw, 3rem);
+}
+
+.sleep-offer-page__intro h1 {
+    color: var(--verde-scuro);
+    font-size: clamp(2.7rem, 6vw, 4.8rem);
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+    margin: 0.55rem 0 1.2rem;
+}
+
+.sleep-offer-page__intro > p:not(.eyebrow) {
+    font-size: 1.08rem;
+    line-height: 1.7;
+    max-width: 760px;
+}
+
+.sleep-payment-state {
+    background: var(--verde-chiaro);
+    border-left: 5px solid var(--rosso-cuore);
+    border-radius: 0 20px 20px 0;
+    margin: 2rem 0;
+    padding: clamp(1.3rem, 3vw, 2rem);
+}
+
+.sleep-payment-state h2 {
+    color: var(--verde-scuro);
+    font-size: clamp(1.6rem, 3vw, 2.25rem);
+    margin: 0.3rem 0 0.7rem;
+}
+
+.sleep-payment-state p {
+    line-height: 1.65;
+}
+
+.sleep-payment-state--confirmed {
+    border-left-color: var(--verde-header);
+}
+
+.sleep-payment-state--expired {
+    background: var(--rosa-chiaro);
+}
+
+.sleep-payment-details {
+    display: grid;
+    gap: 0.65rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1.2rem;
+}
+
+.sleep-payment-details div {
+    border-top: 1px solid var(--verde-scuro-a16);
+    padding-top: 0.65rem;
+}
+
+.sleep-payment-details dt {
+    color: var(--grigio);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sleep-payment-details dd {
+    color: var(--verde-scuro);
+    font-weight: 700;
+    margin: 0.25rem 0 0;
+    overflow-wrap: anywhere;
+}
+
+.sleep-offer-form {
+    margin-top: 2rem;
+}
+
+.sleep-choice-fieldset {
+    border: 0;
+    border-top: 1px solid var(--verde-scuro-a16);
+    margin: 0;
+    padding: 2rem 0;
+}
+
+.sleep-choice-fieldset legend {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 800;
+    padding-right: 1rem;
+}
+
+.sleep-purchase-options,
+.sleep-payment-methods {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sleep-purchase-option,
+.sleep-payment-method {
+    align-items: flex-start;
+    background: var(--carta-luminosa-a72);
+    border: 1px solid var(--verde-scuro-a16);
+    border-radius: 18px;
+    cursor: pointer;
+    display: flex;
+    gap: 0.85rem;
+    min-height: 126px;
+    padding: 1.2rem;
+}
+
+.sleep-purchase-option:has(input:checked),
+.sleep-payment-method:has(input:checked) {
+    background: var(--verde-chiaro);
+    border-color: var(--verde-header);
+    box-shadow: inset 0 -3px 0 var(--rosso-cuore);
+}
+
+.sleep-purchase-option input,
+.sleep-payment-method input,
+.sleep-contract-check input {
+    accent-color: var(--rosso-cuore);
+    flex: 0 0 auto;
+    height: 21px;
+    margin-top: 0.1rem;
+    width: 21px;
+}
+
+.sleep-purchase-option span,
+.sleep-payment-method span {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.sleep-purchase-option strong,
+.sleep-payment-method strong {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.18rem;
+}
+
+.sleep-purchase-option b {
+    color: var(--rosso-cuore);
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+}
+
+.sleep-purchase-option small,
+.sleep-payment-method small {
+    color: var(--grigio);
+    line-height: 1.5;
+}
+
+.sleep-payment-method.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.sleep-payment-unavailable {
+    border-left: 3px solid var(--rosso-cuore);
+    line-height: 1.55;
+    margin-top: 1rem;
+    padding-left: 0.9rem;
+}
+
+.sleep-contract-checks {
+    background: var(--verde-chiaro);
+    border-radius: 20px;
+    display: grid;
+    gap: 1rem;
+    margin: 0 0 1.4rem;
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.sleep-contract-check {
+    align-items: flex-start;
+    cursor: pointer;
+    display: flex;
+    gap: 0.8rem;
+    line-height: 1.55;
+}
+
+.sleep-contract-check--optional {
+    border-top: 1px solid var(--verde-scuro-a16);
+    padding-top: 1rem;
+}
+
+.sleep-contract-check a {
+    color: var(--verde-scuro);
+    font-weight: 800;
+}
+
+.sleep-contract-checks > p {
+    border-left: 3px solid var(--rosso-cuore);
+    color: var(--verde-scuro);
+    line-height: 1.55;
+    padding-left: 0.85rem;
+}
+
+.sleep-offer-form > .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.52;
+}
+
+.sleep-payment-note {
+    color: var(--grigio);
+    font-size: 0.86rem;
+    line-height: 1.5;
+    margin-top: 0.8rem;
+    max-width: 720px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .sleep-faq summary::after {
         transition: none;
@@ -933,7 +1151,17 @@
     }
 .sleep-booking-page,
 .sleep-questionnaire-page,
-.sleep-confirmation {
+.sleep-confirmation,
+.sleep-offer-page {
         padding: 3.4rem 1.15rem;
+    }
+.sleep-purchase-options,
+.sleep-payment-methods,
+.sleep-payment-details {
+        grid-template-columns: 1fr;
+    }
+.sleep-purchase-option,
+.sleep-payment-method {
+        min-height: 0;
     }
 }

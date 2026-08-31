@@ -283,7 +283,7 @@ promettere prevenzione.
 Le tre formule hanno funzioni differenti:
 
 - `Consulenza mirata` — 75 €, dedicata a una singola difficoltà circoscritta;
-- `Percorso sonno personalizzato` — 180 €, proposta principale quando più aspetti si influenzano tra loro.
+- `Percorso sonno personalizzato` — 200 €, proposta principale quando più aspetti si influenzano tra loro.
 - `Percorso sonno con affiancamento` — 320 €, stesso percorso con 60 giorni di WhatsApp entro i confini pubblicati.
 
 La formula breve deve apparire appropriata a casi limitati, non come versione scontata del percorso.

@@ -237,6 +237,11 @@ condiviso, per esempio Redis, e ripetere i test di concorrenza.
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
 | `PUBLIC_BASE_URL` | Origine HTTPS canonica del sito pubblico | No |
 | `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
+| `PAYPAL_LINK_SONNO_MIRATA` | Link PayPal Business HTTPS a prezzo fisso per la formula da 75 € | Potenzialmente |
+| `PAYPAL_LINK_SONNO_PERCORSO` | Link PayPal Business HTTPS a prezzo fisso per la formula da 200 € | Potenzialmente |
+| `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | Link PayPal Business HTTPS a prezzo fisso per la formula da 320 € | Potenzialmente |
+| `BONIFICO_INTESTATARIO` | Intestatario mostrato nella proposta privata | Potenzialmente |
+| `BONIFICO_IBAN` | IBAN mostrato nella proposta privata | Sì |
 | `ADMIN_BOOTSTRAP_USERNAME` | Nome del primo amministratore, solo per il bootstrap | Sì |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Password del primo amministratore, solo per il bootstrap | Sì |
 | `STAGING_AUTH_USERNAME` | Utente della protezione HTTP dello staging | Sì |
@@ -357,6 +362,8 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `PUBLIC_BASE_URL` | origine HTTPS definitiva, senza percorso, per esempio `https://scstudioinfermieristico.it` |
 | `GOOGLE_ANALYTICS_ID` | facoltativo finché informativa, consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
+| `PAYPAL_LINK_SONNO_MIRATA` / `PAYPAL_LINK_SONNO_PERCORSO` / `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | facoltativi; abilitarli soltanto dopo aver verificato importo e descrizione di ciascun link PayPal Business |
+| `BONIFICO_INTESTATARIO` / `BONIFICO_IBAN` | facoltativi; configurarli nel secret manager per rendere disponibile il bonifico nella proposta privata |
 
 `MAIL_USE_TLS` e `MAIL_USE_SSL` non possono essere entrambe attive. Sessione,
 admin e Basic Auth devono usare segreti diversi. Il comando

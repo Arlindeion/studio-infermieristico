@@ -31,7 +31,7 @@ EXPECTED_TABLES = {
     'autorizzazione_immagini',
 }
 
-LATEST_REVISION = 'b7d2e4f6a810'
+LATEST_REVISION = 'c9e1f4a7b260'
 
 
 def _migration_env(database_path):
@@ -92,6 +92,12 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     call_columns = _column_names(database_path, 'call_sonno')
     assert 'promemoria_email_24h_il' in call_columns
     assert 'promemoria_email_2h_il' in call_columns
+    assert 'proposta_token' in call_columns
+    assert 'stato_pagamento' in call_columns
+    assert 'condizioni_versione' in call_columns
+    assert 'avvio_anticipato' in call_columns
+    assert 'fase_percorso' in call_columns
+    assert 'supporto_whatsapp_attivato_il' in call_columns
     assert 'consenso_whatsapp' not in call_columns
     assert 'promemoria_whatsapp_24h_il' not in call_columns
     assert 'promemoria_whatsapp_2h_il' not in call_columns

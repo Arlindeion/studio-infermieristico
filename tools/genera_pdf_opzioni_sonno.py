@@ -97,7 +97,7 @@ def page_one(c):
     c.setFont("Helvetica-Bold", 7.1)
     c.drawCentredString(83.5, main_y + main_h - 23, "PERCORSO PRINCIPALE")
     c.setFont("NewYork", 27)
-    c.drawString(31, main_y + 63, "180 €")
+    c.drawString(31, main_y + 63, "200 €")
     c.setFont("Helvetica-Bold", 10.5)
     c.drawString(128, main_y + 75, "Percorso personalizzato")
     c.setFillColor(HexColor("#D9E6DE"))
@@ -106,7 +106,7 @@ def page_one(c):
     y = main_y + 39
     y = draw_check(c, 31, y, "Tre call da 60-75 minuti", W - 62,
                    color=white, marker_color=HEART_RED)
-    y = draw_check(c, 31, y, "Percorso completabile entro 75 giorni",
+    y = draw_check(c, 31, y, "Terza call entro 75 giorni dall'invio del questionario",
                    W - 62, color=white, marker_color=HEART_RED)
 
     small_y, small_h = 148, 65
@@ -166,7 +166,7 @@ def page_two(c):
     c.roundRect(18, 225, W - 36, 122, 13, fill=1, stroke=0)
     c.setFillColor(DEEP_GREEN)
     c.setFont("NewYork", 20)
-    c.drawString(31, 308, "Percorso personalizzato · 180 €")
+    c.drawString(31, 308, "Percorso personalizzato · 200 €")
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 8.6)
     c.drawString(31, 289, "È la scelta giusta quando:")

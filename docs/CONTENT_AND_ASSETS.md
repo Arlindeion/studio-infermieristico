@@ -193,9 +193,9 @@ I ritagli sono scontornati nel browser con sagome diverse per ogni fotografia. N
 
 | File | Destinatari | Stato |
 |---|---|---|
-| `output/pdf/percorso_sonno_pilota.pdf` | Famiglie interessate al percorso base | Aggiornato alla formula da 180 €; il nome file storico resta invariato per non rompere link già condivisi |
+| `output/pdf/percorso_sonno_pilota.pdf` | Famiglie interessate al percorso base | Aggiornato alla formula da 200 €; il nome file storico resta invariato per non rompere link già condivisi |
 | `output/pdf/consulenza_sonno_opzioni_e_prezzi.pdf` | Famiglie già interessate che chiedono percorso e prezzi | Copia sincronizzata della scheda comparativa corrente |
-| `output/pdf/consulenza_sonno_opzioni_prezzi_senza_foto.pdf` | Stesso pubblico, senza fotografia iniziale | Versione sorgente preferita; include le tre formule da 75 €, 180 € e 320 € |
+| `output/pdf/consulenza_sonno_opzioni_prezzi_senza_foto.pdf` | Stesso pubblico, senza fotografia iniziale | Versione sorgente preferita; include le tre formule da 75 €, 200 € e 320 € |
 
 I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_opzioni_sonno.py`. Se cambiano palette, naming o offerta, aggiornare sia i generatori sia i PDF prodotti.
 

@@ -74,6 +74,13 @@ class Config:
     # Collegamento della videochiamata, incluso nelle conferme delle call sonno
     # solo quando configurato. In alternativa Selene comunica la modalità.
     SONNO_CALL_URL = os.environ.get('SONNO_CALL_URL')
+    # Collegamenti PayPal Business a prezzo fisso. Restano facoltativi finché
+    # il checkout non viene attivato e non devono essere hardcoded nei template.
+    PAYPAL_LINK_SONNO_MIRATA = os.environ.get('PAYPAL_LINK_SONNO_MIRATA')
+    PAYPAL_LINK_SONNO_PERCORSO = os.environ.get('PAYPAL_LINK_SONNO_PERCORSO')
+    PAYPAL_LINK_SONNO_AFFIANCAMENTO = os.environ.get('PAYPAL_LINK_SONNO_AFFIANCAMENTO')
+    BONIFICO_INTESTATARIO = os.environ.get('BONIFICO_INTESTATARIO')
+    BONIFICO_IBAN = os.environ.get('BONIFICO_IBAN')
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
@@ -123,6 +130,11 @@ class TestingConfig(Config):
     GOOGLE_ANALYTICS_ID = None
     PUBLIC_BASE_URL = None
     SONNO_CALL_URL = None
+    PAYPAL_LINK_SONNO_MIRATA = None
+    PAYPAL_LINK_SONNO_PERCORSO = None
+    PAYPAL_LINK_SONNO_AFFIANCAMENTO = None
+    BONIFICO_INTESTATARIO = None
+    BONIFICO_IBAN = None
     APP_ENV = 'testing'
     STAGING_LIVE_INTEGRATIONS = False
     STAGING_AUTH_USERNAME = None

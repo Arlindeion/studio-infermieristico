@@ -614,8 +614,24 @@ def test_pagina_sonno_mostra_formule_e_prezzi_prima_della_prenotazione(client):
     assert 'Consulenza mirata' in landing.text
     assert 'Percorso sonno personalizzato' in landing.text
     assert 'Percorso sonno con affiancamento' in landing.text
+    assert '200 €' in landing.text
     assert '320 €' in landing.text
     assert 'partono da <strong>75 €</strong>' in booking.text
+    assert 'percorso personalizzato 200 €' in booking.text
+
+
+def test_condizioni_sonno_pubblicano_versione_prezzi_e_rimborsi(client):
+    response = client.get('/condizioni-consulenza-sonno')
+
+    assert response.status_code == 200
+    assert response.text.count('<h1') == 1
+    assert '31 agosto 2026' in response.text
+    assert 'Consulenza mirata: 75 €' in response.text
+    assert 'Percorso sonno personalizzato: 200 €' in response.text
+    assert 'Percorso sonno con affiancamento: 320 €' in response.text
+    assert 'rimborso di 150 €' in response.text
+    assert 'dal giorno 46 al giorno 60' in response.text
+    assert '75 giorni dalla data di invio del questionario compilato' in response.text
 
 
 def test_checkbox_call_sonno_usano_stile_compatto_mobile(client):
@@ -692,6 +708,7 @@ def test_questionario_sonno_disponibile_solo_dopo_invito(client):
             eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
             consenso_privacy=True, data='2026-09-21', ora='09:00', stato='Conclusa',
             formula_scelta='percorso', token_questionario=secrets.token_urlsafe(48),
+            pagamento_confermato_il=app_module.utc_now(),
         )
         db.session.add(call)
         db.session.commit()
@@ -4183,7 +4200,9 @@ def test_admin_call_avvisa_se_email_fallisce_ma_calendar_riesce(
         assert evento.esito == 'errore'
 
 
-def test_admin_conclude_call_e_invita_al_questionario_privato(client):
+def test_admin_offerta_pagamento_e_questionario_sonno(client, app, monkeypatch):
+    monkeypatch.setitem(app.config, 'BONIFICO_INTESTATARIO', 'S.C. Studio Infermieristico')
+    monkeypatch.setitem(app.config, 'BONIFICO_IBAN', 'IT00X0000000000000000000000')
     with flask_app.app_context():
         call = CallSonno(
             nome='Anna Verdi',
@@ -4208,25 +4227,95 @@ def test_admin_conclude_call_e_invita_al_questionario_privato(client):
     csrf = _login_admin(client)
     with patch.object(
         app_module,
-        'invia_email_questionario_sonno',
+        'invia_email_offerta_sonno',
         return_value=True,
-    ) as invio_questionario:
+    ) as invio_offerta:
         resp = client.post(
-            f'/admin/call-sonno/{call_id}/questionario',
+            f'/admin/call-sonno/{call_id}/offerta',
             data={
-                'formula_scelta': 'percorso',
                 '_csrf_token': csrf,
+                'azione': 'crea',
+                'proposta_tipo': 'percorso',
             },
             follow_redirects=True,
         )
 
     assert resp.status_code == 200
-    assert 'Questionario privato inviato.' in resp.text
-    invio_questionario.assert_called_once()
+    assert 'Proposta privata generata e inviata' in resp.text
+    invio_offerta.assert_called_once()
     with flask_app.app_context():
         call = db.session.get(CallSonno, call_id)
         assert call.stato == 'Conclusa'
-        assert call.formula_scelta == 'percorso'
+        assert call.proposta_tipo == 'percorso'
+        assert call.proposta_token
+        assert call.proposta_scade_il - call.proposta_inviata_il == app_module.timedelta(days=7)
+        proposal_token = call.proposta_token
+
+    offer = client.get(f'/offerta-sonno/{proposal_token}')
+    assert offer.status_code == 200
+    assert 'Percorso sonno personalizzato' in offer.text
+    assert 'Percorso sonno con affiancamento' in offer.text
+    assert 'Se non selezioni la seconda casella' in offer.text
+    offer_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', offer.text).group(1)
+
+    missing_terms = client.post(
+        f'/offerta-sonno/{proposal_token}',
+        data={
+            '_csrf_token': offer_csrf,
+            'formula_scelta': 'affiancamento',
+            'metodo_pagamento': 'bonifico',
+        },
+    )
+    assert missing_terms.status_code == 400
+    assert 'Devi dichiarare di aver letto e accettato' in missing_terms.text
+
+    offer_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', missing_terms.text).group(1)
+    accepted = client.post(
+        f'/offerta-sonno/{proposal_token}',
+        data={
+            '_csrf_token': offer_csrf,
+            'formula_scelta': 'affiancamento',
+            'metodo_pagamento': 'bonifico',
+            'condizioni_sonno': 'on',
+            'avvio_anticipato': 'on',
+        },
+    )
+    assert accepted.status_code == 302
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.formula_scelta == 'affiancamento'
+        assert call.prezzo_centesimi == 32000
+        assert call.stato_pagamento == 'In attesa'
+        assert call.condizioni_versione == '2026-08-31'
+        assert call.condizioni_accettate_il is not None
+        assert call.avvio_anticipato is True
+        assert call.avvio_anticipato_accettato_il is not None
+        assert call.pagamento_confermato_il is None
+
+    detail = client.get(f'/admin/pratica/CallSonno/{call_id}')
+    admin_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', detail.text).group(1)
+    with patch.object(
+        app_module,
+        'invia_email_questionario_sonno',
+        return_value=True,
+    ) as invio_questionario:
+        confirmed = client.post(
+            f'/admin/call-sonno/{call_id}/conferma-pagamento',
+            data={
+                '_csrf_token': admin_csrf,
+                'riferimento_pagamento': 'BONIFICO-TEST-001',
+            },
+            follow_redirects=True,
+        )
+
+    assert confirmed.status_code == 200
+    assert 'Pagamento confermato. Riepilogo, condizioni e questionario inviati.' in confirmed.text
+    invio_questionario.assert_called_once()
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.stato_pagamento == 'Confermato'
+        assert call.pagamento_confermato_il is not None
+        assert call.riferimento_pagamento == 'BONIFICO-TEST-001'
         assert call.token_questionario
         assert call.questionario_inviato_il is not None
         token = call.token_questionario
@@ -4234,6 +4323,153 @@ def test_admin_conclude_call_e_invita_al_questionario_privato(client):
     questionario = client.get(f'/questionario-sonno/{token}')
     assert questionario.status_code == 200
     assert '<meta name="robots" content="noindex,nofollow,noarchive">' in questionario.text
+
+
+def test_offerta_sonno_senza_avvio_anticipato_preserva_recesso_integrale(client, app, monkeypatch):
+    monkeypatch.setitem(app.config, 'BONIFICO_INTESTATARIO', 'S.C. Studio Infermieristico')
+    monkeypatch.setitem(app.config, 'BONIFICO_IBAN', 'IT00X0000000000000000000000')
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli notturni frequenti',
+            consenso_privacy=True, data='2026-09-21', ora='09:00', stato='Conclusa',
+            proposta_tipo='mirata', proposta_token=secrets.token_urlsafe(48),
+            proposta_scade_il=app_module.utc_now() + app_module.timedelta(days=7),
+        )
+        db.session.add(call)
+        db.session.commit()
+        call_id = call.id
+        token = call.proposta_token
+
+    page = client.get(f'/offerta-sonno/{token}')
+    csrf = re.search(r'name="_csrf_token" value="([^"]+)"', page.text).group(1)
+    response = client.post(
+        f'/offerta-sonno/{token}',
+        data={
+            '_csrf_token': csrf,
+            'formula_scelta': 'mirata',
+            'metodo_pagamento': 'bonifico',
+            'condizioni_sonno': 'on',
+        },
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.avvio_anticipato is False
+        assert call.avvio_anticipato_accettato_il is None
+        assert call.condizioni_accettate_il is not None
+
+
+def test_avvio_lavoro_sonno_attende_questionario_e_recesso(app):
+    pagamento = datetime(2026, 9, 1, 10, 0)
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli', consenso_privacy=True,
+            data='2026-09-21', ora='09:00', formula_scelta='percorso',
+            pagamento_confermato_il=pagamento, avvio_anticipato=False,
+        )
+        db.session.add(call)
+        db.session.flush()
+
+        assert app_module._data_avvio_lavoro_sonno(call) is None
+
+        call.questionario = QuestionarioSonno(
+            call_sonno_id=call.id,
+            risposte='{}',
+            consenso_dati_sanitari=True,
+            compilato_il=datetime(2026, 9, 3, 9, 0),
+        )
+        db.session.flush()
+        assert app_module._data_avvio_lavoro_sonno(call) == datetime(2026, 9, 15, 10, 0)
+
+        call.avvio_anticipato = True
+        assert app_module._data_avvio_lavoro_sonno(call) == datetime(2026, 9, 3, 9, 0)
+
+
+def test_recesso_senza_avvio_anticipato_rimborsa_intero_importo(app):
+    pagamento = datetime(2026, 9, 1, 10, 0)
+    call = CallSonno(
+        formula_scelta='mirata',
+        prezzo_centesimi=7500,
+        pagamento_confermato_il=pagamento,
+        avvio_anticipato=False,
+    )
+
+    assert app_module._rimborso_sonno_centesimi(
+        call, pagamento + app_module.timedelta(days=13),
+    ) == 7500
+    assert app_module._rimborso_sonno_centesimi(
+        call, pagamento + app_module.timedelta(days=14),
+    ) is None
+
+
+def test_admin_non_puo_avviare_il_percorso_prima_della_data_prevista(client, app):
+    pagamento = app_module.utc_now()
+    with app.app_context():
+        call = CallSonno(
+            nome='Anna Verdi', telefono='3331234567', email='anna@example.com',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli', consenso_privacy=True,
+            data='2026-09-21', ora='09:00', formula_scelta='percorso',
+            prezzo_centesimi=20000, stato_pagamento='Confermato',
+            pagamento_confermato_il=pagamento, avvio_anticipato=False,
+        )
+        db.session.add(call)
+        db.session.flush()
+        db.session.add(QuestionarioSonno(
+            call_sonno_id=call.id,
+            risposte='{}',
+            consenso_dati_sanitari=True,
+            compilato_il=pagamento,
+        ))
+        db.session.commit()
+        call_id = call.id
+
+    csrf = _login_admin(client)
+    response = client.post(
+        f'/admin/call-sonno/{call_id}/percorso',
+        data={
+            '_csrf_token': csrf,
+            'fase_percorso': 'diario_preparato',
+            'stato_pagamento': 'Confermato',
+        },
+        follow_redirects=True,
+    )
+
+    assert 'Il lavoro professionale non può iniziare' in response.text
+    with app.app_context():
+        assert db.session.get(CallSonno, call_id).fase_percorso == 'non_avviato'
+
+
+@pytest.mark.parametrize(
+    ('phase', 'expected'),
+    [
+        ('non_avviato', 20000),
+        ('diario_preparato', 15000),
+        ('prima_call', 10000),
+        ('seconda_call', 5000),
+        ('terza_call', 0),
+    ],
+)
+def test_rimborso_percorso_sonno_segue_la_fase(phase, expected):
+    call = CallSonno(formula_scelta='percorso', fase_percorso=phase)
+    assert app_module._rimborso_sonno_centesimi(call) == expected
+
+
+@pytest.mark.parametrize(
+    ('elapsed_days', 'expected'),
+    [(0, 19000), (14, 19000), (15, 16000), (30, 13000), (45, 10000)],
+)
+def test_rimborso_affiancamento_somma_residuo_whatsapp(elapsed_days, expected):
+    started = datetime(2026, 9, 1, 12, 0)
+    call = CallSonno(
+        formula_scelta='affiancamento',
+        fase_percorso='prima_call',
+        supporto_whatsapp_attivato_il=started,
+    )
+    reference = started + app_module.timedelta(days=elapsed_days)
+    assert app_module._rimborso_sonno_centesimi(call, reference) == expected
 
 
 def test_richieste_prestazioni_usano_trenta_minuti_prima_della_scelta_admin():

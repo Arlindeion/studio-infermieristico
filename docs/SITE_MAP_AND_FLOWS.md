@@ -1,6 +1,6 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 13 agosto 2026.
+Ultimo aggiornamento: 31 agosto 2026.
 
 ## Principio di architettura
 
@@ -25,7 +25,9 @@ Le priorità commerciali sono:
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
 | `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere l'orario della call gratuita |
 | `/prenota-call-sonno` | Prenotazione breve della call gratuita | Riservare provvisoriamente uno slot |
-| `/questionario-sonno/<token>` | Questionario privato inviato dopo la call | Preparare la formula concordata |
+| `/condizioni-consulenza-sonno` | Condizioni pubbliche e versionate del servizio | Tornare alla proposta privata aperta in un’altra scheda |
+| `/offerta-sonno/<token>` | Proposta privata valida sette giorni | Scegliere formula, accettare le condizioni e indicare il pagamento |
+| `/questionario-sonno/<token>` | Questionario privato inviato dopo la conferma del pagamento | Avviare la preparazione della consulenza nei tempi accettati |
 | `/prestazioni-infermieristiche` | Spiegare le prestazioni in studio | Accedere alla prenotazione sanitaria |
 | `/prenota` | Prenotare una prestazione sanitaria | Inviare una richiesta di appuntamento |
 | `/da-dove-parto` | Orientare senza diagnosi né raccolta dati | Aprire uno dei percorsi pubblici, mantenendo visibili le alternative |
@@ -138,8 +140,9 @@ Campagna/condivisione
   → conferma oppure accordo telefonico e modifica entro il giorno lavorativo successivo
   → call conoscitiva di circa 20 minuti
   → scelta condivisa della formula
-  → collegamento privato per contratto e pagamento
-  → questionario privato sul sito
+  → proposta privata valida sette giorni, revocabile e rigenerabile
+  → scelta della formula, accettazione delle condizioni e pagamento
+  → conferma manuale del pagamento e invio immediato del questionario
   → consulenza mirata, percorso personalizzato oppure percorso con affiancamento
 ```
 
@@ -149,8 +152,8 @@ Campagna/condivisione
 - `Consulenza mirata`: una difficoltà circoscritta.
 - `Percorso sonno personalizzato`: tre call da 60-75 minuti e diario quando più aspetti si influenzano; durata prevista 60 giorni e chiusura entro 75.
 - `Percorso sonno con affiancamento`: stesso percorso con WhatsApp per 60 giorni, massimo tre confronti raggruppati a settimana dal lunedì al venerdì e risposta entro il giorno lavorativo successivo.
-- I prezzi di lancio 75 €, 180 € e 320 € sono visibili prima della prenotazione; la call aiuta a scegliere, non nasconde il costo.
-- Il pagamento avviene dopo la call gratuita tramite collegamento privato. Il posto è confermato al pagamento; l'eventuale rateizzazione del gestore è soggetta ad approvazione.
+- I prezzi di lancio 75 €, 200 € e 320 € sono visibili prima della prenotazione; la call aiuta a scegliere, non nasconde il costo.
+- Il pagamento integrale avviene dopo la call gratuita tramite collegamento privato valido sette giorni. Il posto è confermato dopo la verifica del pagamento; l'eventuale opzione PayPal “Paga in 3 rate” dipende esclusivamente da PayPal.
 - Selene mantiene la decisione finale sull'appropriatezza del servizio prima dell'invio del collegamento di pagamento.
 - Una persona diversa dal genitore può regalare il servizio, ma non accetta il contratto al posto della famiglia. Prima dell'avvio firma un genitore o tutore, dichiarando responsabilità genitoriale o tutela e, se la responsabilità è condivisa, informazione e consenso dell'altro genitore; in caso di affido esclusivo dichiara l'esistenza del relativo provvedimento.
 - La prima data pubblica selezionabile è il giorno disponibile successivo; le call sono disponibili dal lunedì al sabato negli spazi liberi.
@@ -159,22 +162,24 @@ Campagna/condivisione
 - Lo stato `In attesa` blocca immediatamente lo slot ma non equivale a conferma. La pagina e l'email devono dirlo senza ambiguità.
 - Se l'orario cambia, Selene può concordarlo direttamente oppure inviare dall’admin una proposta modificabile via email. Il link dura 48 ore, ricontrolla lo slot al momento dell’accettazione e conferma solo se resta libero.
 - Prima della call vengono richiesti contatti, età 0-12 mesi, ruolo di genitore/tutore, difficoltà e durata, obiettivo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesto il diario.
-- Il questionario completo viene inviato solo dopo la call, quando la famiglia sceglie una formula. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile.
+- Il questionario completo viene inviato immediatamente dopo la conferma del pagamento. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile. Se non è stato richiesto l’avvio anticipato, la compilazione non autorizza analisi o lavoro professionale prima del quattordicesimo giorno dalla conferma del pagamento.
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
 - Conferme e promemoria automatici vengono inviati esclusivamente via email; WhatsApp resta un contatto umano contestuale e non fa parte dell'automazione della prenotazione.
 - La consulenza non formula diagnosi, non prescrive terapie e non sostituisce il pediatra.
 
 ### Pagamenti, modifiche e rimborsi delle consulenze sonno
 
-- Consulenza mirata: 75 € anticipati.
-- Percorso personalizzato, se la rateizzazione esterna non è concessa: 75 € prima della prima call, 75 € prima di analisi e seconda call, 30 € prima della terza call.
-- Percorso con affiancamento, nello stesso caso: 145 € alla conferma, 145 € entro il giorno 30 o prima di analisi/seconda call, 30 € prima della terza call. Le due quote da 70 € coprono ciascuna 30 giorni di WhatsApp.
+- Consulenza mirata: 75 € con pagamento integrale.
+- Percorso personalizzato: 200 € con pagamento integrale.
+- Percorso con affiancamento: 320 € con pagamento integrale, di cui 200 € per il percorso e 120 € per il supporto WhatsApp.
+- Prima del pagamento vengono raccolte due dichiarazioni distinte: accettazione obbligatoria delle condizioni versionate e richiesta facoltativa di iniziare prima dei 14 giorni. Senza la seconda dichiarazione il questionario parte comunque subito, ma analisi e lavoro professionale restano sospesi; un recesso entro quel termine comporta rimborso integrale.
 - Cancellazione o riprogrammazione gratuita entro la scadenza: per una call del lunedì entro venerdì alle 18; per martedì-sabato almeno 24 ore prima; se la scadenza cade in un festivo, entro le 18 dell'ultimo giorno lavorativo precedente.
 - Cancellazione tardiva: penale del 50%. Riprogrammazione tardiva: penale del 50%. No-show: perdita dell'intera quota relativa all'appuntamento.
 - È concesso un solo spostamento; un ulteriore spostamento comporta la perdita della quota, salvo indisponibilità di Selene.
 - Se Selene non è disponibile, la famiglia sceglie tra riprogrammazione e rimborso integrale della parte non erogata.
-- Se il percorso viene interrotto, vengono trattenuti i servizi già erogati secondo i valori approvati e, per WhatsApp, 70 € / 30 giorni moltiplicati per i giorni di disponibilità trascorsi.
-- Avvio del servizio durante il termine legale di recesso, perdita del diritto dopo completa esecuzione e importi proporzionali richiedono clausole espresse validate prima del lancio.
+- Se il percorso da 200 € viene interrotto, il rimborso residuo è: 200 € prima dell’inizio del lavoro; 150 € con diario elaborato e prima call non svolta; 100 € dopo prima call e diario; 50 € dopo seconda call e diario; zero dopo la terza call.
+- Per l’affiancamento si aggiunge il rimborso residuo del supporto WhatsApp: 120 € se non attivato; 90 € nei giorni 1-15; 60 € nei giorni 16-30; 30 € nei giorni 31-45; zero nei giorni 46-60.
+- La terza call del percorso deve svolgersi entro 75 giorni dall’invio del questionario compilato; l’attesa precedente alla compilazione non è imputabile allo Studio.
 
 ### Percorso dalla campagna
 
