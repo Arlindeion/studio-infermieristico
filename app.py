@@ -482,7 +482,7 @@ FAQ_ITEMS = [
     {
         'id': 'consulenza-sonno-infantile',
         'question': 'Quando può essere utile una consulenza sul sonno infantile?',
-        'answer': "La consulenza è dedicata al sonno dei bambini da 0 a 12 mesi. Può essere utile quando addormentamento, risvegli o pisolini sono difficili da capire. La call gratuita serve a raccontare la difficoltà principale e verificare se il servizio è adatto alla famiglia.",
+        'answer': "La consulenza può essere utile quando addormentamento, risvegli o pisolini sono difficili da capire. La call gratuita serve a raccontare la difficoltà principale e verificare se il servizio è adatto alla famiglia.",
         'link_href': '/consulenze-online',
         'link_text': 'Scopri la consulenza del sonno',
     },
@@ -609,6 +609,18 @@ def _paypal_link_sonno(formula):
 
 def _bonifico_sonno_configurato():
     return bool(app.config.get('BONIFICO_INTESTATARIO') and app.config.get('BONIFICO_IBAN'))
+
+
+def _cognome_prenotante(nome_completo):
+    parti = str(nome_completo or '').split()
+    if len(parti) <= 1:
+        return parti[0] if parti else ''
+    return ' '.join(parti[1:])
+
+
+def _causale_bonifico_sonno(call):
+    formula = FORMULE_SONNO.get(call.formula_scelta, call.formula_scelta or '')
+    return f'{formula} - {_cognome_prenotante(call.nome)}'
 
 
 def _proposta_sonno_valida(call):
@@ -3609,7 +3621,7 @@ def invia_email_alert_call_sonno(call):
                 f'Età bambino: {call.eta_bambino_mesi} mesi\n'
                 f'Difficoltà: {call.difficolta_altro or call.difficolta_principale}\n'
                 f'Durata: {call.durata_difficolta}\n'
-                f'Obiettivo della call: {call.obiettivo_call}\n'
+                f'Obiettivo della call: {call.obiettivo_call or "Non indicato"}\n'
                 f'Quando: {call.data} alle {call.ora}\n\n'
                 f'Lo slot è stato bloccato provvisoriamente. Gestiscilo dall’area admin.'
             ),
@@ -3788,6 +3800,33 @@ def invia_email_questionario_sonno(call):
         return True
     except Exception as errore:
         registra_evento('email', 'errore', 'Email questionario sonno non inviata.', 'CallSonno', call.id, {'errore': str(errore)})
+        return False
+
+
+def invia_email_alert_questionario_sonno_compilato(call):
+    try:
+        dettaglio = public_url(_url_dettaglio_admin('CallSonno', call.id))
+        msg = Message(
+            subject=f'Questionario sonno compilato - {call.nome}',
+            recipients=[app.config['MAIL_ADMIN_RECIPIENT']],
+            body=(
+                f'{call.nome} ha compilato il questionario riservato.\n\n'
+                f'Formula: {FORMULE_SONNO.get(call.formula_scelta, call.formula_scelta)}\n'
+                f'Avvio prima dei 14 giorni: {"richiesto" if call.avvio_anticipato else "non richiesto"}\n\n'
+                f'Apri la pratica e usa “Leggi questionario”: {dettaglio}'
+            ),
+        )
+        _invia_email_tracciata(msg, 'CallSonno', call.id)
+        return True
+    except Exception as errore:
+        registra_evento(
+            'email',
+            'errore',
+            'Email di notifica del questionario compilato non inviata allo Studio.',
+            'CallSonno',
+            call.id,
+            {'errore': str(errore)},
+        )
         return False
 
 
@@ -5383,10 +5422,11 @@ def iscrizione_corso(corso_tipo):
             if partecipazione not in corso['partecipazione_options']:
                 return _render_iscrizione_con_errore(corso_tipo, 'Seleziona il tipo di partecipazione.', 'partecipazione')
             dichiarazioni = {
-                'prove_pratiche': _checkbox_checked('prove_pratiche'),
                 'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
                 'richiesta_non_conferma': _checkbox_checked('richiesta_non_conferma'),
             }
+            if corso_id:
+                dichiarazioni['prove_pratiche'] = _checkbox_checked('prove_pratiche')
             if not all(dichiarazioni.values()):
                 campo_mancante = next(campo for campo, valore in dichiarazioni.items() if not valore)
                 return _render_iscrizione_con_errore(
@@ -5394,7 +5434,7 @@ def iscrizione_corso(corso_tipo):
                     'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
                     campo_mancante,
                 )
-            if request.form.get('conferma_finale') != 'on':
+            if corso_id and request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
             extra = {
@@ -5784,8 +5824,8 @@ def prenota_call_sonno():
             errori.append('Inserisci un numero di telefono valido.')
         if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
             errori.append('Inserisci un indirizzo email valido.')
-        if eta_mesi < 0 or eta_mesi > 12:
-            errori.append('L’età del bambino deve essere compresa tra 0 e 12 mesi.')
+        if eta_mesi < 0 or eta_mesi > 2_147_483_647:
+            errori.append('Inserisci un numero di mesi valido.')
         if ruolo_richiedente not in RUOLI_RICHIEDENTE_SONNO:
             errori.append('Indica se sei genitore o tutore legale del bambino.')
         if difficolta not in DIFFICOLTA_SONNO:
@@ -5796,8 +5836,8 @@ def prenota_call_sonno():
             errori.append('La descrizione può contenere al massimo 300 caratteri.')
         if durata_difficolta not in DURATE_DIFFICOLTA_SONNO:
             errori.append('Indica da quanto tempo osservi la difficoltà.')
-        if not obiettivo_call or len(obiettivo_call) > 300:
-            errori.append('Indica cosa vorresti capire durante la call (massimo 300 caratteri).')
+        if len(obiettivo_call) > 300:
+            errori.append('Il testo sull’obiettivo della call può contenere al massimo 300 caratteri.')
         if not request.form.get('presa_visione_offerta'):
             errori.append('Conferma di aver visto modalità e prezzi delle consulenze.')
         if not request.form.get('conferma_ambito'):
@@ -5833,7 +5873,7 @@ def prenota_call_sonno():
             difficolta_altro=difficolta_altro if difficolta == 'Altro' else None,
             ruolo_richiedente=ruolo_richiedente,
             durata_difficolta=durata_difficolta,
-            obiettivo_call=obiettivo_call,
+            obiettivo_call=obiettivo_call or None,
             presa_visione_offerta=True,
             conferma_ambito=True,
             consenso_privacy=True,
@@ -5922,7 +5962,15 @@ def questionario_sonno(token):
             consenso_dati_sanitari=True,
             consenso_marketing=bool(request.form.get('consenso_marketing')),
         ))
+        db.session.add(AttivitaAdmin(
+            titolo=f'Leggere il questionario di {call.nome}',
+            scadenza=local_now_naive(),
+            entita_tipo='CallSonno',
+            entita_id=call.id,
+            note='Questionario compilato: apri la pratica e seleziona “Leggi questionario”.',
+        ))
         db.session.commit()
+        invia_email_alert_questionario_sonno_compilato(call)
         registra_evento('questionario_sonno', 'successo', 'Questionario sonno compilato.', 'CallSonno', call.id)
         return redirect(url_for('questionario_sonno', token=token))
 
@@ -6129,6 +6177,7 @@ def offerta_sonno(token):
     paid = call.pagamento_confermato_il is not None
     valid = _proposta_sonno_valida(call)
     formulas = _formule_per_proposta_sonno(call.proposta_tipo)
+    edit_payment = request.args.get('modifica') == '1'
 
     def render_offer(form_data=None, status_code=200):
         formula_details = [
@@ -6154,7 +6203,8 @@ def offerta_sonno(token):
             bank_transfer_available=_bonifico_sonno_configurato(),
             bank_holder=app.config.get('BONIFICO_INTESTATARIO'),
             bank_iban=app.config.get('BONIFICO_IBAN'),
-            offer_reference=f'SONNO-{call.id}',
+            offer_reference=_causale_bonifico_sonno(call),
+            edit_payment=edit_payment,
             terms_version=SLEEP_TERMS_VERSION,
             formula_labels=FORMULE_SONNO,
             format_euro=format_euro,
@@ -6644,11 +6694,6 @@ def dettaglio_admin(tipo, entita_id):
         and iscrizione.stato not in STATI_LISTA_ATTESA | {'Annullato'}
         and iscrizione.archiviata_il is None
     ]
-    rimborso_sonno_centesimi = (
-        _rimborso_sonno_centesimi(entita)
-        if tipo == 'CallSonno' and entita.pagamento_confermato_il
-        else None
-    )
     avvio_lavoro_sonno = (
         _data_avvio_lavoro_sonno(entita)
         if tipo == 'CallSonno'
@@ -6678,7 +6723,6 @@ def dettaglio_admin(tipo, entita_id):
         formule_sonno=FORMULE_SONNO,
         fasi_percorso_sonno=FASI_PERCORSO_SONNO,
         stati_pagamento_sonno=STATI_PAGAMENTO_SONNO,
-        rimborso_sonno_centesimi=rimborso_sonno_centesimi,
         avvio_lavoro_sonno=avvio_lavoro_sonno,
         format_euro=format_euro,
     )
@@ -8174,7 +8218,6 @@ def aggiorna_percorso_sonno_admin(id):
             'fase': phase,
             'stato_pagamento': payment_status,
             'supporto_whatsapp_attivato_il': whatsapp_date or None,
-            'rimborso_teorico_centesimi': _rimborso_sonno_centesimi(call),
         },
     )
     flash('Stato del percorso aggiornato.', 'success')

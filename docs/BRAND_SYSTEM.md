@@ -123,7 +123,7 @@ La scelta del testo scuro nell'header è sia stilistica sia funzionale: crea con
 
 ## Naming approvato
 
-- `Consulenza del sonno` o `Consulenza sonno` per il servizio 0-12 mesi.
+- `Consulenza del sonno` o `Consulenza sonno` per il servizio online nazionale.
 - `Consulenze genitori` può diventare in futuro un contenitore, ma non è il nome della landing attuale.
 - `Corso di accompagnamento alla nascita`.
 - `Disostruzione pediatrica e tagli sicuri`.
@@ -141,7 +141,7 @@ Sito, social, PDF e locandine devono utilizzare:
 
 Video generati possono sostenere la frequenza editoriale, ma non devono imitare testimonianze, risultati reali o situazioni cliniche. Devono restare chiaramente coerenti con il sistema visivo e non sostituire la presenza reale di Selene.
 
-La campagna iniziale sulla consulenza del sonno usa lo stesso sistema della landing e non crea un'identità parallela. Un eventuale targeting geografico ridotto per ragioni di spesa non modifica il tono nazionale dell'offerta né l'intera fascia 0-12 mesi; ogni creatività può però concentrarsi su una sola difficoltà osservabile.
+La campagna iniziale sulla consulenza del sonno usa lo stesso sistema della landing e non crea un'identità parallela. Un eventuale targeting geografico ridotto per ragioni di spesa non modifica il tono nazionale dell'offerta e non introduce limiti anagrafici; ogni creatività può però concentrarsi su una sola difficoltà osservabile.
 
 ## Controlli minimi
 

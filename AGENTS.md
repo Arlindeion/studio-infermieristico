@@ -41,7 +41,7 @@ Il sito è una vetrina autorevole con un gestionale commerciale leggero. Deve so
 Gerarchia commerciale:
 
 1. corsi in presenza, già validati;
-2. consulenza del sonno 0-12 mesi, da validare e lanciare a livello nazionale;
+2. consulenza del sonno infantile, da validare e lanciare a livello nazionale senza un limite anagrafico nel modulo di richiesta;
 3. prestazioni infermieristiche, sempre accessibili e prenotabili ma visivamente secondarie.
 
 Non trasformare la homepage in un catalogo e non lasciare che un solo servizio oscuri gli altri due livelli. Il checkpoint interno è il 15 settembre 2026: il sito deve essere tecnicamente pronto e sicuro e deve esistere una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica e non giustifica il rinvio delle attività P0. Consultare brief e roadmap prima di ampliare l'ambito.
@@ -70,7 +70,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - Non promettere risultati garantiti, diagnosi, terapie, soluzioni magiche o serenità universale.
 - Rendere visibili ruolo di Selene, iscrizione OPI Pescara, metodo e confini clinici.
 - Usare i nomi approvati in `BRAND_SYSTEM.md` e `CONTENT_AND_ASSETS.md`.
-- La landing `/consulenze-online` resta verticale sulla consulenza del sonno 0-12 mesi. Non reinserire ciuccio, spannolinamento e routine generiche.
+- La landing `/consulenze-online` resta verticale sulla consulenza del sonno infantile. Non inserire fasce d’età o limiti anagrafici nel modulo di richiesta e non reinserire ciuccio, spannolinamento e routine generiche.
 - `Consulenza mirata` riguarda una difficoltà circoscritta; `Percorso sonno personalizzato` è l'offerta principale quando più aspetti si influenzano.
 - I prezzi non sono la leva principale del sito e i dati economici interni del brief non vanno pubblicati automaticamente.
 - Usare soltanto testimonianze reali e autorizzate, senza alterarne il significato.

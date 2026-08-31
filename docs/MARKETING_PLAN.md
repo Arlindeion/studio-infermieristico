@@ -4,7 +4,7 @@ Ultimo aggiornamento: 4 agosto 2026.
 
 ## Executive Summary
 
-- **Il marketing deve sostenere due percorsi distinti.** I corsi in presenza sono l'offerta già validata e la priorità commerciale locale; la consulenza del sonno 0-12 mesi è il servizio da validare online a livello nazionale. Le prestazioni infermieristiche restano sempre accessibili, ma non diventano il centro della comunicazione.
+- **Il marketing deve sostenere due percorsi distinti.** I corsi in presenza sono l'offerta già validata e la priorità commerciale locale; la consulenza del sonno infantile è il servizio da validare online a livello nazionale senza limiti anagrafici nel modulo. Le prestazioni infermieristiche restano sempre accessibili, ma non diventano il centro della comunicazione.
 - **La scoperta organica esiste già, la conversione non è ancora dimostrata.** Nell'ultima fotografia Instagram disponibile, il 74% delle visualizzazioni proviene da non follower e le visite al profilo equivalgono a circa l'8,2% degli account raggiunti. Mancano però la data esatta della rilevazione, i clic al sito, i contatti e le prenotazioni attribuite: prima del lancio serve una nuova baseline completa.
 - **Il sito deve essere il centro del sistema.** Instagram crea scoperta e fiducia; Google intercetta l'intenzione locale; il sito spiega l'offerta, separa i flussi e registra la conversione. TikTok è accantonato dal 13 agosto 2026 fino a nuova decisione. WhatsApp rimane secondario e contestuale.
 - **Il lancio non coincide con una data pubblica già promessa.** Il riferimento corretto è il checkpoint interno del 15 settembre 2026: sito sicuro e collaudato più prima campagna Meta pronta e misurabile. Nessuna campagna parte finché privacy, consenso, flussi reali e capacità operativa non sono verificati.
@@ -35,7 +35,7 @@ Il sito e i canali devono aumentare il valore percepito e generare contatti qual
 | Priorità | Offerta | Pubblico e geografia | Risultato atteso dal marketing |
 |---|---|---|---|
 | 1 | Corsi e laboratori in presenza | Famiglie, caregiver, aziende e gruppi in provincia di Pescara e dintorni | Riempire date sostenibili, raccogliere interesse quando il calendario è vuoto e sviluppare ricorrenza e passaparola |
-| 2 | Consulenza del sonno 0-12 mesi | Genitori e tutori in tutta Italia, servizio online | Validare domanda, appropriatezza, prezzo e capacità attraverso call qualificate |
+| 2 | Consulenza del sonno infantile | Genitori e tutori in tutta Italia, servizio online | Validare domanda, appropriatezza, prezzo e capacità attraverso call qualificate |
 | 3 | Prestazioni infermieristiche | Pubblico locale | Rendere il servizio trovabile e prenotabile senza usarlo come offerta civetta |
 
 ### Percorsi da misurare separatamente
@@ -86,7 +86,7 @@ Questi dati dimostrano scoperta e curiosità. Non dimostrano ancora che i conten
 
 ### Contesto digitale italiano
 
-AGCOM rileva che a dicembre 2025 Instagram ha raggiunto circa 33,6 milioni di utenti unici in Italia, in crescita del 3% su base annua; TikTok ha superato 24 milioni, in crescita del 5,5%. Il dato non descrive specificamente i genitori 0-12 mesi e non autorizza a stimare la dimensione del pubblico del progetto. Conferma però che entrambi i canali hanno scala nazionale, mentre i dati interni rendono Instagram il punto di partenza più solido.
+AGCOM rileva che a dicembre 2025 Instagram ha raggiunto circa 33,6 milioni di utenti unici in Italia, in crescita del 3% su base annua; TikTok ha superato 24 milioni, in crescita del 5,5%. Il dato non descrive specificamente i genitori interessati al sonno infantile e non autorizza a stimare la dimensione del pubblico del progetto. Conferma però che entrambi i canali hanno scala nazionale, mentre i dati interni rendono Instagram il punto di partenza più solido.
 
 **Implicazione:** mantenere Instagram come canale principale di fiducia e acquisizione. Adattare su TikTok i video che dimostrano interesse, ma non dividere il primo budget tra le due piattaforme.
 
@@ -195,7 +195,7 @@ Proposta coerente con l'offerta attuale:
 ```text
 Selene Campetta · infermiera
 Corsi per famiglie a Montesilvano
-Sonno 0–12 mesi online in Italia
+Consulenza del sonno online in Italia
 ↓ Scegli da dove partire
 ```
 
@@ -205,7 +205,7 @@ Il link porta al sito, non a una raccolta di collegamenti esterna, se la homepag
 
 1. **Inizia da qui.** Selene, ruolo professionale, sede, due percorsi principali e cosa può fare una persona appena arrivata.
 2. **Corsi pratici a Montesilvano.** Sicurezza, nascita e crescita, a chi servono, come vedere le date o lasciare il proprio interesse.
-3. **Consulenza sonno 0-12 mesi online.** Per chi è, cosa osserva, confini educativi e scelta dell'orario della call.
+3. **Consulenza del sonno online.** Per chi è, cosa osserva, confini educativi e scelta dell'orario della call.
 
 I tre post devono essere comprensibili senza avere visto altri contenuti e non devono presentare le prestazioni infermieristiche come terzo pilastro equivalente.
 
@@ -215,7 +215,7 @@ I tre post devono essere comprensibili senza avere visto altri contenuti e non d
 |---|---|---|
 | 10-16 agosto | **Inizia da qui** | Rendere il profilo una presentazione chiara dello studio e dei due percorsi principali |
 | 17-23 agosto | **Corsi pratici a Montesilvano** | Spiegare il primo percorso commerciale e l'accesso a date o ricontatto |
-| 24-30 agosto | **Consulenza sonno 0-12 mesi online** | Spiegare il secondo percorso prima del lancio |
+| 24-30 agosto | **Consulenza del sonno online** | Spiegare il secondo percorso prima del lancio |
 | 3 settembre | Controllo e fissaggio definitivo dei tre post | Rendere il profilo pronto per l'apertura del sito |
 
 Ciascun post destinato a essere fissato occupa il normale slot settimanale del carosello o della fotografia editoriale. Nelle tre settimane la cadenza resta di tre contenuti principali — due video più il post strategico — senza aggiungere un quarto contenuto. Il 3 settembre si controllano testi, link, date e coerenza con le destinazioni del sito prima del fissaggio definitivo.
@@ -227,7 +227,7 @@ Ordine iniziale:
 1. `Inizia qui`
 2. `Corsi`
 3. `Date`
-4. `Sonno 0–12`
+4. `Consulenza sonno`
 5. `Selene`
 6. `Studio`
 7. `FAQ`
@@ -239,7 +239,7 @@ Creare `Recensioni` solo quando esistono testimonianze autentiche, autorizzate e
 ### Pilastri
 
 1. **Corsi e gesti pratici.** Cosa si impara, come si prova, per chi è e prossima data.
-2. **Sonno 0-12 mesi.** Risvegli, sonnellini, addormentamento, ritmi, ambiente e sonno sicuro, una difficoltà osservabile per contenuto.
+2. **Consulenza del sonno.** Risvegli, sonnellini, addormentamento, ritmi, ambiente e sonno sicuro, una difficoltà osservabile per contenuto.
 3. **Metodo e autorevolezza.** Come Selene ascolta, mette ordine e sceglie passi graduali; ruolo infermieristico e confini clinici.
 4. **Attività reali dello studio.** Ambiente, preparazione, materiali, dietro le quinte e professionisti coinvolti senza costruire partnership inesistenti.
 5. **Orientamento al servizio.** Date, FAQ, cosa succede dopo l'invio, differenza tra moduli e canali.
@@ -293,7 +293,7 @@ La campagna esecutiva canonica resta in [`META_SONNO_CAMPAIGN.md`](META_SONNO_CA
 ### Configurazione approvata
 
 - canale: Meta/Instagram;
-- servizio: consulenza del sonno 0-12 mesi;
+- servizio: consulenza del sonno infantile;
 - geografia: nazionale, online;
 - durata del test: tre mesi;
 - budget massimo iniziale: 200 €;
@@ -420,7 +420,7 @@ Le versioni Instagram e TikTok condividono il girato, ma non la chiusura: Instag
 
 ### 24 agosto-6 settembre — prova generale
 
-- tra il 24 e il 30 agosto pubblicare **Consulenza sonno 0-12 mesi online** nel normale slot editoriale e mantenerlo come terzo post destinato al fissaggio;
+- tra il 24 e il 30 agosto pubblicare **Consulenza del sonno online** nel normale slot editoriale e mantenerlo come terzo post destinato al fissaggio;
 - aggiornare il profilo solo quando il sito di destinazione è pronto;
 - pubblicare contenuti di orientamento, corsi e metodo;
 - usare Stories per raccogliere domande reali;
@@ -535,7 +535,7 @@ Questa sezione è uno snapshot storico, non una conferma dello stato corrente de
 ### Strategia e offerta
 
 - [ ] La priorità dei corsi è visibile anche durante la campagna sonno.
-- [ ] La consulenza resta 0-12 mesi, online e nazionale.
+- [ ] La consulenza resta online, nazionale e senza limiti anagrafici nel modulo di richiesta.
 - [ ] Le prestazioni restano in un flusso secondario e separato.
 - [ ] Ogni contenuto ha pubblico, obiettivo e una CTA primaria.
 - [ ] Prezzi, date, durate e qualifiche provengono dalle fonti interne correnti.

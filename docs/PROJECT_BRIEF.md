@@ -44,12 +44,12 @@ La percezione da ottenere nei primi secondi è:
 
 > Qui c'è una professionista sanitaria che sa cosa fa, parla ai genitori in modo umano e può essere la scelta giusta per la mia famiglia.
 
-Il sito deve avvicinarsi al ruolo di guida per i genitori nei primi mesi, senza perdere la credibilità clinica dello studio infermieristico.
+Il sito deve avvicinarsi al ruolo di guida per i genitori, senza perdere la credibilità clinica dello studio infermieristico.
 
 ## Pilastri commerciali
 
 1. Corsi e laboratori in presenza: offerta già validata e priorità commerciale.
-2. Consulenza del sonno infantile 0-12 mesi: servizio da validare e lanciare a livello nazionale.
+2. Consulenza del sonno infantile: servizio da validare e lanciare a livello nazionale senza limitare le richieste in base all’età.
 3. Prestazioni infermieristiche: servizio stabile, separato e prenotabile, con priorità visiva secondaria.
 
 ## Offerta e dati operativi interni
@@ -89,7 +89,7 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 
 - Neomamme stanche e genitori preoccupati.
 - Coppie alla prima gravidanza e partner.
-- Genitori con bambini 0-12 mesi per la consulenza del sonno.
+- Genitori e tutori interessati alla consulenza del sonno infantile.
 - Famiglie con bambini per laboratori alimentari, svezzamento, gioco e sviluppo.
 
 ### Attivi e secondari
@@ -106,15 +106,15 @@ Quando un collaboratore partecipa a un corso, il margine viene ripartito secondo
 
 ## Test di campagna per la consulenza del sonno
 
-- Offerta promossa: consulenza del sonno infantile 0-12 mesi.
+- Offerta promossa: consulenza del sonno infantile.
 - Durata iniziale del test: tre mesi.
-- Pubblico di servizio: famiglie con bambini lungo l'intera fascia 0-12 mesi, coperta dalla formazione specifica di Selene. Le creatività possono partire da difficoltà o fasi più circoscritte, ma la campagna non deve restringere arbitrariamente l'idoneità generale.
+- Pubblico di servizio: famiglie interessate al sonno infantile. Le creatività possono partire da difficoltà o contesti più circoscritti, ma la campagna e il modulo non devono introdurre limiti anagrafici.
 - Credenziale pubblica: `Selene Campetta · infermiera e consulente del sonno infantile`. La qualifica è sostenuta da un certificato di consulente del sonno del 2026 e da una formazione sul sonno infantile di 127 ore. La landing non comunica la durata della formazione e tratta la SIDS soltanto nel contesto delle raccomandazioni sul sonno sicuro e della riduzione del rischio.
 - Geografia del servizio e del primo test: nazionale e online.
 - Percorso principale: annuncio o contenuto social → landing `/consulenze-online` → scelta diretta di uno slot → call gratuita → eventuale proposta della formula adatta → questionario privato sul sito.
 - WhatsApp: canale secondario per chi è ancora indeciso, non conversione principale quando il calendario è disponibile.
 - Obiettivo di apprendimento: produrre casi reali sufficienti a raccogliere, solo dopo l'erogazione e con consenso, almeno tre testimonianze pubblicabili al mese sulla consulenza del sonno.
-- Creatività iniziali: due video verticali sullo stesso pubblico 0-12 mesi, uno sui risvegli frequenti e uno sull'addormentamento con forte supporto; Meta distribuisce i primi 100 € fra le varianti.
+- Creatività iniziali: due video verticali sullo stesso pubblico, uno sui risvegli frequenti e uno sull'addormentamento con forte supporto; Meta distribuisce i primi 100 € fra le varianti.
 - Misure di percorso: costo per call prenotata, percentuale di presenze, costo per call svolta, conversione call svolta → cliente e costo effettivo per cliente. Obiettivo iniziale di conversione: 20%.
 - Capacità iniziale: 10 call gratuite, 2 consulenze mirate, 1 percorso e 2 corsi a settimana. Gli annunci vengono rallentati o fermati quando le call raggiungono 10 prenotazioni nella settimana; un percorso con affiancamento può superare il limite indicativo di un nuovo percorso settimanale se resta sostenibile la risposta WhatsApp.
 

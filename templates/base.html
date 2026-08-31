@@ -31,12 +31,15 @@
     {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno', 'da_dove_parto'] %}
     {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'offerta_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
     {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
+    {% set instant_content_endpoints = ['privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v=4.4">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=5.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.5">
+    {% if page_endpoint not in instant_content_endpoints %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/page-transitions.css') }}?v=1.8">
+    {% endif %}
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.6">
     {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'offerta_sonno', 'questionario_sonno'] %}
@@ -57,7 +60,9 @@
     {% if internal_page_mode %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/internal-pages.css') }}?v=1.5">
     {% endif %}
+    {% if page_endpoint not in instant_content_endpoints %}
     <script src="{{ url_for('static', filename='js/page-transitions.js') }}?v=1.11"></script>
+    {% endif %}
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -169,7 +174,7 @@
 
             <a href="/consulenze-online" class="site-nav__pillar site-nav__pillar--sleep{% if sleep_active %} is-current{% endif %}" data-nav-item{% if sleep_active %} data-nav-current aria-current="page"{% endif %} data-conversion="header_call_sonno">
                 <span>
-                    <small>Online · 0–12 mesi</small>
+                    <small>Online · In tutta Italia</small>
                     <strong>Consulenza sonno</strong>
                 </span>
             </a>
@@ -211,7 +216,7 @@
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
             </a>
             <a href="/consulenze-online" class="mobile-nav__pillar mobile-nav__pillar--sleep{% if sleep_active %} is-current{% endif %}" data-conversion="header_mobile_call_sonno">
-                <small>Online · 0–12 mesi</small>
+                <small>Online · In tutta Italia</small>
                 <strong>Consulenza sonno</strong>
                 <span>Leggere risvegli, sonnellini e addormentamento</span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
@@ -254,7 +259,7 @@
 
 <script src="{{ url_for('static', filename='js/menu-mobile.js') }}"></script>
 <script src="{{ url_for('static', filename='js/conversion-tracking.js') }}?v=1.1" defer></script>
-{% if internal_page_mode %}
+{% if internal_page_mode and (request.endpoint or '') not in ['privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno'] %}
 <script src="{{ url_for('static', filename='js/internal-page-motion.js') }}?v=1.1" defer></script>
 {% endif %}
 {% if page_endpoint == 'prestazioni' %}
@@ -278,7 +283,7 @@
         <div class="site-footer-grid">
             <div>
                 <strong>S.C. Studio Infermieristico</strong>
-                <p>Corsi, consulenza del sonno 0-12 mesi e prestazioni infermieristiche, con Selene.</p>
+                <p>Corsi, consulenza del sonno e prestazioni infermieristiche, con Selene.</p>
             </div>
             <div>
                 <strong>Studio</strong>

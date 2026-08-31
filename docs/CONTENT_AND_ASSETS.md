@@ -59,7 +59,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 
 - Sintesi identitaria: `Competenza sanitaria, parole semplici`.
 - Firma della hero: `Selene Campetta · infermiera e consulente del sonno infantile`; la sintesi identitaria va spezzata graficamente prima di `parole semplici`.
-- Promessa homepage approvata: `Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
+- Promessa homepage approvata: `Non servono risposte perfette. Serve capire cosa osservare e cosa fare.`
 - Titolo della scena corsi in homepage: `Sapere cosa fare nei momenti che contano.`
 - Titolo della scena sonno in homepage: `Leggiamo insieme risvegli, sonnellini e addormentamento.`
 - Titolo della scena metodo in homepage: `Dai dubbi a un passo che puoi usare nella vita reale.` La sequenza approvata è `Ascolto` → `Mettiamo ordine` → `Scegliamo il passo` → `Strumenti che restano`.
@@ -118,7 +118,7 @@ La pagina `Chi sono` termina con corsi e consulenza del sonno come scelte princi
 
 ## Microtesti dell'header
 
-- I due accessi principali sono `In studio · Corsi` e `Online · 0–12 mesi · Consulenza sonno`.
+- I due accessi principali sono `In studio · Corsi` e `Online · In tutta Italia · Consulenza sonno`.
 - Il quiz `Da dove parto?` usa l’etichetta `Quiz` su desktop e `Quiz di orientamento` nel menu mobile, con la spiegazione `Tre domande per trovare il percorso più adatto.`.
 - Il pannello corsi introduce l'offerta con `Imparare insieme, provare davvero.` e rimanda alla panoramica con `Scopri tutti i corsi`.
 - Il menu mobile si apre con `Da dove vuoi partire?` e `Scegli il percorso più vicino a ciò che serve oggi.`.
@@ -139,7 +139,7 @@ La pagina `Chi sono` termina con corsi e consulenza del sonno come scelte princi
 
 Il primo test pubblicitario dura tre mesi e deve usare la nuova identità senza introdurre un sottobrand.
 
-- Offerta: consulenza del sonno 0-12 mesi, con `Capire prima di cambiare.` come sintesi possibile e `Scegli l’orario della call` come CTA.
+- Offerta: consulenza del sonno infantile senza limiti anagrafici nel modulo di richiesta, con `Capire prima di cambiare.` come sintesi possibile e `Scegli l’orario della call` come CTA.
 - Angoli creativi del primo test: `risvegli frequenti` e `addormentamento con forte supporto`, una difficoltà per contenuto.
 - Percorso: ogni contenuto rimanda alla landing nazionale e al calendario della call; WhatsApp resta un'alternativa discreta per chi è indeciso.
 - Prova: usare competenze, metodo e presenza reale di Selene. Non simulare testimonianze, risultati o casi clinici.

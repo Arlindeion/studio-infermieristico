@@ -372,7 +372,7 @@
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="attivita" id="admin-attivita">
     <div class="admin-section-heading"><div><p class="admin-eyebrow">Prossime azioni</p><h2>Attività</h2></div><span class="admin-total">{{ attivita_admin|length }} aperte</span></div>
     <form class="admin-surface admin-form-grid" method="post" action="{{ url_for('aggiungi_attivita_admin') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label>Titolo<input name="titolo" required></label><label>Scadenza<input type="datetime-local" name="scadenza" required></label><label class="admin-form-wide">Note<textarea name="note" rows="2"></textarea></label><button class="btn" type="submit">Aggiungi attività</button></form>
-    <div class="admin-task-list">{% for item in attivita_admin %}<article class="admin-task-row"><div><strong>{{ item.titolo }}</strong><p>{{ item.note or 'Nessuna nota' }}</p><time>{{ item.scadenza.strftime('%d/%m/%Y %H:%M') }}</time></div><form method="post" action="{{ url_for('chiudi_attivita_admin', id=item.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Chiudi</button></form></article>{% else %}<p class="nota nota-lg">Nessuna attività aperta.</p>{% endfor %}</div>
+    <div class="admin-task-list">{% for item in attivita_admin %}<article class="admin-task-row"><div><strong>{{ item.titolo }}</strong><p>{{ item.note or 'Nessuna nota' }}</p><time>{{ item.scadenza.strftime('%d/%m/%Y %H:%M') }}</time>{% if item.entita_tipo and item.entita_id %}<p><a class="btn-azione blu" href="{{ url_for('dettaglio_admin', tipo=item.entita_tipo, entita_id=item.entita_id) }}">Apri pratica</a></p>{% endif %}</div><form method="post" action="{{ url_for('chiudi_attivita_admin', id=item.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn-azione verde" type="submit">Chiudi</button></form></article>{% else %}<p class="nota nota-lg">Nessuna attività aperta.</p>{% endfor %}</div>
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="errori" id="admin-errori">
@@ -530,7 +530,7 @@
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="call-sonno" id="admin-call-sonno">
     <div class="admin-section-heading">
         <div>
-            <p class="admin-eyebrow">Consulenza 0-12 mesi</p>
+            <p class="admin-eyebrow">Consulenza del sonno</p>
             <h2>Call sul sonno</h2>
         </div>
         <span class="admin-total">{{ call_sonno|length }} richieste</span>
@@ -545,7 +545,7 @@
             {% for call in call_sonno %}
             <tr class="stato-{{ call.stato|lower|replace(' ', '-') }}">
                 <td><a class="admin-primary" href="{{ url_for('dettaglio_admin', tipo='CallSonno', entita_id=call.id) }}"><strong>{{ call.nome }}</strong></a><span class="admin-secondary">{{ call.telefono }}</span><span class="admin-secondary">{{ call.email }}</span></td>
-                <td><strong class="admin-primary">{{ call.eta_bambino_mesi }} mesi</strong><span class="admin-secondary">{{ call.difficolta_altro or call.difficolta_principale }}</span></td>
+                <td><strong class="admin-primary">{{ call.difficolta_altro or call.difficolta_principale }}</strong>{% if call.obiettivo_call %}<span class="admin-secondary">{{ call.obiettivo_call }}</span>{% endif %}</td>
                 <td><strong class="admin-primary">{{ call.data }}</strong><span class="admin-secondary">ore {{ call.ora }} · call 20 min · blocco 30 min</span></td>
                 <td><span class="badge">{{ call.stato }}</span>{% if call.stato_pagamento != 'Non avviato' %}<span class="admin-secondary">Pagamento: {{ call.stato_pagamento|lower }}</span>{% endif %}{% if call.questionario %}<span class="admin-secondary">Questionario compilato</span>{% elif call.questionario_inviato_il %}<span class="admin-secondary">Questionario inviato</span>{% endif %}</td>
                 <td class="azioni admin-call-actions">

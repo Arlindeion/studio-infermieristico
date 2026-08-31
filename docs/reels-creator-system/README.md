@@ -27,7 +27,7 @@ Stato verificato il 4 agosto: il Reel Instagram sui risvegli del 3 agosto è `Pu
 I contenuti rispettano questo ordine:
 
 1. corsi in presenza, già validati;
-2. consulenza del sonno 0-12 mesi, online e disponibile in tutta Italia;
+2. consulenza del sonno infantile, online e disponibile in tutta Italia senza fasce anagrafiche;
 3. prestazioni infermieristiche, sempre accessibili ma secondarie nella comunicazione promozionale.
 
 Su dieci contenuti principali, il punto di partenza è:

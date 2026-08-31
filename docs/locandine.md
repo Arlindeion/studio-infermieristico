@@ -244,7 +244,7 @@ Nei PDF rendere link, indirizzo email e numero di telefono cliccabili quando tec
 
 ### Campagna iniziale sulla consulenza del sonno
 
-Il test dura tre mesi e promuove la consulenza del sonno 0-12 mesi. Per ogni annuncio, video o contenuto sponsorizzato:
+Il test dura tre mesi e promuove la consulenza del sonno infantile senza limiti anagrafici. Per ogni annuncio, video o contenuto sponsorizzato:
 
 - partire da una sola difficoltà osservabile, non dal tema generico del sonno;
 - mantenere `Scegli l’orario della call` come CTA primaria verso la landing e il calendario;
@@ -270,7 +270,7 @@ Il prezzo non è la leva principale della comunicazione pubblica.
 Naming:
 
 - `Consulenza del sonno` o `Consulenza sonno`;
-- fascia attuale: 0-12 mesi;
+- nessuna fascia anagrafica da riportare;
 - ruolo pubblico pertinente: `infermiera e consulente del sonno infantile`;
 - non mescolare ciuccio, spannolinamento e consulenze generiche nella stessa offerta.
 

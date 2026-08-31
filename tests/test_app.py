@@ -527,7 +527,7 @@ def _dati_call_sonno(client, data=None, ora='09:00'):
         'nome': 'Anna Verdi',
         'telefono': '333 1234567',
         'email': 'anna@example.com',
-        'eta_bambino_mesi': '7',
+        'eta_bambino_mesi': '18',
         'ruolo_richiedente': 'Genitore con responsabilità genitoriale',
         'difficolta_principale': 'Risvegli notturni frequenti',
         'durata_difficolta': 'Da 1 a 3 mesi',
@@ -556,6 +556,7 @@ def test_prenotazione_call_sonno_blocca_subito_lo_slot(client):
         assert call.presa_visione_offerta is True
         assert call.conferma_ambito is True
         assert call.ruolo_richiedente == 'Genitore con responsabilità genitoriale'
+        assert call.eta_bambino_mesi == 18
 
     availability = client.get(f'/api/orari-call-sonno/{dati["data"]}').get_json()
     assert '09:00' in availability['occupati']
@@ -638,6 +639,22 @@ def test_pagina_sonno_mostra_formule_e_prezzi_prima_della_prenotazione(client):
     assert '320 €' in landing.text
     assert 'partono da <strong>75 €</strong>' in booking.text
     assert 'percorso personalizzato 200 €' in booking.text
+    assert 'name="eta_bambino_mesi"' in booking.text
+    assert 'max="12"' not in booking.text
+    assert '0-12' not in landing.text
+    assert '0–12' not in landing.text
+
+
+def test_obiettivo_call_sonno_e_facoltativo(client):
+    dati = _dati_call_sonno(client)
+    dati.pop('obiettivo_call')
+
+    with patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post('/prenota-call-sonno', data=dati)
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        assert CallSonno.query.one().obiettivo_call is None
 
 
 def test_condizioni_sonno_pubblicano_versione_prezzi_e_rimborsi(client):
@@ -737,6 +754,8 @@ def test_questionario_sonno_disponibile_solo_dopo_invito(client):
     response = client.get(f'/questionario-sonno/{token}')
     assert response.status_code == 200
     assert 'noindex,nofollow,noarchive' in response.text
+    assert 'name="data_nascita"' in response.text
+    assert 'name="eta_corretta"' in response.text
     csrf = re.search(r'name="_csrf_token" value="([^"]+)"', response.text).group(1)
     payload = {
         '_csrf_token': csrf,
@@ -748,11 +767,22 @@ def test_questionario_sonno_disponibile_solo_dopo_invito(client):
         'cambiamento_desiderato': 'Ridurre i risvegli più lunghi',
         'consenso_dati_sanitari': 'on',
     }
-    completed = client.post(f'/questionario-sonno/{token}', data=payload, follow_redirects=True)
+    with patch.object(app_module.mail, 'send', side_effect=RuntimeError('SMTP non disponibile')):
+        completed = client.post(f'/questionario-sonno/{token}', data=payload, follow_redirects=True)
     assert 'Questionario ricevuto' in completed.text
     with flask_app.app_context():
         assert QuestionarioSonno.query.count() == 1
         call_id = CallSonno.query.one().id
+        attivita = app_module.AttivitaAdmin.query.filter_by(
+            entita_tipo='CallSonno', entita_id=call_id, stato='Aperta',
+        ).one()
+        assert attivita.titolo == 'Leggere il questionario di Anna Verdi'
+        email = EmailOperativa.query.filter_by(entita_tipo='CallSonno', entita_id=call_id).one()
+        assert email.oggetto == 'Questionario sonno compilato - Anna Verdi'
+        assert email.stato == 'fallita'
+        assert RegistroEvento.query.filter_by(
+            categoria='email', entita_tipo='CallSonno', entita_id=call_id,
+        ).one().esito == 'errore'
 
     protected = client.get(f'/admin/call-sonno/{call_id}/questionario')
     assert protected.status_code == 302
@@ -761,6 +791,8 @@ def test_questionario_sonno_disponibile_solo_dopo_invito(client):
     assert admin_view.status_code == 200
     assert 'Questionario sonno di Anna Verdi' in admin_view.text
     assert 'Ridurre i risvegli più lunghi' in admin_view.text
+    detail = client.get(f'/admin/pratica/CallSonno/{call_id}')
+    assert 'Leggi questionario' in detail.text
 
 def test_create_admin(app):
     """Testare che un amministratore possa essere creato."""
@@ -1275,6 +1307,21 @@ def test_regia_pagine_interne_non_entra_in_homepage_o_admin(client):
         assert 'data-internal-page=' not in resp.text
 
 
+@pytest.mark.parametrize('route', [
+    '/privacy',
+    '/condizioni-iscrizione-corsi',
+    '/condizioni-consulenza-sonno',
+])
+def test_pagine_legali_caricano_subito_senza_dissolvenza_progressiva(client, route):
+    response = client.get(route)
+
+    assert response.status_code == 200
+    assert 'css/internal-pages.css' in response.text
+    assert 'js/internal-page-motion.js' not in response.text
+    assert 'css/page-transitions.css' not in response.text
+    assert 'js/page-transitions.js' not in response.text
+
+
 def test_transizione_controllata_collega_le_pagine_ed_e_reversibile(client):
     homepage = client.get('/')
     root = Path(app_module.__file__).resolve().parent
@@ -1617,6 +1664,8 @@ def test_faq_include_flussi_aggiornati(client):
     assert 'BLSD' in resp.text
     assert 'link privato' in resp.text
     assert 'open day gratuito' in resp.text
+    assert '0 a 12 mesi' not in resp.text
+    assert '0-12' not in resp.text
 
 
 def _prossimo_giorno_con_weekday(weekday):
@@ -2378,6 +2427,36 @@ def test_iscrizione_senza_date_salva_richiesta_ricontatto(client):
         assert iscrizione.tipo_richiesta == 'ricontatto'
         assert iscrizione.posti == 0
         assert iscrizione.extra_dict()['richiesta_prossime_date'] is True
+
+
+def test_ricontatto_blsd_non_richiede_checkbox_ridondanti(client):
+    page = client.get('/iscrizione-corsi/blsd')
+    token = re.search(r'name="_csrf_token" value="([^"]+)"', page.text).group(1)
+
+    assert 'id="richiesta-ricontatto"' in page.text
+    assert 'name="prove_pratiche"' not in page.text
+    assert 'name="conferma_finale"' not in page.text
+    assert page.text.count('name="buono_stato_salute"') == 1
+
+    response = client.post('/iscrizione-corsi/blsd', data={
+        'nome': 'Giulia Bianchi',
+        'codice_fiscale': 'BNCGLI85A41G482Z',
+        'telefono': '3331234567',
+        'email': 'giulia@example.com',
+        'partecipazione': 'Iscrizione individuale',
+        'buono_stato_salute': 'on',
+        'richiesta_non_conferma': 'on',
+        'consenso_privacy': 'on',
+        'condizioni_corso': 'on',
+        '_csrf_token': token,
+    })
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        iscrizione = IscrizioneCorso.query.one()
+        assert iscrizione.tipo_richiesta == 'ricontatto'
+        assert iscrizione.extra_dict()['buono_stato_salute'] is True
+        assert 'prove_pratiche' not in iscrizione.extra_dict()
 
 
 def test_modulo_interesse_corsi_raccoglie_temi_senza_dati_da_iscrizione(client):
@@ -4276,6 +4355,9 @@ def test_admin_offerta_pagamento_e_questionario_sonno(client, app, monkeypatch):
     assert 'Percorso sonno personalizzato' in offer.text
     assert 'Percorso sonno con affiancamento' in offer.text
     assert 'Se non selezioni la seconda casella' in offer.text
+    assert 'Conferma la scelta della modalità di pagamento' in offer.text
+    assert 'Conferma l’acquisto con obbligo di pagamento' not in offer.text
+    assert 'Formula, prezzo e dichiarazioni vengono registrati' not in offer.text
     offer_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', offer.text).group(1)
 
     missing_terms = client.post(
@@ -4312,7 +4394,19 @@ def test_admin_offerta_pagamento_e_questionario_sonno(client, app, monkeypatch):
         assert call.avvio_anticipato_accettato_il is not None
         assert call.pagamento_confermato_il is None
 
+    bank_summary = client.get(f'/offerta-sonno/{proposal_token}')
+    assert 'IT00X0000000000000000000000' in bank_summary.text
+    assert 'Percorso sonno con affiancamento - Verdi' in bank_summary.text
+    assert 'Cambia la modalità di pagamento' in bank_summary.text
+    assert 'name="metodo_pagamento"' not in bank_summary.text
+
+    edit_payment = client.get(f'/offerta-sonno/{proposal_token}?modifica=1')
+    assert 'name="metodo_pagamento"' in edit_payment.text
+    assert 'Conferma la scelta della modalità di pagamento' in edit_payment.text
+
     detail = client.get(f'/admin/pratica/CallSonno/{call_id}')
+    assert 'Rimborso teorico oggi' not in detail.text
+    assert 'rimborso base' not in detail.text
     admin_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', detail.text).group(1)
     with patch.object(
         app_module,
@@ -6514,7 +6608,7 @@ def test_homepage_ha_gerarchia_commerciale_e_seo(client):
 
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
-    assert 'Nei primi mesi non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
+    assert 'Non servono risposte perfette. Serve capire cosa osservare e cosa fare.' in resp.text
     assert 'Sapere cosa fare nei momenti che contano.' in resp.text
     assert 'In studio a Montesilvano oppure online.' in resp.text
     assert 'In studio oppure online, in tutta Italia.' not in resp.text
@@ -6933,7 +7027,9 @@ def test_consulenza_online_e_verticale_sul_sonno(client):
 
     assert resp.status_code == 200
     assert resp.text.count('<h1') == 1
-    assert 'Consulenza del sonno infantile · 0-12 mesi' in resp.text
+    assert 'Consulenza del sonno infantile · online in tutta Italia' in resp.text
+    assert '0-12' not in resp.text
+    assert '0–12' not in resp.text
     assert 'Infermiera e consulente del sonno infantile' in resp.text
     assert 'La consulenza affronta anche il sonno sicuro e la SIDS?' in resp.text
     assert 'riduzione del rischio di SIDS' in resp.text

@@ -89,8 +89,8 @@
             <div><dt>Condizioni</dt><dd>{% if entita.condizioni_accettate_il %}Versione {{ entita.condizioni_versione }} · {{ entita.condizioni_accettate_il|local_timestamp }}{% else %}Non ancora accettate{% endif %}</dd></div>
             <div><dt>Avvio anticipato</dt><dd>{{ 'Richiesto espressamente' if entita.avvio_anticipato else 'Non richiesto' }}{% if avvio_lavoro_sonno %}<br><small>Avvio consentito: {{ avvio_lavoro_sonno|local_timestamp }}</small>{% endif %}</dd></div>
             <div><dt>Questionario</dt><dd>{% if entita.questionario %}Compilato il {{ entita.questionario.compilato_il|local_timestamp }}{% elif entita.questionario_inviato_il %}Inviato il {{ entita.questionario_inviato_il|local_timestamp }}{% else %}Non inviato{% endif %}</dd></div>
-            {% if rimborso_sonno_centesimi is not none %}<div><dt>Rimborso teorico oggi</dt><dd><strong>{{ format_euro(rimborso_sonno_centesimi) }}</strong><br><small>Da verificare rispetto alla richiesta e al lavoro effettivamente registrato.</small></dd></div>{% endif %}
         </dl>
+        {% if entita.questionario %}<p><a class="btn-azione blu" href="{{ url_for('visualizza_questionario_sonno_admin', id=entita.id) }}">Leggi questionario</a></p>{% endif %}
 
         {% if not entita.pagamento_confermato_il %}
         <div class="admin-detail-grid admin-sleep-workflow__forms">
@@ -127,7 +127,7 @@
         {% if entita.formula_scelta in ['percorso', 'affiancamento'] %}
         <form class="admin-form-grid admin-sleep-progress" method="post" action="{{ url_for('aggiorna_percorso_sonno_admin', id=entita.id) }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <label>Fase del percorso<select name="fase_percorso" required>{% for valore, dati in fasi_percorso_sonno.items() %}<option value="{{ valore }}" {% if entita.fase_percorso == valore %}selected{% endif %}>{{ dati[0] }} · rimborso base {{ format_euro(dati[1]) }}</option>{% endfor %}</select></label>
+            <label>Fase del percorso<select name="fase_percorso" required>{% for valore, dati in fasi_percorso_sonno.items() %}<option value="{{ valore }}" {% if entita.fase_percorso == valore %}selected{% endif %}>{{ dati[0] }}</option>{% endfor %}</select></label>
             {% if entita.formula_scelta == 'affiancamento' %}<label>Attivazione WhatsApp<input type="date" name="supporto_whatsapp_attivato_il" value="{{ entita.supporto_whatsapp_attivato_il.strftime('%Y-%m-%d') if entita.supporto_whatsapp_attivato_il else '' }}"></label>{% endif %}
             <label>Stato pagamento<select name="stato_pagamento" required>{% for stato in ['Confermato', 'Rimborsato parziale', 'Rimborsato'] %}<option {% if entita.stato_pagamento == stato %}selected{% endif %}>{{ stato }}</option>{% endfor %}</select></label>
             <button class="btn" type="submit">Aggiorna percorso</button>

@@ -7,7 +7,7 @@
     <h1>Questionario sonno di {{ call.nome }}</h1>
     <div class="admin-questionnaire-summary">
         <p><strong>Contatti</strong><br>{{ call.email }} · {{ call.telefono }}</p>
-        <p><strong>Richiesta iniziale</strong><br>{{ call.eta_bambino_mesi }} mesi · {{ call.difficolta_altro or call.difficolta_principale }}</p>
+        <p><strong>Richiesta iniziale</strong><br>{{ call.difficolta_altro or call.difficolta_principale }}</p>
     </div>
     <dl class="admin-questionnaire-answers">
         {% for etichetta, risposta in risposte %}

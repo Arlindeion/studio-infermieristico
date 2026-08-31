@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block titolo %}Prenota la call gratuita sul sonno | Selene Campetta{% endblock %}
-{% block meta_description %}Scegli un orario per una call gratuita di circa 20 minuti con Selene e racconta la difficoltà principale sul sonno del tuo bambino 0-12 mesi.{% endblock %}
+{% block meta_description %}Scegli un orario per una call gratuita di circa 20 minuti con Selene e racconta la difficoltà principale sul sonno del tuo bambino.{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex,follow">{% endblock %}
 
 {% block contenuto %}
@@ -45,7 +45,7 @@
             </div>
             <div class="form-gruppo">
                 <label for="eta_bambino_mesi">Età del bambino in mesi *</label>
-                <input id="eta_bambino_mesi" name="eta_bambino_mesi" type="number" min="0" max="12" inputmode="numeric" value="{{ form_data.get('eta_bambino_mesi', '') }}" required>
+                <input id="eta_bambino_mesi" name="eta_bambino_mesi" type="number" min="0" inputmode="numeric" value="{{ form_data.get('eta_bambino_mesi', '') }}" required>
             </div>
             <div class="form-gruppo">
                 <label for="ruolo_richiedente">Il tuo ruolo *</label>
@@ -84,8 +84,8 @@
         </fieldset>
 
         <div class="form-gruppo">
-            <label for="obiettivo_call">Che cosa vorresti capire durante questi 20 minuti? *</label>
-            <textarea id="obiettivo_call" name="obiettivo_call" maxlength="300" rows="3" required>{{ form_data.get('obiettivo_call', '') }}</textarea>
+            <label for="obiettivo_call">Che cosa vorresti capire durante questi 20 minuti?</label>
+            <textarea id="obiettivo_call" name="obiettivo_call" maxlength="300" rows="3">{{ form_data.get('obiettivo_call', '') }}</textarea>
             <small>La call serve a capire se il servizio è appropriato e quale formula valutare. Non sostituisce la consulenza.</small>
         </div>
 

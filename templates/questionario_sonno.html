@@ -23,7 +23,7 @@
         <p class="eyebrow">Area riservata · {{ formule_sonno.get(call.formula_scelta, call.formula_scelta) if formule_sonno is defined else call.formula_scelta }}</p>
         <h1>Raccontami come dorme il bambino nella vita di ogni giorno.</h1>
         <p>Le risposte mi servono per preparare la consulenza che abbiamo concordato. Non sostituiscono una valutazione pediatrica e il modulo non va usato per urgenze.</p>
-        <div class="sleep-known-data"><strong>{{ call.nome }}</strong><span>{{ call.email }} · {{ call.telefono }} · bambino di {{ call.eta_bambino_mesi }} mesi</span></div>
+        <div class="sleep-known-data"><strong>{{ call.nome }}</strong><span>{{ call.email }} · {{ call.telefono }}</span></div>
     </header>
     {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-message" role="alert">{{ messages[0] }}</div>{% endif %}{% endwith %}
 

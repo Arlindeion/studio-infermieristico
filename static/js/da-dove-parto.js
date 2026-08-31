@@ -7,7 +7,7 @@
         prestazioni: {title: 'Prestazioni infermieristiche', copy: 'Consulta le prestazioni disponibili in studio e scegli poi servizio, giorno e orario.', href: '/prestazioni-infermieristiche', label: 'Consulta le prestazioni'},
         azienda: {title: 'Formazione per aziende e gruppi', copy: 'Usa il modulo organizzativo: raccoglie contesto, partecipanti, sede e periodo prima della proposta.', href: '/aziende-e-gruppi', label: 'Avvia una richiesta organizzativa'},
         sicurezza: {title: 'Corsi di sicurezza e primo intervento', copy: 'Confronta disostruzione pediatrica, tagli sicuri e BLSD, poi verifica le prossime edizioni.', href: '/iscrizione-corsi', label: 'Confronta i corsi'},
-        sonno: {title: 'Consulenza del sonno 0–12 mesi', copy: 'Leggi come funziona il primo confronto online prima di scegliere un orario disponibile.', href: '/consulenze-online', label: 'Scopri la consulenza'},
+        sonno: {title: 'Consulenza del sonno', copy: 'Leggi come funziona il primo confronto online prima di scegliere un orario disponibile.', href: '/consulenze-online', label: 'Scopri la consulenza'},
         laboratori: {title: 'Laboratori per l’infanzia', copy: 'Esplora le attività dedicate ad alimentazione, gioco e sviluppo e controlla le prossime date.', href: '/iscrizione-corsi/laboratorio-infanzia', label: 'Scopri i laboratori'},
         dubbi: {title: 'Confronta prima di scegliere', copy: 'Le domande frequenti chiariscono differenze, prenotazioni e contatti senza obbligarti a inviare una richiesta.', href: '/faq', label: 'Apri le domande frequenti'}
     };

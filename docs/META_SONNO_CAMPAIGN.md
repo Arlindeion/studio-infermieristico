@@ -5,7 +5,7 @@ Ultimo aggiornamento: 29 luglio 2026.
 ## Obiettivo e vincoli
 
 - Canale: Meta/Instagram.
-- Pubblico: nazionale, genitori e tutori di bambini 0-12 mesi.
+- Pubblico: nazionale, genitori e tutori interessati al sonno infantile, senza limiti anagrafici nel modulo di richiesta.
 - CTA unica: `Scegli l’orario della call`.
 - Destinazione: `/consulenze-online`, poi `/prenota-call-sonno`.
 - Budget massimo iniziale: 200 €.
@@ -42,7 +42,7 @@ principale è la conversione `call svolta → cliente`, con obiettivo iniziale d
 
 ### Script parlato
 
-> Un risveglio non racconta da solo che cosa sta succedendo. Età, ritmi,
+> Un risveglio non racconta da solo che cosa sta succedendo. Ritmi,
 > sonnellini, ambiente e modo di addormentarsi possono influenzarsi a vicenda.
 > Sono Selene, infermiera e consulente del sonno infantile. Nella call gratuita
 > di 20 minuti ascoltiamo la difficoltà principale e capiamo se una consulenza
@@ -53,7 +53,7 @@ principale è la conversione `call svolta → cliente`, con obiettivo iniziale d
 1. Primo piano di Selene, apertura senza musica invasiva.
 2. Dettaglio breve di diario o agenda priva di dati reali.
 3. Ritorno sul volto per spiegare il metodo.
-4. Chiusura salvia con CTA e indicazione `Online in tutta Italia · 0-12 mesi`.
+4. Chiusura salvia con CTA e indicazione `Online in tutta Italia`.
 
 ### Copy annuncio
 
@@ -73,7 +73,7 @@ servizio è appropriato e quale formula può essere utile. Online in tutta Itali
 
 ### Script parlato
 
-> Braccio, seno e presenza possono avere significati diversi secondo l'età e
+> Braccio, seno e presenza possono avere significati diversi secondo il contesto e
 > la quotidianità della famiglia. Prima di cambiare qualcosa, serve capire che
 > cosa è sostenibile e che cosa stai osservando. Sono Selene, infermiera e
 > consulente del sonno infantile. Prenota una call gratuita di 20 minuti per
@@ -88,7 +88,7 @@ servizio è appropriato e quale formula può essere utile. Online in tutta Itali
 
 ### Copy annuncio
 
-Non esiste una formula uguale per tutte le famiglie. Il percorso parte da età,
+Non esiste una formula uguale per tutte le famiglie. Il percorso parte da
 fisiologia, sicurezza, ritmi e bisogni reali, senza diagnosi né risultati
 garantiti. Il primo passo è una call gratuita di circa 20 minuti.
 
@@ -133,6 +133,6 @@ Registrare per ciascuna creatività:
 
 Con soli 100 € non dichiarare automaticamente un vincitore sulla base di pochi
 click. Intervenire subito se un annuncio genera zero prenotazioni dopo una spesa
-molto superiore al costo obiettivo, se attira richieste fuori fascia o se la
+molto superiore al costo obiettivo, se attira richieste non pertinenti o se la
 percentuale di presenza scende sotto il 70%. Negli altri casi completare il
 checkpoint e modificare una sola variabile per volta.

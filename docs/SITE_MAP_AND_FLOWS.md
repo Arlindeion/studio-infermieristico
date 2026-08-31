@@ -23,7 +23,7 @@ Le priorità commerciali sono:
 | `/iscrizione-corsi/interesse` | Raccogliere l'interesse quando non ci sono date future | Scegliere una tematica e chiedere di essere ricontattati |
 | `/corso-accompagnamento-nascita` | Presentare il percorso con cinque professionisti | Iscriversi all'open day disponibile |
 | `/iscrizione-accompagnamento/<slug>` | Modulo privato del percorso completo | Confermare l'iscrizione al percorso |
-| `/consulenze-online` | Landing nazionale sul sonno infantile 0-12 mesi | Scegliere l'orario della call gratuita |
+| `/consulenze-online` | Landing nazionale sul sonno infantile | Scegliere l'orario della call gratuita |
 | `/prenota-call-sonno` | Prenotazione breve della call gratuita | Riservare provvisoriamente uno slot |
 | `/condizioni-consulenza-sonno` | Condizioni pubbliche e versionate del servizio | Tornare alla proposta privata aperta in un’altra scheda |
 | `/offerta-sonno/<token>` | Proposta privata valida sette giorni | Scegliere formula, accettare le condizioni e indicare il pagamento |
@@ -134,7 +134,7 @@ Homepage, CTA `Scopri la consulenza`
   → scelta dell'orario della call gratuita
 
 Campagna/condivisione
-  → landing sonno 0-12 mesi
+  → landing sul sonno infantile
   → prenotazione breve della call gratuita
   → slot riservato subito come In attesa su database e Calendar
   → conferma oppure accordo telefonico e modifica entro il giorno lavorativo successivo
@@ -148,7 +148,7 @@ Campagna/condivisione
 
 - La landing deve essere verticale sul sonno e pronta per traffico freddo nazionale.
 - La CTA `Scopri la consulenza` dello snap sonno ha funzione informativa e apre `#formule`; `Prima parliamone` e le CTA `Scegli l’orario della call` portano invece alla prenotazione.
-- Deve chiarire problemi osservabili, differenze indicative tra 0-4 e 5-12 mesi, metodo, formule, confini clinici, FAQ e passo successivo.
+- Deve chiarire problemi osservabili, metodo, formule, confini clinici, FAQ e passo successivo senza introdurre fasce anagrafiche.
 - `Consulenza mirata`: una difficoltà circoscritta.
 - `Percorso sonno personalizzato`: tre call da 60-75 minuti e diario quando più aspetti si influenzano; durata prevista 60 giorni e chiusura entro 75.
 - `Percorso sonno con affiancamento`: stesso percorso con WhatsApp per 60 giorni, massimo tre confronti raggruppati a settimana dal lunedì al venerdì e risposta entro il giorno lavorativo successivo.
@@ -161,7 +161,7 @@ Campagna/condivisione
 - Ogni conflitto con prestazioni, corsi, call, eventi manuali o Arzamed/Google Calendar rende lo slot non prenotabile.
 - Lo stato `In attesa` blocca immediatamente lo slot ma non equivale a conferma. La pagina e l'email devono dirlo senza ambiguità.
 - Se l'orario cambia, Selene può concordarlo direttamente oppure inviare dall’admin una proposta modificabile via email. Il link dura 48 ore, ricontrolla lo slot al momento dell’accettazione e conferma solo se resta libero.
-- Prima della call vengono richiesti contatti, età 0-12 mesi, ruolo di genitore/tutore, difficoltà e durata, obiettivo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesto il diario.
+- Prima della call vengono richiesti contatti, ruolo di genitore/tutore, difficoltà e durata, obiettivo facoltativo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesta l’età e non viene richiesto il diario.
 - Il questionario completo viene inviato immediatamente dopo la conferma del pagamento. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile. Se non è stato richiesto l’avvio anticipato, la compilazione non autorizza analisi o lavoro professionale prima del quattordicesimo giorno dalla conferma del pagamento.
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
 - Conferme e promemoria automatici vengono inviati esclusivamente via email; WhatsApp resta un contatto umano contestuale e non fa parte dell'automazione della prenotazione.
@@ -191,7 +191,7 @@ Annuncio o contenuto social
   → slot provvisorio e successiva conferma
 ```
 
-- La campagna iniziale dura tre mesi e promuove il servizio 0-12 mesi senza creare una diversa offerta per ogni creatività.
+- La campagna iniziale dura tre mesi e promuove il servizio senza fasce anagrafiche e senza creare una diversa offerta per ogni creatività.
 - Ogni annuncio può partire da una difficoltà osservabile, come addormentamento, risvegli o pisolini, ma deve rimandare alla stessa landing e allo stesso flusso.
 - Un eventuale targeting limitato ad Abruzzo e regioni confinanti serve solo a controllare la spesa: la pagina, l'idoneità e l'erogazione online restano nazionali.
 - WhatsApp può aiutare chi non è pronto a prenotare, ma non compete visivamente con la CTA principale.
@@ -293,5 +293,5 @@ coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto
 ## Evoluzioni previste
 
 - Prenotazione e pagamento dedicati alle consulenze.
-- Landing verticali per campagne specifiche: sonno/primi mesi, disostruzione, open day nascita.
+- Landing verticali per campagne specifiche: sonno infantile, disostruzione, open day nascita.
 - Pagamento online soltanto quando policy, stati, email, capienza e calendario sono stabili.

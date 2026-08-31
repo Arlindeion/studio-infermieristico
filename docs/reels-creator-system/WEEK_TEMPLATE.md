@@ -14,7 +14,7 @@ Risultato osservabile atteso: [indicare quale comportamento sarà misurato].
 
 ## Pubblico e priorità
 
-- Pubblico: [famiglie locali, genitori di bambini 0-12 mesi in Italia, aziende, altro pubblico approvato].
+- Pubblico: [famiglie locali, genitori e tutori interessati al sonno infantile in Italia, aziende, altro pubblico approvato].
 - Offerta collegata: [corso, consulenza sonno, orientamento, prestazione].
 - Difficoltà o domanda: [una sola formulazione concreta].
 - CTA primaria: [azione esatta].

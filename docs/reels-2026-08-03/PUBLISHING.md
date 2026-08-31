@@ -71,7 +71,7 @@ Dove posso aiutarti e quando serve un altro professionista
 Slide 2:
 
 ```text
-Posso aiutarti quando vuoi comprendere meglio il sonno del tuo bambino da 0 a 12 mesi.
+Posso aiutarti quando vuoi comprendere meglio il sonno del tuo bambino.
 
 Ricostruiamo ciò che accade nelle sue giornate e osserviamo insieme sonno, risvegli e addormentamento.
 ```
@@ -81,7 +81,7 @@ Slide 3:
 ```text
 Un caso concreto
 
-Il tuo bambino di sette mesi si sveglia spesso e non riesci a capire che cosa stia succedendo.
+Il tuo bambino si sveglia spesso e non riesci a capire che cosa stia succedendo.
 
 Durante la consulenza ricostruiamo la giornata, il sonno e le abitudini della famiglia. Da qui individuiamo che cosa osservare e quali cambiamenti provare.
 ```

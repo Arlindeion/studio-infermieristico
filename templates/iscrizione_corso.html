@@ -390,12 +390,14 @@
         {% endif %}
 
         <h3>Dichiarazioni e consensi</h3>
+        {% if corso.has_open_dates %}
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="prove_pratiche" required {{ 'checked' if form_data.get('prove_pratiche') }}>
                 <span>Sono disponibile a partecipare alle prove pratiche previste dal corso *</span>
             </label>
         </div>
+        {% endif %}
         <div class="form-gruppo checkbox-stack">
             <label>
                 <input type="checkbox" name="buono_stato_salute" required {{ 'checked' if form_data.get('buono_stato_salute') }}>
@@ -415,12 +417,14 @@
             </label>
         </div>
         {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
+        {% if corso.has_open_dates %}
         <div class="form-gruppo">
             <label class="privacy-label">
                 <input type="checkbox" name="conferma_finale" required class="privacy-checkbox">
                 <span class="privacy-text">Confermo di voler procedere con la richiesta di iscrizione al corso *</span>
             </label>
         </div>
+        {% endif %}
 
         {% elif corso_tipo == 'disostruzione-pediatrica' %}
         <h3>Dettagli corso</h3>

@@ -27,7 +27,7 @@ Le regole che valgono anche nelle settimane successive sono nel [`sistema genera
 
 Raccogliere domande reali delle famiglie, senza trasformare ogni contenuto in una vendita. I tre temi principali sono:
 
-- risvegli frequenti e consulenza del sonno 0-12 mesi;
+- risvegli frequenti e consulenza del sonno infantile;
 - disostruzione pediatrica e tagli sicuri;
 - ruolo di Selene e confini rispetto alla valutazione clinica.
 
