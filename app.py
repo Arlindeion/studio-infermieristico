@@ -3496,9 +3496,22 @@ def proteggi_staging():
 
 
 @app.after_request
-def impedisci_indicizzazione_staging(response):
+def applica_header_sicurezza_risposta(response):
+    # Lo staging non deve mai essere indicizzato.
     if app.config.get('APP_ENV') == 'staging':
         response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+
+    # L'area amministrativa può contenere dati personali e sanitari. Impedire
+    # che browser e cache condivise conservino le relative risposte riduce il
+    # rischio di ripristinare dati dopo il logout e copre automaticamente le
+    # nuove route aggiunte sotto /admin. L'autenticazione server-side resta il
+    # controllo autorevole a ogni nuova richiesta.
+    if request.path == '/admin' or request.path.startswith('/admin/'):
+        response.headers['Cache-Control'] = 'no-store, private, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+
     return response
 
 

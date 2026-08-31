@@ -175,6 +175,26 @@ def test_staging_espone_health_check_e_robots_senza_credenziali(app, client, mon
     assert robots.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
 
 
+def test_area_admin_non_viene_memorizzata_ne_indicizzata(app, client, monkeypatch):
+    monkeypatch.setitem(app.config, 'APP_ENV', 'production')
+
+    login = client.get('/admin/login')
+    accesso_negato = client.get('/admin')
+    _login_admin(client)
+    admin = client.get('/admin')
+    logout = client.get('/admin/logout')
+
+    for response in (login, accesso_negato, admin, logout):
+        assert response.headers['Cache-Control'] == 'no-store, private, max-age=0'
+        assert response.headers['Pragma'] == 'no-cache'
+        assert response.headers['Expires'] == '0'
+        assert response.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+
+    pagina_pubblica = client.get('/')
+    assert 'Cache-Control' not in pagina_pubblica.headers
+    assert 'X-Robots-Tag' not in pagina_pubblica.headers
+
+
 def test_health_check_e_esente_dai_limiti_globali(app):
     route_esenti = limiter.limit_manager._route_exemptions
 
