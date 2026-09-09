@@ -39,7 +39,22 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from sqlalchemy import event, false as sql_false, text as sql_text
+from sqlalchemy.orm import Session as SASession
+from patient_backfill import (
+    BackfillModels,
+    PatientBackfillError,
+    apply_backfill_plan,
+    build_backfill_plan,
+    delete_plan_file,
+    dry_run_result,
+    paths_equivalent,
+    read_plan_file_secure,
+    resolve_code_revision,
+    write_plan_file,
+    write_report_file,
+)
 from patient_data import (
+    ANONYMIZED_PERSON_PLACEHOLDER,
     normalize_email_address,
     normalize_patient_name,
     normalize_phone_number,
@@ -70,6 +85,16 @@ app = Flask(__name__)
 
 # Caricamento della configurazione
 app.config.from_object(config[config_name])
+if config_name == 'paz_a2_postgres_testing':
+    dedicated_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+    if (
+        not app.config.get('PAZ_A2_POSTGRES_TEST_URL_IS_EXPLICIT')
+        or not isinstance(dedicated_url, str)
+        or not dedicated_url.startswith('postgresql')
+    ):
+        raise RuntimeError(
+            'PAZ-A2 PostgreSQL test config richiede PAZ_A2_TEST_DATABASE_URL esplicito.'
+        )
 if config_name == 'production':
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -2640,7 +2665,7 @@ def _pulisci_dati_operativi_collegati(entita_tipo, entita_id):
 
 
 def _anonimizza_appuntamento(appuntamento, adesso):
-    appuntamento.nome = '[dati anonimizzati]'
+    appuntamento.nome = ANONYMIZED_PERSON_PLACEHOLDER
     appuntamento.telefono = ''
     appuntamento.email = 'privacy-deleted@example.invalid'
     appuntamento.note = None
@@ -2657,11 +2682,11 @@ def _anonimizza_appuntamento(appuntamento, adesso):
 def _anonimizza_call_sonno(call, adesso):
     if call.questionario:
         db.session.delete(call.questionario)
-    call.nome = '[dati anonimizzati]'
+    call.nome = ANONYMIZED_PERSON_PLACEHOLDER
     call.telefono = ''
     call.email = 'privacy-deleted@example.invalid'
     call.eta_bambino_mesi = 0
-    call.difficolta_principale = '[dati anonimizzati]'
+    call.difficolta_principale = ANONYMIZED_PERSON_PLACEHOLDER
     call.difficolta_altro = None
     call.ruolo_richiedente = None
     call.durata_difficolta = None
@@ -2684,7 +2709,7 @@ def _anonimizza_call_sonno(call, adesso):
 
 
 def _anonimizza_iscrizione(iscrizione, adesso):
-    iscrizione.nome = '[dati anonimizzati]'
+    iscrizione.nome = ANONYMIZED_PERSON_PLACEHOLDER
     iscrizione.telefono = ''
     iscrizione.email = None
     iscrizione.codice_fiscale = ''
@@ -2699,8 +2724,8 @@ def _anonimizza_iscrizione(iscrizione, adesso):
 
 
 def _anonimizza_richiesta_azienda(richiesta, adesso):
-    richiesta.organizzazione = '[dati anonimizzati]'
-    richiesta.referente = '[dati anonimizzati]'
+    richiesta.organizzazione = ANONYMIZED_PERSON_PLACEHOLDER
+    richiesta.referente = ANONYMIZED_PERSON_PLACEHOLDER
     richiesta.telefono = ''
     richiesta.email = 'privacy-deleted@example.invalid'
     richiesta.periodo_preferito = None
@@ -2793,7 +2818,7 @@ def applica_conservazione_privacy(adesso=None):
     ):
         if _persona_ha_pratiche_identificabili(persona):
             continue
-        persona.nome = '[dati anonimizzati]'
+        persona.nome = ANONYMIZED_PERSON_PLACEHOLDER
         persona.telefono = None
         persona.email = None
         persona.codice_fiscale = None
@@ -3756,6 +3781,117 @@ def validate_config_command():
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     click.echo(f'Configurazione {app.config.get("APP_ENV")} valida.')
+
+
+def _patient_backfill_models():
+    return BackfillModels(
+        PersonaCorso=PersonaCorso,
+        Persona=Persona,
+        RecapitoPersona=RecapitoPersona,
+        RelazionePersona=RelazionePersona,
+        SegnalazioneDuplicato=SegnalazioneDuplicato,
+        FusionePersona=FusionePersona,
+        Appuntamento=Appuntamento,
+        CallSonno=CallSonno,
+        IscrizioneCorso=IscrizioneCorso,
+        RegistroEvento=RegistroEvento,
+    )
+
+
+@app.cli.group('patients')
+def patients_cli():
+    """Comandi operativi per l'evoluzione controllata dell'area Pazienti."""
+
+
+@patients_cli.command('backfill-identities')
+@click.option('--dry-run', 'dry_run_requested', is_flag=True, help='Genera soltanto il piano (default).')
+@click.option('--apply', 'apply_requested', is_flag=True, help='Applica un piano A2 già generato.')
+@click.option('--plan-file', required=True, type=click.Path(dir_okay=False), help='Percorso del piano JSON riservato.')
+@click.option('--overwrite-plan', is_flag=True, help='Sostituisce atomicamente un piano esistente durante il dry-run.')
+@click.option('--report-file', type=click.Path(dir_okay=False), help='Salva un report minimizzato opzionale.')
+@click.option('--overwrite-report', is_flag=True, help='Sostituisce atomicamente un report esistente.')
+def backfill_patient_identities_command(
+    dry_run_requested,
+    apply_requested,
+    plan_file,
+    overwrite_plan,
+    report_file,
+    overwrite_report,
+):
+    """Genera o applica il backfill identità PAZ-A2 senza usare dati reali nei log."""
+    if dry_run_requested and apply_requested:
+        raise click.ClickException('Usare --dry-run oppure --apply, non entrambi.')
+    if apply_requested and overwrite_plan:
+        raise click.ClickException('--overwrite-plan è disponibile soltanto in dry-run.')
+    if report_file and paths_equivalent(plan_file, report_file):
+        raise click.ClickException('--plan-file e --report-file devono indicare file distinti.')
+
+    models = _patient_backfill_models()
+    report = None
+    cli_error_message = None
+
+    try:
+        if apply_requested:
+            # Read/validate first: once a valid plan exists, service-level
+            # preflight failures can carry its safe run_id into the failure report.
+            plan = read_plan_file_secure(plan_file)
+            result = apply_backfill_plan(
+                db.engine,
+                models,
+                plan,
+                config=app.config,
+            )
+            report = result.report()
+            post_commit_errors = []
+            if report_file:
+                try:
+                    write_report_file(report_file, report, overwrite=overwrite_report)
+                except (PatientBackfillError, OSError):
+                    post_commit_errors.append('report non salvato')
+            try:
+                delete_plan_file(plan_file)
+            except (PatientBackfillError, OSError):
+                post_commit_errors.append('piano non eliminato')
+            click.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
+            if post_commit_errors:
+                cli_error_message = (
+                    'Backfill A2 completato, ma: ' + ', '.join(post_commit_errors) +
+                    '. Non rieseguire il piano già applicato.'
+                )
+        else:
+            with SASession(db.engine) as planner_session:
+                plan = build_backfill_plan(
+                    planner_session,
+                    models,
+                    engine=db.engine,
+                    config=app.config,
+                )
+            write_plan_file(plan_file, plan, overwrite=overwrite_plan)
+            result = dry_run_result(plan)
+            report = result.report()
+            if report_file:
+                write_report_file(report_file, report, overwrite=overwrite_report)
+    except PatientBackfillError as caught:
+        # Copy only safe primitives while the service exception is active.
+        failure_result = getattr(caught, 'failure_result', None)
+        safe_message = str(caught)
+        report_failed = False
+        if failure_result is not None and report_file:
+            try:
+                write_report_file(report_file, failure_result.report(), overwrite=overwrite_report)
+            except (PatientBackfillError, OSError):
+                report_failed = True
+        cli_error_message = safe_message + ('; report di errore non salvato' if report_failed else '')
+    except OSError:
+        cli_error_message = 'Errore filesystem durante la gestione del piano A2.'
+
+    # Deliberately outside exception handlers: ClickException must not retain
+    # the service/DB exception in __context__ or __cause__.
+    if cli_error_message is not None:
+        raise click.ClickException(cli_error_message)
+
+    if report is not None and not apply_requested:
+        click.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
 
 
 valida_configurazione_runtime()

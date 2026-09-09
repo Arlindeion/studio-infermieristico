@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import logging
 import re
 import secrets
 import ssl
@@ -18,11 +19,14 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 from googleapiclient.errors import HttpError
+from sqlalchemy import text as sql_text
+from sqlalchemy.exc import IntegrityError
 
 # Assicurarsi che l'applicazione possa essere importata
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import app as app_module
+import patient_backfill as patient_backfill_module
 from app import app as flask_app
 from config import config, normalize_database_url
 from app import (
@@ -33,6 +37,8 @@ from app import (
     Corso,
     IscrizioneCorso,
     PersonaCorso,
+    Persona,
+    RecapitoPersona,
     ConsensoPrivacyPaziente,
     PercorsoAccompagnamento,
     IncontroAccompagnamento,
@@ -7162,6 +7168,350 @@ def test_email_appuntamento_include_indirizzo_e_link_admin(app, monkeypatch):
 
     assert "Via C. D'Agnese 43\n65015 Montesilvano (PE)" in messaggio_conferma.body
     assert 'https://scstudioinfermieristico.it/admin' in messaggio_ricezione.body
+
+
+# ---------------------------------------------------------------------------
+# PAZ-A2 — integrazione reale CLI/modelli applicativi
+# ---------------------------------------------------------------------------
+
+
+def _prepara_paz_a2_cli(app):
+    """Configura esclusivamente il DB sintetico del test per il gate A2."""
+    app.config.update(
+        SECRET_KEY='paz-a2-test-secret-' + ('x' * 48),
+        SECRET_KEY_IS_EPHEMERAL=False,
+        APP_BUILD_REVISION='paz-a2-cli-test-revision',
+        APP_ENV='testing',
+        PAZ_A2_PLAN_TTL_SECONDS=3600,
+    )
+    db.session.execute(sql_text('DROP TABLE IF EXISTS alembic_version'))
+    db.session.execute(sql_text('CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)'))
+    db.session.execute(
+        sql_text('INSERT INTO alembic_version(version_num) VALUES (:revision)'),
+        {'revision': '8f2c7d1e4a90'},
+    )
+    db.session.commit()
+
+
+def _crea_sorgente_paz_a2(**overrides):
+    payload = {
+        'nome': 'Mario Rossi',
+        'telefono': '333 123 4567',
+        'email': 'mario.rossi@example.test',
+        'codice_fiscale': 'RSSMRA80A01H501X',
+    }
+    payload.update(overrides)
+    source = PersonaCorso(**payload)
+    db.session.add(source)
+    db.session.commit()
+    return source
+
+
+def _invoca_dry_run_a2(runner, plan_file, report_file=None, *extra):
+    args = [
+        'patients', 'backfill-identities',
+        '--dry-run',
+        '--plan-file', str(plan_file),
+    ]
+    if report_file is not None:
+        args.extend(['--report-file', str(report_file)])
+    args.extend(extra)
+    return runner.invoke(args=args)
+
+
+def _invoca_apply_a2(runner, plan_file, report_file=None, *extra):
+    args = [
+        'patients', 'backfill-identities',
+        '--apply',
+        '--plan-file', str(plan_file),
+    ]
+    if report_file is not None:
+        args.extend(['--report-file', str(report_file)])
+    args.extend(extra)
+    return runner.invoke(args=args)
+
+
+def test_paz_a2_cli_dry_run_apply_reali_e_cleanup_piano(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    source = _crea_sorgente_paz_a2()
+    legacy_id = source.id
+    db.session.remove()
+
+    plan_file = tmp_path / 'paz-a2-plan.json'
+    dry_report = tmp_path / 'paz-a2-dry-report.json'
+    apply_report = tmp_path / 'paz-a2-apply-report.json'
+
+    dry = _invoca_dry_run_a2(runner, plan_file, dry_report)
+    assert dry.exit_code == 0, dry.output
+    assert plan_file.exists()
+    assert dry_report.exists()
+    dry_payload = json.loads(dry_report.read_text(encoding='utf-8'))
+    assert dry_payload['source_count'] == 1
+    assert dry_payload['active_sources'] == 1
+    assert dry_payload['anonymized_sources'] == 0
+    assert Persona.query.count() == 0
+
+    db.session.remove()
+    applied = _invoca_apply_a2(runner, plan_file, apply_report)
+    assert applied.exit_code == 0, applied.output
+    assert not plan_file.exists()
+    assert apply_report.exists()
+
+    persona = Persona.query.filter_by(legacy_persona_corso_id=legacy_id).one()
+    assert persona.nome is None
+    assert persona.cognome is None
+    assert persona.legacy_nome_completo == 'Mario Rossi'
+    assert RecapitoPersona.query.filter_by(persona_id=persona.id).count() == 2
+    apply_payload = json.loads(apply_report.read_text(encoding='utf-8'))
+    assert apply_payload['source_count'] == 1
+    assert apply_payload['active_sources'] == 1
+    assert apply_payload['anonymized_sources'] == 0
+    assert RegistroEvento.query.filter_by(categoria='pazienti_v2').count() == 1
+
+
+def test_paz_a2_cli_rifiuta_plan_e_report_stesso_path_in_dry_run(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    same = tmp_path / 'same.json'
+
+    result = runner.invoke(args=[
+        'patients', 'backfill-identities', '--dry-run',
+        '--plan-file', str(same), '--report-file', str(same),
+        '--overwrite-report',
+    ])
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert not same.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_rifiuta_plan_e_report_stesso_path_in_apply_senza_perdere_piano(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / 'apply-same.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    result = runner.invoke(args=[
+        'patients', 'backfill-identities', '--apply',
+        '--plan-file', str(plan_file), '--report-file', str(plan_file),
+        '--overwrite-report',
+    ])
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert plan_file.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_alias_symlink_plan_report_viene_rifiutato(app, runner, tmp_path):
+    if not hasattr(os, 'symlink'):
+        pytest.skip('Symlink non supportati.')
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / 'real-plan.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+    alias = tmp_path / 'alias-report.json'
+    alias.symlink_to(plan_file)
+
+    result = _invoca_apply_a2(runner, plan_file, alias, '--overwrite-report')
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert plan_file.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_integrity_error_sanitizzato_e_report_fallimento(app, runner, tmp_path, monkeypatch, caplog):
+    _prepara_paz_a2_cli(app)
+    sentinel_name = 'PII_SENTINEL_NAME_CLI_A2'
+    sentinel_email = 'pii-sentinel-cli-a2@example.test'
+    _crea_sorgente_paz_a2(nome=sentinel_name, email=sentinel_email)
+    db.session.remove()
+    plan_file = tmp_path / 'failure-plan.json'
+    report_file = tmp_path / 'failure-report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    def explode(*args, **kwargs):
+        raise IntegrityError(
+            f'INSERT persona values ({sentinel_name})',
+            {'email': sentinel_email},
+            RuntimeError(sentinel_name),
+        )
+
+    monkeypatch.setattr(patient_backfill_module, '_apply_source_projection', explode)
+    caplog.set_level(logging.ERROR)
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+
+    assert result.exit_code != 0
+    assert 'UNEXPECTED_INTEGRITY_ERROR' in result.output
+    assert report_file.exists()
+    payload = json.loads(report_file.read_text(encoding='utf-8'))
+    assert payload['status'] == 'errore'
+    assert payload['error_code'] == 'UNEXPECTED_INTEGRITY_ERROR'
+    assert payload['error_phase'] == 'write'
+    assert plan_file.exists(), 'Il piano fallito resta disponibile per diagnosi controllata.'
+
+    exc_chain_parts = []
+    if result.exc_info:
+        cursor = result.exc_info[1]
+        seen = set()
+        while cursor is not None and id(cursor) not in seen:
+            seen.add(id(cursor))
+            exc_chain_parts.extend([
+                type(cursor).__name__, str(cursor), repr(cursor), repr(getattr(cursor, 'args', ()))
+            ])
+            for attr in ('statement', 'params'):
+                if hasattr(cursor, attr):
+                    exc_chain_parts.append(repr(getattr(cursor, attr)))
+            cursor = cursor.__cause__ or cursor.__context__
+
+    exposed = '\n'.join([
+        result.output,
+        json.dumps(payload, ensure_ascii=False),
+        '\n'.join(record.getMessage() for record in caplog.records),
+        '\n'.join(
+            (event.messaggio or '') + ' ' + (event.dettagli or '')
+            for event in RegistroEvento.query.all()
+        ),
+        '\n'.join(exc_chain_parts),
+    ])
+    assert sentinel_name not in exposed
+    assert sentinel_email not in exposed
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_errore_filesystem_post_commit_non_annulla_backfill(app, runner, tmp_path, monkeypatch):
+    _prepara_paz_a2_cli(app)
+    source = _crea_sorgente_paz_a2()
+    legacy_id = source.id
+    db.session.remove()
+    plan_file = tmp_path / 'post-commit-plan.json'
+    report_file = tmp_path / 'post-commit-report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    def fail_report(*args, **kwargs):
+        raise OSError('filesystem failure with no patient payload')
+
+    monkeypatch.setattr(app_module, 'write_report_file', fail_report)
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+
+    assert result.exit_code != 0
+    assert 'Backfill A2 completato' in result.output
+    assert 'report non salvato' in result.output
+    assert not plan_file.exists()
+    assert Persona.query.filter_by(legacy_persona_corso_id=legacy_id).count() == 1
+    assert RegistroEvento.query.filter_by(categoria='pazienti_v2', esito='successo').count() == 1
+
+
+
+def test_testing_config_non_eredita_database_url_reale(app, tmp_path):
+    env = os.environ.copy()
+    env.update({
+        'FLASK_ENV': 'testing',
+        'APP_ENV': 'testing',
+        'SECRET_KEY': 'x' * 64,
+        'DATABASE_URL': 'postgresql+psycopg://danger:danger@127.0.0.1:1/real_like_db',
+    })
+    env.pop('PAZ_A2_TEST_DATABASE_URL', None)
+    script = (
+        "from app import app, db; "
+        "ctx=app.app_context(); ctx.push(); "
+        "print(str(db.engine.url)); print(db.engine.dialect.name); ctx.pop()"
+    )
+    completed = subprocess.run(
+        [sys.executable, '-c', script],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=60,
+    )
+    assert 'sqlite:///:memory:' in completed.stdout
+    assert 'sqlite' in completed.stdout
+    assert 'postgresql' not in completed.stdout.lower()
+
+
+@pytest.mark.parametrize('case', ['A1_NOT_READY', 'UNSTABLE_PLAN_KEY', 'CODE_REVISION_UNKNOWN'])
+def test_paz_a2_cli_preserva_codice_e_fase_failure_report(app, runner, tmp_path, monkeypatch, case):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / f'{case}.plan.json'
+    report_file = tmp_path / f'{case}.report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    if case == 'A1_NOT_READY':
+        db.session.execute(sql_text("UPDATE alembic_version SET version_num='wrong'"))
+        db.session.commit()
+    elif case == 'UNSTABLE_PLAN_KEY':
+        app.config['SECRET_KEY'] = 'short'
+        app.config['SECRET_KEY_IS_EPHEMERAL'] = False
+    else:
+        app.config['APP_BUILD_REVISION'] = None
+        monkeypatch.setattr(
+            patient_backfill_module,
+            'resolve_code_revision',
+            lambda *args, **kwargs: (_ for _ in ()).throw(
+                patient_backfill_module.PatientBackfillError(code='CODE_REVISION_UNKNOWN')
+            ),
+        )
+
+    db.session.remove()
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+    assert result.exit_code != 0
+    assert case in result.output
+    payload = json.loads(report_file.read_text(encoding='utf-8'))
+    assert payload['error_code'] == case
+    expected_phase = 'revalidation' if case == 'A1_NOT_READY' else 'preflight'
+    assert payload['error_phase'] == expected_phase
+    assert payload['blockers'] == {case: 1}
+    assert plan_file.exists()
+
+
+def test_paz_a2_cli_preserva_blocker_specifico_in_report_output_e_audit(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    residual_phone = '3339998877'
+    _crea_sorgente_paz_a2(
+        nome='[dati anonimizzati]',
+        telefono=residual_phone,
+        email=None,
+        codice_fiscale=None,
+        dati_anonimizzati_il=datetime(2026, 9, 6, 12, 0, 0),
+    )
+    db.session.remove()
+
+    plan_file = tmp_path / 'blocked-plan.json'
+    failure_report = tmp_path / 'blocked-failure-report.json'
+    dry = _invoca_dry_run_a2(runner, plan_file)
+    assert dry.exit_code == 0, dry.output
+
+    plan_payload = json.loads(plan_file.read_text(encoding='utf-8'))
+    expected = {'ANONYMIZED_SOURCE_HAS_RESIDUAL_PII': 1}
+    assert plan_payload['summary']['blockers'] == expected
+
+    applied = _invoca_apply_a2(runner, plan_file, failure_report)
+    assert applied.exit_code != 0
+    assert 'ANONYMIZED_SOURCE_HAS_RESIDUAL_PII' in applied.output
+    assert residual_phone not in applied.output
+    assert failure_report.exists()
+    assert plan_file.exists()
+
+    report = json.loads(failure_report.read_text(encoding='utf-8'))
+    assert report['error_code'] == 'BACKFILL_BLOCKER'
+    assert report['blockers'] == expected
+    assert residual_phone not in json.dumps(report, sort_keys=True)
+
+    event = RegistroEvento.query.filter_by(categoria='pazienti_v2', esito='errore').one()
+    audit = json.loads(event.dettagli)
+    assert audit['error_code'] == 'BACKFILL_BLOCKER'
+    assert audit['blocker_codes'] == ['ANONYMIZED_SOURCE_HAS_RESIDUAL_PII']
+    assert residual_phone not in event.dettagli
 
 
 if __name__ == '__main__':

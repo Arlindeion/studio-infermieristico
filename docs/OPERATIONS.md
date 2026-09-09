@@ -692,6 +692,129 @@ pubbliche, una riga admin sintetica, una prenotazione sintetica e revisione
 `56dda7f5137f` correttamente recuperate. Server, database e backup temporanei
 sono stati eliminati dopo il test.
 
+## PAZ-A2 — backfill identità Pazienti 2.0 (solo dopo autorizzazione)
+
+> Stato operativo: questa procedura documenta la candidata PAZ-A2 per test e
+> revisione. Non autorizza l'esecuzione su dati reali, staging o produzione.
+> PAZ-A2 resta subordinata all'integrazione e verifica di PAZ-A1.
+
+### Sicurezza dei database di test
+
+La configurazione applicativa `testing` usa **sempre** `sqlite:///:memory:` e
+ignora qualunque `DATABASE_URL` presente nella shell o nel file `.env`. Questa
+regola è intenzionale: la suite principale usa `db.create_all()` e
+`db.drop_all()` e non deve mai poter raggiungere un database esterno.
+
+Il gate PostgreSQL PAZ-A2 usa una configurazione distinta, selezionata soltanto
+dalla suite opt-in:
+
+```bash
+FLASK_ENV=paz_a2_postgres_testing \
+PAZ_A2_TEST_DATABASE_URL='postgresql+psycopg://.../database_usa_e_getta' \
+pytest -q tests/test_patient_a2_postgres.py
+```
+
+Regole obbligatorie:
+
+- usare esclusivamente `PAZ_A2_TEST_DATABASE_URL`; non usare `DATABASE_URL` per
+  questo gate;
+- il database deve essere dedicato ai test e usa-e-getta;
+- la suite deve verificare esplicitamente `postgresql` come dialetto e lo schema
+  casuale atteso prima di migrazioni/apply;
+- non usare mai database di sviluppo condiviso, staging o produzione;
+- in assenza della variabile dedicata i test PostgreSQL A2 devono risultare
+  skip, non ripiegare su un database ordinario.
+
+### Gate prima di dry-run/apply
+
+Prima di qualunque esecuzione A2 autorizzata su una copia controllata:
+
+```bash
+flask --app app db upgrade
+flask --app app db check
+pytest
+pytest -q tests/test_patient_a2_postgres.py   # con database test dedicato
+
+git diff --check
+```
+
+Verificare inoltre HEAD Git/build revision, head Alembic e che
+`Appuntamento.persona_id`, `CallSonno.persona_id` e
+`IscrizioneCorso.persona_v2_id` siano ancora tutti NULL.
+
+### Dry-run e apply
+
+Il dry-run è il comportamento predefinito e produce un piano firmato:
+
+```bash
+flask --app app patients backfill-identities \
+  --dry-run \
+  --plan-file /percorso/privato/paz-a2-plan.json \
+  --report-file /percorso/privato/paz-a2-dry-run-report.json
+```
+
+L'apply richiede un piano esistente e valido:
+
+```bash
+flask --app app patients backfill-identities \
+  --apply \
+  --plan-file /percorso/privato/paz-a2-plan.json \
+  --report-file /percorso/privato/paz-a2-apply-report.json
+```
+
+Non usare flag o procedure per aggirare firma, TTL, revisione codice, blocker,
+fingerprint source/target o lock transazionale.
+
+### Custodia e retention degli artefatti
+
+Piano e report sono artefatti pseudonimi riservati:
+
+- devono essere creati fuori da directory pubbliche e non vanno committati;
+- il piano usa permessi `0600`, scrittura atomica e rifiuto dei symlink;
+- piano e report non devono contenere nomi, CF, telefoni, email, note o altri
+  valori identificativi in chiaro;
+- il piano viene eliminato dopo un apply riuscito;
+- se l'apply fallisce, conservare il piano solo per il tempo strettamente
+  necessario alla diagnosi, con limite operativo iniziale di 24 ore;
+- non includere questi artefatti nei backup ordinari o nella documentazione.
+
+`SECRET_KEY` deve essere stabile e adeguata: una chiave effimera o troppo corta
+blocca la produzione/applicazione di un piano verificabile.
+
+### Errori, report e recovery post-commit
+
+Gli errori dell'apply devono attraversare il confine CLI soltanto come codici
+sanitizzati; non devono essere esposti messaggi SQL, statement, parametri o
+catene di eccezioni contenenti PII.
+
+Quando esiste già un piano valido, il failure report indica almeno `run_id`,
+`error_code` e una fase stabile (`preflight`, `lock`, `revalidation`, `write` o
+`audit`). Il report viene prodotto solo dopo il rollback della transazione di
+backfill.
+
+L'audit di successo è committato nella stessa transazione del backfill. Se,
+dopo quel commit, falliscono esclusivamente la scrittura del report o la
+cancellazione del piano, **non** tentare rollback del backfill già riuscito:
+
+1. verificare l'evento di successo `pazienti_v2` e i conteggi minimizzati;
+2. verificare lo stato DB con una nuova sessione;
+3. rigenerare/conservare manualmente solo l'artefatto operativo necessario;
+4. eliminare il piano quando la diagnosi è conclusa;
+5. non rilanciare automaticamente lo stesso piano che prevedeva scritture:
+   dopo un apply riuscito deve risultare `STALE_TARGET`.
+
+### Confini della tranche
+
+PAZ-A2 non deve:
+
+- inferire `nome`/`cognome`;
+- creare minori o `RelazionePersona`;
+- copiare note legacy;
+- deduplicare o fondere persone;
+- valorizzare FK delle pratiche;
+- modificare route/UI;
+- eseguire cutover o cleanup legacy.
+
 ## Comandi locali
 
 ```bash
