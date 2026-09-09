@@ -918,6 +918,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il modulo pubblico continua a chiedere l’età in mesi, senza massimo anagrafico, e il questionario successivo al pagamento conserva data di nascita ed età corretta; nessuno di questi dati viene usato per escludere una richiesta. La regola dei 14 giorni resta invariata. I rimborsi contrattuali restano nelle condizioni e nelle regole interne, ma non sono mostrati come valore automatico nella scheda. Il flusso di iscrizione BLSD con una data aperta conserva le conferme previste; la riduzione delle checkbox riguarda il solo ricontatto senza edizione.
 - Collegamenti: `app.py`, `templates/prenota_call_sonno.html`, `templates/offerta_sonno.html`, `templates/admin_dettaglio.html`, `templates/iscrizione_corso.html`, `templates/base.html`, `migrations/versions/2f6a8c1d4e90_rende_facoltativa_eta_call_sonno.py`, `SITE_MAP_AND_FLOWS.md`, `PROJECT_BRIEF.md`, `CONTENT_AND_ASSETS.md`, D-004, D-019, D-033, D-035, D-069, D-105.
 
+## D-116 — La nuova area admin Pazienti diventa il terzo P0 prima del go-live
+
+- Data: 2026-09-09.
+- Stato: approvata dal committente; implementazione e collaudo da completare.
+- Decisione: considerare chiusi il P0 relativo alla cache browser dell'area admin dopo il logout e il P0 relativo alla validazione professionale e legale delle policy. Promuovere l'inserimento della nuova area admin `Pazienti 2.0` a terzo P0 corrente, da completare prima del controllo finale pre-lancio e dell'apertura del dominio pubblico.
+- Motivo: il committente ha validato i primi due gate e ha scelto di includere la nuova area amministrativa nel perimetro necessario al lancio, superando il precedente posizionamento post-lancio della proposta del 31 agosto 2026.
+- Conseguenze: il P0 comprende almeno schema additivo, migrazione controllata delle identità, collegamento verificato delle pratiche e UI/cutover amministrativo sicuro; il cleanup distruttivo del legacy resta escluso dal gate iniziale. Le specifiche tecniche e le patch già revisionate restano candidate finché non sono integrate e collaudate nel checkout reale. Le proposte D-107–D-115 archiviate in `docs/proposte/` non diventano automaticamente decisioni approvate. Per il primo collaudo sul database Render confermato vuoto non è richiesta una copia dei dati inesistenti: vanno invece verificati assenza di dati, revisione Alembic e rollback tecnico. Prima del primo dato reale restano obbligatori PITR e backup cifrato. Restano inoltre obbligatori dry-run, test SQLite e PostgreSQL, protezione server-side, CSRF, header `no-store`, audit minimizzato e collaudo desktop/mobile prima del go-live.
+- Collegamenti: `ROADMAP.md`, `proposte/ROADMAP_PROPOSTA_2026-08-31.md`, `proposte/DECISIONS_PROPOSTA_2026-08-31.md`, D-092, D-095, D-096, D-097, D-106.
+
 ## Modello per nuove decisioni
 
 ```markdown
