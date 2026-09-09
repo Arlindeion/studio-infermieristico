@@ -29,9 +29,14 @@ EXPECTED_TABLES = {
     'consenso_privacy_paziente',
     'richiesta_azienda',
     'autorizzazione_immagini',
+    'persona',
+    'recapito_persona',
+    'relazione_persona',
+    'segnalazione_duplicato',
+    'fusione_persona',
 }
 
-LATEST_REVISION = 'c9e1f4a7b260'
+LATEST_REVISION = '8f2c7d1e4a90'
 
 
 def _migration_env(database_path):
@@ -115,6 +120,12 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'dati_anonimizzati_il' in registration_columns
     assert _column_type(database_path, 'iscrizione_corso', 'data_corso') == 'VARCHAR(255)'
     assert _column_nullable(database_path, 'persona_corso', 'telefono') is True
+    assert 'persona_id' in _column_names(database_path, 'appuntamento')
+    assert 'persona_id' in _column_names(database_path, 'call_sonno')
+    assert 'persona_v2_id' in _column_names(database_path, 'iscrizione_corso')
+    assert _column_nullable(database_path, 'appuntamento', 'persona_id') is True
+    assert _column_nullable(database_path, 'call_sonno', 'persona_id') is True
+    assert _column_nullable(database_path, 'iscrizione_corso', 'persona_v2_id') is True
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')

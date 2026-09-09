@@ -4892,6 +4892,7 @@ def test_admin_appuntamento_avvisa_se_email_fallisce_ma_calendar_riesce(
     google_calendar_scrittura_finto,
 ):
     mock_servizio = google_calendar_scrittura_finto
+    appointment_date = _prossimo_giorno_con_weekday(1).isoformat()
     mock_servizio.events.return_value.insert.return_value.execute.return_value = {
         'id': 'evento-appuntamento-email-fallita'
     }
@@ -4901,7 +4902,7 @@ def test_admin_appuntamento_avvisa_se_email_fallisce_ma_calendar_riesce(
             telefono='3331234567',
             email='mario@example.com',
             servizio='Lavaggio auricolare',
-            data='2026-09-01',
+            data=appointment_date,
             ora='10:00',
         )
         db.session.add(appuntamento)
@@ -4964,10 +4965,12 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
     """Spostare un appuntamento già collegato a un evento deve aggiornarlo
     (patch) invece di crearne uno nuovo."""
     mock_servizio = google_calendar_scrittura_finto
+    original_date = _prossimo_giorno_con_weekday(1)
+    new_date = original_date + app_module.timedelta(days=1)
 
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00',
+                             servizio='Test', data=original_date.isoformat(), ora='10:00',
                              stato='Confermato', google_event_id='evento-esistente')
         db.session.add(appt)
         db.session.commit()
@@ -4975,14 +4978,16 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00',
+        'data': new_date.isoformat(), 'ora': '11:00',
         'duration_minutes': '45', '_csrf_token': csrf
     })
 
     mock_servizio.events().patch.assert_called_once()
     kwargs = mock_servizio.events().patch.call_args.kwargs
     assert kwargs['eventId'] == 'evento-esistente'
-    assert kwargs['body']['end']['dateTime'].startswith('2026-09-02T11:45:00')
+    assert kwargs['body']['end']['dateTime'].startswith(
+        f'{new_date.isoformat()}T11:45:00'
+    )
     mock_servizio.events().insert.assert_not_called()
 
 
@@ -6518,13 +6523,15 @@ def test_riallineamento_automatico_non_sovrascrive_anomalie_esterne_o_attese(app
 def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
     """Spostare un appuntamento su uno slot già preso non deve sovrascrivere l'agenda."""
     mock_servizio = google_calendar_scrittura_finto
+    original_date = _prossimo_giorno_con_weekday(1)
+    occupied_date = original_date + app_module.timedelta(days=1)
 
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00',
+                             servizio='Test', data=original_date.isoformat(), ora='10:00',
                              stato='Confermato')
         occupato = Appuntamento(nome='Luisa Verdi', telefono='334', email='l@example.com',
-                                servizio='Test', data='2026-09-02', ora='11:00',
+                                servizio='Test', data=occupied_date.isoformat(), ora='11:00',
                                 stato='Confermato')
         db.session.add_all([appt, occupato])
         db.session.commit()
@@ -6532,7 +6539,7 @@ def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     resp = client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00',
+        'data': occupied_date.isoformat(), 'ora': '11:00',
         'duration_minutes': '30', '_csrf_token': csrf
     })
 
@@ -6541,16 +6548,17 @@ def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura
     mock_servizio.events().insert.assert_not_called()
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
-        assert aggiornato.data == '2026-09-01'
+        assert aggiornato.data == original_date.isoformat()
         assert aggiornato.ora == '10:00'
 
 
 def test_nessuna_chiamata_google_se_non_configurato(client):
     """Se la scrittura su Google Calendar non è configurata, confermare un
     appuntamento deve funzionare normalmente senza errori né chiamate API."""
+    appointment_date = _prossimo_giorno_con_weekday(1).isoformat()
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00')
+                             servizio='Test', data=appointment_date, ora='10:00')
         db.session.add(appt)
         db.session.commit()
         appt_id = appt.id

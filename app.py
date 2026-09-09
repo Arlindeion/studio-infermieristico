@@ -38,7 +38,15 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from sqlalchemy import text as sql_text
+from sqlalchemy import event, false as sql_false, text as sql_text
+from patient_data import (
+    normalize_email_address,
+    normalize_patient_name,
+    normalize_phone_number,
+    normalize_tax_code,
+    validate_relationship_role,
+    validate_sex_code,
+)
 from sleep_terms import (
     SLEEP_TERMS_SECTIONS,
     SLEEP_TERMS_UPDATED_LABEL,
@@ -1834,6 +1842,13 @@ class Appuntamento(db.Model):
     creato_da_admin = db.Column(db.Boolean, default=False, nullable=False)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
+    persona_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_appuntamento_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_id])
 
 
 class CallSonno(db.Model):
@@ -1886,6 +1901,13 @@ class CallSonno(db.Model):
     difformita_calendario = db.Column(db.Text, nullable=True)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
+    persona_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_call_sonno_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_id])
 
 
 class QuestionarioSonno(db.Model):
@@ -1938,6 +1960,262 @@ class PersonaCorso(db.Model):
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
+class Persona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=True)
+    cognome = db.Column(db.String(100), nullable=True)
+    data_nascita = db.Column(db.Date, nullable=True)
+    sesso_anagrafico = db.Column(db.String(1), nullable=True)
+    codice_fiscale = db.Column(db.String(32), nullable=True, index=True)
+    comune_nascita = db.Column(db.String(120), nullable=True)
+    provincia_nascita = db.Column(db.String(10), nullable=True)
+    stato_nascita = db.Column(db.String(120), nullable=True)
+    indirizzo_residenza = db.Column(db.String(200), nullable=True)
+    cap_residenza = db.Column(db.String(12), nullable=True)
+    comune_residenza = db.Column(db.String(120), nullable=True)
+    provincia_residenza = db.Column(db.String(10), nullable=True)
+    stato_residenza = db.Column(db.String(120), nullable=True)
+    stato = db.Column(db.String(20), nullable=False, default='attiva', server_default='attiva')
+    anagrafica_da_verificare = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    legacy_persona_corso_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona_corso.id', name='fk_persona_legacy_persona_corso', ondelete='RESTRICT'),
+        nullable=True,
+    )
+    legacy_nome_completo = db.Column(db.String(200), nullable=True)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    aggiornato_il = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+
+    legacy_persona_corso = db.relationship('PersonaCorso', foreign_keys=[legacy_persona_corso_id])
+    recapiti = db.relationship('RecapitoPersona', back_populates='persona', lazy=True)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "sesso_anagrafico IS NULL OR sesso_anagrafico IN ('F','M')",
+            name='ck_persona_sesso_anagrafico',
+        ),
+        db.CheckConstraint(
+            "stato IN ('attiva','archiviata')",
+            name='ck_persona_stato',
+        ),
+        db.CheckConstraint(
+            "(stato = 'archiviata' AND archiviato_il IS NOT NULL) OR "
+            "(stato = 'attiva' AND archiviato_il IS NULL)",
+            name='ck_persona_archiviazione_coerente',
+        ),
+        db.UniqueConstraint(
+            'legacy_persona_corso_id',
+            name='uq_persona_legacy_persona_corso_id',
+        ),
+        db.Index('ix_persona_cognome_nome', 'cognome', 'nome'),
+        db.Index('ix_persona_data_nascita', 'data_nascita'),
+        db.Index('ix_persona_stato', 'stato'),
+    )
+
+
+class RecapitoPersona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_recapito_persona_persona', ondelete='RESTRICT'), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)
+    valore = db.Column(db.String(254), nullable=False)
+    valore_normalizzato = db.Column(db.String(254), nullable=False)
+    principale = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    etichetta = db.Column(db.String(80), nullable=True)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+
+    persona = db.relationship('Persona', back_populates='recapiti')
+
+    __table_args__ = (
+        db.CheckConstraint("tipo IN ('telefono','email')", name='ck_recapito_persona_tipo'),
+        db.CheckConstraint(
+            'archiviato_il IS NULL OR principale = false',
+            name='ck_recapito_persona_archiviato_non_principale',
+        ),
+        db.UniqueConstraint(
+            'persona_id', 'tipo', 'valore_normalizzato',
+            name='uq_recapito_persona_valore',
+        ),
+        db.Index('ix_recapito_persona_persona_id', 'persona_id'),
+        db.Index('ix_recapito_persona_ricerca', 'tipo', 'valore_normalizzato'),
+        db.Index(
+            'uq_recapito_persona_principale_attivo',
+            'persona_id', 'tipo',
+            unique=True,
+            sqlite_where=sql_text('principale = 1 AND archiviato_il IS NULL'),
+            postgresql_where=sql_text('principale IS TRUE AND archiviato_il IS NULL'),
+        ),
+    )
+
+
+class RelazionePersona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_assistita_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_relazione_persona_assistita', ondelete='RESTRICT'), nullable=False)
+    persona_referente_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_relazione_persona_referente', ondelete='RESTRICT'), nullable=False)
+    ruolo = db.Column(db.String(30), nullable=False)
+    contatto_principale = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    referente_comunicazioni = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    referente_consensi = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    note = db.Column(db.Text, nullable=True)
+    stato = db.Column(db.String(20), nullable=False, default='attiva', server_default='attiva')
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    aggiornato_il = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+
+    persona_assistita = db.relationship('Persona', foreign_keys=[persona_assistita_id])
+    persona_referente = db.relationship('Persona', foreign_keys=[persona_referente_id])
+
+    __table_args__ = (
+        db.CheckConstraint('persona_assistita_id <> persona_referente_id', name='ck_relazione_persona_no_self'),
+        db.CheckConstraint(
+            "ruolo IN ('madre','padre','tutore','affidatario','caregiver','altro')",
+            name='ck_relazione_persona_ruolo',
+        ),
+        db.CheckConstraint("stato IN ('attiva','archiviata')", name='ck_relazione_persona_stato'),
+        db.CheckConstraint(
+            "(stato = 'attiva' AND archiviato_il IS NULL) OR "
+            "(stato = 'archiviata' AND archiviato_il IS NOT NULL)",
+            name='ck_relazione_persona_archiviazione_coerente',
+        ),
+        db.CheckConstraint(
+            "archiviato_il IS NULL OR "
+            "(contatto_principale = false AND referente_comunicazioni = false AND referente_consensi = false)",
+            name='ck_relazione_persona_archiviata_senza_ruoli_attivi',
+        ),
+        db.UniqueConstraint(
+            'persona_assistita_id', 'persona_referente_id', 'ruolo',
+            name='uq_relazione_persona',
+        ),
+        db.Index('ix_relazione_persona_assistita_id', 'persona_assistita_id'),
+        db.Index('ix_relazione_persona_referente_id', 'persona_referente_id'),
+        db.Index(
+            'uq_relazione_persona_contatto_principale_attivo',
+            'persona_assistita_id',
+            unique=True,
+            sqlite_where=sql_text("contatto_principale = 1 AND stato = 'attiva' AND archiviato_il IS NULL"),
+            postgresql_where=sql_text("contatto_principale IS TRUE AND stato = 'attiva' AND archiviato_il IS NULL"),
+        ),
+        db.Index(
+            'uq_relazione_persona_comunicazioni_attivo',
+            'persona_assistita_id',
+            unique=True,
+            sqlite_where=sql_text("referente_comunicazioni = 1 AND stato = 'attiva' AND archiviato_il IS NULL"),
+            postgresql_where=sql_text("referente_comunicazioni IS TRUE AND stato = 'attiva' AND archiviato_il IS NULL"),
+        ),
+    )
+
+
+class SegnalazioneDuplicato(db.Model):
+    """Storage minimo per una futura segnalazione di possibile duplicato.
+
+    PAZ-A1 conserva soltanto la coppia e il livello. Decisioni ``non_unire``/
+    ``fuso``, motivi e fingerprint vengono introdotti insieme al workflow di
+    deduplicazione, perché la loro semantica dipende dai dati confrontati.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    persona_a_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_segnalazione_duplicato_persona_a', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    persona_b_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_segnalazione_duplicato_persona_b', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    livello = db.Column(db.String(20), nullable=False)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+
+    __table_args__ = (
+        db.CheckConstraint('persona_a_id < persona_b_id', name='ck_segnalazione_duplicato_id_ordinati'),
+        db.CheckConstraint("livello IN ('forte','probabile')", name='ck_segnalazione_duplicato_livello'),
+        db.UniqueConstraint(
+            'persona_a_id', 'persona_b_id',
+            name='uq_segnalazione_duplicato_coppia',
+        ),
+        db.Index('ix_segnalazione_duplicato_persona_a_id', 'persona_a_id'),
+        db.Index('ix_segnalazione_duplicato_persona_b_id', 'persona_b_id'),
+    )
+
+
+class FusionePersona(db.Model):
+    """Header auditabile di una futura fusione già conclusa con successo.
+
+    PAZ-A1 non conserva snapshot o mappe JSON. Il dettaglio dei record spostati
+    sarà progettato insieme alla procedura transazionale di fusione, quando
+    potrà essere validato e testato end-to-end.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    persona_principale_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_fusione_persona_principale', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    persona_secondaria_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_fusione_persona_secondaria', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    operazione_id = db.Column(db.String(36), nullable=False)
+    stato = db.Column(db.String(20), nullable=False, default='applicata', server_default='applicata')
+    applicata_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    annullata_il = db.Column(db.DateTime, nullable=True)
+    admin_id = db.Column(
+        db.Integer,
+        db.ForeignKey('admin.id', name='fk_fusione_persona_admin', ondelete='RESTRICT'),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        db.CheckConstraint('persona_principale_id <> persona_secondaria_id', name='ck_fusione_persona_no_self'),
+        db.CheckConstraint("stato IN ('applicata','annullata')", name='ck_fusione_persona_stato'),
+        db.CheckConstraint(
+            "(stato = 'applicata' AND annullata_il IS NULL) OR "
+            "(stato = 'annullata' AND annullata_il IS NOT NULL)",
+            name='ck_fusione_persona_stato_temporale',
+        ),
+        db.UniqueConstraint('operazione_id', name='uq_fusione_persona_operazione_id'),
+        db.Index('ix_fusione_persona_principale_id', 'persona_principale_id'),
+        db.Index('ix_fusione_persona_secondaria_id', 'persona_secondaria_id'),
+    )
+
+
+def _prepare_persona_for_storage(mapper, connection, target):
+    target.nome = normalize_patient_name(target.nome)
+    target.cognome = normalize_patient_name(target.cognome)
+    target.codice_fiscale = normalize_tax_code(target.codice_fiscale)
+    target.sesso_anagrafico = validate_sex_code(target.sesso_anagrafico)
+
+
+def _prepare_recapito_for_storage(mapper, connection, target):
+    target.tipo = str(target.tipo or '').strip().casefold()
+    if target.tipo == 'telefono':
+        target.valore = str(target.valore or '').strip()
+        target.valore_normalizzato = normalize_phone_number(target.valore)
+    elif target.tipo == 'email':
+        target.valore = str(target.valore or '').strip()
+        target.valore_normalizzato = normalize_email_address(target.valore)
+    else:
+        raise ValueError('Tipo recapito non ammesso.')
+    if target.valore_normalizzato is None:
+        raise ValueError('Il recapito non può essere vuoto.')
+
+
+def _prepare_relazione_for_storage(mapper, connection, target):
+    target.ruolo = validate_relationship_role(target.ruolo)
+
+
+event.listen(Persona, 'before_insert', _prepare_persona_for_storage)
+event.listen(Persona, 'before_update', _prepare_persona_for_storage)
+event.listen(RecapitoPersona, 'before_insert', _prepare_recapito_for_storage)
+event.listen(RecapitoPersona, 'before_update', _prepare_recapito_for_storage)
+event.listen(RelazionePersona, 'before_insert', _prepare_relazione_for_storage)
+event.listen(RelazionePersona, 'before_update', _prepare_relazione_for_storage)
+
+
 class PercorsoAccompagnamento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titolo = db.Column(db.String(200), nullable=False)
@@ -1971,6 +2249,12 @@ class IscrizioneCorso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     corso_id = db.Column(db.Integer, db.ForeignKey('corso.id'), nullable=True)
     persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=True)
+    persona_v2_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_iscrizione_corso_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
     percorso_accompagnamento_id = db.Column(db.Integer, db.ForeignKey('percorso_accompagnamento.id'), nullable=True)
     corso_tipo = db.Column(db.String(80), nullable=False)
     corso_titolo = db.Column(db.String(200), nullable=False)
@@ -2002,6 +2286,7 @@ class IscrizioneCorso(db.Model):
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
     corso = db.relationship('Corso', backref=db.backref('iscrizioni', lazy=True))
     persona = db.relationship('PersonaCorso', backref=db.backref('iscrizioni', lazy=True))
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_v2_id])
     percorso_accompagnamento = db.relationship(
         'PercorsoAccompagnamento',
         backref=db.backref('iscrizioni', lazy=True)
