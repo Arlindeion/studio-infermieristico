@@ -936,6 +936,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: PAZ-A3 non deve inventare migrazioni su record inesistenti; prima del deploy deve verificare e registrare conteggi nulli e revisione Alembic, quindi concludersi come no-op. PAZ-A4 deve spostare elenco, scheda, creazione, modifica, ricerca, collegamento delle pratiche, storico e consensi dell'admin sul modello v2; appuntamenti, call sonno e iscrizioni corso conservano i propri dati storici e usano le FK v2. I dati legacy non vanno cancellati automaticamente e il rollback applicativo mantiene intatte le tabelle precedenti, ma non prevede di ricostruire automaticamente nel legacy i dati nati dopo il cutover.
 - Collegamenti: `PAZIENTI_2_0_IMPLEMENTATION.md`, `ROADMAP.md`, `OPERATIONS.md`, D-092, D-097, D-116.
 
+## D-118 — Pazienti 2.0 precede il completamento degli altri P0 aperti
+
+- Data: 2026-09-10.
+- Stato: approvata dal committente; esecuzione in corso.
+- Decisione: concentrare il lavoro corrente sulla preparazione di `Pazienti 2.0` al deploy privato su Render. Prima del deploy vanno chiusi i rilievi bloccanti dell'implementazione e va eseguito un preflight che confermi schema atteso, revisione Alembic e assenza di pratiche o anagrafiche nel database dichiarato vuoto. Il completamento operativo degli altri P0 aperti riprende dopo il deploy e lo smoke test mirato di `Pazienti 2.0` su Render.
+- Motivo: la nuova anagrafica è il cambiamento strutturale che condiziona il successivo collaudo complessivo dell'area amministrativa. Completare prima il suo ciclo implementazione, deploy privato e verifica evita di ripetere pagamenti, pulizia dati e controllo finale su una versione destinata a essere immediatamente sostituita.
+- Conseguenze: durante questa fase il P0 `Pazienti 2.0` è l'unico P0 aperto in lavorazione. Configurazione dei pagamenti reali, pulizia conclusiva dei dati sintetici, verifica tecnica complessiva, protezione dati e rollback del go-live e decisione GO/NO-GO restano aperti e obbligatori, ma sono pianificati dopo il deploy di `Pazienti 2.0`. Il rinvio operativo non autorizza `APP_ENV=production`, dominio, DNS, indicizzazione, inserimento di dati reali o apertura pubblica. Il preflight e il rollback tecnico strettamente necessari al deploy di `Pazienti 2.0` restano parte del relativo P0 e non vengono rinviati.
+- Collegamenti: `ROADMAP.md`, `PAZIENTI_2_0_IMPLEMENTATION.md`, `OPERATIONS.md`, D-071, D-116, D-117.
+
 ## Modello per nuove decisioni
 
 ```markdown
