@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import date, datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from werkzeug.security import generate_password_hash
@@ -75,6 +75,7 @@ def test_evento_calendar_esterno_e_posizionato_lato_server_nella_fascia_oraria(c
         'dettagli': [],
         'note': None,
         'ha_email': False,
+        'spostabile_calendar': True,
     }
 
     with (
@@ -97,6 +98,77 @@ def test_evento_calendar_esterno_e_posizionato_lato_server_nella_fascia_oraria(c
         'style="top: 66.666667%; height: 3.333333%;"'
         in response.text
     )
+
+
+def test_drag_evento_calendar_esterno_aggiorna_google_senza_mail(app, client):
+    _login(client)
+    token = _csrf(client)
+    app.config['GOOGLE_CALENDAR_ID'] = 'calendar-test'
+    servizio = MagicMock()
+    remoto = {
+        'id': 'evento-esterno-1',
+        'status': 'confirmed',
+        'summary': 'Mario Rossi Medicazione semplice',
+        'start': {
+            'dateTime': '2026-09-11T10:00:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+        'end': {
+            'dateTime': '2026-09-11T10:30:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+    }
+    aggiornato = {
+        **remoto,
+        'start': {
+            'dateTime': '2026-09-11T11:00:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+        'end': {
+            'dateTime': '2026-09-11T11:30:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+    }
+
+    with (
+        patch.object(app_module, 'local_today', return_value=date(2026, 9, 10)),
+        patch.object(app_module, '_ottieni_servizio_calendario', return_value=servizio),
+        patch.object(
+            app_module,
+            '_esegui_richiesta_calendario',
+            side_effect=[remoto, aggiornato],
+        ),
+        patch.object(app_module, 'slot_occupato_db', return_value=False),
+        patch.object(app_module, 'intervallo_occupato_da_calendario', return_value=False),
+        patch.object(app_module, '_invalida_cache_calendario') as invalida_cache,
+    ):
+        response = client.post(
+            '/admin/calendar-esterno/sposta-agenda',
+            data={
+                '_csrf_token': token,
+                'event_id': 'evento-esterno-1',
+                'data_originale': '2026-09-11',
+                'ora_originale': '10:00',
+                'fine_originale': '10:30',
+                'data': '2026-09-11',
+                'ora': '11:00',
+                'invia_email': '0',
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload['ok'] is True
+    assert payload['calendar_ok'] is True
+    assert payload['email_sent'] is None
+    kwargs_patch = servizio.events.return_value.patch.call_args.kwargs
+    assert kwargs_patch['eventId'] == 'evento-esterno-1'
+    assert kwargs_patch['sendUpdates'] == 'none'
+    assert kwargs_patch['body']['start']['dateTime'].startswith(
+        '2026-09-11T11:00:00'
+    )
+    invalida_cache.assert_called_once()
 
 
 @pytest.mark.parametrize(('mail_choice', 'mail_expected'), [('0', False), ('1', True)])

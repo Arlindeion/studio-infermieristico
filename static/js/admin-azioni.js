@@ -390,12 +390,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 `${formattaData(origine.data)} · ${origine.ora}`;
             dialogSpostamento.querySelector('[data-drag-to]').textContent =
                 `${formattaData(proposta.data)} · ${proposta.ora}`;
-            const haEmail = trascinato.dataset.hasEmail === '1';
+            const eventoEsterno = trascinato.dataset.eventType === 'Esterno';
+            const haEmail = !eventoEsterno && trascinato.dataset.hasEmail === '1';
             bottoneMail.disabled = !haEmail;
             notaMail.hidden = haEmail;
-            notaMail.textContent = haEmail
-                ? ''
-                : 'Il paziente non ha un indirizzo email registrato: puoi confermare solo senza mail.';
+            if (eventoEsterno) {
+                notaMail.textContent = 'Evento proveniente da Calendar / Arzamed: lo spostamento aggiorna Calendar, ma il sito non dispone di una mail paziente collegata.';
+            } else {
+                notaMail.textContent = haEmail
+                    ? ''
+                    : 'Il paziente non ha un indirizzo email registrato: puoi confermare solo senza mail.';
+            }
             trascinato.classList.add('is-pending-move');
             dialogSpostamento.showModal();
         }
@@ -410,14 +415,22 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.set('_csrf_token', csrf?.value || '');
             formData.set('data_originale', origineRichiesta.data);
             formData.set('ora_originale', origineRichiesta.ora);
+            formData.set('fine_originale', origineRichiesta.fine);
             formData.set('data', propostaRichiesta.data);
             formData.set('ora', propostaRichiesta.ora);
             formData.set('invia_email', inviaMail ? '1' : '0');
+            const eventoEsterno = appuntamento.dataset.eventType === 'Esterno';
+            if (eventoEsterno) {
+                formData.set('event_id', appuntamento.dataset.eventId || '');
+            }
             const azioni = [...dialogSpostamento.querySelectorAll('[data-drag-choice]')];
             azioni.forEach(button => { button.disabled = true; });
 
             try {
-                const risposta = await fetch(`/admin/appuntamento/${appuntamento.dataset.eventId}/sposta-agenda`, {
+                const endpoint = eventoEsterno
+                    ? '/admin/calendar-esterno/sposta-agenda'
+                    : `/admin/appuntamento/${appuntamento.dataset.eventId}/sposta-agenda`;
+                const risposta = await fetch(endpoint, {
                     method: 'POST',
                     body: formData,
                     credentials: 'same-origin',
@@ -473,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         eventi.forEach(posizionaEvento);
-        agendaSettimanale.querySelectorAll('[data-week-appointment]').forEach(evento => {
+        agendaSettimanale.querySelectorAll('[data-week-draggable]').forEach(evento => {
             evento.addEventListener('dragstart', function(event) {
                 trascinato = this;
                 origine = {

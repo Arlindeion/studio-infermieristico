@@ -5807,7 +5807,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=6.0' in scheda.text
+    assert '/static/css/admin.css?v=6.1' in scheda.text
     assert 'class="admin-shell"' in scheda.text
     assert 'Panoramica' in scheda.text
     assert 'Cartella infermieristica' in scheda.text

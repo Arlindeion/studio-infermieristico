@@ -3462,6 +3462,13 @@ def _eventi_calendar_esterni(data_inizio, data_fine):
             'stato': 'Calendar / Arzamed',
             'sincronizzazione': 'esterno',
             'url': None,
+            'dettagli': [],
+            'note': evento.get('description'),
+            'ha_email': False,
+            'spostabile_calendar': bool(
+                (evento.get('start') or {}).get('dateTime')
+                and (evento.get('end') or {}).get('dateTime')
+            ),
         })
     return eventi
 
@@ -7069,6 +7076,7 @@ def admin():
                     ).total_seconds() // 60
                 ),
             )
+            evento_agenda['week_duration_minutes'] = durata_evento_minuti
             fine_evento_minuti = inizio_evento_minuti + durata_evento_minuti
             inizio_visibile = max(
                 inizio_griglia_minuti,
@@ -8322,6 +8330,244 @@ def sposta_appuntamento_agenda_admin(id):
         'calendar_ok': calendar_ok,
         'email_sent': email_ok,
         'sincronizzazione': appuntamento.sincronizzazione,
+    })
+
+
+
+@app.route('/admin/calendar-esterno/sposta-agenda', methods=['POST'])
+@login_required
+def sposta_evento_calendar_esterno_admin():
+    # Sposta un evento Calendar/Arzamed non collegato a una pratica locale.
+    if not _csrf_admin_valido():
+        return jsonify({
+            'ok': False,
+            'message': 'Sessione non valida. Ricarica l’agenda e riprova.',
+        }), 400
+
+    event_id = request.form.get('event_id', '').strip()
+    if not event_id or len(event_id) > 255:
+        return jsonify({'ok': False, 'message': 'Evento Calendar non valido.'}), 422
+
+    # Gli eventi già collegati al DB devono usare il flusso della pratica locale.
+    for _, modello, _, _ in _modelli_sincronizzabili():
+        if modello.query.filter(modello.google_event_id == event_id).first():
+            return jsonify({
+                'ok': False,
+                'message': 'Questo evento è collegato a una pratica del sito: spostalo dalla relativa scheda.',
+            }), 409
+
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar non è disponibile in questo momento.',
+        }), 503
+
+    try:
+        remoto = _esegui_richiesta_calendario(
+            servizio.events().get(
+                calendarId=calendar_id,
+                eventId=event_id,
+            ),
+            ignora_assenza_evento=True,
+        )
+    except Exception as errore:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Lettura evento esterno fallita durante uno spostamento da agenda.',
+            dettagli={
+                'google_event_id': event_id,
+                'errore': type(errore).__name__,
+            },
+        )
+        return jsonify({
+            'ok': False,
+            'message': 'Non riesco a verificare l’evento su Google Calendar. Riprova.',
+        }), 502
+
+    if not isinstance(remoto, dict) or remoto.get('status') == 'cancelled':
+        return jsonify({
+            'ok': False,
+            'message': 'L’evento non è più disponibile su Google Calendar. Ricarica l’agenda.',
+        }), 409
+
+    start_remoto = remoto.get('start') or {}
+    end_remoto = remoto.get('end') or {}
+    if not start_remoto.get('dateTime') or not end_remoto.get('dateTime'):
+        return jsonify({
+            'ok': False,
+            'message': 'Gli eventi giornalieri non possono essere spostati dalla griglia oraria.',
+        }), 409
+
+    intervallo_originale = _intervallo_da_evento_google(remoto)
+    if not intervallo_originale:
+        return jsonify({
+            'ok': False,
+            'message': 'L’orario dell’evento Calendar non è leggibile. Ricarica l’agenda.',
+        }), 409
+
+    inizio_originale, fine_originale, _ = intervallo_originale
+    data_originale = request.form.get('data_originale', '').strip()
+    ora_originale = request.form.get('ora_originale', '').strip()
+    fine_originale_form = request.form.get('fine_originale', '').strip()
+    if (
+        data_originale != inizio_originale.date().isoformat()
+        or ora_originale != inizio_originale.strftime('%H:%M')
+        or fine_originale_form != fine_originale.strftime('%H:%M')
+    ):
+        return jsonify({
+            'ok': False,
+            'message': 'L’evento è cambiato su Calendar dopo l’apertura dell’agenda. Ricarica la pagina.',
+        }), 409
+
+    if request.form.get('invia_email') == '1':
+        return jsonify({
+            'ok': False,
+            'message': 'L’evento arriva da Calendar/Arzamed e non ha una mail paziente collegata nel sito. Conferma senza mail.',
+            'requires_without_email': True,
+        }), 422
+
+    durata = int((fine_originale - inizio_originale).total_seconds() // 60)
+    if durata <= 0 or durata > (15 * 60):
+        return jsonify({
+            'ok': False,
+            'message': 'La durata dell’evento non è compatibile con la griglia settimanale.',
+        }), 422
+
+    nuova_data = request.form.get('data', '').strip()
+    nuova_ora = request.form.get('ora', '').strip()
+    try:
+        nuovo_inizio, nuovo_fine = _intervallo_locale(
+            nuova_data,
+            nuova_ora,
+            durata,
+        )
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Data o orario non validi.'}), 422
+
+    if nuova_data < local_today().isoformat():
+        return jsonify({
+            'ok': False,
+            'message': 'Non puoi spostare un evento nel passato.',
+        }), 422
+
+    limite_inizio = nuovo_inizio.replace(
+        hour=7,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    limite_fine = nuovo_inizio.replace(
+        hour=22,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    if nuovo_inizio < limite_inizio or nuovo_fine > limite_fine:
+        return jsonify({
+            'ok': False,
+            'message': 'Sposta l’evento tra le 07:00 e le 22:00, entro la griglia visibile.',
+        }), 422
+
+    if nuova_data == data_originale and nuova_ora == ora_originale:
+        return jsonify({
+            'ok': True,
+            'message': 'L’evento è già in questo orario.',
+            'data': nuova_data,
+            'ora': nuova_ora,
+            'calendar_ok': True,
+            'email_sent': None,
+        })
+
+    if (
+        slot_occupato_db(nuova_data, nuova_ora, durata)
+        or intervallo_occupato_da_calendario(
+            nuova_data,
+            nuova_ora,
+            durata,
+            ignore_google_event_id=event_id,
+        )
+    ):
+        return jsonify({
+            'ok': False,
+            'message': 'Il nuovo intervallo è occupato. L’evento non è stato spostato.',
+        }), 409
+
+    timezone_evento = (
+        start_remoto.get('timeZone')
+        or end_remoto.get('timeZone')
+        or getattr(FUSO_ORARIO, 'key', 'Europe/Rome')
+    )
+    corpo = {
+        'start': {
+            'dateTime': nuovo_inizio.isoformat(timespec='seconds'),
+            'timeZone': timezone_evento,
+        },
+        'end': {
+            'dateTime': nuovo_fine.isoformat(timespec='seconds'),
+            'timeZone': timezone_evento,
+        },
+    }
+
+    try:
+        aggiornato = _esegui_richiesta_calendario(
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=event_id,
+                body=corpo,
+                sendUpdates='none',
+            )
+        )
+    except Exception as errore:
+        registra_evento(
+            'google_calendar',
+            'errore',
+            'Spostamento evento esterno Calendar fallito.',
+            dettagli={
+                'google_event_id': event_id,
+                'errore': type(errore).__name__,
+            },
+        )
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar non ha confermato lo spostamento. Nessun dato locale è stato modificato.',
+        }), 502
+
+    if not isinstance(aggiornato, dict):
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar ha restituito una risposta non valida. Ricarica l’agenda prima di riprovare.',
+        }), 502
+
+    _invalida_cache_calendario()
+    registra_evento(
+        'google_calendar',
+        'successo',
+        'Evento esterno spostato dalla griglia settimanale.',
+        dettagli={
+            'google_event_id': event_id,
+            'prima': {
+                'data': data_originale,
+                'ora': ora_originale,
+                'fine': fine_originale_form,
+            },
+            'dopo': {
+                'data': nuova_data,
+                'ora': nuova_ora,
+                'fine': nuovo_fine.strftime('%H:%M'),
+            },
+        },
+    )
+    return jsonify({
+        'ok': True,
+        'message': 'Evento spostato su Google Calendar senza invio mail dal sito.',
+        'data': nuova_data,
+        'ora': nuova_ora,
+        'calendar_ok': True,
+        'email_sent': None,
+        'sincronizzazione': 'esterno',
     })
 
 

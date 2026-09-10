@@ -2822,6 +2822,7 @@ button.admin-inline-link {
     border-left: 4px solid var(--week-event-accent);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--nero-a06);
+    box-sizing: border-box;
     color: var(--testo);
     display: grid;
     gap: 0.12rem;
@@ -2908,6 +2909,45 @@ button.admin-inline-link {
     color: var(--verde-scuro);
     font-weight: 800;
     margin-top: 0.1rem;
+}
+
+
+.admin-week-event.is-compact {
+    align-items: center;
+    display: flex;
+    gap: 0.32rem;
+    min-height: 22px;
+    padding: 0.12rem 0.34rem;
+    white-space: nowrap;
+}
+
+.admin-week-event.is-compact .admin-week-event-head {
+    flex: 0 0 auto;
+}
+
+.admin-week-event.is-compact .admin-week-event-head .sync-dot {
+    display: none;
+}
+
+.admin-week-event.is-compact time {
+    font-size: 0.64rem;
+    line-height: 1;
+}
+
+.admin-week-event.is-compact .admin-week-event-title {
+    flex: 1 1 auto;
+    font-size: 0.69rem;
+    line-height: 1.05;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-week-event.is-compact > small,
+.admin-week-event.is-compact > a,
+.admin-week-event.is-compact > .admin-week-drag-hint {
+    display: none;
 }
 
 .admin-week-event-corso,

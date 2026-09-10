@@ -156,13 +156,6 @@
         <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_successiva.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese successivo{% else %}Periodo successivo{% endif %}">→</a>
         <a class="admin-calendar-today" href="{{ url_for('admin', data=oggi_admin.isoformat(), vista=vista_agenda) }}#admin-agenda">Oggi</a>
     </nav>
-    <div class="admin-command-strip">
-        <a href="#admin-agenda"><strong>{{ eventi_oggi_count }}</strong><span>impegni oggi</span></a>
-        <a href="#admin-richieste" data-admin-jump="richieste"><strong>{{ richieste_urgenti_count }}</strong><span>richieste urgenti</span></a>
-        <a href="#admin-corsi" data-admin-jump="corsi"><strong>{{ posti_corsi_settimana }}{% if capienza_corsi_settimana %}/{{ capienza_corsi_settimana }}{% endif %}</strong><span>posti corsi · 7 giorni</span></a>
-        <a href="#admin-call-sonno" data-admin-jump="call-sonno"><strong>{{ funnel_sonno.in_attesa }} · {{ funnel_sonno.confermate }} · {{ funnel_sonno.concluse }}</strong><span>sonno: attesa · confermate · concluse</span></a>
-    </div>
-
     <div class="admin-agenda-layout{% if vista_agenda == 'mese' %} is-month{% elif vista_agenda == 'settimana' %} is-week{% endif %}">
         <div class="admin-agenda-list">
         {% if vista_agenda == 'mese' %}
@@ -226,27 +219,33 @@
                 {% for giorno in giorni_agenda %}
                 <div class="admin-week-day-canvas{% if giorno == oggi_admin %} is-today{% endif %}" data-week-day="{{ giorno.isoformat() }}">
                     {% for evento in agenda_per_giorno.get(giorno, []) %}
-                    {% set spostabile = evento.tipo == 'Appuntamento' and evento.stato == 'Confermato' and evento.sincronizzazione not in ['difforme', 'eliminato_esternamente'] %}
+                    {% set spostabile_locale = evento.tipo == 'Appuntamento' and evento.stato == 'Confermato' and evento.sincronizzazione not in ['difforme', 'eliminato_esternamente'] %}
+                    {% set spostabile_esterno = evento.tipo == 'Esterno' and evento.get('spostabile_calendar', False) %}
+                    {% set spostabile = spostabile_locale or spostabile_esterno %}
+                    {% set compatto = evento.get('week_duration_minutes', 30) <= 30 %}
                     <article
-                        class="admin-week-event admin-week-event-{{ evento.tipo|lower }}{% if spostabile %} is-draggable{% endif %}"
+                        class="admin-week-event admin-week-event-{{ evento.tipo|lower }}{% if compatto %} is-compact{% endif %}{% if spostabile %} is-draggable{% endif %}"
                         data-week-event
                         data-event-id="{{ evento.id }}"
                         data-event-type="{{ evento.tipo }}"
                         data-event-date="{{ giorno.isoformat() }}"
                         data-event-start="{{ evento.inizio.strftime('%H:%M') }}"
                         data-event-end="{{ evento.fine.strftime('%H:%M') }}"
+                        title="{{ evento.titolo }}"
                         style="top: {{ '%.6f'|format(evento.week_top_percent) }}%; height: {{ '%.6f'|format(evento.week_height_percent) }}%;"
                         {% if evento.week_hidden %}hidden{% endif %}
-                        {% if spostabile %}draggable="true" data-week-appointment data-has-email="{{ '1' if evento.get('ha_email') else '0' }}"{% endif %}
+                        {% if spostabile %}draggable="true" data-week-draggable data-has-email="{{ '1' if evento.get('ha_email') else '0' }}"{% endif %}
+                        {% if spostabile_locale %}data-week-appointment{% endif %}
+                        {% if spostabile_esterno %}data-week-calendar-external{% endif %}
                     >
                         <div class="admin-week-event-head">
                             <time data-week-event-time>{{ evento.inizio.strftime('%H:%M') }}–{{ evento.fine.strftime('%H:%M') }}</time>
                             <span class="sync-dot sync-{{ evento.sincronizzazione }}" title="{{ evento.sincronizzazione|replace('_', ' ') }}"></span>
                         </div>
-                        <strong>{{ evento.titolo }}</strong>
+                        <strong class="admin-week-event-title">{{ evento.titolo }}</strong>
                         <small>{{ evento.tipo|replace('CallSonno', 'Call sonno')|replace('IncontroAccompagnamento', 'Incontro')|replace('BloccoAgenda', 'Blocco') }} · {{ evento.stato }}</small>
                         {% if evento.url %}<a href="{{ evento.url }}" draggable="false" aria-label="Apri la scheda di {{ evento.titolo }}">Apri scheda</a>{% endif %}
-                        {% if spostabile %}<span class="admin-week-drag-hint">Trascina per spostare</span>{% endif %}
+                        {% if spostabile %}<span class="admin-week-drag-hint">{% if spostabile_esterno %}Trascina per spostare su Calendar{% else %}Trascina per spostare{% endif %}</span>{% endif %}
                     </article>
                     {% endfor %}
                 </div>
@@ -257,7 +256,7 @@
             <span class="is-appointment">Appuntamenti e call</span>
             <span class="is-course">Corsi</span>
             <span class="is-block">Pause e chiusure</span>
-            <small>Gli appuntamenti confermati si spostano solo trascinandoli. Lo slot viene ricontrollato prima del salvataggio.</small>
+            <small>Appuntamenti confermati ed eventi Calendar/Arzamed si spostano trascinandoli. Lo slot viene ricontrollato prima del salvataggio.</small>
         </div>
         {% else %}
             {% for giorno, eventi in agenda_per_giorno.items() %}
@@ -1486,5 +1485,5 @@
     {% endif %}
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.8"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.9"></script>
 {% endblock %}
