@@ -1,10 +1,10 @@
 # Area Pazienti 2.0 — specifica corrente e registro di revisione
 
-> **Stato al 7 settembre 2026:** candidata `PAZ-A1 v4` verificata tecnicamente in copia isolata; applicazione al repository ancora separata.
+> **Stato al 10 settembre 2026:** PAZ-A1, PAZ-A2 v5 e PAZ-A4 sono integrate e verificate localmente nel branch `codex/pazienti-2-0`; il cutover diretto è approvato in D-117. Nessun deploy o uso di dati reali è autorizzato da questo documento.
 >
-> Le sezioni 1–13 riportano la candidata **PAZ-A1 v4** come dipendenza; le sezioni 14–29 contengono la proposta A2 revisionata. La patch A1 non è applicata al repository, non è committata, non è deployata e questo documento non autorizza A2, backfill o uso di dati reali.
+> Le sezioni 1–38 conservano specifiche e registro delle revisioni A1/A2. Lo stato storico riportato dentro quelle sezioni descrive i pacchetti al momento delle singole review; non prevale sul presente riepilogo operativo.
 >
-> La base verificata è `ebab09b`. La patch v4 si applica pulitamente a tale commit; HEAD Git e head Alembic devono essere ricontrollati prima dell'applicazione effettiva.
+> Integrazione corrente: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, aggiornamento roadmap `4276c1f`, PAZ-A4 `7e022bf`. La suite integrata corrente ha superato 410 test Python, 37 test JavaScript, 6 test PostgreSQL opt-in e i controlli Alembic SQLite/PostgreSQL. Queste evidenze locali non equivalgono a un deploy.
 
 ## 1. Regole di stato e fonti canoniche
 
@@ -207,8 +207,8 @@ Su SQLite le tre FK nullable verso `persona` vengono aggiunte come colonne inlin
 |---|---|---|
 | PAZ-A1 | solo legacy | create, sempre NULL |
 | PAZ-A2 | legacy | identità/recapiti popolati, pratiche ancora NULL |
-| PAZ-A3 | legacy + confronto | popolate solo da mapping verificato |
-| PAZ-A4 | da decidere | eventuale dual-read/dual-write limitato |
+| PAZ-A3 | legacy + confronto | no-op se i conteggi del database Render sono nulli; altrimenti stop e nuova review |
+| PAZ-A4 | v2 per ogni nuova scrittura | cutover diretto, senza dual-write; lettura legacy solo per compatibilità |
 | PAZ-A5 | v2 dopo cutover | legacy ritirabile solo dopo riconciliazione |
 
 Non sono ammessi collegamenti per somiglianza di nome.
@@ -404,7 +404,7 @@ Solo dopo accettazione A1:
 
 ### PAZ-A4 — UI/cutover controllato
 
-Da progettare dopo A1–A3.
+D-117 approva il cutover diretto: tutte le nuove anagrafiche e associazioni usano il modello v2, senza dual-write. Il legacy resta presente ma non riceve nuovi record.
 
 ### PAZ-A5 — cleanup legacy
 
@@ -2640,3 +2640,61 @@ Prima dell'accettazione definitiva del delta v5 il revisore deve ripetere almeno
 ### 38.6 Stato
 
 La v5 non riapre alcun rilievo di specifica e non introduce nuove funzionalità. Resta `In revisione` esclusivamente per la verifica del delta manutentivo. Nessun apply su dati reali, commit/push o deploy è autorizzato da questo pacchetto.
+
+---
+
+## 39. PAZ-A4 — cutover diretto approvato per il database vuoto
+
+> **Stato:** implementato nel branch candidato; collaudo privato Render e
+> go-live non ancora autorizzati.
+
+La decisione D-117 elimina il dual-write: dal lancio ogni nuova anagrafica e
+ogni nuovo collegamento vengono scritti soltanto nel modello Pazienti 2.0. Le
+tabelle legacy restano nello schema per compatibilità e non vengono cancellate
+in questa fase.
+
+### 39.1 Perimetro implementato
+
+- elenco, ricerca, creazione, modifica e scheda admin usano `Persona` e
+  `RecapitoPersona`;
+- appuntamenti, call sonno e iscrizioni corso valorizzano le rispettive FK v2;
+- il flusso operativo non crea più `PersonaCorso` o `CollegamentoPersona`;
+- storico, ricerca dei possibili duplicati e consensi privacy leggono il modello
+  v2, mantenendo una sola compatibilità di lettura per eventuali record legacy;
+- la retention rimuove i collegamenti v2 e anonimizza la persona quando non ha
+  più pratiche identificabili;
+- la migrazione `d4a7c2e9f610` aggiunge il collegamento v2 ai consensi e impone
+  che ogni consenso punti a un solo modello, legacy oppure v2;
+- il downgrade è intenzionalmente bloccato dopo la prima scrittura A4, perché
+  non esiste una ricostruzione affidabile dei nuovi pazienti nel legacy.
+
+### 39.2 PAZ-A3 sul database dichiarato vuoto
+
+Il comando `flask --app app patients preflight-cutover` verifica la revisione
+Alembic e stampa esclusivamente conteggi minimizzati. Deve restituire revisione
+`d4a7c2e9f610`, `status: pronto` e tutti i conteggi a zero. In caso contrario il
+deploy si ferma: non viene avviato automaticamente il backfill A2.
+
+La procedura completa e i criteri di arresto sono nella sezione PAZ-A3/A4 di
+`OPERATIONS.md`.
+
+### 39.3 Evidenze locali del 10 settembre 2026
+
+```text
+suite completa Python                         410 passed, 6 skipped
+suite JavaScript                              37 passed
+PostgreSQL reale usa-e-getta A1/A2            6 passed
+migrazione A4 + db check PostgreSQL reale     OK
+migrazione A4 + db check SQLite               OK
+preflight A3 su database SQLite vuoto         pronto, tutti i conteggi a zero
+python compile + git diff --check             OK
+```
+
+Il collaudo visuale con dati esclusivamente sintetici ha verificato elenco,
+modulo e scheda a 1440×900 e 390×844 px senza overflow orizzontale. Il test
+reale nel browser locale `logout → Indietro` ha richiesto nuovamente
+l'autenticazione e non ha ripresentato la scheda protetta. Database e server di
+collaudo sono stati eliminati al termine.
+
+Restano esterni a queste evidenze il deploy privato Render, il preflight sul
+database Render, gli smoke test post-deploy e il go-live pubblico.

@@ -418,8 +418,9 @@ passaggi CET/CEST.
 - `CallSonno`: richiesta breve, stato, slot Calendar e invito al questionario.
 - `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
-- `PersonaCorso`: anagrafica pazienti, partecipanti e famiglie esposta nell’admin come `Pazienti`; il nome tecnico e la tabella restano invariati per compatibilità.
-- `ConsensoPrivacyPaziente`: nome tecnico storico della tabella che conserva stato e data della presa visione associata alla scheda paziente e alla specifica pratica di origine.
+- `Persona`, `RecapitoPersona`: anagrafica Pazienti 2.0 attiva e relativi recapiti normalizzati; dal cutover sono l'unica destinazione delle nuove scritture amministrative.
+- `PersonaCorso`: anagrafica legacy mantenuta temporaneamente in sola lettura per i record precedenti; non riceve nuove righe dopo il cutover D-117.
+- `ConsensoPrivacyPaziente`: tabella storica che conserva stato e data della presa visione associata alla specifica pratica; ogni riga punta a una sola anagrafica, legacy oppure v2.
 - `AutorizzazioneImmagini`: consenso facoltativo per una singola persona, con finalità, canali, responsabilità genitoriale, versione dell’informativa e revoca.
 - `IscrizioneCorso`: richiesta collegata, quando possibile, a corso e persona.
 - `PercorsoAccompagnamento`: edizione del corso nascita completo.
@@ -429,7 +430,8 @@ passaggi CET/CEST.
 - `AttivitaAdmin`, `NotaAdmin`: prossime azioni e note cronologiche.
 - `EmailOperativa`: copia esatta di destinatario, oggetto, corpo ed esito fino al termine applicabile alla pratica collegata.
 - `PropostaSlot`, `BloccoAgenda`: proposte accettabili e pause/chiusure sincronizzate.
-- `RegistroModifica`, `CollegamentoPersona`: audit amministrativo e collegamenti manuali tra pratiche e anagrafiche paziente.
+- `RegistroModifica`: audit amministrativo minimizzato.
+- `CollegamentoPersona`: collegamento legacy mantenuto in sola compatibilità di lettura; le nuove associazioni usano le FK Pazienti 2.0 sulle pratiche.
 
 Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.md`.
 
@@ -544,11 +546,16 @@ successivi non ne dipendono.
 
 ## Database e migrazioni
 
-La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente del repository è
-`a6c9e1f4b802`, mentre l’ultima revisione verificata nella preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo deploy. Le revisioni aggiungono qualificazione, UTM e stato dei
-promemoria email alla call sonno, rimuovono i campi del precedente promemoria
-WhatsApp, aggiungono la durata effettiva, introducono la regia operativa admin, normalizzano le difformità dei database SQLite legacy, portano `iscrizione_corso.data_corso` da 20 a 255 caratteri per contenere data, ora e luogo dell’edizione e rendono facoltativo `persona_corso.telefono` per consentire anagrafiche con recapiti ancora da completare. Un nuovo
-database, SQLite o PostgreSQL, si prepara esclusivamente con:
+La baseline Alembic `56dda7f5137f` crea lo schema iniziale; la revisione corrente
+del repository è `d4a7c2e9f610`, mentre l'ultima revisione verificata nella
+preproduzione privata resta `d91e6b4f2a30` finché non viene eseguito un nuovo
+deploy. Le revisioni aggiungono qualificazione, UTM e stato dei promemoria email
+alla call sonno, rimuovono i campi del precedente promemoria WhatsApp, aggiungono
+la durata effettiva, introducono la regia operativa admin, normalizzano le
+difformità dei database SQLite legacy, portano `iscrizione_corso.data_corso` da
+20 a 255 caratteri, rendono facoltativo `persona_corso.telefono` e introducono
+schema, backfill e cutover di Pazienti 2.0. Un nuovo database, SQLite o
+PostgreSQL, si prepara esclusivamente con:
 
 ```bash
 flask --app app db upgrade
@@ -692,11 +699,12 @@ pubbliche, una riga admin sintetica, una prenotazione sintetica e revisione
 `56dda7f5137f` correttamente recuperate. Server, database e backup temporanei
 sono stati eliminati dopo il test.
 
-## PAZ-A2 — backfill identità Pazienti 2.0 (solo dopo autorizzazione)
+## PAZ-A2 — backfill identità Pazienti 2.0 (solo per database non vuoti)
 
-> Stato operativo: questa procedura documenta la candidata PAZ-A2 per test e
-> revisione. Non autorizza l'esecuzione su dati reali, staging o produzione.
-> PAZ-A2 resta subordinata all'integrazione e verifica di PAZ-A1.
+> Stato operativo: PAZ-A2 è integrata e verificata con dati sintetici su SQLite
+> e PostgreSQL. Non è mai stata eseguita su dati esterni e non va avviata sul
+> database Render dichiarato vuoto: in quel caso PAZ-A3 deve chiudersi come
+> preflight senza scritture, secondo D-117.
 
 ### Sicurezza dei database di test
 
@@ -814,6 +822,47 @@ PAZ-A2 non deve:
 - valorizzare FK delle pratiche;
 - modificare route/UI;
 - eseguire cutover o cleanup legacy.
+
+## PAZ-A3/A4 — preflight e cutover diretto sul database Render vuoto
+
+Il deploy resta un'operazione separata e richiede approvazione esplicita. Dopo
+il deploy del commit candidato nell'ambiente privato, eseguire nell'ordine:
+
+```bash
+flask --app app db upgrade
+flask --app app db check
+flask --app app patients preflight-cutover
+```
+
+Il terzo comando non legge né stampa dati identificativi. Deve terminare con
+codice zero e restituire `status: pronto`, revisione Alembic
+`d4a7c2e9f610` e conteggi tutti uguali a zero per anagrafiche, pratiche,
+collegamenti e consensi. L'eventuale account amministratore e le configurazioni
+operative non sono conteggiati.
+
+Se la revisione non coincide o anche un solo conteggio è diverso da zero:
+
+1. interrompere il collaudo;
+2. non eseguire automaticamente PAZ-A2 o altre scritture correttive;
+3. identificare se i record sono sintetici o reali senza copiarli nei log;
+4. decidere separatamente se svuotare il database di test oppure applicare il
+   percorso controllato A2/A3 per un database da preservare.
+
+Con preflight verde, il collaudo privato A4 usa esclusivamente dati sintetici e
+verifica almeno:
+
+- creazione, modifica, ricerca e scheda di una persona in Pazienti 2.0;
+- collegamento di appuntamento, call sonno e iscrizione corso alle FK v2;
+- assenza di nuove righe in `persona_corso` e `collegamento_persona`;
+- storico e consensi senza dati personali nei log;
+- logout e pulsante Indietro del browser, con nuova autenticazione richiesta;
+- resa e uso da tastiera dell'admin a 1440 px e 390 px.
+
+Al termine eliminare i record sintetici prima di qualunque uso reale. Dopo la
+prima scrittura A4 non usare il downgrade Alembic: il rollback applicativo non
+può ricostruire nel modello legacy i pazienti nati solo in v2. Un eventuale
+reset del database vuoto o un deploy correttivo richiedono una decisione
+esplicita. PITR e backup cifrato restano obbligatori prima del primo dato reale.
 
 ## Comandi locali
 
