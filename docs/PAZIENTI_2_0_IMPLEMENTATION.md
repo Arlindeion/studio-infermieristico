@@ -1,10 +1,10 @@
 # Area Pazienti 2.0 — specifica corrente e registro di revisione
 
-> **Stato al 10 settembre 2026:** PAZ-A1, PAZ-A2 v5 e il cutover dati PAZ-A4 sono integrati nel branch `integration/pazienti-2.0`; D-119 ha riaperto il completamento UI per adottare la preview Admin 2.0 nell’intera area amministrativa. Nessun deploy o uso di dati reali è autorizzato da questo documento.
+> **Stato al 10 settembre 2026:** PAZ-A1, PAZ-A2 v5, il cutover dati PAZ-A4 e la shell completa Admin 2.0 sono integrati nel branch `integration/pazienti-2.0`; le correzioni P1 di accessibilità della sidebar e consultazione protetta delle anagrafiche archiviate sono verificate localmente. Nessun deploy o uso di dati reali è autorizzato da questo documento.
 >
 > Le sezioni 1–38 conservano specifiche e registro delle revisioni A1/A2. Lo stato storico riportato dentro quelle sezioni descrive i pacchetti al momento delle singole review; non prevale sul presente riepilogo operativo.
 >
-> Fondazione integrata: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, PAZ-A4 `7e022bf`, integrazione `fa9ff40` e rinforzi finali `b8fadb0`. Questi commit non costituiscono da soli la UI Admin 2.0 approvata in D-119. Le evidenze locali non equivalgono a un deploy.
+> Fondazione integrata: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, PAZ-A4 `7e022bf`, integrazione `fa9ff40` e rinforzi finali `b8fadb0`. Il commit `cd6d084` aggiunge la UI Admin 2.0 approvata in D-119. Le evidenze locali non equivalgono a un deploy.
 
 ## 1. Regole di stato e fonti canoniche
 
@@ -2703,8 +2703,8 @@ database Render, gli smoke test post-deploy e il go-live pubblico.
 
 ## 40. Admin 2.0 — integrazione della preview completa
 
-> **Stato:** in implementazione nel branch `integration/pazienti-2.0`; deploy
-> privato non ancora autorizzato.
+> **Stato:** implementata e verificata localmente nel branch
+> `integration/pazienti-2.0`; deploy privato non ancora autorizzato.
 
 D-119 chiarisce che il risultato atteso non è soltanto il cambio di modello
 dati. Sidebar, topbar, gerarchia e struttura responsive della preview completa
@@ -2740,7 +2740,7 @@ devono diventare la shell reale di tutte le schermate amministrative.
 
 ```text
 suite completa Python                         428 passed, 6 skipped
-suite JavaScript                              41 passed
+suite JavaScript                              42 passed
 python compile + git diff --check             OK
 controllo 1440x900 e 390x844                  OK, nessun overflow
 console browser                               nessun errore
@@ -2750,3 +2750,15 @@ logout -> Indietro                            login nuovamente richiesto
 I 6 skip restano i test PostgreSQL opt-in e devono essere eseguiti prima del
 deploy candidato. Il controllo visuale ha usato esclusivamente dati sintetici
 in un database SQLite in-memory.
+
+### 40.4 Correzioni P1 successive a `cd6d084`
+
+- la sidebar usa semantica di navigazione e marca la sezione corrente con
+  `aria-current="page"`; la semantica `tablist`/`tab` rimane soltanto nei veri
+  pannelli a schede della pagina paziente;
+- il filtro delle anagrafiche archiviate offre un accesso esplicito in sola
+  lettura alla scheda storica;
+- la scheda archiviata non espone il salvataggio e le route di modifica o di
+  collegamento a nuove pratiche continuano a rifiutare la persona non attiva;
+- test Python e JavaScript coprono navigazione, rendering read-only e blocco
+  delle scritture.

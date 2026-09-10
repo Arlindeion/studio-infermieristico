@@ -954,6 +954,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il P0 #3 resta aperto e il deploy privato viene preceduto dall’integrazione della nuova shell su dashboard, pratiche, corsi, aziende, pazienti, attività, errori, impostazioni e archivi. Elenco e scheda paziente devono usare dati reali per metriche, ricerca, filtri, stato, cronologia e consensi. Le sezioni della preview prive di un dominio implementato, come cartella infermieristica, note generali e archivio documenti, devono essere indicate come future e non offrire comandi simulati. I flussi esistenti, CSRF, autenticazione, audit, Calendar, email e header `no-store` non cambiano implicitamente. Il criterio di uscita richiede suite automatica, controllo desktop/mobile, tastiera, focus, assenza di overflow e smoke test dopo il deploy.
 - Collegamenti: `ROADMAP.md`, `PAZIENTI_2_0_IMPLEMENTATION.md`, `templates/admin_layout.html`, `templates/admin.html`, `templates/admin_paziente.html`, `static/css/admin.css`, D-116, D-117, D-118.
 
+## D-120 — Le anagrafiche archiviate restano consultabili ma non modificabili
+
+- Data: 2026-09-10.
+- Stato: approvata e verificata localmente.
+- Decisione: consentire dall’elenco Pazienti l’apertura delle anagrafiche nello stato `archiviata` esclusivamente in sola lettura. Le route che collegano nuove pratiche o modificano l’anagrafica continuano ad accettare soltanto persone attive. Trattare inoltre la sidebar Admin 2.0 come navigazione tra sezioni, usando `aria-current="page"` sulla voce corrente invece della semantica dei tab; i tab restano riservati ai pannelli interni della scheda paziente.
+- Motivo: lo storico deve poter essere consultato senza riattivare implicitamente un’anagrafica o permettere nuove scritture. La sidebar cambia destinazione o sezione amministrativa e non rappresenta un widget a schede secondo il modello di accessibilità ARIA.
+- Conseguenze: l’elenco distingue `Apri scheda` da `Apri in sola lettura`; la scheda archiviata non mostra `Salva modifiche`, mentre una richiesta POST di modifica e il tentativo di collegarla a una nuova pratica restituiscono `404` o il rifiuto applicativo già previsto. La suite locale passa con 428 test Python, 6 skip PostgreSQL opt-in e 42 test JavaScript.
+- Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_layout.html`, `templates/admin_paziente.html`, `static/js/admin-azioni.js`, `tests/test_app.py`, `tests/js/admin-shell.test.js`, D-119.
+
 ## Modello per nuove decisioni
 
 ```markdown

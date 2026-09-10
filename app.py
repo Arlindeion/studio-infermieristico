@@ -7784,7 +7784,11 @@ def _campi_anagrafici_persona_da_form():
 @app.route('/admin/paziente/<int:id>')
 @login_required
 def dettaglio_paziente_admin(id):
-    paziente = _persona_v2_attiva(id)
+    paziente = Persona.query.filter(
+        Persona.id == id,
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato.in_(('attiva', 'archiviata')),
+    ).first()
     if paziente is None:
         abort(404)
     consensi_privacy = _patient_privacy_history(paziente)

@@ -15,11 +15,29 @@ const patientTemplate = fs.readFileSync(
     path.resolve(__dirname, '../../templates/admin_paziente.html'),
     'utf8'
 );
+const adminLayoutTemplate = fs.readFileSync(
+    path.resolve(__dirname, '../../templates/admin_layout.html'),
+    'utf8'
+);
+const adminActionsScript = fs.readFileSync(
+    path.resolve(__dirname, '../../static/js/admin-azioni.js'),
+    'utf8'
+);
 
 test('porta in vista la sezione attiva della sidebar mobile', () => {
     assert.match(shellScript, /admin-shell-nav-link\.attivo/);
     assert.match(shellScript, /scrollIntoView/);
     assert.match(shellScript, /inline: 'center'/);
+});
+
+test('la sidebar principale usa semantica di navigazione e aria-current', () => {
+    assert.doesNotMatch(adminLayoutTemplate, /role="tablist"/);
+    assert.doesNotMatch(adminLayoutTemplate, /role="tab"/);
+    assert.doesNotMatch(adminLayoutTemplate, /aria-selected/);
+    assert.match(adminLayoutTemplate, /aria-current="page"/);
+    assert.match(adminActionsScript, /setAttribute\('aria-current', 'page'\)/);
+    assert.match(adminActionsScript, /removeAttribute\('aria-current'\)/);
+    assert.doesNotMatch(adminActionsScript, /aria-selected/);
 });
 
 test('i tab paziente aggiornano selezione e pannello visibile', () => {

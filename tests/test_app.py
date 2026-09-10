@@ -5919,6 +5919,7 @@ def test_admin_pazienti_espone_metriche_e_filtra_lo_stato(client):
         app_module._imposta_recapito_principale(attiva, 'email', 'ada@example.test')
         app_module._imposta_recapito_principale(da_verificare, 'telefono', '3332222222')
         db.session.commit()
+        archiviata_id = archiviata.id
 
     _login_admin(client)
     response = client.get('/admin?stato_paziente=verifica#admin-pazienti')
@@ -5931,6 +5932,31 @@ def test_admin_pazienti_espone_metriche_e_filtra_lo_stato(client):
     assert 'Bruna Rosa' in section
     assert 'Ada Verdi' not in section
     assert 'Carla Blu' not in section
+
+    archived_response = client.get('/admin?stato_paziente=archiviata#admin-pazienti')
+    assert archived_response.status_code == 200
+    archived_section = archived_response.text.split(
+        'id="admin-pazienti"', 1
+    )[1].split('</section>', 1)[0]
+    assert 'Carla Blu' in archived_section
+    assert f'href="/admin/paziente/{archiviata_id}"' in archived_section
+    assert 'Apri in sola lettura' in archived_section
+
+    archived_detail = client.get(f'/admin/paziente/{archiviata_id}')
+    assert archived_detail.status_code == 200
+    assert 'Anagrafica archiviata' in archived_detail.text
+    assert 'Salva modifiche' not in archived_detail.text
+
+    csrf = _csrf_admin(client)
+    archived_update = client.post(
+        f'/admin/paziente/{archiviata_id}/modifica',
+        data={
+            '_csrf_token': csrf,
+            'nome': 'Carla',
+            'cognome': 'Blu',
+        },
+    )
+    assert archived_update.status_code == 404
 
 
 def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
@@ -6121,7 +6147,10 @@ def test_admin_non_collega_una_persona_archiviata(client):
 
     assert response.status_code == 422
     assert response.get_json()['message'] == 'La persona selezionata non è più disponibile.'
-    assert client.get(f'/admin/paziente/{paziente_id}').status_code == 404
+    archived_detail = client.get(f'/admin/paziente/{paziente_id}')
+    assert archived_detail.status_code == 200
+    assert 'Anagrafica archiviata' in archived_detail.text
+    assert 'Salva modifiche' not in archived_detail.text
     with flask_app.app_context():
         assert Appuntamento.query.count() == 0
 

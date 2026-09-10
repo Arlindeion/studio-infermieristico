@@ -339,7 +339,7 @@
                     <td>{% if paziente.stato == 'archiviata' %}<span class="admin-patient-badge is-archived">Archiviata</span>{% elif paziente.anagrafica_da_verificare %}<span class="admin-patient-badge is-review">Da verificare</span>{% else %}<span class="admin-patient-badge is-active">Attiva</span>{% endif %}{% if paziente.id in pazienti_in_collisione %}<span class="admin-patient-badge is-collision">Recapito condiviso</span>{% endif %}</td>
                     <td>{{ paziente.numero_pratiche }}</td>
                     <td>{{ paziente.aggiornato_il|local_timestamp }}</td>
-                    <td>{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% else %}<span class="admin-secondary">Scheda non apribile</span>{% endif %}</td>
+                    <td>{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% elif paziente.stato == 'archiviata' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri in sola lettura</a>{% else %}<span class="admin-secondary">Stato non consultabile</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -355,7 +355,7 @@
                 <p><span>Pratiche</span> {{ paziente.numero_pratiche }}</p>
                 {% if paziente.codice_fiscale %}<p><span>Codice fiscale</span> {{ paziente.codice_fiscale }}</p>{% endif %}
             </div>
-            <div class="card-admin-azioni">{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% else %}<span class="admin-secondary">Scheda non apribile</span>{% endif %}</div>
+            <div class="card-admin-azioni">{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% elif paziente.stato == 'archiviata' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri in sola lettura</a>{% else %}<span class="admin-secondary">Stato non consultabile</span>{% endif %}</div>
         </article>
         {% endfor %}
     </div>

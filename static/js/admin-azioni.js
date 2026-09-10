@@ -15,7 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
         adminViewButtons.forEach(button => {
             const attivo = button.dataset.adminTarget === nomePannello;
             button.classList.toggle('attivo', attivo);
-            button.setAttribute('aria-selected', attivo ? 'true' : 'false');
+            if (attivo) {
+                button.setAttribute('aria-current', 'page');
+            } else {
+                button.removeAttribute('aria-current');
+            }
         });
     }
 

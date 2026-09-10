@@ -26,7 +26,7 @@
     href="{{ url_for('admin') }}#admin-{{ target }}"
     class="admin-shell-nav-link{% if admin_active_section == target %} attivo{% endif %}{% if archive %} is-archive{% endif %}"
     data-admin-shell-link="{{ target }}"
-    {% if admin_endpoint == 'admin' %}data-admin-target="{{ target }}" role="tab" aria-selected="{{ 'true' if admin_active_section == target else 'false' }}"{% elif admin_active_section == target %}aria-current="page"{% endif %}
+    {% if admin_endpoint == 'admin' %}data-admin-target="{{ target }}"{% endif %}{% if admin_active_section == target %} aria-current="page"{% endif %}
 >
     <span class="admin-shell-nav-mark" aria-hidden="true">{{ short }}</span>
     <span>{{ label }}</span>
@@ -42,7 +42,7 @@
             <span><strong>S.C.</strong><small>Studio Infermieristico</small></span>
         </a>
 
-        <nav class="admin-shell-nav" aria-label="Sezioni admin"{% if admin_endpoint == 'admin' %} role="tablist"{% endif %}>
+        <nav class="admin-shell-nav" aria-label="Sezioni admin">
             {{ admin_nav_link('agenda', 'Agenda', 'AG') }}
             {{ admin_nav_link('richieste', 'Richieste', 'RI', richieste_nuove_count if richieste_nuove_count is defined else 0) }}
             {{ admin_nav_link('corsi', 'Corsi', 'CO', iscrizioni_nuove_count if iscrizioni_nuove_count is defined else 0) }}
