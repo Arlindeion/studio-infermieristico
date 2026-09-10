@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_TABLES = {
@@ -36,7 +38,7 @@ EXPECTED_TABLES = {
     'fusione_persona',
 }
 
-LATEST_REVISION = '8f2c7d1e4a90'
+LATEST_REVISION = 'd4a7c2e9f610'
 
 
 def _migration_env(database_path):
@@ -126,10 +128,102 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert _column_nullable(database_path, 'appuntamento', 'persona_id') is True
     assert _column_nullable(database_path, 'call_sonno', 'persona_id') is True
     assert _column_nullable(database_path, 'iscrizione_corso', 'persona_v2_id') is True
+    assert 'dati_anonimizzati_il' in _column_names(database_path, 'persona')
+    assert 'persona_v2_id' in _column_names(database_path, 'consenso_privacy_paziente')
+    assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_id') is True
+    assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_v2_id') is True
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
     assert 'No new upgrade operations detected' in check.stdout + check.stderr
+
+
+def test_cutover_pazienti_v2_preserva_consensi_legacy_e_vincola_il_modello(tmp_path):
+    database_path = tmp_path / 'patient_cutover.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade', '8f2c7d1e4a90')
+
+    with sqlite3.connect(database_path) as connection:
+        legacy_id = connection.execute(
+            "INSERT INTO persona_corso (nome) VALUES ('Persona Legacy')"
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO consenso_privacy_paziente
+                (persona_id, entita_tipo, entita_id, accettato, creato_il)
+            VALUES (?, 'Appuntamento', 1, 1, '2026-09-09 10:00:00')
+            """,
+            (legacy_id,),
+        )
+        connection.commit()
+
+    _run_flask(env, 'db', 'upgrade')
+
+    with sqlite3.connect(database_path) as connection:
+        connection.execute('PRAGMA foreign_keys=ON')
+        legacy_row = connection.execute(
+            'SELECT persona_id, persona_v2_id FROM consenso_privacy_paziente'
+        ).fetchone()
+        assert legacy_row == (legacy_id, None)
+        persona_v2_id = connection.execute(
+            "INSERT INTO persona (nome, cognome, stato) VALUES ('Anna', 'Neri', 'attiva')"
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO consenso_privacy_paziente
+                (persona_v2_id, entita_tipo, entita_id, accettato, creato_il)
+            VALUES (?, 'CallSonno', 2, 1, '2026-09-09 10:00:00')
+            """,
+            (persona_v2_id,),
+        )
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                """
+                INSERT INTO consenso_privacy_paziente
+                    (entita_tipo, entita_id, accettato, creato_il)
+                VALUES ('IscrizioneCorso', 3, 1, '2026-09-09 10:00:00')
+                """
+            )
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                """
+                INSERT INTO consenso_privacy_paziente
+                    (persona_id, persona_v2_id, entita_tipo, entita_id, accettato, creato_il)
+                VALUES (?, ?, 'IscrizioneCorso', 4, 1, '2026-09-09 10:00:00')
+                """,
+                (legacy_id, persona_v2_id),
+            )
+
+
+def test_cutover_pazienti_v2_downgrade_sicuro_prima_delle_scritture(tmp_path):
+    database_path = tmp_path / 'patient_cutover_downgrade.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade')
+    _run_flask(env, 'db', 'downgrade', '8f2c7d1e4a90')
+
+    assert 'dati_anonimizzati_il' not in _column_names(database_path, 'persona')
+    assert 'persona_v2_id' not in _column_names(database_path, 'consenso_privacy_paziente')
+    assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_id') is False
+
+
+def test_cutover_pazienti_v2_blocca_downgrade_dopo_una_nuova_anagrafica(tmp_path):
+    database_path = tmp_path / 'patient_cutover_unsafe_downgrade.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade')
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO persona (nome, cognome, stato) VALUES ('Anna', 'Neri', 'attiva')"
+        )
+        connection.commit()
+
+    with pytest.raises(subprocess.CalledProcessError):
+        _run_flask(env, 'db', 'downgrade', '8f2c7d1e4a90')
+
+    with sqlite3.connect(database_path) as connection:
+        revision = connection.execute(
+            'SELECT version_num FROM alembic_version'
+        ).fetchone()[0]
+    assert revision == LATEST_REVISION
 
 
 def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):

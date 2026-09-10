@@ -576,86 +576,19 @@ def test_named_fks_and_indexes_match_between_orm_source_and_migration_source():
     assert 'ON DELETE RESTRICT' in migration_source
 
 
-def test_a1_does_not_write_new_practice_foreign_keys_from_existing_flows():
-    """Static regression guard for the known A1 write surfaces.
-
-    It catches constructor keywords, direct assignments on variables that
-    represent Appuntamento/CallSonno/IscrizioneCorso, setattr, ORM update/bulk
-    mappings and obvious raw INSERT/UPDATE SQL. Audit dictionaries containing
-    the legacy key ``persona_id`` are intentionally not treated as writes.
-    """
+def test_a4_operational_flows_use_only_patients_v2_writes():
+    """The direct cutover must not create new legacy patient/link rows."""
 
     source = (PROJECT_ROOT / 'app.py').read_text()
     tree = ast.parse(source)
-    forbidden_by_model = {
-        'Appuntamento': 'persona_id',
-        'CallSonno': 'persona_id',
-        'IscrizioneCorso': 'persona_v2_id',
-    }
-    variable_fields = {
-        'appuntamento': {'persona_id'},
-        'appointment': {'persona_id'},
-        'call': {'persona_id'},
-        'call_sonno': {'persona_id'},
-        'iscrizione': {'persona_v2_id'},
-        'registration': {'persona_v2_id'},
-    }
-    forbidden_fields = {'persona_id', 'persona_v2_id'}
-    violations = []
+    constructor_calls = [
+        node.func.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        and node.func.id in {'PersonaCorso', 'CollegamentoPersona'}
+    ]
 
-    def _mapping_forbidden_keys(dict_node):
-        hits = []
-        if not isinstance(dict_node, ast.Dict):
-            return hits
-        for key in dict_node.keys:
-            if isinstance(key, ast.Constant) and key.value in forbidden_fields:
-                hits.append(key.value)
-            elif isinstance(key, ast.Attribute) and key.attr in forbidden_fields:
-                hits.append(key.attr)
-        return hits
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            forbidden_keyword = forbidden_by_model.get(node.func.id)
-            if forbidden_keyword and any(keyword.arg == forbidden_keyword for keyword in node.keywords):
-                violations.append(('constructor', node.func.id, forbidden_keyword, node.lineno))
-
-        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            for target in targets:
-                if not isinstance(target, ast.Attribute) or not isinstance(target.value, ast.Name):
-                    continue
-                allowed_for_variable = variable_fields.get(target.value.id, set())
-                if target.attr in allowed_for_variable:
-                    violations.append(('attribute', target.value.id, target.attr, target.lineno))
-
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'setattr':
-            if (
-                len(node.args) >= 2
-                and isinstance(node.args[0], ast.Name)
-                and isinstance(node.args[1], ast.Constant)
-                and node.args[1].value in variable_fields.get(node.args[0].id, set())
-            ):
-                violations.append(('setattr', node.args[0].id, node.args[1].value, node.lineno))
-
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            if node.func.attr in {'update', 'bulk_update_mappings', 'bulk_insert_mappings'}:
-                for arg in node.args:
-                    for key in _mapping_forbidden_keys(arg):
-                        violations.append((node.func.attr, key, node.lineno))
-                    if isinstance(arg, (ast.List, ast.Tuple)):
-                        for item in arg.elts:
-                            for key in _mapping_forbidden_keys(item):
-                                violations.append((node.func.attr, key, node.lineno))
-
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            sql = node.value.lower()
-            if ('insert into' in sql or 'update ' in sql) and any(
-                table in sql for table in ('appuntamento', 'call_sonno', 'iscrizione_corso')
-            ):
-                if 'persona_v2_id' in sql:
-                    violations.append(('raw-sql', 'persona_v2_id', node.lineno))
-                if any(table in sql for table in ('appuntamento', 'call_sonno')) and re.search(r'\bpersona_id\b', sql):
-                    violations.append(('raw-sql', 'persona_id', node.lineno))
-
-    assert violations == []
+    assert constructor_calls == []
+    assert 'appointment.persona_v2 = patient' in source
+    assert 'registration.persona_v2 = patient' in source
+    assert 'persona_v2=persona' in source
