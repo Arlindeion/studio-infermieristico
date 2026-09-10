@@ -235,6 +235,8 @@
                         data-event-date="{{ giorno.isoformat() }}"
                         data-event-start="{{ evento.inizio.strftime('%H:%M') }}"
                         data-event-end="{{ evento.fine.strftime('%H:%M') }}"
+                        style="top: {{ '%.6f'|format(evento.week_top_percent) }}%; height: {{ '%.6f'|format(evento.week_height_percent) }}%;"
+                        {% if evento.week_hidden %}hidden{% endif %}
                         {% if spostabile %}draggable="true" data-week-appointment data-has-email="{{ '1' if evento.get('ha_email') else '0' }}"{% endif %}
                     >
                         <div class="admin-week-event-head">
@@ -1484,5 +1486,5 @@
     {% endif %}
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.7"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.8"></script>
 {% endblock %}

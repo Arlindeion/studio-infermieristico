@@ -7048,6 +7048,49 @@ def admin():
         agenda_precedente = inizio_agenda - timedelta(days=1)
         agenda_successiva = inizio_agenda + timedelta(days=1)
     agenda = _agenda_operativa(inizio_agenda, fine_agenda)
+    if vista_agenda == 'settimana':
+        # La posizione iniziale degli eventi viene calcolata anche lato server.
+        # In questo modo gli eventi restano nella fascia oraria corretta anche
+        # se il JavaScript del drag & drop non viene eseguito o viene caricato
+        # in ritardo. Il JS può poi aggiornare gli stessi valori durante il drag.
+        inizio_griglia_minuti = 7 * 60
+        fine_griglia_minuti = 22 * 60
+        durata_griglia_minuti = fine_griglia_minuti - inizio_griglia_minuti
+        for evento_agenda in agenda:
+            inizio_evento_minuti = (
+                evento_agenda['inizio'].hour * 60
+                + evento_agenda['inizio'].minute
+            )
+            durata_evento_minuti = max(
+                1,
+                int(
+                    (
+                        evento_agenda['fine'] - evento_agenda['inizio']
+                    ).total_seconds() // 60
+                ),
+            )
+            fine_evento_minuti = inizio_evento_minuti + durata_evento_minuti
+            inizio_visibile = max(
+                inizio_griglia_minuti,
+                inizio_evento_minuti,
+            )
+            fine_visibile = min(
+                fine_griglia_minuti,
+                fine_evento_minuti,
+            )
+            evento_agenda['week_top_percent'] = (
+                (inizio_visibile - inizio_griglia_minuti)
+                / durata_griglia_minuti * 100
+            )
+            evento_agenda['week_height_percent'] = max(
+                (fine_visibile - inizio_visibile)
+                / durata_griglia_minuti * 100,
+                1.8,
+            )
+            evento_agenda['week_hidden'] = (
+                fine_evento_minuti <= inizio_griglia_minuti
+                or inizio_evento_minuti >= fine_griglia_minuti
+            )
     agenda_per_giorno = defaultdict(list)
     for evento_agenda in agenda:
         agenda_per_giorno[evento_agenda['inizio'].date()].append(evento_agenda)

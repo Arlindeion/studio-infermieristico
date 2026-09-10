@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import date
+from datetime import date, datetime
 from unittest.mock import patch
 
 import pytest
@@ -59,6 +59,44 @@ def test_admin_senza_parametri_apre_la_settimana(client):
     assert response.status_code == 200
     assert 'data-admin-week-grid' in response.text
     assert 'Conferma e manda mail al paziente' in response.text
+
+
+def test_evento_calendar_esterno_e_posizionato_lato_server_nella_fascia_oraria(client):
+    _login(client)
+    evento_esterno = {
+        'tipo': 'Esterno',
+        'id': 'calendar-esterno-17',
+        'titolo': 'Visita da Calendar',
+        'inizio': datetime(2026, 9, 7, 17, 0),
+        'fine': datetime(2026, 9, 7, 17, 30),
+        'stato': 'Calendar / Arzamed',
+        'sincronizzazione': 'esterno',
+        'url': None,
+        'dettagli': [],
+        'note': None,
+        'ha_email': False,
+    }
+
+    with (
+        patch.object(
+            app_module,
+            '_riconciliazione_admin_se_necessaria',
+            return_value=None,
+        ),
+        patch.object(
+            app_module,
+            '_agenda_operativa',
+            return_value=[evento_esterno],
+        ),
+    ):
+        response = client.get('/admin?vista=settimana&data=2026-09-07')
+
+    assert response.status_code == 200
+    assert 'data-event-start="17:00"' in response.text
+    assert (
+        'style="top: 66.666667%; height: 3.333333%;"'
+        in response.text
+    )
 
 
 @pytest.mark.parametrize(('mail_choice', 'mail_expected'), [('0', False), ('1', True)])
