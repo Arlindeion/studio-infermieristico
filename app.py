@@ -3507,6 +3507,7 @@ def _agenda_operativa(data_inizio, data_fine):
                 if valore not in (None, '')
             ],
             'note': note,
+            'ha_email': bool(getattr(entita, 'email', None)),
         })
 
     for elemento in Appuntamento.query.filter(Appuntamento.data.between(limite_inizio, limite_fine), Appuntamento.stato != 'Annullato', Appuntamento.archiviato_il.is_(None)).all():
@@ -7016,9 +7017,9 @@ def admin():
             ))
     db.session.commit()
 
-    vista_agenda = request.args.get('vista', 'mese')
+    vista_agenda = request.args.get('vista', 'settimana')
     if vista_agenda not in {'giorno', 'settimana', 'mese'}:
-        vista_agenda = 'mese'
+        vista_agenda = 'settimana'
     mese_richiesto = request.args.get('mese', '').strip()
     try:
         if vista_agenda == 'mese' and mese_richiesto:
@@ -7033,16 +7034,28 @@ def admin():
         fine_agenda = inizio_agenda.replace(day=ultimo_giorno)
         agenda_precedente = (inizio_agenda - timedelta(days=1)).replace(day=1)
         agenda_successiva = (fine_agenda + timedelta(days=1)).replace(day=1)
+    elif vista_agenda == 'settimana':
+        # La settimana amministrativa è sempre lunedì-domenica, come un'agenda
+        # professionale: una data nel mezzo della settimana resta solo l'ancora
+        # usata per individuare il periodo.
+        inizio_agenda = data_agenda - timedelta(days=data_agenda.weekday())
+        fine_agenda = inizio_agenda + timedelta(days=6)
+        agenda_precedente = inizio_agenda - timedelta(days=7)
+        agenda_successiva = inizio_agenda + timedelta(days=7)
     else:
         inizio_agenda = data_agenda
-        fine_agenda = data_agenda + timedelta(days=6 if vista_agenda == 'settimana' else 0)
-        passo = 7 if vista_agenda == 'settimana' else 1
-        agenda_precedente = inizio_agenda - timedelta(days=passo)
-        agenda_successiva = inizio_agenda + timedelta(days=passo)
+        fine_agenda = data_agenda
+        agenda_precedente = inizio_agenda - timedelta(days=1)
+        agenda_successiva = inizio_agenda + timedelta(days=1)
     agenda = _agenda_operativa(inizio_agenda, fine_agenda)
     agenda_per_giorno = defaultdict(list)
     for evento_agenda in agenda:
         agenda_per_giorno[evento_agenda['inizio'].date()].append(evento_agenda)
+    giorni_agenda = (
+        [inizio_agenda + timedelta(days=offset) for offset in range(7)]
+        if vista_agenda == 'settimana'
+        else []
+    )
     calendario_mese = []
     if vista_agenda == 'mese':
         for settimana in calendar_module.Calendar(firstweekday=0).monthdatescalendar(
@@ -7333,6 +7346,7 @@ def admin():
     ).count()
     return render_template('admin.html',
                            agenda_per_giorno=dict(agenda_per_giorno),
+                           giorni_agenda=giorni_agenda,
                            inizio_agenda=inizio_agenda,
                            fine_agenda=fine_agenda,
                            agenda_precedente=agenda_precedente,
@@ -8133,6 +8147,139 @@ def aggiungi_appuntamento_admin():
     if risposta_json:
         return jsonify({'ok': True, 'redirect': destinazione})
     return redirect(destinazione)
+
+
+@app.route('/admin/appuntamento/<int:id>/sposta-agenda', methods=['POST'])
+@login_required
+def sposta_appuntamento_agenda_admin(id):
+    """Sposta un appuntamento confermato dalla griglia settimanale.
+
+    Il database viene aggiornato soltanto dopo aver ricontrollato disponibilità
+    e versione visualizzata dall'admin. Calendar viene sempre riallineato;
+    l'email di spostamento parte solo se scelta esplicitamente nel dialog.
+    """
+    if not _csrf_admin_valido():
+        return jsonify({'ok': False, 'message': 'Sessione non valida. Ricarica l’agenda e riprova.'}), 400
+
+    appuntamento = db.get_or_404(Appuntamento, id)
+    if appuntamento.archiviato_il is not None or appuntamento.stato != 'Confermato':
+        return jsonify({
+            'ok': False,
+            'message': 'Questo appuntamento non può essere spostato dalla griglia.',
+        }), 409
+    if appuntamento.sincronizzazione in {'difforme', 'eliminato_esternamente'}:
+        return jsonify({
+            'ok': False,
+            'message': 'Risolvi prima il conflitto con Google Calendar.',
+        }), 409
+
+    data_originale = request.form.get('data_originale', '').strip()
+    ora_originale = request.form.get('ora_originale', '').strip()
+    if data_originale != appuntamento.data or ora_originale != appuntamento.ora:
+        return jsonify({
+            'ok': False,
+            'message': 'L’appuntamento è cambiato dopo l’apertura dell’agenda. Ricarica la pagina prima di spostarlo.',
+        }), 409
+
+    nuova_data = request.form.get('data', '').strip()
+    nuova_ora = request.form.get('ora', '').strip()
+    invia_email = request.form.get('invia_email') == '1'
+    durata = appuntamento.duration_minutes or DURATA_SLOT_MINUTI
+
+    try:
+        _intervallo_locale(nuova_data, nuova_ora, durata)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Data o orario non validi.'}), 422
+    if nuova_data < local_today().isoformat():
+        return jsonify({'ok': False, 'message': 'Non puoi spostare un appuntamento nel passato.'}), 422
+    if not is_appointment_interval_bookable(nuova_data, nuova_ora, durata):
+        return jsonify({
+            'ok': False,
+            'message': 'Il nuovo intervallo non rientra negli orari disponibili dello studio.',
+        }), 422
+    if invia_email and not appuntamento.email:
+        return jsonify({
+            'ok': False,
+            'message': 'Questo paziente non ha un indirizzo email: conferma lo spostamento senza mail.',
+            'requires_without_email': True,
+        }), 422
+
+    if nuova_data == appuntamento.data and nuova_ora == appuntamento.ora:
+        return jsonify({
+            'ok': True,
+            'message': 'L’appuntamento è già in questo orario.',
+            'data': appuntamento.data,
+            'ora': appuntamento.ora,
+            'calendar_ok': True,
+            'email_sent': None,
+        })
+
+    occupato = (
+        slot_occupato_db(
+            nuova_data,
+            nuova_ora,
+            durata,
+            ignore_appuntamento_id=appuntamento.id,
+        )
+        or intervallo_occupato_da_calendario(
+            nuova_data,
+            nuova_ora,
+            durata,
+            ignore_google_event_id=appuntamento.google_event_id,
+        )
+    )
+    if occupato:
+        return jsonify({
+            'ok': False,
+            'message': 'Il nuovo intervallo è occupato. L’appuntamento non è stato spostato.',
+        }), 409
+
+    prima = {
+        'data': appuntamento.data,
+        'ora': appuntamento.ora,
+        'durata_minuti': durata,
+    }
+    appuntamento.data = nuova_data
+    appuntamento.ora = nuova_ora
+    db.session.commit()
+
+    calendar_ok = crea_o_aggiorna_evento_calendario(appuntamento)
+    email_ok = invia_email_spostamento(appuntamento) if invia_email else None
+    registra_modifica(
+        'spostamento_drag_agenda',
+        'Appuntamento',
+        appuntamento.id,
+        {
+            'prima': prima,
+            'dopo': {
+                'data': nuova_data,
+                'ora': nuova_ora,
+                'durata_minuti': durata,
+            },
+            'email_richiesta': invia_email,
+            'email_inviata': email_ok,
+            'calendar_ok': calendar_ok,
+        },
+    )
+
+    if not calendar_ok:
+        messaggio = 'Spostamento salvato, ma Google Calendar richiede verifica.'
+    elif invia_email and not email_ok:
+        messaggio = 'Spostamento salvato e Calendar aggiornato, ma la mail non è partita.'
+    elif invia_email:
+        messaggio = 'Appuntamento spostato, Calendar aggiornato e mail inviata al paziente.'
+    else:
+        messaggio = 'Appuntamento spostato e Calendar aggiornato senza inviare mail.'
+
+    return jsonify({
+        'ok': True,
+        'message': messaggio,
+        'data': appuntamento.data,
+        'ora': appuntamento.ora,
+        'calendar_ok': calendar_ok,
+        'email_sent': email_ok,
+        'sincronizzazione': appuntamento.sincronizzazione,
+    })
 
 
 @app.route('/admin/blocco/aggiungi', methods=['POST'])

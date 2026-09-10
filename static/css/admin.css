@@ -2694,6 +2694,337 @@ button.admin-inline-link {
     }
 }
 
+/* ─── AGENDA SETTIMANALE DRAG & DROP ─── */
+.admin-agenda-layout.is-week {
+    display: block;
+}
+
+.admin-agenda-layout.is-week .admin-agenda-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1.5rem;
+    position: static;
+}
+
+.admin-week-scroll {
+    background: var(--bianco);
+    border: 1px solid var(--verde-scuro-a14);
+    border-radius: 14px;
+    box-shadow: var(--ombra-card);
+    max-width: 100%;
+    overflow: auto;
+}
+
+.admin-week-calendar {
+    --week-hour-height: 72px;
+    display: grid;
+    grid-template-columns: 72px repeat(7, minmax(132px, 1fr));
+    grid-template-rows: 64px 1080px;
+    min-width: 996px;
+    position: relative;
+}
+
+.admin-week-corner,
+.admin-week-day-header {
+    background: var(--carta);
+    border-bottom: 1px solid var(--verde-scuro-a14);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.admin-week-corner {
+    border-right: 1px solid var(--verde-scuro-a14);
+    grid-column: 1;
+    grid-row: 1;
+    left: 0;
+    z-index: 7;
+}
+
+.admin-week-day-header {
+    align-items: center;
+    border-right: 1px solid var(--verde-scuro-a14);
+    display: flex;
+    flex-direction: column;
+    grid-row: 1;
+    justify-content: center;
+    min-width: 0;
+}
+
+.admin-week-day-header span {
+    color: var(--grigio);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.admin-week-day-header strong {
+    align-items: center;
+    color: var(--verde-scuro);
+    display: inline-flex;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+}
+
+.admin-week-day-header.is-today strong {
+    background: var(--verde-header);
+    border-radius: 50%;
+    color: var(--bianco);
+}
+
+.admin-week-time-axis {
+    background: var(--carta);
+    border-right: 1px solid var(--verde-scuro-a14);
+    grid-column: 1;
+    grid-row: 2;
+    left: 0;
+    position: sticky;
+    z-index: 4;
+}
+
+.admin-week-time-axis span {
+    color: var(--grigio);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding-right: 0.65rem;
+    position: absolute;
+    right: 0;
+    transform: translateY(-50%);
+}
+
+.admin-week-day-canvas {
+    background-color: var(--bianco);
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--week-hour-height) - 1px),
+        var(--verde-scuro-a08) calc(var(--week-hour-height) - 1px),
+        var(--verde-scuro-a08) var(--week-hour-height)
+    );
+    border-right: 1px solid var(--verde-scuro-a10);
+    grid-row: 2;
+    min-width: 0;
+    position: relative;
+}
+
+.admin-week-day-canvas.is-today {
+    background-color: var(--verde-chiaro-a55);
+}
+
+.admin-week-event {
+    --week-event-accent: var(--verde-header);
+    --week-event-surface: var(--verde-chiaro);
+    background: var(--week-event-surface);
+    border: 1px solid var(--verde-scuro-a12);
+    border-left: 4px solid var(--week-event-accent);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--nero-a06);
+    color: var(--testo);
+    display: grid;
+    gap: 0.12rem;
+    left: 4px;
+    min-height: 26px;
+    overflow: hidden;
+    padding: 0.38rem 0.45rem;
+    position: absolute;
+    right: 4px;
+    z-index: 2;
+}
+
+.admin-week-drop-preview {
+    background: var(--verde-azione-soft-a22);
+    border: 2px dashed var(--verde-header);
+    border-radius: 8px;
+    color: var(--verde-scuro);
+    font-size: 0.72rem;
+    font-weight: 800;
+    left: 4px;
+    padding: 0.35rem;
+    pointer-events: none;
+    position: absolute;
+    right: 4px;
+    z-index: 7;
+}
+
+.admin-week-event.is-draggable {
+    cursor: grab;
+}
+
+.admin-week-event.is-draggable:active,
+.admin-week-event.is-dragging {
+    cursor: grabbing;
+}
+
+.admin-week-event.is-dragging,
+.admin-week-event.is-pending-move {
+    box-shadow: 0 12px 28px var(--verde-scuro-a20);
+    opacity: 0.9;
+    outline: 2px solid var(--verde-header);
+    z-index: 8;
+}
+
+.admin-week-event-head {
+    align-items: center;
+    display: flex;
+    gap: 0.35rem;
+    justify-content: space-between;
+}
+
+.admin-week-event time,
+.admin-week-event small,
+.admin-week-drag-hint,
+.admin-week-event a {
+    font-size: 0.7rem;
+    line-height: 1.15;
+}
+
+.admin-week-event time {
+    color: var(--verde-scuro);
+    font-weight: 800;
+}
+
+.admin-week-event strong {
+    font-size: 0.78rem;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-week-event small {
+    color: var(--grigio);
+}
+
+.admin-week-event a {
+    color: var(--verde-scuro);
+    font-weight: 800;
+    margin-top: 0.15rem;
+    text-underline-offset: 2px;
+}
+
+.admin-week-drag-hint {
+    color: var(--verde-scuro);
+    font-weight: 800;
+    margin-top: 0.1rem;
+}
+
+.admin-week-event-corso,
+.admin-week-event-incontroaccompagnamento {
+    --week-event-accent: var(--rosa-antico);
+    --week-event-surface: var(--rosa-chiaro);
+}
+
+.admin-week-event-bloccoagenda {
+    --week-event-accent: var(--grigio);
+    --week-event-surface: var(--carta);
+}
+
+.admin-week-event-esterno {
+    --week-event-accent: #55759a;
+    --week-event-surface: #edf2f6;
+}
+
+.admin-week-legend {
+    margin-top: 0.8rem;
+}
+
+.admin-drag-move-dialog {
+    background: var(--carta);
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 20px 56px var(--verde-scuro-a20);
+    color: var(--testo);
+    max-width: min(640px, calc(100% - 2rem));
+    padding: 0;
+    width: 100%;
+}
+
+.admin-drag-move-dialog::backdrop {
+    background: var(--verde-scuro-a82);
+}
+
+.admin-drag-move-dialog-body {
+    padding: 1.4rem;
+}
+
+.admin-drag-move-dialog h3 {
+    color: var(--verde-scuro);
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    margin: 0.15rem 0 0.7rem;
+}
+
+.admin-drag-move-summary {
+    margin-bottom: 1rem;
+}
+
+.admin-drag-move-dialog dl {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: 1fr 1fr;
+    margin: 0 0 1rem;
+}
+
+.admin-drag-move-dialog dl div {
+    background: var(--bianco);
+    border: 1px solid var(--verde-scuro-a12);
+    border-radius: 10px;
+    padding: 0.8rem;
+}
+
+.admin-drag-move-dialog dt {
+    color: var(--grigio);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.admin-drag-move-dialog dd {
+    color: var(--verde-scuro);
+    font-weight: 800;
+    margin: 0.15rem 0 0;
+}
+
+.admin-drag-move-note {
+    background: #fff4d8;
+    border-radius: 8px;
+    color: #805500;
+    font-size: 0.86rem;
+    padding: 0.75rem;
+}
+
+.admin-drag-move-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: flex-end;
+}
+
+.admin-drag-move-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+@media (max-width: 900px) {
+    .admin-agenda-layout.is-week .admin-agenda-tools {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-drag-move-dialog dl {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-drag-move-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+
+
 .admin-period-navigation {
     align-items: center;
     display: flex;

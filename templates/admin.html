@@ -163,7 +163,7 @@
         <a href="#admin-call-sonno" data-admin-jump="call-sonno"><strong>{{ funnel_sonno.in_attesa }} · {{ funnel_sonno.confermate }} · {{ funnel_sonno.concluse }}</strong><span>sonno: attesa · confermate · concluse</span></a>
     </div>
 
-    <div class="admin-agenda-layout{% if vista_agenda == 'mese' %} is-month{% endif %}">
+    <div class="admin-agenda-layout{% if vista_agenda == 'mese' %} is-month{% elif vista_agenda == 'settimana' %} is-week{% endif %}">
         <div class="admin-agenda-list">
         {% if vista_agenda == 'mese' %}
         <div class="admin-month-scroll">
@@ -206,6 +206,57 @@
         </table>
         </div>
         <div class="admin-calendar-legend" aria-label="Legenda calendario"><span class="is-appointment">Appuntamenti e call</span><span class="is-course">Corsi</span><span class="is-block">Pause e chiusure</span><small>Seleziona il numero del giorno per aprire la vista dettagliata.</small></div>
+        {% elif vista_agenda == 'settimana' %}
+        <div class="admin-week-scroll" data-admin-week-grid data-week-start-minute="420" data-week-end-minute="1320" data-week-snap-minute="15">
+            <div class="admin-week-calendar">
+                <div class="admin-week-corner" aria-hidden="true"></div>
+                {% for giorno in giorni_agenda %}
+                <header class="admin-week-day-header{% if giorno == oggi_admin %} is-today{% endif %}">
+                    <span>{{ giorni_settimana_brevi[giorno.weekday()] }}</span>
+                    <strong>{{ giorno.day }}</strong>
+                </header>
+                {% endfor %}
+
+                <div class="admin-week-time-axis" aria-hidden="true">
+                    {% for ora in range(7, 23) %}
+                    <span style="top: {{ (ora - 7) * 72 }}px">{{ '%02d:00'|format(ora) }}</span>
+                    {% endfor %}
+                </div>
+
+                {% for giorno in giorni_agenda %}
+                <div class="admin-week-day-canvas{% if giorno == oggi_admin %} is-today{% endif %}" data-week-day="{{ giorno.isoformat() }}">
+                    {% for evento in agenda_per_giorno.get(giorno, []) %}
+                    {% set spostabile = evento.tipo == 'Appuntamento' and evento.stato == 'Confermato' and evento.sincronizzazione not in ['difforme', 'eliminato_esternamente'] %}
+                    <article
+                        class="admin-week-event admin-week-event-{{ evento.tipo|lower }}{% if spostabile %} is-draggable{% endif %}"
+                        data-week-event
+                        data-event-id="{{ evento.id }}"
+                        data-event-type="{{ evento.tipo }}"
+                        data-event-date="{{ giorno.isoformat() }}"
+                        data-event-start="{{ evento.inizio.strftime('%H:%M') }}"
+                        data-event-end="{{ evento.fine.strftime('%H:%M') }}"
+                        {% if spostabile %}draggable="true" data-week-appointment data-has-email="{{ '1' if evento.get('ha_email') else '0' }}"{% endif %}
+                    >
+                        <div class="admin-week-event-head">
+                            <time data-week-event-time>{{ evento.inizio.strftime('%H:%M') }}–{{ evento.fine.strftime('%H:%M') }}</time>
+                            <span class="sync-dot sync-{{ evento.sincronizzazione }}" title="{{ evento.sincronizzazione|replace('_', ' ') }}"></span>
+                        </div>
+                        <strong>{{ evento.titolo }}</strong>
+                        <small>{{ evento.tipo|replace('CallSonno', 'Call sonno')|replace('IncontroAccompagnamento', 'Incontro')|replace('BloccoAgenda', 'Blocco') }} · {{ evento.stato }}</small>
+                        {% if evento.url %}<a href="{{ evento.url }}" draggable="false" aria-label="Apri la scheda di {{ evento.titolo }}">Apri scheda</a>{% endif %}
+                        {% if spostabile %}<span class="admin-week-drag-hint">Trascina per spostare</span>{% endif %}
+                    </article>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="admin-calendar-legend admin-week-legend" aria-label="Legenda agenda settimanale">
+            <span class="is-appointment">Appuntamenti e call</span>
+            <span class="is-course">Corsi</span>
+            <span class="is-block">Pause e chiusure</span>
+            <small>Gli appuntamenti confermati si spostano solo trascinandoli. Lo slot viene ricontrollato prima del salvataggio.</small>
+        </div>
         {% else %}
             {% for giorno, eventi in agenda_per_giorno.items() %}
             <section class="admin-day">
@@ -264,6 +315,25 @@
             </details>
         </aside>
     </div>
+
+    <dialog class="admin-drag-move-dialog" data-drag-move-dialog aria-labelledby="admin-drag-move-title">
+        <div class="admin-drag-move-dialog-body">
+            <p class="admin-eyebrow">Spostamento appuntamento</p>
+            <h3 id="admin-drag-move-title">Confermi il nuovo orario?</h3>
+            <p class="admin-drag-move-summary"><strong data-drag-appointment-title></strong></p>
+            <dl>
+                <div><dt>Da</dt><dd data-drag-from></dd></div>
+                <div><dt>A</dt><dd data-drag-to></dd></div>
+            </dl>
+            <p class="admin-drag-move-note" data-drag-mail-note hidden></p>
+            <input type="hidden" data-drag-csrf value="{{ csrf_token() }}">
+            <div class="admin-drag-move-actions">
+                <button type="button" class="btn-azione blu" data-drag-choice="cancel">Annulla</button>
+                <button type="button" class="btn-azione verde" data-drag-choice="mail">Conferma e manda mail al paziente</button>
+                <button type="button" class="btn-azione verde" data-drag-choice="no-mail">Conferma senza mail</button>
+            </div>
+        </div>
+    </dialog>
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="richieste" id="admin-richieste">

@@ -283,6 +283,252 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const agendaSettimanale = document.querySelector('[data-admin-week-grid]');
+    const dialogSpostamento = document.querySelector('[data-drag-move-dialog]');
+    if (agendaSettimanale && dialogSpostamento) {
+        const inizioMinuti = Number(agendaSettimanale.dataset.weekStartMinute || 420);
+        const fineMinuti = Number(agendaSettimanale.dataset.weekEndMinute || 1320);
+        const snapMinuti = Number(agendaSettimanale.dataset.weekSnapMinute || 15);
+        const teleGiorno = [...agendaSettimanale.querySelectorAll('[data-week-day]')];
+        const eventi = [...agendaSettimanale.querySelectorAll('[data-week-event]')];
+        const csrf = dialogSpostamento.querySelector('[data-drag-csrf]');
+        const bottoneMail = dialogSpostamento.querySelector('[data-drag-choice="mail"]');
+        const notaMail = dialogSpostamento.querySelector('[data-drag-mail-note]');
+        const anteprima = document.createElement('div');
+        anteprima.className = 'admin-week-drop-preview';
+        anteprima.hidden = true;
+        let trascinato = null;
+        let origine = null;
+        let proposta = null;
+        let attesaConferma = false;
+
+        function minutiDaOra(valore) {
+            const parti = String(valore || '').split(':').map(Number);
+            if (parti.length !== 2 || parti.some(Number.isNaN)) return null;
+            return parti[0] * 60 + parti[1];
+        }
+
+        function oraDaMinuti(minuti) {
+            const ore = Math.floor(minuti / 60);
+            const resto = minuti % 60;
+            return `${String(ore).padStart(2, '0')}:${String(resto).padStart(2, '0')}`;
+        }
+
+        function durataEvento(evento) {
+            const start = minutiDaOra(evento.dataset.eventStart);
+            const end = minutiDaOra(evento.dataset.eventEnd);
+            if (start === null || end === null) return 30;
+            return Math.max(15, end >= start ? end - start : 1440 - start + end);
+        }
+
+        function geometriaEvento(ora, durata) {
+            const start = minutiDaOra(ora);
+            if (start === null) return null;
+            const totale = fineMinuti - inizioMinuti;
+            const startVisibile = Math.max(inizioMinuti, Math.min(start, fineMinuti));
+            const endVisibile = Math.max(inizioMinuti, Math.min(start + durata, fineMinuti));
+            return {
+                top: `${((startVisibile - inizioMinuti) / totale) * 100}%`,
+                height: `${Math.max(((endVisibile - startVisibile) / totale) * 100, 1.8)}%`,
+                hidden: endVisibile <= inizioMinuti || startVisibile >= fineMinuti,
+            };
+        }
+
+        function posizionaEvento(evento, ora = evento.dataset.eventStart) {
+            const geometria = geometriaEvento(ora, durataEvento(evento));
+            if (!geometria) return;
+            evento.style.top = geometria.top;
+            evento.style.height = geometria.height;
+            evento.hidden = geometria.hidden;
+        }
+
+        function formattaData(dataIso) {
+            const [anno, mese, giorno] = dataIso.split('-');
+            return `${giorno}/${mese}/${anno}`;
+        }
+
+        function rimuoviAnteprima() {
+            anteprima.remove();
+            anteprima.hidden = true;
+        }
+
+        function azzeraTrascinamento() {
+            if (trascinato) {
+                trascinato.classList.remove('is-dragging', 'is-pending-move');
+            }
+            rimuoviAnteprima();
+            trascinato = null;
+            origine = null;
+            proposta = null;
+            attesaConferma = false;
+        }
+
+        function aggiornaAnteprima(canvas, clientY) {
+            if (!trascinato) return;
+            const rect = canvas.getBoundingClientRect();
+            const durata = durataEvento(trascinato);
+            const percentuale = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+            let minuti = inizioMinuti + percentuale * (fineMinuti - inizioMinuti);
+            minuti = Math.round(minuti / snapMinuti) * snapMinuti;
+            minuti = Math.max(inizioMinuti, Math.min(minuti, fineMinuti - durata));
+            const ora = oraDaMinuti(minuti);
+            const geometria = geometriaEvento(ora, durata);
+            if (!geometria) return;
+            if (anteprima.parentElement !== canvas) canvas.appendChild(anteprima);
+            anteprima.hidden = false;
+            anteprima.style.top = geometria.top;
+            anteprima.style.height = geometria.height;
+            anteprima.textContent = ora;
+            proposta = {data: canvas.dataset.weekDay, ora};
+        }
+
+        function apriDialog() {
+            if (!trascinato || !origine || !proposta) return;
+            dialogSpostamento.querySelector('[data-drag-appointment-title]').textContent =
+                trascinato.querySelector('strong')?.textContent || 'Appuntamento';
+            dialogSpostamento.querySelector('[data-drag-from]').textContent =
+                `${formattaData(origine.data)} · ${origine.ora}`;
+            dialogSpostamento.querySelector('[data-drag-to]').textContent =
+                `${formattaData(proposta.data)} · ${proposta.ora}`;
+            const haEmail = trascinato.dataset.hasEmail === '1';
+            bottoneMail.disabled = !haEmail;
+            notaMail.hidden = haEmail;
+            notaMail.textContent = haEmail
+                ? ''
+                : 'Il paziente non ha un indirizzo email registrato: puoi confermare solo senza mail.';
+            trascinato.classList.add('is-pending-move');
+            dialogSpostamento.showModal();
+        }
+
+        async function salvaSpostamento(inviaMail) {
+            if (!trascinato || !origine || !proposta) return;
+            const appuntamento = trascinato;
+            const origineRichiesta = {...origine};
+            const propostaRichiesta = {...proposta};
+            const durata = durataEvento(appuntamento);
+            const formData = new FormData();
+            formData.set('_csrf_token', csrf?.value || '');
+            formData.set('data_originale', origineRichiesta.data);
+            formData.set('ora_originale', origineRichiesta.ora);
+            formData.set('data', propostaRichiesta.data);
+            formData.set('ora', propostaRichiesta.ora);
+            formData.set('invia_email', inviaMail ? '1' : '0');
+            const azioni = [...dialogSpostamento.querySelectorAll('[data-drag-choice]')];
+            azioni.forEach(button => { button.disabled = true; });
+
+            try {
+                const risposta = await fetch(`/admin/appuntamento/${appuntamento.dataset.eventId}/sposta-agenda`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const risultato = await risposta.json();
+                if (!risposta.ok || !risultato.ok) {
+                    if (risultato.requires_without_email) {
+                        bottoneMail.disabled = true;
+                        notaMail.hidden = false;
+                        notaMail.textContent = risultato.message;
+                        return;
+                    }
+                    window.alert(risultato.message || 'Spostamento non riuscito.');
+                    dialogSpostamento.close();
+                    azzeraTrascinamento();
+                    return;
+                }
+
+                const canvasDestinazione = teleGiorno.find(
+                    canvas => canvas.dataset.weekDay === risultato.data
+                );
+                if (!canvasDestinazione) {
+                    window.location.reload();
+                    return;
+                }
+                const nuovaFine = minutiDaOra(risultato.ora) + durata;
+                appuntamento.dataset.eventDate = risultato.data;
+                appuntamento.dataset.eventStart = risultato.ora;
+                appuntamento.dataset.eventEnd = oraDaMinuti(nuovaFine % 1440);
+                canvasDestinazione.appendChild(appuntamento);
+                posizionaEvento(appuntamento);
+                const etichettaOra = appuntamento.querySelector('[data-week-event-time]');
+                if (etichettaOra) {
+                    etichettaOra.textContent = `${risultato.ora}–${appuntamento.dataset.eventEnd}`;
+                }
+                dialogSpostamento.close();
+                azzeraTrascinamento();
+                if (!risultato.calendar_ok || (inviaMail && risultato.email_sent === false)) {
+                    window.alert(risultato.message);
+                }
+            } catch (_errore) {
+                window.alert('Connessione interrotta: lo spostamento non è stato confermato.');
+                dialogSpostamento.close();
+                azzeraTrascinamento();
+            } finally {
+                azioni.forEach(button => { button.disabled = false; });
+                bottoneMail.disabled = appuntamento.dataset.hasEmail !== '1';
+            }
+        }
+
+        eventi.forEach(posizionaEvento);
+        agendaSettimanale.querySelectorAll('[data-week-appointment]').forEach(evento => {
+            evento.addEventListener('dragstart', function(event) {
+                trascinato = this;
+                origine = {
+                    canvas: this.parentElement,
+                    data: this.dataset.eventDate,
+                    ora: this.dataset.eventStart,
+                    fine: this.dataset.eventEnd,
+                };
+                proposta = {data: origine.data, ora: origine.ora};
+                attesaConferma = false;
+                this.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', this.dataset.eventId || 'appuntamento');
+            });
+            evento.addEventListener('dragend', function() {
+                this.classList.remove('is-dragging');
+                if (!attesaConferma) azzeraTrascinamento();
+            });
+        });
+
+        teleGiorno.forEach(canvas => {
+            canvas.addEventListener('dragover', function(event) {
+                if (!trascinato) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                aggiornaAnteprima(this, event.clientY);
+            });
+            canvas.addEventListener('drop', function(event) {
+                if (!trascinato) return;
+                event.preventDefault();
+                aggiornaAnteprima(this, event.clientY);
+                if (!proposta || (proposta.data === origine.data && proposta.ora === origine.ora)) {
+                    azzeraTrascinamento();
+                    return;
+                }
+                attesaConferma = true;
+                trascinato.classList.remove('is-dragging');
+                apriDialog();
+            });
+        });
+
+        dialogSpostamento.querySelector('[data-drag-choice="cancel"]').addEventListener('click', function() {
+            dialogSpostamento.close();
+            azzeraTrascinamento();
+        });
+        bottoneMail.addEventListener('click', () => salvaSpostamento(true));
+        dialogSpostamento.querySelector('[data-drag-choice="no-mail"]').addEventListener('click', () => salvaSpostamento(false));
+        dialogSpostamento.addEventListener('cancel', function(event) {
+            event.preventDefault();
+            dialogSpostamento.close();
+            azzeraTrascinamento();
+        });
+    }
+
+
     const eventiMensili = document.querySelectorAll('[data-calendar-preview]');
     if (eventiMensili.length) {
         const HOVER_DELAY_MS = 1000;

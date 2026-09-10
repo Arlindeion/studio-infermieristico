@@ -7165,7 +7165,7 @@ def test_admin_vista_mensile_mostra_eventi_e_navigazione(client):
     assert '<details class="admin-surface"><summary>Aggiungi pausa o chiusura</summary>' in response.text
 
 
-def test_admin_apre_la_vista_mensile_e_ordina_i_controlli(client):
+def test_admin_apre_la_vista_settimanale_e_ordina_i_controlli(client):
     _login_admin(client)
 
     with patch.object(app_module, '_eventi_calendar_esterni', return_value=[]):
@@ -7173,15 +7173,15 @@ def test_admin_apre_la_vista_mensile_e_ordina_i_controlli(client):
         response_vista_non_valida = client.get('/admin?vista=non-valida')
 
     assert response.status_code == 200
-    assert '<table class="admin-month">' in response.text
+    assert 'data-admin-week-grid' in response.text
     assert response_vista_non_valida.status_code == 200
-    assert '<table class="admin-month">' in response_vista_non_valida.text
+    assert 'data-admin-week-grid' in response_vista_non_valida.text
     indice_mese = response.text.index('>Mese</a>')
     indice_settimana = response.text.index('>Settimana</a>')
     indice_giorno = response.text.index('>Giorno</a>')
     assert indice_mese < indice_settimana < indice_giorno
-    inizio_link_mese = response.text.rfind('<a', 0, indice_mese)
-    assert 'filtro-btn attivo' in response.text[inizio_link_mese:indice_mese]
+    inizio_link_settimana = response.text.rfind('<a', 0, indice_settimana)
+    assert 'filtro-btn attivo' in response.text[inizio_link_settimana:indice_settimana]
 
 
 def test_admin_mostra_gli_strumenti_agenda_chiusi_in_ogni_vista(client):

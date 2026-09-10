@@ -40,9 +40,9 @@ projects:
                   name: sc-studio-infermieristico-production-db
                   property: connectionString
               - key: MAIL_SUPPRESS_SEND
-                value: "true"
-              - key: STAGING_LIVE_INTEGRATIONS
                 value: "false"
+              - key: STAGING_LIVE_INTEGRATIONS
+                value: "true"
               - key: STAGING_AUTH_USERNAME
                 sync: false
               - key: STAGING_AUTH_PASSWORD
