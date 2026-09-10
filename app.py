@@ -53,7 +53,15 @@ from patient_backfill import (
     write_plan_file,
     write_report_file,
 )
-from patient_backfill_plan import read_alembic_revision
+from patient_cutover_preflight import (
+    PAZ_A4_ALEMBIC_REVISION,
+    build_patient_cutover_preflight,
+)
+from patient_service import (
+    AmbiguousPatientMatchError,
+    find_active_patient_by_tax_code,
+    load_patient_practice_counts,
+)
 from patient_data import (
     ANONYMIZED_PERSON_PLACEHOLDER,
     PatientDataValidationError,
@@ -2045,6 +2053,9 @@ class Persona(db.Model):
 
     @property
     def numero_pratiche(self):
+        preloaded = getattr(self, '_numero_pratiche_precaricato', None)
+        if preloaded is not None:
+            return preloaded
         return len(_patient_practices(self))
 
     __table_args__ = (
@@ -3920,47 +3931,15 @@ def patients_cli():
     """Comandi operativi per l'evoluzione controllata dell'area Pazienti."""
 
 
-PAZ_A4_ALEMBIC_REVISION = 'd4a7c2e9f610'
-
-
 @patients_cli.command('preflight-cutover')
 def preflight_patient_cutover_command():
-    """Verifica senza PII che il database sia pronto al cutover diretto A4."""
-    try:
-        revision = read_alembic_revision(db.session)
-    except PatientBackfillError:
-        db.session.rollback()
-        raise click.ClickException('PAZ_A3_REVISIONE_NON_VERIFICABILE') from None
-
-    if revision != PAZ_A4_ALEMBIC_REVISION:
-        click.echo(json.dumps({
-            'status': 'bloccato',
-            'error_code': 'PAZ_A3_REVISIONE_NON_VALIDA',
-            'alembic_revision': revision,
-            'expected_revision': PAZ_A4_ALEMBIC_REVISION,
-        }, sort_keys=True))
-        raise click.ClickException('PAZ_A3_REVISIONE_NON_VALIDA')
-
-    counts = {
-        'appuntamenti': Appuntamento.query.count(),
-        'call_sonno': CallSonno.query.count(),
-        'consensi_privacy_paziente': ConsensoPrivacyPaziente.query.count(),
-        'iscrizioni_corso': IscrizioneCorso.query.count(),
-        'collegamenti_legacy': CollegamentoPersona.query.count(),
-        'persone_legacy': PersonaCorso.query.count(),
-        'persone_v2': Persona.query.count(),
-    }
-    non_empty = {key: value for key, value in counts.items() if value}
-    payload = {
-        'status': 'bloccato' if non_empty else 'pronto',
-        'alembic_revision': revision,
-        'counts': counts,
-    }
-    if non_empty:
-        payload['error_code'] = 'PAZ_A3_DATABASE_NON_VUOTO'
+    """Run the read-only gate in strict diagnostic mode after app import."""
+    payload = build_patient_cutover_preflight(db.engine)
     click.echo(json.dumps(payload, sort_keys=True))
-    if non_empty:
-        raise click.ClickException('PAZ_A3_DATABASE_NON_VUOTO')
+    if payload['status'] != 'pronto':
+        raise click.ClickException(
+            payload.get('error_code', 'PAZ_A3_PREFLIGHT_NON_ESEGUIBILE')
+        )
 
 
 @patients_cli.command('backfill-identities')
@@ -5198,11 +5177,17 @@ def consulenze_online():
 
 
 def _email_valida(email):
-    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) is not None
+    try:
+        return normalize_email_address(email) is not None
+    except PatientDataValidationError:
+        return False
 
 
 def _telefono_valido(telefono):
-    return re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono) is not None
+    try:
+        return normalize_phone_number(telefono) is not None
+    except PatientDataValidationError:
+        return False
 
 
 def _normalizza_telefono(telefono):
@@ -5268,14 +5253,11 @@ def _label_tipo_richiesta(tipo_richiesta):
 
 
 def _persona_v2_da_codice_fiscale(codice_fiscale=''):
-    codice_normalizzato = normalize_tax_code(codice_fiscale)
-    if not codice_normalizzato:
-        return None
-    return Persona.query.filter(
-        db.func.upper(Persona.codice_fiscale) == codice_normalizzato,
-        Persona.dati_anonimizzati_il.is_(None),
-        Persona.stato == 'attiva',
-    ).first()
+    return find_active_patient_by_tax_code(
+        db.session,
+        Persona,
+        codice_fiscale,
+    )
 
 
 def _persona_v2_attiva(persona_id):
@@ -5585,12 +5567,12 @@ def _ensure_patient_for_course_registration(registration):
     return patient, existing_patient is None
 
 
-def _audit_automatic_course_patient_link(registration, patient, patient_created,
-                                         creation_action):
+def _audit_automatic_patient_link(entity_type, entity_id, patient, patient_created,
+                                  creation_action):
     registra_modifica(
         'collegamento_paziente_automatico',
-        'IscrizioneCorso',
-        registration.id,
+        entity_type,
+        entity_id,
         {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
     )
     if patient_created:
@@ -5598,8 +5580,19 @@ def _audit_automatic_course_patient_link(registration, patient, patient_created,
             creation_action,
             'Persona',
             patient.id,
-            {'tipo_pratica': 'IscrizioneCorso', 'pratica_id': registration.id},
+            {'tipo_pratica': entity_type, 'pratica_id': entity_id},
         )
+
+
+def _audit_automatic_course_patient_link(registration, patient, patient_created,
+                                         creation_action):
+    _audit_automatic_patient_link(
+        'IscrizioneCorso',
+        registration.id,
+        patient,
+        patient_created,
+        creation_action,
+    )
 
 
 def _slugify(value):
@@ -6246,7 +6239,16 @@ def iscrizione_corso(corso_tipo):
         patient = None
         patient_created = False
         if in_lista_attesa:
-            patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+            try:
+                patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+            except AmbiguousPatientMatchError:
+                db.session.rollback()
+                return _render_iscrizione_con_errore(
+                    corso_tipo,
+                    'Non posso collegare automaticamente questa iscrizione: '
+                    'contatta lo studio per una verifica dell’anagrafica.',
+                    'codice_fiscale',
+                )
         db.session.commit()
         if patient:
             _audit_automatic_course_patient_link(
@@ -6496,9 +6498,9 @@ def prenota_call_sonno():
             eta_mesi = -1
         if not nome or len(nome) > 100:
             errori.append('Inserisci nome e cognome (massimo 100 caratteri).')
-        if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
+        if not _telefono_valido(telefono):
             errori.append('Inserisci un numero di telefono valido.')
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        if not _email_valida(email):
             errori.append('Inserisci un indirizzo email valido.')
         if eta_mesi < 0 or eta_mesi > 2_147_483_647:
             errori.append('Inserisci un numero di mesi valido.')
@@ -6754,12 +6756,12 @@ def prenota():
             return render_template('prenota.html', form_data=request.form)
 
         # Valida il formato del telefono (consenti cifre, spazi, +, -, (), lunghezza 7-20)
-        if not re.match(r'^[\d\s\+\-\(\)]{7,20}$', telefono):
+        if not _telefono_valido(telefono):
             flash('Il numero di telefono non è valido.')
             return render_template('prenota.html', form_data=request.form)
 
         # Valida il formato dell'email
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        if not _email_valida(email):
             flash('L\'indirizzo email non è valido.')
             return render_template('prenota.html', form_data=request.form)
 
@@ -7143,6 +7145,16 @@ def admin():
         for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
     pazienti = pazienti_query.order_by(Persona.cognome, Persona.nome).all()
+    practice_counts = load_patient_practice_counts(
+        db.session,
+        pazienti,
+        appointment_model=Appuntamento,
+        sleep_call_model=CallSonno,
+        registration_model=IscrizioneCorso,
+        legacy_link_model=CollegamentoPersona,
+    )
+    for paziente in pazienti:
+        paziente._numero_pratiche_precaricato = practice_counts.get(paziente.id, 0)
     # Query gli appuntamenti in base al filtro
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
@@ -7648,7 +7660,11 @@ def aggiungi_paziente_admin():
             flash('La data di nascita non può essere futura.', 'error')
             return redirect(url_for('admin') + '#admin-pazienti')
     if codice_fiscale:
-        esistente = _persona_v2_da_codice_fiscale(codice_fiscale)
+        try:
+            esistente = _persona_v2_da_codice_fiscale(codice_fiscale)
+        except AmbiguousPatientMatchError as errore:
+            flash(str(errore), 'error')
+            return redirect(url_for('admin') + '#admin-pazienti')
         if esistente:
             flash('Esiste già un paziente con questo codice fiscale.', 'error')
             return redirect(url_for('dettaglio_paziente_admin', id=esistente.id))
@@ -8556,11 +8572,20 @@ def accetta_proposta_slot(token):
         if proposta.entita_tipo == 'Appuntamento':
             entita.duration_minutes = proposta.durata_minuti
             entita.stato = 'Confermato'
+            patient, patient_created = _ensure_patient_for_appointment(entita)
         else:
             entita.stato = 'Confermata'
+            patient, patient_created = _ensure_patient_for_sleep_call(entita)
         proposta.stato = 'Accettata'
         proposta.accettata_il = utc_now()
         db.session.commit()
+        _audit_automatic_patient_link(
+            proposta.entita_tipo,
+            entita.id,
+            patient,
+            patient_created,
+            'creazione_anagrafica_da_conferma',
+        )
         _sincronizza_entita_admin(proposta.entita_tipo, entita)
         if proposta.entita_tipo == 'Appuntamento':
             invia_email_conferma(entita)
@@ -8629,19 +8654,13 @@ def conferma_call_sonno_admin(id):
     call.stato = 'Confermata'
     patient, patient_created = _ensure_patient_for_sleep_call(call)
     db.session.commit()
-    registra_modifica(
-        'collegamento_paziente_automatico',
+    _audit_automatic_patient_link(
         'CallSonno',
         call.id,
-        {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
+        patient,
+        patient_created,
+        'creazione_anagrafica_da_conferma',
     )
-    if patient_created:
-        registra_modifica(
-            'creazione_anagrafica_da_conferma',
-            'Persona',
-            patient.id,
-            {'tipo_pratica': 'CallSonno', 'pratica_id': call.id},
-        )
     email_inviata = invia_email_conferma_call_sonno(call)
     calendar_aggiornato = crea_o_aggiorna_evento_calendario_call_sonno(call)
     if not email_inviata and not calendar_aggiornato:
@@ -8726,7 +8745,15 @@ def modifica_call_sonno_admin(id):
         call.data = nuova_data
         call.ora = nuova_ora
         call.stato = 'Confermata'
+        patient, patient_created = _ensure_patient_for_sleep_call(call)
         db.session.commit()
+        _audit_automatic_patient_link(
+            'CallSonno',
+            call.id,
+            patient,
+            patient_created,
+            'creazione_anagrafica_da_conferma',
+        )
         email_inviata = invia_email_conferma_call_sonno(call, modificata=True)
         calendar_aggiornato = crea_o_aggiorna_evento_calendario_call_sonno(call)
         if not email_inviata and not calendar_aggiornato:
@@ -9033,18 +9060,12 @@ def aggiorna_stato(id, stato):
     db.session.commit()
     registra_modifica('cambio_stato', 'Appuntamento', appuntamento.id, {'stato': stato})
     if patient:
-        registra_modifica(
-            'collegamento_paziente_automatico',
+        _audit_automatic_patient_link(
             'Appuntamento',
             appuntamento.id,
-            {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
-        )
-    if patient_created:
-        registra_modifica(
+            patient,
+            patient_created,
             'creazione_anagrafica_da_conferma',
-            'Persona',
-            patient.id,
-            {'tipo_pratica': 'Appuntamento', 'pratica_id': appuntamento.id},
         )
     if stato == 'Confermato':
         email_inviata = invia_email_conferma(appuntamento)
@@ -9147,7 +9168,15 @@ def modifica_appuntamento(id):
         appuntamento.ora = nuova_ora
         appuntamento.duration_minutes = duration_minutes
         appuntamento.stato = 'Confermato'
+        patient, patient_created = _ensure_patient_for_appointment(appuntamento)
         db.session.commit()
+        _audit_automatic_patient_link(
+            'Appuntamento',
+            appuntamento.id,
+            patient,
+            patient_created,
+            'creazione_anagrafica_da_conferma',
+        )
         if was_pending:
             email_inviata = invia_email_conferma(appuntamento)
         else:
@@ -9829,7 +9858,12 @@ def aggiorna_stato_iscrizione_corso(id, stato):
     patient = None
     patient_created = False
     if stato == stato_precedente and stato in STATI_LISTA_ATTESA and not iscrizione.persona_v2:
-        patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+        try:
+            patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+        except AmbiguousPatientMatchError as errore:
+            db.session.rollback()
+            flash(str(errore), 'error')
+            return redirect(_url_dettaglio_admin('IscrizioneCorso', iscrizione.id))
         db.session.commit()
         _audit_automatic_course_patient_link(
             iscrizione,
@@ -9858,7 +9892,12 @@ def aggiorna_stato_iscrizione_corso(id, stato):
     if stato not in {'Lista attesa', 'Invitato'} and iscrizione.posti == 0:
         iscrizione.posti = iscrizione.posti_richiesti or 1
     if stato == 'Confermato' or stato in STATI_LISTA_ATTESA:
-        patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+        try:
+            patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
+        except AmbiguousPatientMatchError as errore:
+            db.session.rollback()
+            flash(str(errore), 'error')
+            return redirect(_url_dettaglio_admin('IscrizioneCorso', iscrizione.id))
     db.session.commit()
     registra_modifica('cambio_stato', 'IscrizioneCorso', iscrizione.id, {'da': stato_precedente, 'a': stato})
     if patient:

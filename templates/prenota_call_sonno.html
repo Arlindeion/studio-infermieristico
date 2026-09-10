@@ -37,7 +37,7 @@
             </div>
             <div class="form-gruppo">
                 <label for="telefono">Telefono / WhatsApp *</label>
-                <input id="telefono" name="telefono" type="tel" autocomplete="tel" maxlength="20" value="{{ form_data.get('telefono', '') }}" required>
+                <input id="telefono" name="telefono" type="tel" autocomplete="tel" maxlength="20" pattern="[0-9+()./ \-]{6,20}" title="Usa da 6 a 20 caratteri: numeri, spazi, +, parentesi, punti, / o trattini." value="{{ form_data.get('telefono', '') }}" required>
             </div>
             <div class="form-gruppo">
                 <label for="email">Email *</label>

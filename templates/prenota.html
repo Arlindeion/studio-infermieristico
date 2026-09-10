@@ -28,13 +28,13 @@
         <div class="form-gruppo">
             <label for="telefono">Numero di telefono *</label>
             <input type="tel" id="telefono" name="telefono" placeholder="Es. 333 1234567"
-                   value="{{ form_data.get('telefono', '') if form_data else '' }}" required>
+                   value="{{ form_data.get('telefono', '') if form_data else '' }}" maxlength="20" pattern="[0-9+()./ \-]{6,20}" title="Usa da 6 a 20 caratteri: numeri, spazi, +, parentesi, punti, / o trattini." required>
         </div>
 
         <div class="form-gruppo">
             <label for="email">Email *</label>
             <input type="email" id="email" name="email" placeholder="Es. mario.rossi@email.it"
-                   value="{{ form_data.get('email', '') if form_data else '' }}" required>
+                   value="{{ form_data.get('email', '') if form_data else '' }}" maxlength="100" required>
         </div>
 
         <div class="form-gruppo booking-service-field">

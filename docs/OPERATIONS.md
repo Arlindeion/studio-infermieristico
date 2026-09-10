@@ -825,24 +825,38 @@ PAZ-A2 non deve:
 
 ## PAZ-A3/A4 — preflight e cutover diretto sul database Render vuoto
 
-Il deploy resta un'operazione separata e richiede approvazione esplicita. Dopo
-il deploy del commit candidato nell'ambiente privato, eseguire nell'ordine:
+Il deploy resta un'operazione separata e richiede approvazione esplicita. Il
+controllo di database vuoto deve avvenire **prima** di qualunque migration A1/A4.
+Il Blueprint di produzione/preproduzione esegue quindi il gate read-only come
+prima operazione del `preDeployCommand`:
 
 ```bash
+python patient_cutover_preflight.py --allow-applied
 flask --app app db upgrade
 flask --app app db check
-flask --app app patients preflight-cutover
+flask --app app bootstrap-admin
 ```
 
-Il terzo comando non legge né stampa dati identificativi. Deve terminare con
-codice zero e restituire `status: pronto`, revisione Alembic
-`d4a7c2e9f610` e conteggi tutti uguali a zero per anagrafiche, pratiche,
-collegamenti e consensi. L'eventuale account amministratore e le configurazioni
-operative non sono conteggiati.
+Al primo cutover `patient_cutover_preflight.py` non importa `app.py`: legge
+soltanto `alembic_version`, metadati dello schema e `COUNT(*)`, senza selezionare
+né stampare PII e senza eseguire scritture. Accetta esclusivamente le revisioni
+pre-A1 note della catena Render da `d91e6b4f2a30` a `c9e1f4a7b260`; lo schema
+deve essere coerente con quella fase e i conteggi di anagrafiche, pratiche,
+collegamenti e consensi devono essere tutti zero **prima** che `db upgrade` possa
+partire.
 
-Se la revisione non coincide o anche un solo conteggio è diverso da zero:
+`--allow-applied` non aggira il controllo del primo cutover. Serve soltanto a
+rendere idempotente il hook nei deploy successivi: quando la revisione è già
+`d4a7c2e9f610`, il gate verifica che lo schema A4 sia completo e restituisce
+`status: cutover_gia_applicato` senza pretendere che un database ormai in uso
+torni vuoto. Il comando Flask `flask --app app patients preflight-cutover` resta
+disponibile come controllo diagnostico stretto: a revisione A4 esegue anche i
+conteggi e quindi segnala un database non vuoto.
 
-1. interrompere il collaudo;
+Se la revisione non è ammessa, lo schema è inatteso, il preflight non è
+eseguibile o anche un solo conteggio del primo cutover è diverso da zero:
+
+1. interrompere il deploy/collaudo;
 2. non eseguire automaticamente PAZ-A2 o altre scritture correttive;
 3. identificare se i record sono sintetici o reali senza copiarli nei log;
 4. decidere separatamente se svuotare il database di test oppure applicare il
@@ -852,17 +866,21 @@ Con preflight verde, il collaudo privato A4 usa esclusivamente dati sintetici e
 verifica almeno:
 
 - creazione, modifica, ricerca e scheda di una persona in Pazienti 2.0;
-- collegamento di appuntamento, call sonno e iscrizione corso alle FK v2;
+- collegamento di appuntamento, call sonno e iscrizione corso alle FK v2 in
+  **tutti** i percorsi che portano una pratica allo stato confermato;
+- stop esplicito e rollback se un codice fiscale identifica più anagrafiche
+  attive;
 - assenza di nuove righe in `persona_corso` e `collegamento_persona`;
 - storico e consensi senza dati personali nei log;
 - logout e pulsante Indietro del browser, con nuova autenticazione richiesta;
 - resa e uso da tastiera dell'admin a 1440 px e 390 px.
 
 Al termine eliminare i record sintetici prima di qualunque uso reale. Dopo la
-prima scrittura A4 non usare il downgrade Alembic: il rollback applicativo non
-può ricostruire nel modello legacy i pazienti nati solo in v2. Un eventuale
-reset del database vuoto o un deploy correttivo richiedono una decisione
-esplicita. PITR e backup cifrato restano obbligatori prima del primo dato reale.
+prima identità v2 non usare il downgrade Alembic A4: il rollback strutturale non
+può ricostruire in modo sicuro lo stato applicativo successivo al cutover. Un
+eventuale reset del database vuoto o un deploy correttivo richiedono una
+decisione esplicita. PITR e backup cifrato restano obbligatori prima del primo
+dato reale.
 
 ## Comandi locali
 

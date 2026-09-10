@@ -18,7 +18,10 @@ depends_on = None
 def _has_a4_writes(bind):
     checks = (
         'SELECT 1 FROM consenso_privacy_paziente WHERE persona_v2_id IS NOT NULL LIMIT 1',
-        'SELECT 1 FROM persona WHERE legacy_persona_corso_id IS NULL LIMIT 1',
+        # Any v2 identity makes the structural A4 downgrade unsafe.  A row
+        # created by A2 from legacy data can already have been edited by A4,
+        # even when no new practice FK or consent row has been written yet.
+        'SELECT 1 FROM persona LIMIT 1',
         'SELECT 1 FROM appuntamento WHERE persona_id IS NOT NULL LIMIT 1',
         'SELECT 1 FROM call_sonno WHERE persona_id IS NOT NULL LIMIT 1',
         'SELECT 1 FROM iscrizione_corso WHERE persona_v2_id IS NOT NULL LIMIT 1',

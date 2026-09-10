@@ -23,7 +23,7 @@ projects:
             branch: main
             numInstances: 1
             buildCommand: pip install -r requirements.txt
-            preDeployCommand: DISABLE_SCHEDULER=true flask --app app db upgrade && DISABLE_SCHEDULER=true flask --app app bootstrap-admin
+            preDeployCommand: python patient_cutover_preflight.py --allow-applied && DISABLE_SCHEDULER=true flask --app app db upgrade && DISABLE_SCHEDULER=true flask --app app db check && DISABLE_SCHEDULER=true flask --app app bootstrap-admin
             startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app
             healthCheckPath: /healthz
             autoDeployTrigger: "off"

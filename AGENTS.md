@@ -32,6 +32,7 @@ In caso di contraddizione, questo file prevale sulle altre fonti. Non duplicare 
 - Mantenere il codice PostgreSQL-ready ed evitare assunzioni SQLite-specific fuori dalle migrazioni una tantum.
 - Evitare dipendenze non necessarie, SQL grezzo e architetture premature.
 - Codice Python in inglese; interfaccia utente in italiano.
+- Eccezione transitoria Pazienti 2.0: nomi di modelli, colonne e helper applicativi già introdotti dal cutover possono restare in italiano per compatibilità fino al refactor post-deploy; ogni nuovo modulo o API Python deve usare nomi inglesi.
 - Preferire funzioni piccole, nomi chiari e commenti soltanto quando spiegano una decisione non evidente.
 
 ## Obiettivo e priorità di prodotto

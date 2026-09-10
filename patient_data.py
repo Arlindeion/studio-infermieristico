@@ -1,9 +1,9 @@
-"""Validation and canonicalization helpers for the proposed Patients 2.0 schema.
+"""Shared validation and canonicalization helpers for patient contact data.
 
-PAZ-A1 keeps this module independent from Flask and SQLAlchemy so the same
-rules can be reused by future backfill code without importing the web app.
-Only validation required by the additive A1 schema lives here; duplicate and
-merge payload logic is deliberately deferred until those workflows exist.
+The module stays independent from Flask and SQLAlchemy so Patients 2.0, public
+forms, administrative flows and backfill code use the same rules. Persistence
+limits reflect the narrowest active practice columns; widening those columns
+must happen before these limits can be relaxed safely.
 """
 
 from __future__ import annotations
@@ -14,7 +14,8 @@ import unicodedata
 
 MAX_NAME_LENGTH = 100
 MAX_TAX_CODE_LENGTH = 32
-MAX_EMAIL_LENGTH = 254
+MAX_EMAIL_LENGTH = 100
+MAX_PHONE_DISPLAY_LENGTH = 20
 MIN_PHONE_DIGITS = 6
 MAX_PHONE_DIGITS = 15
 ANONYMIZED_PERSON_PLACEHOLDER = "[dati anonimizzati]"
@@ -90,7 +91,10 @@ def normalize_phone_number(value: str | None) -> str | None:
     display_value = _nfkc(value).strip()
     if not display_value:
         return None
-    if not _PHONE_FORMAT_RE.fullmatch(display_value):
+    if (
+        len(display_value) > MAX_PHONE_DISPLAY_LENGTH
+        or not _PHONE_FORMAT_RE.fullmatch(display_value)
+    ):
         raise PatientDataValidationError("Numero di telefono non valido.")
 
     if display_value.startswith("00"):

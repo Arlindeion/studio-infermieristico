@@ -36,7 +36,7 @@
             <div class="form-riga">
                 <div class="form-gruppo">
                     <label for="telefono">Telefono *</label>
-                    <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" autocomplete="tel" maxlength="20" required>
+                    <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" autocomplete="tel" maxlength="20" pattern="[0-9+()./ \-]{6,20}" title="Usa da 6 a 20 caratteri: numeri, spazi, +, parentesi, punti, / o trattini." required>
                 </div>
                 <div class="form-gruppo">
                     <label for="email">Email <span class="label-facoltativa">facoltativa</span></label>
