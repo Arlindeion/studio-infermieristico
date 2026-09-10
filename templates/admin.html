@@ -247,7 +247,7 @@
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="confirm_missing_contacts" value="0">
                     <div class="admin-inline-form-message" role="alert" aria-live="assertive" hidden></div>
-                    <label>Persona esistente<select id="admin-appointment-person" name="persona_id"><option value="">Nuova persona</option>{% for persona in persone_corsi %}<option value="{{ persona.id }}" data-nome="{{ persona.nome }}" data-telefono="{{ persona.telefono or '' }}" data-email="{{ persona.email or '' }}">{{ persona.nome }}{% if persona.telefono %} · {{ persona.telefono }}{% endif %}</option>{% endfor %}</select></label>
+                    <label>Persona esistente<select id="admin-appointment-person" name="persona_id"><option value="">Nuova persona</option>{% for persona in persone_corsi %}<option value="{{ persona.id }}" data-nome="{{ persona.nome_completo }}" data-telefono="{{ persona.telefono or '' }}" data-email="{{ persona.email or '' }}">{{ persona.nome_completo }}{% if persona.telefono %} · {{ persona.telefono }}{% endif %}</option>{% endfor %}</select></label>
                     <label>Nome<input name="nome" maxlength="100" autocomplete="name" required></label>
                     <div class="admin-contact-fields">
                         <label>Telefono <small>facoltativo</small><input name="telefono" inputmode="tel" autocomplete="tel"></label>
@@ -313,7 +313,10 @@
         <summary>Aggiungi paziente</summary>
         <form class="admin-form-grid" method="post" action="{{ url_for('aggiungi_paziente_admin') }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <label>Nome e cognome *<input name="nome" maxlength="100" autocomplete="name" required></label>
+            <label>Nome *<input name="nome" maxlength="100" autocomplete="given-name" required></label>
+            <label>Cognome *<input name="cognome" maxlength="100" autocomplete="family-name" required></label>
+            <label>Data di nascita<input type="date" name="data_nascita" autocomplete="bday"></label>
+            <label>Sesso anagrafico<select name="sesso_anagrafico"><option value="">Non indicato</option><option value="F">F</option><option value="M">M</option></select></label>
             <label>Telefono<input type="tel" name="telefono" maxlength="20" autocomplete="tel"></label>
             <label>Email<input type="email" name="email" maxlength="100" autocomplete="email"></label>
             <label>Codice fiscale<input name="codice_fiscale" maxlength="32" autocapitalize="characters"></label>
@@ -332,10 +335,10 @@
             <tbody>
                 {% for paziente in pazienti %}
                 <tr>
-                    <td><strong class="admin-primary">{{ paziente.nome }}</strong>{% if paziente.codice_fiscale %}<span class="admin-secondary">CF {{ paziente.codice_fiscale }}</span>{% endif %}</td>
+                    <td><strong class="admin-primary">{{ paziente.nome_completo }}</strong>{% if paziente.anagrafica_da_verificare %}<span class="admin-secondary">Dati da verificare</span>{% endif %}{% if paziente.codice_fiscale %}<span class="admin-secondary">CF {{ paziente.codice_fiscale }}</span>{% endif %}</td>
                     <td>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
                     <td>{% if paziente.email %}<a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
-                    <td>{{ paziente.iscrizioni|length + paziente.collegamenti_pratiche|length }}</td>
+                    <td>{{ paziente.numero_pratiche }}</td>
                     <td>{{ paziente.aggiornato_il|local_timestamp }}</td>
                     <td><a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a></td>
                 </tr>
@@ -346,7 +349,7 @@
     <div class="card-admin-lista admin-patient-cards">
         {% for paziente in pazienti %}
         <article class="card-admin">
-            <div class="card-admin-header"><strong>{{ paziente.nome }}</strong><span class="badge">{{ paziente.iscrizioni|length + paziente.collegamenti_pratiche|length }} pratiche</span></div>
+            <div class="card-admin-header"><strong>{{ paziente.nome_completo }}</strong><span class="badge">{{ paziente.numero_pratiche }} pratiche</span></div>
             <div class="card-admin-body">
                 <p><span>Telefono</span> {{ paziente.telefono or 'Da aggiungere' }}</p>
                 <p><span>Email</span> {{ paziente.email or 'Da aggiungere' }}</p>
@@ -731,7 +734,7 @@
                 </div>
                 <span class="admin-total">{{ persone_corsi_count }} contatti in rubrica</span>
             </div>
-            <p class="manual-panel-copy">Usa una persona già salvata oppure crea un nuovo contatto famiglia. Nome bambino ed età restano in rubrica per i laboratori successivi.</p>
+            <p class="manual-panel-copy">Usa una persona già salvata oppure crea una nuova anagrafica. Nome ed età del bambino restano nella singola iscrizione finché non vengono registrati come persona distinta.</p>
             <form method="POST" action="/admin/iscrizione-corso/aggiungi" class="form-admin-manuale">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="form-riga">
@@ -752,13 +755,11 @@
                             <option value="">Nuova persona/famiglia</option>
                             {% for p in persone_corsi %}
                             <option value="{{ p.id }}"
-                                    data-nome="{{ p.nome }}"
+                                    data-nome="{{ p.nome_completo }}"
                                     data-telefono="{{ p.telefono or '' }}"
                                     data-email="{{ p.email or '' }}"
-                                    data-codice-fiscale="{{ p.codice_fiscale or '' }}"
-                                    data-nome-bambino="{{ p.nome_bambino or '' }}"
-                                    data-eta-bambino="{{ p.eta_bambino or '' }}">
-                                {{ p.nome }}{% if p.nome_bambino %} · {{ p.nome_bambino }}{% endif %}{% if p.telefono %} · {{ p.telefono }}{% endif %}
+                                    data-codice-fiscale="{{ p.codice_fiscale or '' }}">
+                                {{ p.nome_completo }}{% if p.telefono %} · {{ p.telefono }}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
@@ -834,11 +835,6 @@
                     </div>
                 </div>
 
-                <div class="form-gruppo">
-                    <label for="manual-contact-notes">Note rubrica</label>
-                    <textarea name="note_persona" id="manual-contact-notes" rows="2" placeholder="Informazioni utili da ritrovare anche nelle prossime iscrizioni"></textarea>
-                </div>
-
                 <div class="manual-consensi">
                     <label>
                         <input type="checkbox" name="consenso_privacy" checked>
@@ -858,7 +854,7 @@
 
         <details class="rubrica-corsi-panel">
             <summary>
-                <span>Rubrica famiglie e partecipanti</span>
+                <span>Anagrafica Pazienti 2.0</span>
                 <strong>{{ persone_corsi_count }}</strong>
             </summary>
             {% if persone_corsi %}
@@ -866,18 +862,11 @@
                 {% for p in persone_corsi %}
                 <article class="rubrica-corsi-card">
                     <div>
-                        <strong>{{ p.nome }}</strong>
+                        <strong>{{ p.nome_completo }}</strong>
                         <span>{{ p.telefono or 'Telefono non indicato' }}</span>
                     </div>
                     <p>{{ p.email or 'Email non indicata' }}</p>
-                    {% if p.nome_bambino or p.eta_bambino %}
-                    <p class="rubrica-bambino">
-                        Bambino: {{ p.nome_bambino or 'nome non indicato' }}{% if p.eta_bambino %}, {{ p.eta_bambino }}{% endif %}
-                    </p>
-                    {% endif %}
-                    {% if p.note %}
-                    <p class="rubrica-note">{{ p.note }}</p>
-                    {% endif %}
+                    {% if p.anagrafica_da_verificare %}<p class="rubrica-note">Dati anagrafici da verificare</p>{% endif %}
                 </article>
                 {% endfor %}
             </div>
@@ -1146,8 +1135,8 @@
         <tbody>
             {% for i in iscrizioni_corsi %}
             {% set extra = i.extra_dict() %}
-            {% set nome_bambino = i.persona.nome_bambino if i.persona and i.persona.nome_bambino else extra.get('nome_bambino') %}
-            {% set eta_bambino = i.persona.eta_bambino if i.persona and i.persona.eta_bambino else extra.get('eta_bambino') %}
+            {% set nome_bambino = extra.get('nome_bambino') %}
+            {% set eta_bambino = extra.get('eta_bambino') %}
             <tr class="stato-{{ i.stato | lower | replace(' ', '-') }}">
                 <td>
                     <strong>{{ i.corso_titolo }}</strong><br>
@@ -1160,7 +1149,7 @@
                 <td>
                     {{ i.nome }}<br>
                     <span class="text-muted">CF: {{ i.codice_fiscale or 'Non indicato' }}</span>
-                    {% if i.persona %}
+                    {% if i.persona_v2 or i.persona %}
                     <span class="admin-secondary">In rubrica</span>
                     {% endif %}
                     {% if nome_bambino or eta_bambino %}
@@ -1204,8 +1193,8 @@
     <div class="card-admin-lista">
         {% for i in iscrizioni_corsi %}
         {% set extra = i.extra_dict() %}
-        {% set nome_bambino = i.persona.nome_bambino if i.persona and i.persona.nome_bambino else extra.get('nome_bambino') %}
-        {% set eta_bambino = i.persona.eta_bambino if i.persona and i.persona.eta_bambino else extra.get('eta_bambino') %}
+        {% set nome_bambino = extra.get('nome_bambino') %}
+        {% set eta_bambino = extra.get('eta_bambino') %}
         <div class="card-admin stato-{{ i.stato | lower | replace(' ', '-') }}">
             <div class="card-admin-header">
                 <strong>{{ i.nome }}</strong>
@@ -1220,7 +1209,7 @@
                 {% if nome_bambino or eta_bambino %}
                 <p><span>Bambino</span> {{ nome_bambino or 'Nome non indicato' }}{% if eta_bambino %}, {{ eta_bambino }}{% endif %}</p>
                 {% endif %}
-                {% if i.persona %}<p><span>Rubrica</span> Salvato</p>{% endif %}
+                {% if i.persona_v2 or i.persona %}<p><span>Anagrafica</span> Salvato</p>{% endif %}
                 {% if i.data_corso %}<p><span>Data</span> {{ i.data_corso }}</p>{% endif %}
                 {% if i.partecipazione %}<p><span>Tipo</span> {{ i.partecipazione }}</p>{% endif %}
                 {% if extra.ente_azienda %}<p><span>Azienda/gruppo</span> {{ extra.ente_azienda }}</p>{% endif %}

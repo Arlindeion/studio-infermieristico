@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titolo %}{{ paziente.nome }} · Pazienti admin{% endblock %}
+{% block titolo %}{{ paziente.nome_completo }} · Pazienti admin{% endblock %}
 {% block contenuto %}
 <main class="pagina-interna admin-page admin-detail-page admin-patient-detail">
     <div class="admin-detail-topbar">
@@ -14,7 +14,7 @@
     <header class="admin-detail-header admin-patient-header">
         <div>
             <p class="admin-eyebrow">Paziente #{{ paziente.id }}</p>
-            <h1>{{ paziente.nome }}</h1>
+            <h1>{{ paziente.nome_completo }}</h1>
             <p>
                 {% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% endif %}
                 {% if paziente.email %} · <a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% endif %}
@@ -33,7 +33,7 @@
         <p>Telefono o email coincidono. I record non vengono uniti automaticamente.</p>
         <div class="admin-history-links">
             {% for duplicato in duplicati %}
-            <a href="{{ url_for('dettaglio_paziente_admin', id=duplicato.id) }}"><span>Paziente #{{ duplicato.id }}</span><strong>{{ duplicato.nome }}</strong><small>{{ duplicato.telefono }}{% if duplicato.email %} · {{ duplicato.email }}{% endif %}</small></a>
+            <a href="{{ url_for('dettaglio_paziente_admin', id=duplicato.id) }}"><span>Paziente #{{ duplicato.id }}</span><strong>{{ duplicato.nome_completo }}</strong><small>{{ duplicato.telefono }}{% if duplicato.email %} · {{ duplicato.email }}{% endif %}</small></a>
             {% endfor %}
         </div>
     </section>
@@ -46,13 +46,21 @@
             <p class="filtro-descrizione">Le modifiche aggiornano questa scheda paziente. Appuntamenti, call e iscrizioni già registrati conservano i dati originari.</p>
             <form class="admin-form-grid" method="post" action="{{ url_for('modifica_paziente_admin', id=paziente.id) }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <label>Nome e cognome *<input name="nome" value="{{ paziente.nome }}" maxlength="100" autocomplete="name" required></label>
+                <label>Nome *<input name="nome" value="{{ paziente.nome or '' }}" maxlength="100" autocomplete="given-name" required></label>
+                <label>Cognome *<input name="cognome" value="{{ paziente.cognome or '' }}" maxlength="100" autocomplete="family-name" required></label>
+                <label>Data di nascita<input type="date" name="data_nascita" value="{{ paziente.data_nascita.isoformat() if paziente.data_nascita else '' }}" autocomplete="bday"></label>
+                <label>Sesso anagrafico<select name="sesso_anagrafico"><option value="">Non indicato</option><option value="F" {% if paziente.sesso_anagrafico == 'F' %}selected{% endif %}>F</option><option value="M" {% if paziente.sesso_anagrafico == 'M' %}selected{% endif %}>M</option></select></label>
                 <label>Telefono<input type="tel" name="telefono" value="{{ paziente.telefono or '' }}" maxlength="20" autocomplete="tel"></label>
                 <label>Email<input type="email" name="email" value="{{ paziente.email or '' }}" maxlength="100" autocomplete="email"></label>
                 <label>Codice fiscale<input name="codice_fiscale" value="{{ paziente.codice_fiscale or '' }}" maxlength="32" autocapitalize="characters"></label>
-                <label>Nome bambino<input name="nome_bambino" value="{{ paziente.nome_bambino or '' }}" maxlength="100"></label>
-                <label>Età bambino<input name="eta_bambino" value="{{ paziente.eta_bambino or '' }}" maxlength="40"></label>
-                <label class="admin-form-wide">Note anagrafica<textarea name="note" rows="5" maxlength="4000">{{ paziente.note or '' }}</textarea></label>
+                <label>Comune di nascita<input name="comune_nascita" value="{{ paziente.comune_nascita or '' }}" maxlength="120"></label>
+                <label>Provincia di nascita<input name="provincia_nascita" value="{{ paziente.provincia_nascita or '' }}" maxlength="10"></label>
+                <label>Stato di nascita<input name="stato_nascita" value="{{ paziente.stato_nascita or '' }}" maxlength="120"></label>
+                <label class="admin-form-wide">Indirizzo di residenza<input name="indirizzo_residenza" value="{{ paziente.indirizzo_residenza or '' }}" maxlength="200" autocomplete="street-address"></label>
+                <label>CAP<input name="cap_residenza" value="{{ paziente.cap_residenza or '' }}" maxlength="12" autocomplete="postal-code"></label>
+                <label>Comune di residenza<input name="comune_residenza" value="{{ paziente.comune_residenza or '' }}" maxlength="120" autocomplete="address-level2"></label>
+                <label>Provincia di residenza<input name="provincia_residenza" value="{{ paziente.provincia_residenza or '' }}" maxlength="10" autocomplete="address-level1"></label>
+                <label>Stato di residenza<input name="stato_residenza" value="{{ paziente.stato_residenza or '' }}" maxlength="120" autocomplete="country-name"></label>
                 <button class="btn" type="submit">Salva modifiche</button>
             </form>
         </section>

@@ -84,6 +84,8 @@ class Config:
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
+    APP_BUILD_REVISION = os.environ.get('APP_BUILD_REVISION') or os.environ.get('RENDER_GIT_COMMIT')
+    PAZ_A2_PLAN_TTL_SECONDS = int(os.environ.get('PAZ_A2_PLAN_TTL_SECONDS') or 3600)
     # Opt-in separato per collaudare integrazioni reali in uno staging pagato,
     # che resta comunque protetto da Basic Auth e noindex.
     STAGING_LIVE_INTEGRATIONS = os.environ.get(
@@ -110,10 +112,13 @@ class ProductionConfig(Config):
     PREFERRED_URL_SCHEME = 'https'
 
 class TestingConfig(Config):
-    """Configurazione di test."""
+    """Configurazione di test applicativa, sempre isolata su SQLite in-memory."""
     TESTING = True
-    # Usa un database in memoria per i test
+    # Sicurezza: la suite applicativa non deve mai ereditare DATABASE_URL da
+    # shell/.env. Le fixture usano create_all()/drop_all(), quindi qualunque
+    # database esterno sarebbe distruttivo.
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    DATABASE_URL_IS_EXPLICIT = False
     # Disabilita CSRF durante i test
     WTF_CSRF_ENABLED = False
     # Disabilita il rate limiting durante i test: altrimenti, siccome i
@@ -140,9 +145,27 @@ class TestingConfig(Config):
     STAGING_AUTH_USERNAME = None
     STAGING_AUTH_PASSWORD = None
 
+
+class PazA2PostgresTestingConfig(TestingConfig):
+    """Configurazione test-only per il gate PostgreSQL PAZ-A2.
+
+    Viene selezionata soltanto dai subprocess della suite opt-in e usa
+    esclusivamente PAZ_A2_TEST_DATABASE_URL: il generico DATABASE_URL non viene
+    mai considerato. L'app verifica inoltre che l'URL dedicato sia presente e
+    PostgreSQL prima di inizializzare il database.
+    """
+    SQLALCHEMY_DATABASE_URI = normalize_database_url(
+        os.environ.get('PAZ_A2_TEST_DATABASE_URL')
+    ) or 'sqlite:///:memory:'
+    DATABASE_URL_IS_EXPLICIT = bool(os.environ.get('PAZ_A2_TEST_DATABASE_URL'))
+    PAZ_A2_POSTGRES_TEST_URL_IS_EXPLICIT = bool(
+        os.environ.get('PAZ_A2_TEST_DATABASE_URL')
+    )
+
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
+    'paz_a2_postgres_testing': PazA2PostgresTestingConfig,
     'default': DevelopmentConfig
 }

@@ -38,7 +38,32 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from sqlalchemy import text as sql_text
+from sqlalchemy import event, false as sql_false, text as sql_text
+from sqlalchemy.orm import Session as SASession
+from patient_backfill import (
+    BackfillModels,
+    PatientBackfillError,
+    apply_backfill_plan,
+    build_backfill_plan,
+    delete_plan_file,
+    dry_run_result,
+    paths_equivalent,
+    read_plan_file_secure,
+    resolve_code_revision,
+    write_plan_file,
+    write_report_file,
+)
+from patient_backfill_plan import read_alembic_revision
+from patient_data import (
+    ANONYMIZED_PERSON_PLACEHOLDER,
+    PatientDataValidationError,
+    normalize_email_address,
+    normalize_patient_name,
+    normalize_phone_number,
+    normalize_tax_code,
+    validate_relationship_role,
+    validate_sex_code,
+)
 from sleep_terms import (
     SLEEP_TERMS_SECTIONS,
     SLEEP_TERMS_UPDATED_LABEL,
@@ -62,6 +87,16 @@ app = Flask(__name__)
 
 # Caricamento della configurazione
 app.config.from_object(config[config_name])
+if config_name == 'paz_a2_postgres_testing':
+    dedicated_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+    if (
+        not app.config.get('PAZ_A2_POSTGRES_TEST_URL_IS_EXPLICIT')
+        or not isinstance(dedicated_url, str)
+        or not dedicated_url.startswith('postgresql')
+    ):
+        raise RuntimeError(
+            'PAZ-A2 PostgreSQL test config richiede PAZ_A2_TEST_DATABASE_URL esplicito.'
+        )
 if config_name == 'production':
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -1834,6 +1869,13 @@ class Appuntamento(db.Model):
     creato_da_admin = db.Column(db.Boolean, default=False, nullable=False)
     archiviato_il = db.Column(db.DateTime, nullable=True, index=True)
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
+    persona_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_appuntamento_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_id])
 
 
 class CallSonno(db.Model):
@@ -1886,6 +1928,13 @@ class CallSonno(db.Model):
     difformita_calendario = db.Column(db.Text, nullable=True)
     archiviata_il = db.Column(db.DateTime, nullable=True, index=True)
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
+    persona_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_call_sonno_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_id])
 
 
 class QuestionarioSonno(db.Model):
@@ -1938,6 +1987,292 @@ class PersonaCorso(db.Model):
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
 
 
+class Persona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=True)
+    cognome = db.Column(db.String(100), nullable=True)
+    data_nascita = db.Column(db.Date, nullable=True)
+    sesso_anagrafico = db.Column(db.String(1), nullable=True)
+    codice_fiscale = db.Column(db.String(32), nullable=True, index=True)
+    comune_nascita = db.Column(db.String(120), nullable=True)
+    provincia_nascita = db.Column(db.String(10), nullable=True)
+    stato_nascita = db.Column(db.String(120), nullable=True)
+    indirizzo_residenza = db.Column(db.String(200), nullable=True)
+    cap_residenza = db.Column(db.String(12), nullable=True)
+    comune_residenza = db.Column(db.String(120), nullable=True)
+    provincia_residenza = db.Column(db.String(10), nullable=True)
+    stato_residenza = db.Column(db.String(120), nullable=True)
+    stato = db.Column(db.String(20), nullable=False, default='attiva', server_default='attiva')
+    anagrafica_da_verificare = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    legacy_persona_corso_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona_corso.id', name='fk_persona_legacy_persona_corso', ondelete='RESTRICT'),
+        nullable=True,
+    )
+    legacy_nome_completo = db.Column(db.String(200), nullable=True)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    aggiornato_il = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+    dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
+
+    legacy_persona_corso = db.relationship('PersonaCorso', foreign_keys=[legacy_persona_corso_id])
+    recapiti = db.relationship('RecapitoPersona', back_populates='persona', lazy=True)
+
+    @property
+    def nome_completo(self):
+        parti = [parte for parte in (self.nome, self.cognome) if parte]
+        return ' '.join(parti) or self.legacy_nome_completo or f'Paziente #{self.id}'
+
+    def recapito_principale(self, tipo):
+        attivi = [
+            recapito
+            for recapito in self.recapiti
+            if recapito.tipo == tipo and recapito.archiviato_il is None
+        ]
+        if not attivi:
+            return None
+        return next((recapito for recapito in attivi if recapito.principale), attivi[0])
+
+    @property
+    def telefono(self):
+        recapito = self.recapito_principale('telefono')
+        return recapito.valore if recapito else None
+
+    @property
+    def email(self):
+        recapito = self.recapito_principale('email')
+        return recapito.valore if recapito else None
+
+    @property
+    def numero_pratiche(self):
+        return len(_patient_practices(self))
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "sesso_anagrafico IS NULL OR sesso_anagrafico IN ('F','M')",
+            name='ck_persona_sesso_anagrafico',
+        ),
+        db.CheckConstraint(
+            "stato IN ('attiva','archiviata')",
+            name='ck_persona_stato',
+        ),
+        db.CheckConstraint(
+            "(stato = 'archiviata' AND archiviato_il IS NOT NULL) OR "
+            "(stato = 'attiva' AND archiviato_il IS NULL)",
+            name='ck_persona_archiviazione_coerente',
+        ),
+        db.UniqueConstraint(
+            'legacy_persona_corso_id',
+            name='uq_persona_legacy_persona_corso_id',
+        ),
+        db.Index('ix_persona_cognome_nome', 'cognome', 'nome'),
+        db.Index('ix_persona_data_nascita', 'data_nascita'),
+        db.Index('ix_persona_stato', 'stato'),
+    )
+
+
+class RecapitoPersona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_recapito_persona_persona', ondelete='RESTRICT'), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)
+    valore = db.Column(db.String(254), nullable=False)
+    valore_normalizzato = db.Column(db.String(254), nullable=False)
+    principale = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    etichetta = db.Column(db.String(80), nullable=True)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+
+    persona = db.relationship('Persona', back_populates='recapiti')
+
+    __table_args__ = (
+        db.CheckConstraint("tipo IN ('telefono','email')", name='ck_recapito_persona_tipo'),
+        db.CheckConstraint(
+            'archiviato_il IS NULL OR principale = false',
+            name='ck_recapito_persona_archiviato_non_principale',
+        ),
+        db.UniqueConstraint(
+            'persona_id', 'tipo', 'valore_normalizzato',
+            name='uq_recapito_persona_valore',
+        ),
+        db.Index('ix_recapito_persona_persona_id', 'persona_id'),
+        db.Index('ix_recapito_persona_ricerca', 'tipo', 'valore_normalizzato'),
+        db.Index(
+            'uq_recapito_persona_principale_attivo',
+            'persona_id', 'tipo',
+            unique=True,
+            sqlite_where=sql_text('principale = 1 AND archiviato_il IS NULL'),
+            postgresql_where=sql_text('principale IS TRUE AND archiviato_il IS NULL'),
+        ),
+    )
+
+
+class RelazionePersona(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    persona_assistita_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_relazione_persona_assistita', ondelete='RESTRICT'), nullable=False)
+    persona_referente_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_relazione_persona_referente', ondelete='RESTRICT'), nullable=False)
+    ruolo = db.Column(db.String(30), nullable=False)
+    contatto_principale = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    referente_comunicazioni = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    referente_consensi = db.Column(db.Boolean, nullable=False, default=False, server_default=sql_false())
+    note = db.Column(db.Text, nullable=True)
+    stato = db.Column(db.String(20), nullable=False, default='attiva', server_default='attiva')
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    aggiornato_il = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now, server_default=db.func.current_timestamp())
+    archiviato_il = db.Column(db.DateTime, nullable=True)
+
+    persona_assistita = db.relationship('Persona', foreign_keys=[persona_assistita_id])
+    persona_referente = db.relationship('Persona', foreign_keys=[persona_referente_id])
+
+    __table_args__ = (
+        db.CheckConstraint('persona_assistita_id <> persona_referente_id', name='ck_relazione_persona_no_self'),
+        db.CheckConstraint(
+            "ruolo IN ('madre','padre','tutore','affidatario','caregiver','altro')",
+            name='ck_relazione_persona_ruolo',
+        ),
+        db.CheckConstraint("stato IN ('attiva','archiviata')", name='ck_relazione_persona_stato'),
+        db.CheckConstraint(
+            "(stato = 'attiva' AND archiviato_il IS NULL) OR "
+            "(stato = 'archiviata' AND archiviato_il IS NOT NULL)",
+            name='ck_relazione_persona_archiviazione_coerente',
+        ),
+        db.CheckConstraint(
+            "archiviato_il IS NULL OR "
+            "(contatto_principale = false AND referente_comunicazioni = false AND referente_consensi = false)",
+            name='ck_relazione_persona_archiviata_senza_ruoli_attivi',
+        ),
+        db.UniqueConstraint(
+            'persona_assistita_id', 'persona_referente_id', 'ruolo',
+            name='uq_relazione_persona',
+        ),
+        db.Index('ix_relazione_persona_assistita_id', 'persona_assistita_id'),
+        db.Index('ix_relazione_persona_referente_id', 'persona_referente_id'),
+        db.Index(
+            'uq_relazione_persona_contatto_principale_attivo',
+            'persona_assistita_id',
+            unique=True,
+            sqlite_where=sql_text("contatto_principale = 1 AND stato = 'attiva' AND archiviato_il IS NULL"),
+            postgresql_where=sql_text("contatto_principale IS TRUE AND stato = 'attiva' AND archiviato_il IS NULL"),
+        ),
+        db.Index(
+            'uq_relazione_persona_comunicazioni_attivo',
+            'persona_assistita_id',
+            unique=True,
+            sqlite_where=sql_text("referente_comunicazioni = 1 AND stato = 'attiva' AND archiviato_il IS NULL"),
+            postgresql_where=sql_text("referente_comunicazioni IS TRUE AND stato = 'attiva' AND archiviato_il IS NULL"),
+        ),
+    )
+
+
+class SegnalazioneDuplicato(db.Model):
+    """Storage minimo per una futura segnalazione di possibile duplicato.
+
+    PAZ-A1 conserva soltanto la coppia e il livello. Decisioni ``non_unire``/
+    ``fuso``, motivi e fingerprint vengono introdotti insieme al workflow di
+    deduplicazione, perché la loro semantica dipende dai dati confrontati.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    persona_a_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_segnalazione_duplicato_persona_a', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    persona_b_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_segnalazione_duplicato_persona_b', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    livello = db.Column(db.String(20), nullable=False)
+    creato_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+
+    __table_args__ = (
+        db.CheckConstraint('persona_a_id < persona_b_id', name='ck_segnalazione_duplicato_id_ordinati'),
+        db.CheckConstraint("livello IN ('forte','probabile')", name='ck_segnalazione_duplicato_livello'),
+        db.UniqueConstraint(
+            'persona_a_id', 'persona_b_id',
+            name='uq_segnalazione_duplicato_coppia',
+        ),
+        db.Index('ix_segnalazione_duplicato_persona_a_id', 'persona_a_id'),
+        db.Index('ix_segnalazione_duplicato_persona_b_id', 'persona_b_id'),
+    )
+
+
+class FusionePersona(db.Model):
+    """Header auditabile di una futura fusione già conclusa con successo.
+
+    PAZ-A1 non conserva snapshot o mappe JSON. Il dettaglio dei record spostati
+    sarà progettato insieme alla procedura transazionale di fusione, quando
+    potrà essere validato e testato end-to-end.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    persona_principale_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_fusione_persona_principale', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    persona_secondaria_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_fusione_persona_secondaria', ondelete='RESTRICT'),
+        nullable=False,
+    )
+    operazione_id = db.Column(db.String(36), nullable=False)
+    stato = db.Column(db.String(20), nullable=False, default='applicata', server_default='applicata')
+    applicata_il = db.Column(db.DateTime, nullable=False, default=utc_now, server_default=db.func.current_timestamp())
+    annullata_il = db.Column(db.DateTime, nullable=True)
+    admin_id = db.Column(
+        db.Integer,
+        db.ForeignKey('admin.id', name='fk_fusione_persona_admin', ondelete='RESTRICT'),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        db.CheckConstraint('persona_principale_id <> persona_secondaria_id', name='ck_fusione_persona_no_self'),
+        db.CheckConstraint("stato IN ('applicata','annullata')", name='ck_fusione_persona_stato'),
+        db.CheckConstraint(
+            "(stato = 'applicata' AND annullata_il IS NULL) OR "
+            "(stato = 'annullata' AND annullata_il IS NOT NULL)",
+            name='ck_fusione_persona_stato_temporale',
+        ),
+        db.UniqueConstraint('operazione_id', name='uq_fusione_persona_operazione_id'),
+        db.Index('ix_fusione_persona_principale_id', 'persona_principale_id'),
+        db.Index('ix_fusione_persona_secondaria_id', 'persona_secondaria_id'),
+    )
+
+
+def _prepare_persona_for_storage(mapper, connection, target):
+    target.nome = normalize_patient_name(target.nome)
+    target.cognome = normalize_patient_name(target.cognome)
+    target.codice_fiscale = normalize_tax_code(target.codice_fiscale)
+    target.sesso_anagrafico = validate_sex_code(target.sesso_anagrafico)
+
+
+def _prepare_recapito_for_storage(mapper, connection, target):
+    target.tipo = str(target.tipo or '').strip().casefold()
+    if target.tipo == 'telefono':
+        target.valore = str(target.valore or '').strip()
+        target.valore_normalizzato = normalize_phone_number(target.valore)
+    elif target.tipo == 'email':
+        target.valore = str(target.valore or '').strip()
+        target.valore_normalizzato = normalize_email_address(target.valore)
+    else:
+        raise ValueError('Tipo recapito non ammesso.')
+    if target.valore_normalizzato is None:
+        raise ValueError('Il recapito non può essere vuoto.')
+
+
+def _prepare_relazione_for_storage(mapper, connection, target):
+    target.ruolo = validate_relationship_role(target.ruolo)
+
+
+event.listen(Persona, 'before_insert', _prepare_persona_for_storage)
+event.listen(Persona, 'before_update', _prepare_persona_for_storage)
+event.listen(RecapitoPersona, 'before_insert', _prepare_recapito_for_storage)
+event.listen(RecapitoPersona, 'before_update', _prepare_recapito_for_storage)
+event.listen(RelazionePersona, 'before_insert', _prepare_relazione_for_storage)
+event.listen(RelazionePersona, 'before_update', _prepare_relazione_for_storage)
+
+
 class PercorsoAccompagnamento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titolo = db.Column(db.String(200), nullable=False)
@@ -1971,6 +2306,12 @@ class IscrizioneCorso(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     corso_id = db.Column(db.Integer, db.ForeignKey('corso.id'), nullable=True)
     persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=True)
+    persona_v2_id = db.Column(
+        db.Integer,
+        db.ForeignKey('persona.id', name='fk_iscrizione_corso_persona_v2', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
     percorso_accompagnamento_id = db.Column(db.Integer, db.ForeignKey('percorso_accompagnamento.id'), nullable=True)
     corso_tipo = db.Column(db.String(80), nullable=False)
     corso_titolo = db.Column(db.String(200), nullable=False)
@@ -2002,6 +2343,7 @@ class IscrizioneCorso(db.Model):
     dati_anonimizzati_il = db.Column(db.DateTime, nullable=True, index=True)
     corso = db.relationship('Corso', backref=db.backref('iscrizioni', lazy=True))
     persona = db.relationship('PersonaCorso', backref=db.backref('iscrizioni', lazy=True))
+    persona_v2 = db.relationship('Persona', foreign_keys=[persona_v2_id])
     percorso_accompagnamento = db.relationship(
         'PercorsoAccompagnamento',
         backref=db.backref('iscrizioni', lazy=True)
@@ -2200,7 +2542,17 @@ class CollegamentoPersona(db.Model):
 
 class ConsensoPrivacyPaziente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=False, index=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('persona_corso.id'), nullable=True, index=True)
+    persona_v2_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            'persona.id',
+            name='fk_consenso_privacy_paziente_persona_v2',
+            ondelete='RESTRICT',
+        ),
+        nullable=True,
+        index=True,
+    )
     entita_tipo = db.Column(db.String(40), nullable=False, index=True)
     entita_id = db.Column(db.Integer, nullable=False, index=True)
     accettato = db.Column(db.Boolean, default=False, nullable=False)
@@ -2210,7 +2562,17 @@ class ConsensoPrivacyPaziente(db.Model):
         'PersonaCorso',
         backref=db.backref('consensi_privacy', lazy=True, cascade='all, delete-orphan'),
     )
+    persona_v2 = db.relationship(
+        'Persona',
+        foreign_keys=[persona_v2_id],
+        backref=db.backref('consensi_privacy_v2', lazy=True),
+    )
     __table_args__ = (
+        db.CheckConstraint(
+            '(persona_id IS NOT NULL AND persona_v2_id IS NULL) OR '
+            '(persona_id IS NULL AND persona_v2_id IS NOT NULL)',
+            name='ck_consenso_privacy_paziente_un_solo_modello',
+        ),
         db.UniqueConstraint(
             'entita_tipo',
             'entita_id',
@@ -2355,13 +2717,18 @@ def _pulisci_dati_operativi_collegati(entita_tipo, entita_id):
 
 
 def _anonimizza_appuntamento(appuntamento, adesso):
-    appuntamento.nome = '[dati anonimizzati]'
+    appuntamento.nome = ANONYMIZED_PERSON_PLACEHOLDER
     appuntamento.telefono = ''
     appuntamento.email = 'privacy-deleted@example.invalid'
     appuntamento.note = None
     appuntamento.google_event_id = None
     appuntamento.difformita_calendario = None
     appuntamento.dati_anonimizzati_il = adesso
+    appuntamento.persona_v2 = None
+    ConsensoPrivacyPaziente.query.filter_by(
+        entita_tipo='Appuntamento',
+        entita_id=appuntamento.id,
+    ).delete(synchronize_session=False)
     CollegamentoPersona.query.filter_by(
         entita_tipo='Appuntamento',
         entita_id=appuntamento.id,
@@ -2372,11 +2739,11 @@ def _anonimizza_appuntamento(appuntamento, adesso):
 def _anonimizza_call_sonno(call, adesso):
     if call.questionario:
         db.session.delete(call.questionario)
-    call.nome = '[dati anonimizzati]'
+    call.nome = ANONYMIZED_PERSON_PLACEHOLDER
     call.telefono = ''
     call.email = 'privacy-deleted@example.invalid'
     call.eta_bambino_mesi = 0
-    call.difficolta_principale = '[dati anonimizzati]'
+    call.difficolta_principale = ANONYMIZED_PERSON_PLACEHOLDER
     call.difficolta_altro = None
     call.ruolo_richiedente = None
     call.durata_difficolta = None
@@ -2391,6 +2758,11 @@ def _anonimizza_call_sonno(call, adesso):
     call.utm_campaign = None
     call.utm_content = None
     call.dati_anonimizzati_il = adesso
+    call.persona_v2 = None
+    ConsensoPrivacyPaziente.query.filter_by(
+        entita_tipo='CallSonno',
+        entita_id=call.id,
+    ).delete(synchronize_session=False)
     CollegamentoPersona.query.filter_by(
         entita_tipo='CallSonno',
         entita_id=call.id,
@@ -2399,23 +2771,28 @@ def _anonimizza_call_sonno(call, adesso):
 
 
 def _anonimizza_iscrizione(iscrizione, adesso):
-    iscrizione.nome = '[dati anonimizzati]'
+    iscrizione.nome = ANONYMIZED_PERSON_PLACEHOLDER
     iscrizione.telefono = ''
     iscrizione.email = None
     iscrizione.codice_fiscale = ''
     iscrizione.note = None
     iscrizione.dati_extra = None
     iscrizione.persona_id = None
+    iscrizione.persona_v2_id = None
     iscrizione.token_lista_attesa = None
     iscrizione.superamento_capienza_motivo = None
     iscrizione.consenso_immagini = False
     iscrizione.dati_anonimizzati_il = adesso
+    ConsensoPrivacyPaziente.query.filter_by(
+        entita_tipo='IscrizioneCorso',
+        entita_id=iscrizione.id,
+    ).delete(synchronize_session=False)
     _pulisci_dati_operativi_collegati('IscrizioneCorso', iscrizione.id)
 
 
 def _anonimizza_richiesta_azienda(richiesta, adesso):
-    richiesta.organizzazione = '[dati anonimizzati]'
-    richiesta.referente = '[dati anonimizzati]'
+    richiesta.organizzazione = ANONYMIZED_PERSON_PLACEHOLDER
+    richiesta.referente = ANONYMIZED_PERSON_PLACEHOLDER
     richiesta.telefono = ''
     richiesta.email = 'privacy-deleted@example.invalid'
     richiesta.periodo_preferito = None
@@ -2438,6 +2815,23 @@ def _persona_ha_pratiche_identificabili(persona):
         if pratica and pratica.dati_anonimizzati_il is None:
             return True
     return False
+
+
+def _persona_v2_ha_pratiche_identificabili(persona):
+    return bool(
+        Appuntamento.query.filter_by(
+            persona_id=persona.id,
+            dati_anonimizzati_il=None,
+        ).first()
+        or CallSonno.query.filter_by(
+            persona_id=persona.id,
+            dati_anonimizzati_il=None,
+        ).first()
+        or IscrizioneCorso.query.filter_by(
+            persona_v2_id=persona.id,
+            dati_anonimizzati_il=None,
+        ).first()
+    )
 
 
 def applica_conservazione_privacy(adesso=None):
@@ -2508,7 +2902,7 @@ def applica_conservazione_privacy(adesso=None):
     ):
         if _persona_ha_pratiche_identificabili(persona):
             continue
-        persona.nome = '[dati anonimizzati]'
+        persona.nome = ANONYMIZED_PERSON_PLACEHOLDER
         persona.telefono = None
         persona.email = None
         persona.codice_fiscale = None
@@ -2517,6 +2911,39 @@ def applica_conservazione_privacy(adesso=None):
         persona.note = None
         persona.dati_anonimizzati_il = riferimento
         conteggi['persone'] += 1
+
+    for persona in Persona.query.filter(
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.aggiornato_il <= limite_persone,
+    ):
+        if _persona_v2_ha_pratiche_identificabili(persona):
+            continue
+        RecapitoPersona.query.filter_by(persona_id=persona.id).delete(
+            synchronize_session=False
+        )
+        RelazionePersona.query.filter(db.or_(
+            RelazionePersona.persona_assistita_id == persona.id,
+            RelazionePersona.persona_referente_id == persona.id,
+        )).delete(synchronize_session=False)
+        persona.nome = None
+        persona.cognome = None
+        persona.data_nascita = None
+        persona.sesso_anagrafico = None
+        persona.codice_fiscale = None
+        persona.comune_nascita = None
+        persona.provincia_nascita = None
+        persona.stato_nascita = None
+        persona.indirizzo_residenza = None
+        persona.cap_residenza = None
+        persona.comune_residenza = None
+        persona.provincia_residenza = None
+        persona.stato_residenza = None
+        persona.legacy_nome_completo = None
+        persona.stato = 'archiviata'
+        persona.archiviato_il = riferimento
+        persona.dati_anonimizzati_il = riferimento
+        persona.anagrafica_da_verificare = False
+        conteggi['persone_v2'] += 1
 
     db.session.commit()
     if any(conteggi.values()):
@@ -3471,6 +3898,160 @@ def validate_config_command():
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     click.echo(f'Configurazione {app.config.get("APP_ENV")} valida.')
+
+
+def _patient_backfill_models():
+    return BackfillModels(
+        PersonaCorso=PersonaCorso,
+        Persona=Persona,
+        RecapitoPersona=RecapitoPersona,
+        RelazionePersona=RelazionePersona,
+        SegnalazioneDuplicato=SegnalazioneDuplicato,
+        FusionePersona=FusionePersona,
+        Appuntamento=Appuntamento,
+        CallSonno=CallSonno,
+        IscrizioneCorso=IscrizioneCorso,
+        RegistroEvento=RegistroEvento,
+    )
+
+
+@app.cli.group('patients')
+def patients_cli():
+    """Comandi operativi per l'evoluzione controllata dell'area Pazienti."""
+
+
+PAZ_A4_ALEMBIC_REVISION = 'd4a7c2e9f610'
+
+
+@patients_cli.command('preflight-cutover')
+def preflight_patient_cutover_command():
+    """Verifica senza PII che il database sia pronto al cutover diretto A4."""
+    try:
+        revision = read_alembic_revision(db.session)
+    except PatientBackfillError:
+        db.session.rollback()
+        raise click.ClickException('PAZ_A3_REVISIONE_NON_VERIFICABILE') from None
+
+    if revision != PAZ_A4_ALEMBIC_REVISION:
+        click.echo(json.dumps({
+            'status': 'bloccato',
+            'error_code': 'PAZ_A3_REVISIONE_NON_VALIDA',
+            'alembic_revision': revision,
+            'expected_revision': PAZ_A4_ALEMBIC_REVISION,
+        }, sort_keys=True))
+        raise click.ClickException('PAZ_A3_REVISIONE_NON_VALIDA')
+
+    counts = {
+        'appuntamenti': Appuntamento.query.count(),
+        'call_sonno': CallSonno.query.count(),
+        'consensi_privacy_paziente': ConsensoPrivacyPaziente.query.count(),
+        'iscrizioni_corso': IscrizioneCorso.query.count(),
+        'collegamenti_legacy': CollegamentoPersona.query.count(),
+        'persone_legacy': PersonaCorso.query.count(),
+        'persone_v2': Persona.query.count(),
+    }
+    non_empty = {key: value for key, value in counts.items() if value}
+    payload = {
+        'status': 'bloccato' if non_empty else 'pronto',
+        'alembic_revision': revision,
+        'counts': counts,
+    }
+    if non_empty:
+        payload['error_code'] = 'PAZ_A3_DATABASE_NON_VUOTO'
+    click.echo(json.dumps(payload, sort_keys=True))
+    if non_empty:
+        raise click.ClickException('PAZ_A3_DATABASE_NON_VUOTO')
+
+
+@patients_cli.command('backfill-identities')
+@click.option('--dry-run', 'dry_run_requested', is_flag=True, help='Genera soltanto il piano (default).')
+@click.option('--apply', 'apply_requested', is_flag=True, help='Applica un piano A2 già generato.')
+@click.option('--plan-file', required=True, type=click.Path(dir_okay=False), help='Percorso del piano JSON riservato.')
+@click.option('--overwrite-plan', is_flag=True, help='Sostituisce atomicamente un piano esistente durante il dry-run.')
+@click.option('--report-file', type=click.Path(dir_okay=False), help='Salva un report minimizzato opzionale.')
+@click.option('--overwrite-report', is_flag=True, help='Sostituisce atomicamente un report esistente.')
+def backfill_patient_identities_command(
+    dry_run_requested,
+    apply_requested,
+    plan_file,
+    overwrite_plan,
+    report_file,
+    overwrite_report,
+):
+    """Genera o applica il backfill identità PAZ-A2 senza usare dati reali nei log."""
+    if dry_run_requested and apply_requested:
+        raise click.ClickException('Usare --dry-run oppure --apply, non entrambi.')
+    if apply_requested and overwrite_plan:
+        raise click.ClickException('--overwrite-plan è disponibile soltanto in dry-run.')
+    if report_file and paths_equivalent(plan_file, report_file):
+        raise click.ClickException('--plan-file e --report-file devono indicare file distinti.')
+
+    models = _patient_backfill_models()
+    report = None
+    cli_error_message = None
+
+    try:
+        if apply_requested:
+            # Read/validate first: once a valid plan exists, service-level
+            # preflight failures can carry its safe run_id into the failure report.
+            plan = read_plan_file_secure(plan_file)
+            result = apply_backfill_plan(
+                db.engine,
+                models,
+                plan,
+                config=app.config,
+            )
+            report = result.report()
+            post_commit_errors = []
+            if report_file:
+                try:
+                    write_report_file(report_file, report, overwrite=overwrite_report)
+                except (PatientBackfillError, OSError):
+                    post_commit_errors.append('report non salvato')
+            try:
+                delete_plan_file(plan_file)
+            except (PatientBackfillError, OSError):
+                post_commit_errors.append('piano non eliminato')
+            click.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
+            if post_commit_errors:
+                cli_error_message = (
+                    'Backfill A2 completato, ma: ' + ', '.join(post_commit_errors) +
+                    '. Non rieseguire il piano già applicato.'
+                )
+        else:
+            with SASession(db.engine) as planner_session:
+                plan = build_backfill_plan(
+                    planner_session,
+                    models,
+                    engine=db.engine,
+                    config=app.config,
+                )
+            write_plan_file(plan_file, plan, overwrite=overwrite_plan)
+            result = dry_run_result(plan)
+            report = result.report()
+            if report_file:
+                write_report_file(report_file, report, overwrite=overwrite_report)
+    except PatientBackfillError as caught:
+        # Copy only safe primitives while the service exception is active.
+        failure_result = getattr(caught, 'failure_result', None)
+        safe_message = str(caught)
+        report_failed = False
+        if failure_result is not None and report_file:
+            try:
+                write_report_file(report_file, failure_result.report(), overwrite=overwrite_report)
+            except (PatientBackfillError, OSError):
+                report_failed = True
+        cli_error_message = safe_message + ('; report di errore non salvato' if report_failed else '')
+    except OSError:
+        cli_error_message = 'Errore filesystem durante la gestione del piano A2.'
+
+    # Deliberately outside exception handlers: ClickException must not retain
+    # the service/DB exception in __context__ or __cause__.
+    if cli_error_message is not None:
+        raise click.ClickException(cli_error_message)
+
+    if report is not None and not apply_requested:
+        click.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
 
 
 valida_configurazione_runtime()
@@ -4686,57 +5267,193 @@ def _label_tipo_richiesta(tipo_richiesta):
     return TIPI_RICHIESTA_CORSO.get(tipo_richiesta, tipo_richiesta or 'Richiesta')
 
 
-def _persona_corso_da_contatti(telefono='', email='', codice_fiscale=''):
-    codice_normalizzato = re.sub(r'\s+', '', codice_fiscale or '').upper()
-    if codice_normalizzato:
-        persona = PersonaCorso.query.filter(
-            db.func.upper(PersonaCorso.codice_fiscale) == codice_normalizzato
-        ).first()
-        if persona:
-            return persona
-    return None
+def _persona_v2_da_codice_fiscale(codice_fiscale=''):
+    codice_normalizzato = normalize_tax_code(codice_fiscale)
+    if not codice_normalizzato:
+        return None
+    return Persona.query.filter(
+        db.func.upper(Persona.codice_fiscale) == codice_normalizzato,
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato == 'attiva',
+    ).first()
+
+
+def _persona_v2_attiva(persona_id):
+    if persona_id is None:
+        return None
+    return Persona.query.filter(
+        Persona.id == persona_id,
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato == 'attiva',
+    ).first()
+
+
+def _imposta_recapito_principale(persona, tipo, valore):
+    normalizer = {
+        'telefono': normalize_phone_number,
+        'email': normalize_email_address,
+    }[tipo]
+    normalizzato = normalizer(valore)
+    attivi = [
+        recapito
+        for recapito in persona.recapiti
+        if recapito.tipo == tipo and recapito.archiviato_il is None
+    ]
+    if normalizzato is None:
+        for recapito in attivi:
+            recapito.principale = False
+            recapito.archiviato_il = utc_now()
+        return None
+
+    recapiti_archiviati = False
+    for recapito in attivi:
+        if recapito.valore_normalizzato != normalizzato:
+            recapito.principale = False
+            recapito.archiviato_il = utc_now()
+            recapiti_archiviati = True
+    if recapiti_archiviati:
+        # Evita una violazione transitoria dell'indice univoco parziale quando
+        # un recapito principale viene sostituito con uno già archiviato.
+        db.session.flush()
+
+    recapito = next(
+        (
+            item for item in persona.recapiti
+            if item.tipo == tipo and item.valore_normalizzato == normalizzato
+        ),
+        None,
+    )
+    if recapito is None:
+        recapito = RecapitoPersona(
+            persona=persona,
+            tipo=tipo,
+            valore=(valore or '').strip(),
+            valore_normalizzato=normalizzato,
+        )
+        db.session.add(recapito)
+    else:
+        recapito.valore = (valore or '').strip()
+        recapito.archiviato_il = None
+    recapito.principale = True
+    return recapito
+
+
+def _crea_persona_v2_da_snapshot(nome, telefono='', email='', codice_fiscale=''):
+    nome_normalizzato = normalize_patient_name(nome)
+    if not nome_normalizzato:
+        raise PatientDataValidationError('Il nome del paziente è obbligatorio.')
+    persona = Persona(
+        nome=nome_normalizzato,
+        cognome=None,
+        codice_fiscale=normalize_tax_code(codice_fiscale),
+        anagrafica_da_verificare=True,
+    )
+    db.session.add(persona)
+    for tipo, valore in (('telefono', telefono), ('email', email)):
+        try:
+            _imposta_recapito_principale(persona, tipo, valore)
+        except PatientDataValidationError:
+            # La pratica resta la fotografia storica. Un recapito non valido non
+            # deve impedire il salvataggio dell'anagrafica da verificare.
+            continue
+    return persona
+
+
+def _aggiorna_persona_v2_da_snapshot(persona, nome='', telefono='', email='', codice_fiscale=''):
+    if persona.anagrafica_da_verificare and nome:
+        persona.nome = normalize_patient_name(nome)
+        persona.cognome = None
+    if codice_fiscale:
+        persona.codice_fiscale = normalize_tax_code(codice_fiscale)
+    for tipo, valore in (('telefono', telefono), ('email', email)):
+        if not valore:
+            continue
+        try:
+            _imposta_recapito_principale(persona, tipo, valore)
+        except PatientDataValidationError:
+            continue
+    return persona
 
 
 def _possibili_duplicati_persona(persona):
-    """Segnala corrispondenze deboli senza unire automaticamente le pratiche."""
+    """Segnala contatti condivisi senza unire automaticamente le persone."""
+    contatti = {
+        (recapito.tipo, recapito.valore_normalizzato)
+        for recapito in persona.recapiti
+        if recapito.archiviato_il is None
+    }
+    if not contatti:
+        return []
     duplicati = []
-    email = (persona.email or '').strip().lower()
-    telefono = _normalizza_telefono(persona.telefono)
-    for candidata in PersonaCorso.query.filter(PersonaCorso.id != persona.id).all():
-        stessa_email = email and (candidata.email or '').strip().lower() == email
-        stesso_telefono = telefono and _normalizza_telefono(candidata.telefono) == telefono
-        if stessa_email or stesso_telefono:
+    for candidata in Persona.query.filter(
+        Persona.id != persona.id,
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato == 'attiva',
+    ).all():
+        if any(
+            (recapito.tipo, recapito.valore_normalizzato) in contatti
+            for recapito in candidata.recapiti
+            if recapito.archiviato_il is None
+        ):
             duplicati.append(candidata)
     return duplicati
 
 
-def _storico_persona_admin(persona):
-    """Restituisce le pratiche collegate senza modificare i recapiti storici."""
-    storico = [
-        {
-            'tipo': 'IscrizioneCorso',
-            'id': iscrizione.id,
-            'titolo': iscrizione.corso_titolo,
-            'data': iscrizione.data_corso or '',
-            'creato_il': iscrizione.creato_il,
-        }
-        for iscrizione in persona.iscrizioni
-    ]
-    for collegamento in persona.collegamenti_pratiche:
-        pratica = _entita_admin(collegamento.entita_tipo, collegamento.entita_id)
-        if pratica:
-            titolo = (
-                getattr(pratica, 'servizio', None)
-                or ('Call sonno' if collegamento.entita_tipo == 'CallSonno' else None)
-                or _nome_entita_admin(collegamento.entita_tipo, pratica)
+def _patient_practices(persona):
+    """Return v2 links plus the read-only legacy history mapped by PAZ-A2."""
+    records = []
+    seen = set()
+
+    def add_record(record_type, record):
+        key = (record_type, record.id)
+        if key not in seen:
+            seen.add(key)
+            records.append((record_type, record))
+
+    for record_type, items in (
+        ('Appuntamento', Appuntamento.query.filter_by(persona_id=persona.id).all()),
+        ('CallSonno', CallSonno.query.filter_by(persona_id=persona.id).all()),
+        ('IscrizioneCorso', IscrizioneCorso.query.filter_by(persona_v2_id=persona.id).all()),
+    ):
+        for record in items:
+            add_record(record_type, record)
+
+    if persona.legacy_persona_corso_id:
+        for record in IscrizioneCorso.query.filter_by(
+            persona_id=persona.legacy_persona_corso_id,
+        ).all():
+            add_record('IscrizioneCorso', record)
+        for link in CollegamentoPersona.query.filter_by(
+            persona_id=persona.legacy_persona_corso_id,
+        ).all():
+            if link.entita_tipo not in {'Appuntamento', 'CallSonno'}:
+                continue
+            record = _entita_admin(
+                link.entita_tipo,
+                link.entita_id,
             )
-            storico.append({
-                'tipo': collegamento.entita_tipo,
-                'id': pratica.id,
-                'titolo': titolo,
-                'data': getattr(pratica, 'data', '') or '',
-                'creato_il': getattr(pratica, 'creato_il', collegamento.creato_il),
-            })
+            if record is not None:
+                add_record(link.entita_tipo, record)
+    return records
+
+
+def _storico_persona_admin(persona):
+    """Restituisce le pratiche v2 e la compatibilità di lettura legacy."""
+    storico = []
+    for tipo, pratica in _patient_practices(persona):
+        titolo = (
+            getattr(pratica, 'servizio', None)
+            or ('Call sonno' if tipo == 'CallSonno' else None)
+            or getattr(pratica, 'corso_titolo', None)
+            or _nome_entita_admin(tipo, pratica)
+        )
+        storico.append({
+            'tipo': tipo,
+            'id': pratica.id,
+            'titolo': titolo,
+            'data': getattr(pratica, 'data', None) or getattr(pratica, 'data_corso', '') or '',
+            'creato_il': getattr(pratica, 'creato_il', None),
+        })
     return sorted(
         storico,
         key=lambda voce: voce['creato_il'] or datetime.min,
@@ -4745,7 +5462,7 @@ def _storico_persona_admin(persona):
 
 
 def _sync_patient_privacy_consent(persona, entita_tipo, entita):
-    """Copy the practice consent evidence into the patient's consent history."""
+    """Copy practice consent evidence to the Patients 2.0 history."""
     db.session.flush()
     consent = ConsensoPrivacyPaziente.query.filter_by(
         entita_tipo=entita_tipo,
@@ -4753,13 +5470,14 @@ def _sync_patient_privacy_consent(persona, entita_tipo, entita):
     ).first()
     if consent is None:
         consent = ConsensoPrivacyPaziente(
-            persona=persona,
+            persona_v2=persona,
             entita_tipo=entita_tipo,
             entita_id=entita.id,
         )
         db.session.add(consent)
     else:
-        consent.persona = persona
+        consent.persona = None
+        consent.persona_v2 = persona
     consent.accettato = bool(getattr(entita, 'consenso_privacy', False))
     consent.accettato_il = (
         getattr(entita, 'creato_il', None) if consent.accettato else None
@@ -4769,8 +5487,13 @@ def _sync_patient_privacy_consent(persona, entita_tipo, entita):
 
 def _patient_privacy_history(persona):
     history = []
-    consents = ConsensoPrivacyPaziente.query.filter_by(
-        persona_id=persona.id,
+    patient_filters = [ConsensoPrivacyPaziente.persona_v2_id == persona.id]
+    if persona.legacy_persona_corso_id:
+        patient_filters.append(
+            ConsensoPrivacyPaziente.persona_id == persona.legacy_persona_corso_id
+        )
+    consents = ConsensoPrivacyPaziente.query.filter(
+        db.or_(*patient_filters)
     ).order_by(
         ConsensoPrivacyPaziente.accettato_il.desc(),
         ConsensoPrivacyPaziente.creato_il.desc(),
@@ -4798,113 +5521,66 @@ def _patient_privacy_history(persona):
     return history
 
 
-def _aggiorna_persona_corso(persona, nome='', telefono='', email='', codice_fiscale='',
-                            nome_bambino='', eta_bambino='', note=''):
-    if nome:
-        persona.nome = nome
-    if telefono:
-        persona.telefono = telefono
-    if email:
-        persona.email = email
-    if codice_fiscale:
-        persona.codice_fiscale = codice_fiscale
-    if nome_bambino:
-        persona.nome_bambino = nome_bambino
-    if eta_bambino:
-        persona.eta_bambino = eta_bambino
-    if note:
-        if persona.note and note not in persona.note:
-            persona.note = f'{persona.note}\n{note}'
-        elif not persona.note:
-            persona.note = note
-    return persona
-
-
-def _trova_o_crea_persona_corso(nome, telefono, email='', codice_fiscale='',
-                                nome_bambino='', eta_bambino='', note=''):
-    persona = _persona_corso_da_contatti(
-        telefono=telefono,
-        email=email,
-        codice_fiscale=codice_fiscale,
-    )
-    if persona:
-        return _aggiorna_persona_corso(
-            persona,
-            nome=nome,
-            telefono=telefono,
-            email=email,
-            codice_fiscale=codice_fiscale,
-            nome_bambino=nome_bambino,
-            eta_bambino=eta_bambino,
-            note=note
-        )
-
-    persona = PersonaCorso(
-        nome=nome,
-        telefono=telefono,
-        email=email or None,
-        codice_fiscale=codice_fiscale or None,
-        nome_bambino=nome_bambino or None,
-        eta_bambino=eta_bambino or None,
-        note=note or None,
-    )
-    db.session.add(persona)
-    return persona
-
-
 def _ensure_patient_for_appointment(appointment):
     """Create and link a patient only when an appointment is confirmed."""
-    existing_link = CollegamentoPersona.query.filter_by(
-        entita_tipo='Appuntamento',
-        entita_id=appointment.id,
-    ).first()
-    if existing_link:
+    if appointment.persona_v2:
         _sync_patient_privacy_consent(
-            existing_link.persona,
+            appointment.persona_v2,
             'Appuntamento',
             appointment,
         )
-        return existing_link.persona, False
+        return appointment.persona_v2, False
 
-    patient = PersonaCorso(
-        nome=appointment.nome,
-        telefono=appointment.telefono or None,
-        email=appointment.email or None,
+    patient = _crea_persona_v2_da_snapshot(
+        appointment.nome,
+        appointment.telefono,
+        appointment.email,
     )
-    db.session.add(patient)
-    db.session.flush()
-    db.session.add(CollegamentoPersona(
-        persona=patient,
-        entita_tipo='Appuntamento',
-        entita_id=appointment.id,
-    ))
+    appointment.persona_v2 = patient
     _sync_patient_privacy_consent(patient, 'Appuntamento', appointment)
+    return patient, True
+
+
+def _ensure_patient_for_sleep_call(call):
+    """Create and link a Patients 2.0 record when the sleep call is confirmed."""
+    if call.persona_v2:
+        _sync_patient_privacy_consent(call.persona_v2, 'CallSonno', call)
+        return call.persona_v2, False
+    patient = _crea_persona_v2_da_snapshot(call.nome, call.telefono, call.email)
+    call.persona_v2 = patient
+    _sync_patient_privacy_consent(patient, 'CallSonno', call)
     return patient, True
 
 
 def _ensure_patient_for_course_registration(registration):
     """Create or link the primary registrant when they enter the patient list."""
-    if registration.persona:
+    if registration.persona_v2:
         _sync_patient_privacy_consent(
-            registration.persona,
+            registration.persona_v2,
             'IscrizioneCorso',
             registration,
         )
-        return registration.persona, False
+        return registration.persona_v2, False
 
-    extra = registration.extra_dict()
-    existing_patient = _persona_corso_da_contatti(
+    existing_patient = _persona_v2_da_codice_fiscale(
         codice_fiscale=registration.codice_fiscale,
     )
-    patient = _trova_o_crea_persona_corso(
-        nome=registration.nome,
-        telefono=registration.telefono,
-        email=registration.email or '',
-        codice_fiscale=registration.codice_fiscale,
-        nome_bambino=extra.get('nome_bambino', ''),
-        eta_bambino=extra.get('eta_bambino', ''),
-    )
-    registration.persona = patient
+    if existing_patient:
+        patient = _aggiorna_persona_v2_da_snapshot(
+            existing_patient,
+            nome=registration.nome,
+            telefono=registration.telefono,
+            email=registration.email or '',
+            codice_fiscale=registration.codice_fiscale,
+        )
+    else:
+        patient = _crea_persona_v2_da_snapshot(
+            registration.nome,
+            registration.telefono,
+            registration.email or '',
+            registration.codice_fiscale,
+        )
+    registration.persona_v2 = patient
     _sync_patient_privacy_consent(patient, 'IscrizioneCorso', registration)
     return patient, existing_patient is None
 
@@ -4915,12 +5591,12 @@ def _audit_automatic_course_patient_link(registration, patient, patient_created,
         'collegamento_paziente_automatico',
         'IscrizioneCorso',
         registration.id,
-        {'persona_id': patient.id, 'nuova_anagrafica': patient_created},
+        {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
     )
     if patient_created:
         registra_modifica(
             creation_action,
-            'PersonaCorso',
+            'Persona',
             patient.id,
             {'tipo_pratica': 'IscrizioneCorso', 'pratica_id': registration.id},
         )
@@ -6441,14 +7117,21 @@ def admin():
 
     ricerca = request.args.get('q', '').strip()
     risultati_ricerca = []
-    pazienti_query = PersonaCorso.query
+    pazienti_query = Persona.query.filter(
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato == 'attiva',
+    )
     if ricerca:
         criterio = f'%{ricerca}%'
         pazienti_query = pazienti_query.filter(db.or_(
-            PersonaCorso.nome.ilike(criterio),
-            PersonaCorso.telefono.ilike(criterio),
-            PersonaCorso.email.ilike(criterio),
-            PersonaCorso.codice_fiscale.ilike(criterio),
+            Persona.nome.ilike(criterio),
+            Persona.cognome.ilike(criterio),
+            Persona.legacy_nome_completo.ilike(criterio),
+            Persona.codice_fiscale.ilike(criterio),
+            Persona.recapiti.any(db.and_(
+                RecapitoPersona.archiviato_il.is_(None),
+                RecapitoPersona.valore.ilike(criterio),
+            )),
         ))
         for elemento in Appuntamento.query.filter(db.or_(Appuntamento.nome.ilike(criterio), Appuntamento.telefono.ilike(criterio), Appuntamento.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'Appuntamento', 'id': elemento.id, 'nome': elemento.nome, 'dettaglio': f'{elemento.telefono} · {elemento.servizio}'})
@@ -6459,7 +7142,7 @@ def admin():
 
         for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
-    pazienti = pazienti_query.order_by(PersonaCorso.nome).all()
+    pazienti = pazienti_query.order_by(Persona.cognome, Persona.nome).all()
     # Query gli appuntamenti in base al filtro
     if filtro == 'in_attesa':
         appuntamenti = Appuntamento.query.filter(
@@ -6500,7 +7183,10 @@ def admin():
     )).order_by(Corso.data.desc(), Corso.ora.desc()).all()
     panoramica_corsi = _panoramica_corsi(corsi)
     panoramica_corsi_archivio = _panoramica_corsi(corsi_archivio)
-    persone_corsi = PersonaCorso.query.order_by(PersonaCorso.nome).all()
+    persone_corsi = Persona.query.filter(
+        Persona.dati_anonimizzati_il.is_(None),
+        Persona.stato == 'attiva',
+    ).order_by(Persona.cognome, Persona.nome).all()
     percorsi_accompagnamento = PercorsoAccompagnamento.query.order_by(PercorsoAccompagnamento.creato_il.desc()).all()
     panoramica_percorsi_accompagnamento = _panoramica_percorsi_accompagnamento(percorsi_accompagnamento)
     presenze_accompagnamento = {}
@@ -6673,14 +7359,20 @@ def dettaglio_admin(tipo, entita_id):
         'difforme', 'eliminato_esternamente'
     }:
         difformita = _dettagli_anomalia_calendar(tipo, entita)
-    duplicati = _possibili_duplicati_persona(entita.persona) if tipo == 'IscrizioneCorso' and entita.persona else []
+    duplicati = _possibili_duplicati_persona(entita.persona_v2) if tipo == 'IscrizioneCorso' and entita.persona_v2 else []
     corsi_disponibili = Corso.query.filter(
         Corso.data >= local_today().isoformat(),
         Corso.stato != 'Annullato',
         Corso.archiviato_il.is_(None),
     ).order_by(Corso.data, Corso.ora).all()
     collegamento_persona = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
-    persona_collegata = entita.persona if tipo == 'IscrizioneCorso' else (collegamento_persona.persona if collegamento_persona else None)
+    persona_collegata = getattr(entita, 'persona_v2', None)
+    if persona_collegata is None:
+        persona_legacy = entita.persona if tipo == 'IscrizioneCorso' else (collegamento_persona.persona if collegamento_persona else None)
+        if persona_legacy:
+            persona_collegata = Persona.query.filter_by(
+                legacy_persona_corso_id=persona_legacy.id,
+            ).first()
     storico_persona = _storico_persona_admin(persona_collegata) if persona_collegata else []
     iscrizioni_corso = (
         IscrizioneCorso.query.filter_by(corso_id=entita.id).order_by(IscrizioneCorso.nome).all()
@@ -6712,7 +7404,10 @@ def dettaglio_admin(tipo, entita_id):
         corsi_disponibili=corsi_disponibili,
         iscrizioni_corso=iscrizioni_corso,
         destinatari_aggiornamento_corso=destinatari_aggiornamento_corso,
-        persone_disponibili=PersonaCorso.query.order_by(PersonaCorso.nome).all(),
+        persone_disponibili=Persona.query.filter(
+            Persona.dati_anonimizzati_il.is_(None),
+            Persona.stato == 'attiva',
+        ).order_by(Persona.cognome, Persona.nome).all(),
         persona_collegata=persona_collegata,
         storico_persona=storico_persona,
         stati_appuntamento=STATI_APPUNTAMENTO_ADMIN,
@@ -6869,18 +7564,14 @@ def collega_persona_admin(tipo, entita_id):
     pratica = _entita_admin(tipo, entita_id)
     if pratica is None:
         abort(404)
-    persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int))
+    persona = _persona_v2_attiva(request.form.get('persona_id', type=int))
     if not persona:
         flash('Seleziona una persona valida.', 'error')
         return redirect(_url_dettaglio_admin(tipo, entita_id))
-    collegamento = CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first()
-    if collegamento:
-        collegamento.persona = persona
-    else:
-        db.session.add(CollegamentoPersona(persona=persona, entita_tipo=tipo, entita_id=entita_id))
+    pratica.persona_v2 = persona
     _sync_patient_privacy_consent(persona, tipo, pratica)
     db.session.commit()
-    registra_modifica('collegamento_persona', tipo, entita_id, {'persona_id': persona.id})
+    registra_modifica('collegamento_persona_v2', tipo, entita_id, {'persona_v2_id': persona.id})
     flash('Pratica collegata manualmente alla persona.', 'success')
     return redirect(_url_dettaglio_admin(tipo, entita_id))
 
@@ -6893,7 +7584,7 @@ def crea_paziente_da_pratica_admin(tipo, entita_id):
     pratica = _entita_admin(tipo, entita_id)
     if pratica is None:
         abort(404)
-    if CollegamentoPersona.query.filter_by(entita_tipo=tipo, entita_id=entita_id).first():
+    if pratica.persona_v2:
         flash('La pratica è già collegata a un paziente.', 'error')
         return redirect(_url_dettaglio_admin(tipo, entita_id))
     if pratica.telefono and not _telefono_valido(pratica.telefono):
@@ -6902,28 +7593,21 @@ def crea_paziente_da_pratica_admin(tipo, entita_id):
     if pratica.email and not _email_valida(pratica.email):
         flash('Correggi prima l’indirizzo email della pratica.', 'error')
         return redirect(_url_dettaglio_admin(tipo, entita_id))
-    paziente = PersonaCorso(
-        nome=pratica.nome,
-        telefono=pratica.telefono,
-        email=pratica.email or None,
-        eta_bambino=(
-            f'{pratica.eta_bambino_mesi} mesi'
-            if tipo == 'CallSonno' and pratica.eta_bambino_mesi is not None
-            else None
-        ),
-    )
-    db.session.add(paziente)
-    db.session.flush()
-    db.session.add(CollegamentoPersona(
-        persona=paziente,
-        entita_tipo=tipo,
-        entita_id=entita_id,
-    ))
+    try:
+        paziente = _crea_persona_v2_da_snapshot(
+            pratica.nome,
+            pratica.telefono,
+            pratica.email or '',
+        )
+    except PatientDataValidationError as errore:
+        flash(str(errore), 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
+    pratica.persona_v2 = paziente
     _sync_patient_privacy_consent(paziente, tipo, pratica)
     db.session.commit()
     registra_modifica(
         'creazione_anagrafica_da_pratica',
-        'PersonaCorso',
+        'Persona',
         paziente.id,
         {'tipo_pratica': tipo, 'pratica_id': entita_id},
     )
@@ -6937,43 +7621,95 @@ def aggiungi_paziente_admin():
     if not _csrf_admin_valido():
         abort(400)
     nome = request.form.get('nome', '').strip()
+    cognome = request.form.get('cognome', '').strip()
     telefono = request.form.get('telefono', '').strip()
     email = request.form.get('email', '').strip()
-    codice_fiscale = re.sub(r'\s+', '', request.form.get('codice_fiscale', '')).upper()
-    if not nome or len(nome) > 100:
-        flash('Inserisci nome e cognome del paziente (massimo 100 caratteri).', 'error')
+    try:
+        nome = normalize_patient_name(nome)
+        cognome = normalize_patient_name(cognome)
+        codice_fiscale = normalize_tax_code(request.form.get('codice_fiscale', ''))
+        sesso_anagrafico = validate_sex_code(request.form.get('sesso_anagrafico', ''))
+        telefono_normalizzato = normalize_phone_number(telefono)
+        email_normalizzata = normalize_email_address(email)
+    except PatientDataValidationError as errore:
+        flash(str(errore), 'error')
         return redirect(url_for('admin') + '#admin-pazienti')
-    if telefono and not _telefono_valido(telefono):
-        flash('Inserisci un numero di telefono valido oppure lascia il campo vuoto.', 'error')
+    if not nome or not cognome:
+        flash('Inserisci nome e cognome del paziente.', 'error')
         return redirect(url_for('admin') + '#admin-pazienti')
-    if email and not _email_valida(email):
-        flash('Inserisci un indirizzo email valido.', 'error')
-        return redirect(url_for('admin') + '#admin-pazienti')
-    if len(codice_fiscale) > 32:
-        flash('Il codice fiscale è troppo lungo.', 'error')
-        return redirect(url_for('admin') + '#admin-pazienti')
+    data_nascita = None
+    if request.form.get('data_nascita', '').strip():
+        try:
+            data_nascita = date.fromisoformat(request.form['data_nascita'])
+        except ValueError:
+            flash('Inserisci una data di nascita valida.', 'error')
+            return redirect(url_for('admin') + '#admin-pazienti')
+        if data_nascita > local_today():
+            flash('La data di nascita non può essere futura.', 'error')
+            return redirect(url_for('admin') + '#admin-pazienti')
     if codice_fiscale:
-        esistente = _persona_corso_da_contatti(codice_fiscale=codice_fiscale)
+        esistente = _persona_v2_da_codice_fiscale(codice_fiscale)
         if esistente:
             flash('Esiste già un paziente con questo codice fiscale.', 'error')
             return redirect(url_for('dettaglio_paziente_admin', id=esistente.id))
-    paziente = PersonaCorso(
+    paziente = Persona(
         nome=nome,
-        telefono=telefono or None,
-        email=email or None,
-        codice_fiscale=codice_fiscale or None,
+        cognome=cognome,
+        data_nascita=data_nascita,
+        sesso_anagrafico=sesso_anagrafico,
+        codice_fiscale=codice_fiscale,
+        anagrafica_da_verificare=False,
     )
     db.session.add(paziente)
+    if telefono_normalizzato:
+        _imposta_recapito_principale(paziente, 'telefono', telefono)
+    if email_normalizzata:
+        _imposta_recapito_principale(paziente, 'email', email)
     db.session.commit()
-    registra_modifica('creazione_anagrafica', 'PersonaCorso', paziente.id)
+    registra_modifica('creazione_anagrafica', 'Persona', paziente.id)
     flash('Paziente aggiunto all’anagrafica.', 'success')
     return redirect(url_for('dettaglio_paziente_admin', id=paziente.id))
+
+
+def _campi_anagrafici_persona_da_form():
+    valori = {
+        'nome': normalize_patient_name(request.form.get('nome', '')),
+        'cognome': normalize_patient_name(request.form.get('cognome', '')),
+        'codice_fiscale': normalize_tax_code(request.form.get('codice_fiscale', '')),
+        'sesso_anagrafico': validate_sex_code(request.form.get('sesso_anagrafico', '')),
+        'comune_nascita': normalize_patient_name(request.form.get('comune_nascita', '')),
+        'provincia_nascita': (request.form.get('provincia_nascita', '').strip().upper() or None),
+        'stato_nascita': normalize_patient_name(request.form.get('stato_nascita', '')),
+        'indirizzo_residenza': (request.form.get('indirizzo_residenza', '').strip() or None),
+        'cap_residenza': (request.form.get('cap_residenza', '').strip() or None),
+        'comune_residenza': normalize_patient_name(request.form.get('comune_residenza', '')),
+        'provincia_residenza': (request.form.get('provincia_residenza', '').strip().upper() or None),
+        'stato_residenza': normalize_patient_name(request.form.get('stato_residenza', '')),
+    }
+    data_nascita = request.form.get('data_nascita', '').strip()
+    valori['data_nascita'] = date.fromisoformat(data_nascita) if data_nascita else None
+    if valori['data_nascita'] and valori['data_nascita'] > local_today():
+        raise PatientDataValidationError('La data di nascita non può essere futura.')
+    limiti = {
+        'provincia_nascita': 10,
+        'indirizzo_residenza': 200,
+        'cap_residenza': 12,
+        'provincia_residenza': 10,
+    }
+    for campo, limite in limiti.items():
+        if valori[campo] and len(valori[campo]) > limite:
+            raise PatientDataValidationError(
+                f'Il campo {campo.replace("_", " ")} supera il limite consentito.'
+            )
+    return valori
 
 
 @app.route('/admin/paziente/<int:id>')
 @login_required
 def dettaglio_paziente_admin(id):
-    paziente = db.get_or_404(PersonaCorso, id)
+    paziente = _persona_v2_attiva(id)
+    if paziente is None:
+        abort(404)
     consensi_privacy = _patient_privacy_history(paziente)
     return render_template(
         'admin_paziente.html',
@@ -6992,57 +7728,55 @@ def dettaglio_paziente_admin(id):
 def modifica_paziente_admin(id):
     if not _csrf_admin_valido():
         abort(400)
-    paziente = db.get_or_404(PersonaCorso, id)
-    valori = {
-        'nome': request.form.get('nome', '').strip(),
-        'telefono': request.form.get('telefono', '').strip(),
-        'email': request.form.get('email', '').strip(),
-        'codice_fiscale': re.sub(r'\s+', '', request.form.get('codice_fiscale', '')).upper(),
-        'nome_bambino': request.form.get('nome_bambino', '').strip(),
-        'eta_bambino': request.form.get('eta_bambino', '').strip(),
-        'note': request.form.get('note', '').strip(),
-    }
-    if not valori['nome'] or len(valori['nome']) > 100:
-        flash('Inserisci nome e cognome del paziente (massimo 100 caratteri).', 'error')
+    paziente = _persona_v2_attiva(id)
+    if paziente is None:
+        abort(404)
+    try:
+        valori = _campi_anagrafici_persona_da_form()
+        telefono = request.form.get('telefono', '').strip()
+        email = request.form.get('email', '').strip()
+        normalize_phone_number(telefono)
+        normalize_email_address(email)
+    except PatientDataValidationError as errore:
+        flash(str(errore), 'error')
         return redirect(url_for('dettaglio_paziente_admin', id=id))
-    if valori['telefono'] and not _telefono_valido(valori['telefono']):
-        flash('Inserisci un numero di telefono valido oppure lascia il campo vuoto.', 'error')
+    except ValueError:
+        flash('Controlla la data di nascita inserita.', 'error')
         return redirect(url_for('dettaglio_paziente_admin', id=id))
-    if valori['email'] and not _email_valida(valori['email']):
-        flash('Inserisci un indirizzo email valido.', 'error')
+    if not valori['nome'] or not valori['cognome']:
+        flash('Inserisci nome e cognome del paziente.', 'error')
         return redirect(url_for('dettaglio_paziente_admin', id=id))
-    limiti = {
-        'email': 100,
-        'codice_fiscale': 32,
-        'nome_bambino': 100,
-        'eta_bambino': 40,
-        'note': 4000,
-    }
-    for campo, limite in limiti.items():
-        if len(valori[campo]) > limite:
-            flash(f'Il campo {campo.replace("_", " ")} supera il limite consentito.', 'error')
-            return redirect(url_for('dettaglio_paziente_admin', id=id))
     if valori['codice_fiscale']:
-        esistente = PersonaCorso.query.filter(
-            PersonaCorso.id != paziente.id,
-            db.func.upper(PersonaCorso.codice_fiscale) == valori['codice_fiscale'],
+        esistente = Persona.query.filter(
+            Persona.id != paziente.id,
+            Persona.dati_anonimizzati_il.is_(None),
+            db.func.upper(Persona.codice_fiscale) == valori['codice_fiscale'],
         ).first()
         if esistente:
             flash('Il codice fiscale appartiene già a un’altra anagrafica.', 'error')
             return redirect(url_for('dettaglio_paziente_admin', id=id))
     campi_modificati = [
         campo for campo, valore in valori.items()
-        if (getattr(paziente, campo) or '') != valore
+        if getattr(paziente, campo) != valore
     ]
+    telefono_precedente = paziente.telefono
+    email_precedente = paziente.email
     for campo, valore in valori.items():
-        setattr(paziente, campo, valore or None)
+        setattr(paziente, campo, valore)
+    _imposta_recapito_principale(paziente, 'telefono', telefono)
+    _imposta_recapito_principale(paziente, 'email', email)
+    if telefono_precedente != (telefono or None):
+        campi_modificati.append('telefono')
+    if email_precedente != (email or None):
+        campi_modificati.append('email')
+    paziente.anagrafica_da_verificare = False
     db.session.commit()
     if campi_modificati:
         registra_modifica(
             'modifica_anagrafica',
-            'PersonaCorso',
+            'Persona',
             paziente.id,
-            {'campi': campi_modificati},
+            {'campi': sorted(set(campi_modificati))},
         )
     flash('Anagrafica del paziente aggiornata.', 'success')
     return redirect(url_for('dettaglio_paziente_admin', id=id))
@@ -7245,8 +7979,11 @@ def aggiungi_appuntamento_admin():
         flash(messaggio, 'error')
         return redirect(url_for('admin') + '#admin-agenda')
 
-    persona = db.session.get(PersonaCorso, request.form.get('persona_id', type=int)) if request.form.get('persona_id') else None
-    nome = request.form.get('nome', '').strip() or (persona.nome if persona else '')
+    persona_id = request.form.get('persona_id', type=int)
+    persona = _persona_v2_attiva(persona_id)
+    if persona_id and persona is None:
+        return errore_modulo('La persona selezionata non è più disponibile.')
+    nome = request.form.get('nome', '').strip() or (persona.nome_completo if persona else '')
     telefono = request.form.get('telefono', '').strip() or (persona.telefono if persona else '')
     email = request.form.get('email', '').strip() or (persona.email if persona else '')
     servizio = request.form.get('servizio', '').strip()
@@ -7301,11 +8038,7 @@ def aggiungi_appuntamento_admin():
     db.session.add(appuntamento)
     db.session.flush()
     if persona:
-        db.session.add(CollegamentoPersona(
-            persona=persona,
-            entita_tipo='Appuntamento',
-            entita_id=appuntamento.id,
-        ))
+        appuntamento.persona_v2 = persona
         _sync_patient_privacy_consent(persona, 'Appuntamento', appuntamento)
     db.session.commit()
     registra_modifica(
@@ -7894,7 +8627,21 @@ def conferma_call_sonno_admin(id):
     if call.stato == 'Annullata':
         abort(400)
     call.stato = 'Confermata'
+    patient, patient_created = _ensure_patient_for_sleep_call(call)
     db.session.commit()
+    registra_modifica(
+        'collegamento_paziente_automatico',
+        'CallSonno',
+        call.id,
+        {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
+    )
+    if patient_created:
+        registra_modifica(
+            'creazione_anagrafica_da_conferma',
+            'Persona',
+            patient.id,
+            {'tipo_pratica': 'CallSonno', 'pratica_id': call.id},
+        )
     email_inviata = invia_email_conferma_call_sonno(call)
     calendar_aggiornato = crea_o_aggiorna_evento_calendario_call_sonno(call)
     if not email_inviata and not calendar_aggiornato:
@@ -8290,12 +9037,12 @@ def aggiorna_stato(id, stato):
             'collegamento_paziente_automatico',
             'Appuntamento',
             appuntamento.id,
-            {'persona_id': patient.id, 'nuova_anagrafica': patient_created},
+            {'persona_v2_id': patient.id, 'nuova_anagrafica': patient_created},
         )
     if patient_created:
         registra_modifica(
             'creazione_anagrafica_da_conferma',
-            'PersonaCorso',
+            'Persona',
             patient.id,
             {'tipo_pratica': 'Appuntamento', 'pratica_id': appuntamento.id},
         )
@@ -8691,7 +9438,10 @@ def aggiungi_iscrizione_corso_manuale():
         return redirect(url_for('admin', corso_id=corso.id) + '#admin-corsi')
 
     persona_id = request.form.get('persona_id', type=int)
-    persona = db.session.get(PersonaCorso, persona_id) if persona_id else None
+    persona = _persona_v2_attiva(persona_id)
+    if persona_id and persona is None:
+        flash('La persona selezionata non è più disponibile.', 'error')
+        return redirect(url_for('admin') + '#admin-corsi')
 
     nome = request.form.get('nome', '').strip()
     telefono = request.form.get('telefono', '').strip()
@@ -8699,19 +9449,18 @@ def aggiungi_iscrizione_corso_manuale():
     codice_fiscale = request.form.get('codice_fiscale', '').strip()
     nome_bambino = request.form.get('nome_bambino', '').strip()
     eta_bambino = request.form.get('eta_bambino', '').strip()
-    note_persona = request.form.get('note_persona', '').strip()
-
     if persona:
-        _aggiorna_persona_corso(
-            persona,
-            nome=nome,
-            telefono=telefono,
-            email=email,
-            codice_fiscale=codice_fiscale,
-            nome_bambino=nome_bambino,
-            eta_bambino=eta_bambino,
-            note=note_persona
-        )
+        try:
+            _aggiorna_persona_v2_da_snapshot(
+                persona,
+                nome=nome,
+                telefono=telefono,
+                email=email,
+                codice_fiscale=codice_fiscale,
+            )
+        except PatientDataValidationError as errore:
+            flash(str(errore), 'error')
+            return redirect(url_for('admin') + '#admin-corsi')
     else:
         if not nome or len(nome) > 100:
             flash('Inserisci nome e cognome della persona.', 'error')
@@ -8719,22 +9468,31 @@ def aggiungi_iscrizione_corso_manuale():
         if not telefono or not _telefono_valido(telefono):
             flash('Inserisci un numero di telefono valido.', 'error')
             return redirect(url_for('admin') + '#admin-corsi')
-        persona = _trova_o_crea_persona_corso(
-            nome=nome,
-            telefono=telefono,
-            email=email,
-            codice_fiscale=codice_fiscale,
-            nome_bambino=nome_bambino,
-            eta_bambino=eta_bambino,
-            note=note_persona
-        )
+        try:
+            persona = _persona_v2_da_codice_fiscale(codice_fiscale)
+            if persona:
+                _aggiorna_persona_v2_da_snapshot(
+                    persona,
+                    nome=nome,
+                    telefono=telefono,
+                    email=email,
+                    codice_fiscale=codice_fiscale,
+                )
+            else:
+                persona = _crea_persona_v2_da_snapshot(
+                    nome,
+                    telefono,
+                    email,
+                    codice_fiscale,
+                )
+        except PatientDataValidationError as errore:
+            flash(str(errore), 'error')
+            return redirect(url_for('admin') + '#admin-corsi')
 
-    nome = nome or persona.nome
+    nome = nome or persona.nome_completo
     telefono = telefono or persona.telefono
     email = email or persona.email or ''
     codice_fiscale = codice_fiscale or persona.codice_fiscale or ''
-    nome_bambino = nome_bambino or persona.nome_bambino or ''
-    eta_bambino = eta_bambino or persona.eta_bambino or ''
 
     if not nome or len(nome) > 100:
         flash('Inserisci nome e cognome della persona.', 'error')
@@ -8784,7 +9542,7 @@ def aggiungi_iscrizione_corso_manuale():
 
     iscrizione = IscrizioneCorso(
         corso_id=corso.id,
-        persona=persona,
+        persona_v2=persona,
         corso_tipo=corso.tipo or '',
         corso_titolo=corso.titolo,
         nome=nome,
@@ -9070,7 +9828,7 @@ def aggiorna_stato_iscrizione_corso(id, stato):
     stato_precedente = iscrizione.stato
     patient = None
     patient_created = False
-    if stato == stato_precedente and stato in STATI_LISTA_ATTESA and not iscrizione.persona:
+    if stato == stato_precedente and stato in STATI_LISTA_ATTESA and not iscrizione.persona_v2:
         patient, patient_created = _ensure_patient_for_course_registration(iscrizione)
         db.session.commit()
         _audit_automatic_course_patient_link(

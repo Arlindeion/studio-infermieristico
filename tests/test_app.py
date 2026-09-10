@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import logging
 import re
 import secrets
 import ssl
@@ -18,11 +19,14 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 from googleapiclient.errors import HttpError
+from sqlalchemy import text as sql_text
+from sqlalchemy.exc import IntegrityError
 
 # Assicurarsi che l'applicazione possa essere importata
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import app as app_module
+import patient_backfill as patient_backfill_module
 from app import app as flask_app
 from config import config, normalize_database_url
 from app import (
@@ -33,6 +37,8 @@ from app import (
     Corso,
     IscrizioneCorso,
     PersonaCorso,
+    Persona,
+    RecapitoPersona,
     ConsensoPrivacyPaziente,
     PercorsoAccompagnamento,
     IncontroAccompagnamento,
@@ -1268,6 +1274,86 @@ def test_conservazione_privacy_anonimizza_dati_scaduti_e_mantiene_riepiloghi(cli
         assert QuestionarioSonno.query.count() == 0
 
 
+def test_conservazione_privacy_rimuove_identita_e_collegamenti_v2_scaduti(client):
+    riferimento = datetime(2026, 8, 29, 12, 0, 0)
+    with flask_app.app_context():
+        persona = Persona(
+            nome='Anna',
+            cognome='Neri',
+            codice_fiscale='NRENNA80A41G482X',
+            aggiornato_il=datetime(2024, 1, 1),
+        )
+        appuntamento = Appuntamento(
+            nome='Anna Neri',
+            telefono='3331234567',
+            email='anna@example.com',
+            servizio='Medicazione semplice',
+            data='2024-01-01',
+            ora='10:00',
+            stato='Concluso',
+            persona_v2=persona,
+        )
+        db.session.add_all([persona, appuntamento])
+        app_module._imposta_recapito_principale(persona, 'telefono', '3331234567')
+        app_module._imposta_recapito_principale(persona, 'email', 'anna@example.com')
+        db.session.flush()
+        app_module._sync_patient_privacy_consent(persona, 'Appuntamento', appuntamento)
+        db.session.commit()
+        persona_id = persona.id
+        appuntamento_id = appuntamento.id
+
+        conteggi = app_module.applica_conservazione_privacy(riferimento)
+
+        persona = db.session.get(Persona, persona_id)
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
+        assert conteggi['appuntamenti'] == 1
+        assert conteggi['persone_v2'] == 1
+        assert appuntamento.persona_id is None
+        assert persona.nome is None
+        assert persona.cognome is None
+        assert persona.codice_fiscale is None
+        assert persona.stato == 'archiviata'
+        assert persona.dati_anonimizzati_il == riferimento
+        assert RecapitoPersona.query.filter_by(persona_id=persona_id).count() == 0
+        assert ConsensoPrivacyPaziente.query.count() == 0
+
+
+def test_conferma_call_sonno_crea_solo_anagrafica_v2(client):
+    with flask_app.app_context():
+        call = CallSonno(
+            nome='Anna Neri',
+            telefono='3331234567',
+            email='anna@example.com',
+            eta_bambino_mesi=8,
+            difficolta_principale='Risvegli',
+            data='2099-09-10',
+            ora='10:00',
+            consenso_privacy=True,
+        )
+        db.session.add(call)
+        db.session.commit()
+        call_id = call.id
+
+    csrf = _login_admin(client)
+    with patch.object(app_module, 'invia_email_conferma_call_sonno', return_value=True), \
+         patch.object(app_module, 'crea_o_aggiorna_evento_calendario_call_sonno', return_value=True):
+        response = client.post(
+            f'/admin/call-sonno/{call_id}/conferma',
+            data={'_csrf_token': csrf},
+        )
+
+    assert response.status_code == 302
+    with flask_app.app_context():
+        call = db.session.get(CallSonno, call_id)
+        assert call.persona_v2 is not None
+        assert call.persona_v2.nome == 'Anna Neri'
+        assert PersonaCorso.query.count() == 0
+        assert app_module.CollegamentoPersona.query.count() == 0
+        consent = ConsensoPrivacyPaziente.query.one()
+        assert consent.persona_id is None
+        assert consent.persona_v2_id == call.persona_id
+
+
 @pytest.mark.parametrize(
     ('route', 'mode', 'has_progress'),
     [
@@ -2012,15 +2098,15 @@ def test_admin_conferma_e_annulla_iscrizione_inviando_una_sola_mail_per_transizi
     with flask_app.app_context():
         iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
         assert iscrizione.stato == 'Annullato'
-        patient = PersonaCorso.query.one()
-        assert iscrizione.persona_id == patient.id
+        patient = Persona.query.one()
+        assert iscrizione.persona_v2_id == patient.id
         assert patient.nome == 'Mario Rossi'
         assert patient.telefono == '3331234567'
         assert patient.email == 'mario@example.com'
         assert patient.codice_fiscale == 'RSSMRA80A01G482X'
         audit = app_module.RegistroModifica.query.filter_by(
             azione='creazione_anagrafica_da_conferma',
-            entita_tipo='PersonaCorso',
+            entita_tipo='Persona',
             entita_id=patient.id,
         ).one()
         assert json.loads(audit.dettagli)['pratica_id'] == iscrizione_id
@@ -2033,12 +2119,14 @@ def test_conferma_iscrizione_riusa_il_paziente_solo_con_codice_fiscale(client):
         data='2099-09-20',
     )
     with flask_app.app_context():
-        patient = PersonaCorso(
+        patient = Persona(
             nome='Anna Neri',
-            telefono='3330000000',
-            email='vecchia@example.com',
+            anagrafica_da_verificare=True,
             codice_fiscale='NRENNA90A41G482Z',
         )
+        db.session.add(patient)
+        app_module._imposta_recapito_principale(patient, 'telefono', '3330000000')
+        app_module._imposta_recapito_principale(patient, 'email', 'vecchia@example.com')
         registration = IscrizioneCorso(
             corso_id=int(data_corso_id),
             corso_tipo='laboratorio-infanzia',
@@ -2073,15 +2161,16 @@ def test_conferma_iscrizione_riusa_il_paziente_solo_con_codice_fiscale(client):
 
     assert response.status_code == 302
     with flask_app.app_context():
-        assert PersonaCorso.query.count() == 1
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
         registration = db.session.get(IscrizioneCorso, registration_id)
-        patient = db.session.get(PersonaCorso, patient_id)
-        assert registration.persona_id == patient_id
+        patient = db.session.get(Persona, patient_id)
+        assert registration.persona_v2_id == patient_id
         assert patient.nome == 'Anna Neri aggiornata'
         assert patient.telefono == '3331234567'
         assert patient.email == 'anna@example.com'
-        assert patient.nome_bambino == 'Leo'
-        assert patient.eta_bambino == '18 mesi'
+        assert registration.extra_dict()['nome_bambino'] == 'Leo'
+        assert registration.extra_dict()['eta_bambino'] == '18 mesi'
         link_audit = app_module.RegistroModifica.query.filter_by(
             azione='collegamento_paziente_automatico',
             entita_tipo='IscrizioneCorso',
@@ -2129,9 +2218,10 @@ def test_errore_mail_conferma_non_annulla_lo_stato_salvato(client):
     with flask_app.app_context():
         iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
         assert iscrizione.stato == 'Confermato'
-        assert iscrizione.persona is not None
-        assert iscrizione.persona.nome == 'Giulia Bianchi'
-        assert PersonaCorso.query.count() == 1
+        assert iscrizione.persona_v2 is not None
+        assert iscrizione.persona_v2.nome == 'Giulia Bianchi'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
         email = EmailOperativa.query.filter_by(
             entita_tipo='IscrizioneCorso',
             entita_id=iscrizione_id,
@@ -2781,22 +2871,24 @@ def test_data_piena_senza_successiva_crea_lista_attesa(client):
         assert iscrizione.stato == 'Lista attesa'
         assert iscrizione.posti == 0
         assert iscrizione.posti_richiesti == 1
-        assert iscrizione.persona is not None
-        assert iscrizione.persona.nome == 'Luisa Verdi'
-        assert iscrizione.persona.telefono == '3337654321'
-        assert iscrizione.persona.email == 'luisa@example.com'
-        assert iscrizione.persona.codice_fiscale == 'VRDLSU90A41G482Y'
-        assert PersonaCorso.query.count() == 1
+        assert iscrizione.persona_v2 is not None
+        assert iscrizione.persona_v2.nome == 'Luisa Verdi'
+        assert iscrizione.persona_v2.telefono == '3337654321'
+        assert iscrizione.persona_v2.email == 'luisa@example.com'
+        assert iscrizione.persona_v2.codice_fiscale == 'VRDLSU90A41G482Y'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
         consent = ConsensoPrivacyPaziente.query.one()
-        assert consent.persona_id == iscrizione.persona_id
+        assert consent.persona_id is None
+        assert consent.persona_v2_id == iscrizione.persona_v2_id
         assert consent.entita_tipo == 'IscrizioneCorso'
         assert consent.entita_id == iscrizione.id
         assert consent.accettato is True
         assert consent.accettato_il == iscrizione.creato_il
         audit = app_module.RegistroModifica.query.filter_by(
             azione='creazione_anagrafica_da_lista_attesa',
-            entita_tipo='PersonaCorso',
-            entita_id=iscrizione.persona_id,
+            entita_tipo='Persona',
+            entita_id=iscrizione.persona_v2_id,
         ).one()
         assert json.loads(audit.dettagli)['pratica_id'] == iscrizione.id
 
@@ -2808,12 +2900,14 @@ def test_lista_attesa_riusa_paziente_con_codice_fiscale_esatto(client):
         capienza_massima=1,
     )
     with flask_app.app_context():
-        existing_patient = PersonaCorso(
+        existing_patient = Persona(
             nome='Luisa Verdi precedente',
-            telefono='3330000000',
-            email='precedente@example.com',
+            anagrafica_da_verificare=True,
             codice_fiscale='VRDLSU90A41G482Y',
         )
+        db.session.add(existing_patient)
+        app_module._imposta_recapito_principale(existing_patient, 'telefono', '3330000000')
+        app_module._imposta_recapito_principale(existing_patient, 'email', 'precedente@example.com')
         registration = IscrizioneCorso(
             corso_id=int(data_corso_id),
             corso_tipo='disostruzione-pediatrica',
@@ -2852,10 +2946,11 @@ def test_lista_attesa_riusa_paziente_con_codice_fiscale_esatto(client):
     assert response.status_code == 302
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.filter_by(nome='Luisa Verdi').one()
-        patient = db.session.get(PersonaCorso, existing_patient_id)
+        patient = db.session.get(Persona, existing_patient_id)
         assert iscrizione.stato == 'Lista attesa'
-        assert iscrizione.persona_id == existing_patient_id
-        assert PersonaCorso.query.count() == 1
+        assert iscrizione.persona_v2_id == existing_patient_id
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
         assert patient.nome == 'Luisa Verdi'
         assert patient.telefono == '3337654321'
         assert patient.email == 'luisa@example.com'
@@ -2895,9 +2990,10 @@ def test_passaggio_admin_a_lista_attesa_crea_e_collega_il_paziente(client):
         registration = db.session.get(IscrizioneCorso, registration_id)
         assert registration.stato == 'Lista attesa'
         assert registration.posti == 1
-        assert registration.persona is not None
-        assert registration.persona.nome == 'Paolo Blu'
-        assert PersonaCorso.query.count() == 1
+        assert registration.persona_v2 is not None
+        assert registration.persona_v2.nome == 'Paolo Blu'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
 
 
 def test_stato_lista_attesa_ripetuto_collega_una_pratica_storica(client):
@@ -2930,9 +3026,10 @@ def test_stato_lista_attesa_ripetuto_collega_una_pratica_storica(client):
     with flask_app.app_context():
         registration = db.session.get(IscrizioneCorso, registration_id)
         assert registration.stato == 'Lista attesa'
-        assert registration.persona is not None
-        assert registration.persona.nome == 'Marta Viola'
-        assert PersonaCorso.query.count() == 1
+        assert registration.persona_v2 is not None
+        assert registration.persona_v2.nome == 'Marta Viola'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
 
 
 def test_admin_mostra_panoramica_iscritti_per_corso(client):
@@ -3042,13 +3139,13 @@ def test_admin_aggiunge_iscritto_manualmente_e_crea_rubrica(client):
     assert send_mock.call_count == 1
     assert send_mock.call_args.args[0].recipients == ['anna@example.com']
     with flask_app.app_context():
-        persona = PersonaCorso.query.one()
+        persona = Persona.query.one()
         iscrizione = IscrizioneCorso.query.one()
         assert persona.nome == 'Anna Neri'
-        assert persona.nome_bambino == 'Leo'
-        assert persona.eta_bambino == '18 mesi'
-        assert 'pomeridiano' in persona.note
-        assert iscrizione.persona_id == persona.id
+        assert iscrizione.extra_dict()['nome_bambino'] == 'Leo'
+        assert iscrizione.extra_dict()['eta_bambino'] == '18 mesi'
+        assert iscrizione.persona_v2_id == persona.id
+        assert PersonaCorso.query.count() == 0
         assert iscrizione.corso_id == int(data_corso_id)
         assert iscrizione.stato == 'Confermato'
         assert iscrizione.tipo_richiesta == 'iscrizione_effettiva'
@@ -3079,14 +3176,13 @@ def test_admin_rifiuta_open_day_manuale_per_corsi_diversi_da_accompagnamento(cli
 def test_admin_richiama_persona_da_rubrica_senza_duplicarla(client):
     data_corso_id = _crea_data_corso('disostruzione-pediatrica', 'Disostruzione pediatrica')
     with flask_app.app_context():
-        persona = PersonaCorso(
+        persona = Persona(
             nome='Anna Neri',
-            telefono='3331234567',
-            email='anna@example.com',
-            nome_bambino='Leo',
-            eta_bambino='18 mesi',
+            anagrafica_da_verificare=True,
         )
         db.session.add(persona)
+        app_module._imposta_recapito_principale(persona, 'telefono', '3331234567')
+        app_module._imposta_recapito_principale(persona, 'email', 'anna@example.com')
         db.session.commit()
         persona_id = persona.id
 
@@ -3098,15 +3194,18 @@ def test_admin_richiama_persona_da_rubrica_senza_duplicarla(client):
         'stato': 'Nuova',
         'posti': '1',
         'partecipazione': 'Iscrizione individuale',
+        'nome_bambino': 'Leo',
+        'eta_bambino': '18 mesi',
         'consenso_privacy': 'on',
         '_csrf_token': csrf,
     })
 
     assert resp.status_code == 302
     with flask_app.app_context():
-        assert PersonaCorso.query.count() == 1
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
         iscrizione = IscrizioneCorso.query.one()
-        assert iscrizione.persona_id == persona_id
+        assert iscrizione.persona_v2_id == persona_id
         assert iscrizione.nome == 'Anna Neri'
         assert iscrizione.telefono == '3331234567'
         assert iscrizione.extra_dict()['nome_bambino'] == 'Leo'
@@ -3771,6 +3870,23 @@ def test_errori_calendar_aprono_il_circuito_senza_abbattere_il_sito(
     assert client.get('/healthz').status_code == 200
 
 
+def test_eventi_calendar_esterni_degradano_su_errore_api(app, monkeypatch):
+    monkeypatch.setitem(app.config, 'GOOGLE_CALENDAR_ID', 'calendar@example.invalid')
+    servizio = MagicMock()
+    servizio.events.return_value.list.return_value.execute.side_effect = TimeoutError(
+        'Calendar non risponde'
+    )
+    monkeypatch.setattr(app_module, '_ottieni_servizio_calendario', lambda: servizio)
+
+    with app.app_context():
+        eventi = app_module._eventi_calendar_esterni(
+            date(2099, 8, 11),
+            date(2099, 8, 18),
+        )
+
+    assert eventi == []
+
+
 def test_endpoint_orari_occupati_unisce_db_e_calendario(client, calendario_finto):
     """L'endpoint /api/orari-occupati deve unire prenotazioni dal sito e impegni Arzamed."""
     with flask_app.app_context():
@@ -3914,7 +4030,7 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         assert iscrizione.consenso_immagini is False
         assert iscrizione.consenso_dati_gravidanza is True
         assert iscrizione.consenso_dati_gravidanza_il is not None
-        assert iscrizione.persona is None
+        assert iscrizione.persona_v2 is None
         assert PersonaCorso.query.count() == 0
         assert PresenzaAccompagnamento.query.count() == 9
 
@@ -3936,10 +4052,11 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
     with flask_app.app_context():
         iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
         assert iscrizione.stato == 'Confermato'
-        assert iscrizione.persona is not None
-        assert iscrizione.persona.nome == 'Luisa Verdi'
-        assert iscrizione.persona.codice_fiscale == 'VRDLSU90A41G482Y'
-        assert PersonaCorso.query.count() == 1
+        assert iscrizione.persona_v2 is not None
+        assert iscrizione.persona_v2.nome == 'Luisa Verdi'
+        assert iscrizione.persona_v2.codice_fiscale == 'VRDLSU90A41G482Y'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 1
 
 
 def test_capienza_percorso_privato_blocca_e_annullamento_riapre(client):
@@ -4703,16 +4820,15 @@ def test_conferma_crea_evento_su_calendario(client, google_calendar_scrittura_fi
         aggiornato = db.session.get(Appuntamento, appt_id)
         assert aggiornato.google_event_id == 'evento-abc-123'
         assert aggiornato.duration_minutes == 75
-        patient = PersonaCorso.query.one()
-        link = app_module.CollegamentoPersona.query.one()
+        patient = Persona.query.one()
         assert patient.nome == 'Mario Rossi'
-        assert patient.telefono == '333'
+        assert patient.telefono is None
         assert patient.email == 'm@example.com'
-        assert link.persona_id == patient.id
-        assert link.entita_tipo == 'Appuntamento'
-        assert link.entita_id == appt_id
+        assert aggiornato.persona_id == patient.id
+        assert app_module.CollegamentoPersona.query.count() == 0
         consent = ConsensoPrivacyPaziente.query.one()
-        assert consent.persona_id == patient.id
+        assert consent.persona_id is None
+        assert consent.persona_v2_id == patient.id
         assert consent.entita_tipo == 'Appuntamento'
         assert consent.entita_id == appt_id
         assert consent.accettato is True
@@ -4727,11 +4843,13 @@ def test_conferma_appuntamento_non_unisce_pazienti_solo_per_contatti_uguali(
         'id': 'evento-contatti-uguali'
     }
     with flask_app.app_context():
-        existing_patient = PersonaCorso(
+        existing_patient = Persona(
             nome='Mario Rossi esistente',
-            telefono='3331234567',
-            email='mario@example.com',
+            anagrafica_da_verificare=True,
         )
+        db.session.add(existing_patient)
+        app_module._imposta_recapito_principale(existing_patient, 'telefono', '3331234567')
+        app_module._imposta_recapito_principale(existing_patient, 'email', 'mario@example.com')
         appointment = Appuntamento(
             nome='Mario Rossi',
             telefono='3331234567',
@@ -4753,13 +4871,11 @@ def test_conferma_appuntamento_non_unisce_pazienti_solo_per_contatti_uguali(
 
     assert response.status_code == 302
     with flask_app.app_context():
-        assert PersonaCorso.query.count() == 2
-        link = app_module.CollegamentoPersona.query.filter_by(
-            entita_tipo='Appuntamento',
-            entita_id=appointment_id,
-        ).one()
-        assert link.persona_id != existing_patient_id
-        assert link.persona.nome == 'Mario Rossi'
+        assert PersonaCorso.query.count() == 0
+        assert Persona.query.count() == 2
+        appointment = db.session.get(Appuntamento, appointment_id)
+        assert appointment.persona_id != existing_patient_id
+        assert appointment.persona_v2.nome == 'Mario Rossi'
 
 
 def test_conferma_richiede_durata_manuale(client, google_calendar_scrittura_finto):
@@ -4873,11 +4989,8 @@ def test_errore_calendar_non_perde_appuntamento_e_finisce_nel_registro(
         ).one()
         assert aggiornato.stato == 'Confermato'
         assert aggiornato.google_event_id is None
-        link = app_module.CollegamentoPersona.query.filter_by(
-            entita_tipo='Appuntamento',
-            entita_id=appt_id,
-        ).one()
-        assert link.persona.nome == 'Mario Rossi'
+        assert aggiornato.persona_v2.nome == 'Mario Rossi'
+        assert app_module.CollegamentoPersona.query.count() == 0
         assert 'sincronizzazione' in evento.messaggio
 
     admin_resp = client.get('/admin')
@@ -4892,6 +5005,7 @@ def test_admin_appuntamento_avvisa_se_email_fallisce_ma_calendar_riesce(
     google_calendar_scrittura_finto,
 ):
     mock_servizio = google_calendar_scrittura_finto
+    appointment_date = _prossimo_giorno_con_weekday(1).isoformat()
     mock_servizio.events.return_value.insert.return_value.execute.return_value = {
         'id': 'evento-appuntamento-email-fallita'
     }
@@ -4901,7 +5015,7 @@ def test_admin_appuntamento_avvisa_se_email_fallisce_ma_calendar_riesce(
             telefono='3331234567',
             email='mario@example.com',
             servizio='Lavaggio auricolare',
-            data='2026-09-01',
+            data=appointment_date,
             ora='10:00',
         )
         db.session.add(appuntamento)
@@ -4964,10 +5078,12 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
     """Spostare un appuntamento già collegato a un evento deve aggiornarlo
     (patch) invece di crearne uno nuovo."""
     mock_servizio = google_calendar_scrittura_finto
+    original_date = _prossimo_giorno_con_weekday(1)
+    new_date = original_date + app_module.timedelta(days=1)
 
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00',
+                             servizio='Test', data=original_date.isoformat(), ora='10:00',
                              stato='Confermato', google_event_id='evento-esistente')
         db.session.add(appt)
         db.session.commit()
@@ -4975,14 +5091,16 @@ def test_spostamento_aggiorna_evento_esistente(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00',
+        'data': new_date.isoformat(), 'ora': '11:00',
         'duration_minutes': '45', '_csrf_token': csrf
     })
 
     mock_servizio.events().patch.assert_called_once()
     kwargs = mock_servizio.events().patch.call_args.kwargs
     assert kwargs['eventId'] == 'evento-esistente'
-    assert kwargs['body']['end']['dateTime'].startswith('2026-09-02T11:45:00')
+    assert kwargs['body']['end']['dateTime'].startswith(
+        f'{new_date.isoformat()}T11:45:00'
+    )
     mock_servizio.events().insert.assert_not_called()
 
 
@@ -5669,7 +5787,8 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
 
     resp = client.post('/admin/paziente/aggiungi', data={
         '_csrf_token': csrf,
-        'nome': 'Anna Neri',
+        'nome': 'Anna',
+        'cognome': 'Neri',
         'telefono': '',
         'email': '',
         'codice_fiscale': 'nrena80a41g482x',
@@ -5677,7 +5796,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
 
     assert resp.status_code == 302
     with flask_app.app_context():
-        paziente = PersonaCorso.query.one()
+        paziente = Persona.query.one()
         paziente_id = paziente.id
         assert paziente.codice_fiscale == 'NRENA80A41G482X'
         assert paziente.telefono is None
@@ -5693,24 +5812,22 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     csrf = _csrf_admin(client)
     resp = client.post(f'/admin/paziente/{paziente_id}/modifica', data={
         '_csrf_token': csrf,
-        'nome': 'Anna Neri',
+        'nome': 'Anna',
+        'cognome': 'Neri',
         'telefono': '3337654321',
         'email': 'anna@example.com',
         'codice_fiscale': 'NRENA80A41G482X',
-        'nome_bambino': 'Leo',
-        'eta_bambino': '18 mesi',
-        'note': 'Preferisce essere contattata nel pomeriggio.',
     })
 
     assert resp.status_code == 302
     with flask_app.app_context():
-        aggiornato = db.session.get(PersonaCorso, paziente_id)
+        aggiornato = db.session.get(Persona, paziente_id)
         assert aggiornato.telefono == '3337654321'
         assert aggiornato.email == 'anna@example.com'
-        assert aggiornato.nome_bambino == 'Leo'
+        assert aggiornato.nome_completo == 'Anna Neri'
         modifica = app_module.RegistroModifica.query.filter_by(
             azione='modifica_anagrafica',
-            entita_tipo='PersonaCorso',
+            entita_tipo='Persona',
             entita_id=paziente_id,
         ).one()
         dettagli = json.loads(modifica.dettagli)
@@ -5718,12 +5835,44 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
         assert 'email' in dettagli['campi']
         assert 'anna@example.com' not in modifica.dettagli
 
+    scheda_aggiornata = client.get(f'/admin/paziente/{paziente_id}')
+    assert 'value="3337654321"' in scheda_aggiornata.text
+    assert 'value="anna@example.com"' in scheda_aggiornata.text
+
+
+def test_recapito_principale_v2_puo_essere_sostituito_e_ripristinato(app):
+    persona = Persona(nome='Anna', cognome='Neri')
+    db.session.add(persona)
+    app_module._imposta_recapito_principale(persona, 'telefono', '3331111111')
+    db.session.commit()
+
+    app_module._imposta_recapito_principale(persona, 'telefono', '3332222222')
+    db.session.commit()
+    assert persona.telefono == '3332222222'
+
+    app_module._imposta_recapito_principale(persona, 'telefono', '3331111111')
+    db.session.commit()
+
+    assert persona.telefono == '3331111111'
+    recapiti = RecapitoPersona.query.filter_by(
+        persona_id=persona.id,
+        tipo='telefono',
+    ).all()
+    assert len(recapiti) == 2
+    assert sum(item.principale for item in recapiti) == 1
+    assert sum(item.archiviato_il is None for item in recapiti) == 1
+
 
 def test_admin_pazienti_filtra_anagrafica_e_mantiene_ricerca_pratiche(client):
     with flask_app.app_context():
-        db.session.add_all([
-            PersonaCorso(nome='Anna Neri', telefono='3331234567', email='anna@example.com'),
-            PersonaCorso(nome='Giulia Bianchi', telefono='3337654321', email='giulia@example.com'),
+        anna = Persona(nome='Anna', cognome='Neri')
+        giulia = Persona(nome='Giulia', cognome='Bianchi')
+        db.session.add_all([anna, giulia])
+        app_module._imposta_recapito_principale(anna, 'telefono', '3331234567')
+        app_module._imposta_recapito_principale(anna, 'email', 'anna@example.com')
+        app_module._imposta_recapito_principale(giulia, 'telefono', '3337654321')
+        app_module._imposta_recapito_principale(giulia, 'email', 'giulia@example.com')
+        db.session.add(
             Appuntamento(
                 nome='Anna Neri',
                 telefono='3331234567',
@@ -5731,8 +5880,8 @@ def test_admin_pazienti_filtra_anagrafica_e_mantiene_ricerca_pratiche(client):
                 servizio='Medicazione semplice',
                 data='2099-09-01',
                 ora='10:00',
-            ),
-        ])
+            )
+        )
         db.session.commit()
 
     _login_admin(client)
@@ -5770,14 +5919,14 @@ def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
 
     assert resp.status_code == 302
     with flask_app.app_context():
-        paziente = PersonaCorso.query.one()
-        collegamento = app_module.CollegamentoPersona.query.one()
+        paziente = Persona.query.one()
+        appuntamento = db.session.get(Appuntamento, appuntamento_id)
         assert paziente.nome == 'Mario Rossi'
-        assert collegamento.persona_id == paziente.id
-        assert collegamento.entita_tipo == 'Appuntamento'
-        assert collegamento.entita_id == appuntamento_id
+        assert appuntamento.persona_id == paziente.id
+        assert app_module.CollegamentoPersona.query.count() == 0
         consenso = ConsensoPrivacyPaziente.query.one()
-        assert consenso.persona_id == paziente.id
+        assert consenso.persona_id is None
+        assert consenso.persona_v2_id == paziente.id
         assert consenso.accettato is True
         assert consenso.accettato_il == appuntamento.creato_il
         paziente_id = paziente.id
@@ -5791,14 +5940,86 @@ def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):
     assert 'Data presa visione:' in scheda.text
 
 
+def test_paziente_v2_legge_storico_e_consensi_legacy_mappati(app):
+    legacy = PersonaCorso(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+    )
+    db.session.add(legacy)
+    db.session.flush()
+    patient = Persona(
+        nome='Mario Rossi',
+        legacy_persona_corso_id=legacy.id,
+        anagrafica_da_verificare=True,
+    )
+    appointment = Appuntamento(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Medicazione semplice',
+        data='2099-09-01',
+        ora='10:00',
+        consenso_privacy=True,
+    )
+    registration = IscrizioneCorso(
+        persona=legacy,
+        corso_tipo='blsd',
+        corso_titolo='BLSD',
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        codice_fiscale='',
+        consenso_privacy=True,
+    )
+    db.session.add_all([patient, appointment, registration])
+    db.session.flush()
+    db.session.add_all([
+        app_module.CollegamentoPersona(
+            persona=legacy,
+            entita_tipo='Appuntamento',
+            entita_id=appointment.id,
+        ),
+        ConsensoPrivacyPaziente(
+            persona=legacy,
+            entita_tipo='Appuntamento',
+            entita_id=appointment.id,
+            accettato=True,
+            accettato_il=appointment.creato_il,
+        ),
+        ConsensoPrivacyPaziente(
+            persona=legacy,
+            entita_tipo='IscrizioneCorso',
+            entita_id=registration.id,
+            accettato=True,
+            accettato_il=registration.creato_il,
+        ),
+    ])
+    db.session.commit()
+
+    history = app_module._storico_persona_admin(patient)
+    privacy_history = app_module._patient_privacy_history(patient)
+
+    assert patient.numero_pratiche == 2
+    assert {(item['tipo'], item['id']) for item in history} == {
+        ('Appuntamento', appointment.id),
+        ('IscrizioneCorso', registration.id),
+    }
+    assert {item['consent'].entita_tipo for item in privacy_history} == {
+        'Appuntamento',
+        'IscrizioneCorso',
+    }
+
+
 def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
     with flask_app.app_context():
-        paziente = PersonaCorso(
+        paziente = Persona(
             nome='Mario Rossi',
-            telefono='3331234567',
-            email='mario@example.com',
+            anagrafica_da_verificare=True,
         )
         db.session.add(paziente)
+        app_module._imposta_recapito_principale(paziente, 'telefono', '3331234567')
+        app_module._imposta_recapito_principale(paziente, 'email', 'mario@example.com')
         db.session.commit()
         paziente_id = paziente.id
     csrf = _login_admin(client)
@@ -5823,14 +6044,49 @@ def test_admin_crea_appuntamento_in_attesa_con_scadenza(client):
         assert appuntamento.creato_da_admin is True
         assert appuntamento.duration_minutes == 45
         assert appuntamento.scadenza_gestione is not None
-        collegamento = app_module.CollegamentoPersona.query.one()
-        assert collegamento.persona_id == paziente_id
-        assert collegamento.entita_tipo == 'Appuntamento'
-        assert collegamento.entita_id == appuntamento.id
+        assert appuntamento.persona_id == paziente_id
+        assert app_module.CollegamentoPersona.query.count() == 0
         consenso = ConsensoPrivacyPaziente.query.one()
-        assert consenso.persona_id == paziente_id
+        assert consenso.persona_id is None
+        assert consenso.persona_v2_id == paziente_id
         assert consenso.accettato is True
         assert consenso.accettato_il == appuntamento.creato_il
+
+
+def test_admin_non_collega_una_persona_archiviata(client):
+    with flask_app.app_context():
+        paziente = Persona(
+            nome='Persona',
+            cognome='Archiviata',
+            stato='archiviata',
+            archiviato_il=app_module.utc_now(),
+        )
+        db.session.add(paziente)
+        db.session.commit()
+        paziente_id = paziente.id
+    csrf = _login_admin(client)
+
+    response = client.post('/admin/appuntamento/aggiungi', data={
+        '_csrf_token': csrf,
+        'persona_id': str(paziente_id),
+        'nome': 'Persona Archiviata',
+        'telefono': '3331234567',
+        'email': 'archiviata@example.test',
+        'servizio': 'Medicazione semplice',
+        'data': '2099-09-01',
+        'ora': '10:00',
+        'duration_minutes': '45',
+        'confirm_missing_contacts': '1',
+    }, headers={
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    })
+
+    assert response.status_code == 422
+    assert response.get_json()['message'] == 'La persona selezionata non è più disponibile.'
+    assert client.get(f'/admin/paziente/{paziente_id}').status_code == 404
+    with flask_app.app_context():
+        assert Appuntamento.query.count() == 0
 
 
 def test_admin_chiede_conferma_json_se_mancano_i_contatti(client):
@@ -6518,13 +6774,15 @@ def test_riallineamento_automatico_non_sovrascrive_anomalie_esterne_o_attese(app
 def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura_finto):
     """Spostare un appuntamento su uno slot già preso non deve sovrascrivere l'agenda."""
     mock_servizio = google_calendar_scrittura_finto
+    original_date = _prossimo_giorno_con_weekday(1)
+    occupied_date = original_date + app_module.timedelta(days=1)
 
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00',
+                             servizio='Test', data=original_date.isoformat(), ora='10:00',
                              stato='Confermato')
         occupato = Appuntamento(nome='Luisa Verdi', telefono='334', email='l@example.com',
-                                servizio='Test', data='2026-09-02', ora='11:00',
+                                servizio='Test', data=occupied_date.isoformat(), ora='11:00',
                                 stato='Confermato')
         db.session.add_all([appt, occupato])
         db.session.commit()
@@ -6532,7 +6790,7 @@ def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura
 
     csrf = _login_admin(client)
     resp = client.post(f'/admin/modifica/{appt_id}', data={
-        'data': '2026-09-02', 'ora': '11:00',
+        'data': occupied_date.isoformat(), 'ora': '11:00',
         'duration_minutes': '30', '_csrf_token': csrf
     })
 
@@ -6541,16 +6799,17 @@ def test_spostamento_rifiuta_slot_gia_occupato(client, google_calendar_scrittura
     mock_servizio.events().insert.assert_not_called()
     with flask_app.app_context():
         aggiornato = db.session.get(Appuntamento, appt_id)
-        assert aggiornato.data == '2026-09-01'
+        assert aggiornato.data == original_date.isoformat()
         assert aggiornato.ora == '10:00'
 
 
 def test_nessuna_chiamata_google_se_non_configurato(client):
     """Se la scrittura su Google Calendar non è configurata, confermare un
     appuntamento deve funzionare normalmente senza errori né chiamate API."""
+    appointment_date = _prossimo_giorno_con_weekday(1).isoformat()
     with flask_app.app_context():
         appt = Appuntamento(nome='Mario Rossi', telefono='333', email='m@example.com',
-                             servizio='Test', data='2026-09-01', ora='10:00')
+                             servizio='Test', data=appointment_date, ora='10:00')
         db.session.add(appt)
         db.session.commit()
         appt_id = appt.id
@@ -7154,6 +7413,409 @@ def test_email_appuntamento_include_indirizzo_e_link_admin(app, monkeypatch):
 
     assert "Via C. D'Agnese 43\n65015 Montesilvano (PE)" in messaggio_conferma.body
     assert 'https://scstudioinfermieristico.it/admin' in messaggio_ricezione.body
+
+
+# ---------------------------------------------------------------------------
+# PAZ-A2 — integrazione reale CLI/modelli applicativi
+# ---------------------------------------------------------------------------
+
+
+def _imposta_revisione_alembic_sintetica(revision):
+    db.session.execute(sql_text('DROP TABLE IF EXISTS alembic_version'))
+    db.session.execute(sql_text('CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)'))
+    db.session.execute(
+        sql_text('INSERT INTO alembic_version(version_num) VALUES (:revision)'),
+        {'revision': revision},
+    )
+    db.session.commit()
+
+
+def test_paz_a3_preflight_cutover_accetta_database_vuoto_al_head_a4(app, runner):
+    _imposta_revisione_alembic_sintetica(app_module.PAZ_A4_ALEMBIC_REVISION)
+
+    result = runner.invoke(args=['patients', 'preflight-cutover'])
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload == {
+        'alembic_revision': app_module.PAZ_A4_ALEMBIC_REVISION,
+        'counts': {
+            'appuntamenti': 0,
+            'call_sonno': 0,
+            'collegamenti_legacy': 0,
+            'consensi_privacy_paziente': 0,
+            'iscrizioni_corso': 0,
+            'persone_legacy': 0,
+            'persone_v2': 0,
+        },
+        'status': 'pronto',
+    }
+
+
+def test_paz_a3_preflight_cutover_blocca_pratiche_senza_esporre_pii(app, runner):
+    _imposta_revisione_alembic_sintetica(app_module.PAZ_A4_ALEMBIC_REVISION)
+    db.session.add(Appuntamento(
+        nome='PII SENTINEL',
+        telefono='3330000000',
+        email='pii-sentinel@example.test',
+        servizio='Test sintetico',
+        data='2099-09-01',
+        ora='10:00',
+    ))
+    db.session.commit()
+
+    result = runner.invoke(args=['patients', 'preflight-cutover'])
+
+    assert result.exit_code != 0
+    assert 'PAZ_A3_DATABASE_NON_VUOTO' in result.output
+    assert 'PII SENTINEL' not in result.output
+    payload = json.loads(result.output.splitlines()[0])
+    assert payload['status'] == 'bloccato'
+    assert payload['counts']['appuntamenti'] == 1
+
+
+def test_paz_a3_preflight_cutover_blocca_revisione_non_a4(app, runner):
+    _imposta_revisione_alembic_sintetica('8f2c7d1e4a90')
+
+    result = runner.invoke(args=['patients', 'preflight-cutover'])
+
+    assert result.exit_code != 0
+    assert 'PAZ_A3_REVISIONE_NON_VALIDA' in result.output
+    payload = json.loads(result.output.splitlines()[0])
+    assert payload['expected_revision'] == app_module.PAZ_A4_ALEMBIC_REVISION
+
+
+def _prepara_paz_a2_cli(app):
+    """Configura esclusivamente il DB sintetico del test per il gate A2."""
+    app.config.update(
+        SECRET_KEY='paz-a2-test-secret-' + ('x' * 48),
+        SECRET_KEY_IS_EPHEMERAL=False,
+        APP_BUILD_REVISION='paz-a2-cli-test-revision',
+        APP_ENV='testing',
+        PAZ_A2_PLAN_TTL_SECONDS=3600,
+    )
+    _imposta_revisione_alembic_sintetica('8f2c7d1e4a90')
+
+
+def _crea_sorgente_paz_a2(**overrides):
+    payload = {
+        'nome': 'Mario Rossi',
+        'telefono': '333 123 4567',
+        'email': 'mario.rossi@example.test',
+        'codice_fiscale': 'RSSMRA80A01H501X',
+    }
+    payload.update(overrides)
+    source = PersonaCorso(**payload)
+    db.session.add(source)
+    db.session.commit()
+    return source
+
+
+def _invoca_dry_run_a2(runner, plan_file, report_file=None, *extra):
+    args = [
+        'patients', 'backfill-identities',
+        '--dry-run',
+        '--plan-file', str(plan_file),
+    ]
+    if report_file is not None:
+        args.extend(['--report-file', str(report_file)])
+    args.extend(extra)
+    return runner.invoke(args=args)
+
+
+def _invoca_apply_a2(runner, plan_file, report_file=None, *extra):
+    args = [
+        'patients', 'backfill-identities',
+        '--apply',
+        '--plan-file', str(plan_file),
+    ]
+    if report_file is not None:
+        args.extend(['--report-file', str(report_file)])
+    args.extend(extra)
+    return runner.invoke(args=args)
+
+
+def test_paz_a2_cli_dry_run_apply_reali_e_cleanup_piano(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    source = _crea_sorgente_paz_a2()
+    legacy_id = source.id
+    db.session.remove()
+
+    plan_file = tmp_path / 'paz-a2-plan.json'
+    dry_report = tmp_path / 'paz-a2-dry-report.json'
+    apply_report = tmp_path / 'paz-a2-apply-report.json'
+
+    dry = _invoca_dry_run_a2(runner, plan_file, dry_report)
+    assert dry.exit_code == 0, dry.output
+    assert plan_file.exists()
+    assert dry_report.exists()
+    dry_payload = json.loads(dry_report.read_text(encoding='utf-8'))
+    assert dry_payload['source_count'] == 1
+    assert dry_payload['active_sources'] == 1
+    assert dry_payload['anonymized_sources'] == 0
+    assert Persona.query.count() == 0
+
+    db.session.remove()
+    applied = _invoca_apply_a2(runner, plan_file, apply_report)
+    assert applied.exit_code == 0, applied.output
+    assert not plan_file.exists()
+    assert apply_report.exists()
+
+    persona = Persona.query.filter_by(legacy_persona_corso_id=legacy_id).one()
+    assert persona.nome is None
+    assert persona.cognome is None
+    assert persona.legacy_nome_completo == 'Mario Rossi'
+    assert RecapitoPersona.query.filter_by(persona_id=persona.id).count() == 2
+    apply_payload = json.loads(apply_report.read_text(encoding='utf-8'))
+    assert apply_payload['source_count'] == 1
+    assert apply_payload['active_sources'] == 1
+    assert apply_payload['anonymized_sources'] == 0
+    assert RegistroEvento.query.filter_by(categoria='pazienti_v2').count() == 1
+
+
+def test_paz_a2_cli_rifiuta_plan_e_report_stesso_path_in_dry_run(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    same = tmp_path / 'same.json'
+
+    result = runner.invoke(args=[
+        'patients', 'backfill-identities', '--dry-run',
+        '--plan-file', str(same), '--report-file', str(same),
+        '--overwrite-report',
+    ])
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert not same.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_rifiuta_plan_e_report_stesso_path_in_apply_senza_perdere_piano(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / 'apply-same.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    result = runner.invoke(args=[
+        'patients', 'backfill-identities', '--apply',
+        '--plan-file', str(plan_file), '--report-file', str(plan_file),
+        '--overwrite-report',
+    ])
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert plan_file.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_alias_symlink_plan_report_viene_rifiutato(app, runner, tmp_path):
+    if not hasattr(os, 'symlink'):
+        pytest.skip('Symlink non supportati.')
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / 'real-plan.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+    alias = tmp_path / 'alias-report.json'
+    alias.symlink_to(plan_file)
+
+    result = _invoca_apply_a2(runner, plan_file, alias, '--overwrite-report')
+
+    assert result.exit_code != 0
+    assert 'file distinti' in result.output
+    assert plan_file.exists()
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_integrity_error_sanitizzato_e_report_fallimento(app, runner, tmp_path, monkeypatch, caplog):
+    _prepara_paz_a2_cli(app)
+    sentinel_name = 'PII_SENTINEL_NAME_CLI_A2'
+    sentinel_email = 'pii-sentinel-cli-a2@example.test'
+    _crea_sorgente_paz_a2(nome=sentinel_name, email=sentinel_email)
+    db.session.remove()
+    plan_file = tmp_path / 'failure-plan.json'
+    report_file = tmp_path / 'failure-report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    def explode(*args, **kwargs):
+        raise IntegrityError(
+            f'INSERT persona values ({sentinel_name})',
+            {'email': sentinel_email},
+            RuntimeError(sentinel_name),
+        )
+
+    monkeypatch.setattr(patient_backfill_module, '_apply_source_projection', explode)
+    caplog.set_level(logging.ERROR)
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+
+    assert result.exit_code != 0
+    assert 'UNEXPECTED_INTEGRITY_ERROR' in result.output
+    assert report_file.exists()
+    payload = json.loads(report_file.read_text(encoding='utf-8'))
+    assert payload['status'] == 'errore'
+    assert payload['error_code'] == 'UNEXPECTED_INTEGRITY_ERROR'
+    assert payload['error_phase'] == 'write'
+    assert plan_file.exists(), 'Il piano fallito resta disponibile per diagnosi controllata.'
+
+    exc_chain_parts = []
+    if result.exc_info:
+        cursor = result.exc_info[1]
+        seen = set()
+        while cursor is not None and id(cursor) not in seen:
+            seen.add(id(cursor))
+            exc_chain_parts.extend([
+                type(cursor).__name__, str(cursor), repr(cursor), repr(getattr(cursor, 'args', ()))
+            ])
+            for attr in ('statement', 'params'):
+                if hasattr(cursor, attr):
+                    exc_chain_parts.append(repr(getattr(cursor, attr)))
+            cursor = cursor.__cause__ or cursor.__context__
+
+    exposed = '\n'.join([
+        result.output,
+        json.dumps(payload, ensure_ascii=False),
+        '\n'.join(record.getMessage() for record in caplog.records),
+        '\n'.join(
+            (event.messaggio or '') + ' ' + (event.dettagli or '')
+            for event in RegistroEvento.query.all()
+        ),
+        '\n'.join(exc_chain_parts),
+    ])
+    assert sentinel_name not in exposed
+    assert sentinel_email not in exposed
+    assert Persona.query.count() == 0
+
+
+def test_paz_a2_cli_errore_filesystem_post_commit_non_annulla_backfill(app, runner, tmp_path, monkeypatch):
+    _prepara_paz_a2_cli(app)
+    source = _crea_sorgente_paz_a2()
+    legacy_id = source.id
+    db.session.remove()
+    plan_file = tmp_path / 'post-commit-plan.json'
+    report_file = tmp_path / 'post-commit-report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    def fail_report(*args, **kwargs):
+        raise OSError('filesystem failure with no patient payload')
+
+    monkeypatch.setattr(app_module, 'write_report_file', fail_report)
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+
+    assert result.exit_code != 0
+    assert 'Backfill A2 completato' in result.output
+    assert 'report non salvato' in result.output
+    assert not plan_file.exists()
+    assert Persona.query.filter_by(legacy_persona_corso_id=legacy_id).count() == 1
+    assert RegistroEvento.query.filter_by(categoria='pazienti_v2', esito='successo').count() == 1
+
+
+
+def test_testing_config_non_eredita_database_url_reale(app, tmp_path):
+    env = os.environ.copy()
+    env.update({
+        'FLASK_ENV': 'testing',
+        'APP_ENV': 'testing',
+        'SECRET_KEY': 'x' * 64,
+        'DATABASE_URL': 'postgresql+psycopg://danger:danger@127.0.0.1:1/real_like_db',
+    })
+    env.pop('PAZ_A2_TEST_DATABASE_URL', None)
+    script = (
+        "from app import app, db; "
+        "ctx=app.app_context(); ctx.push(); "
+        "print(str(db.engine.url)); print(db.engine.dialect.name); ctx.pop()"
+    )
+    completed = subprocess.run(
+        [sys.executable, '-c', script],
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=60,
+    )
+    assert 'sqlite:///:memory:' in completed.stdout
+    assert 'sqlite' in completed.stdout
+    assert 'postgresql' not in completed.stdout.lower()
+
+
+@pytest.mark.parametrize('case', ['A1_NOT_READY', 'UNSTABLE_PLAN_KEY', 'CODE_REVISION_UNKNOWN'])
+def test_paz_a2_cli_preserva_codice_e_fase_failure_report(app, runner, tmp_path, monkeypatch, case):
+    _prepara_paz_a2_cli(app)
+    _crea_sorgente_paz_a2()
+    db.session.remove()
+    plan_file = tmp_path / f'{case}.plan.json'
+    report_file = tmp_path / f'{case}.report.json'
+    assert _invoca_dry_run_a2(runner, plan_file).exit_code == 0
+
+    if case == 'A1_NOT_READY':
+        db.session.execute(sql_text("UPDATE alembic_version SET version_num='wrong'"))
+        db.session.commit()
+    elif case == 'UNSTABLE_PLAN_KEY':
+        app.config['SECRET_KEY'] = 'short'
+        app.config['SECRET_KEY_IS_EPHEMERAL'] = False
+    else:
+        app.config['APP_BUILD_REVISION'] = None
+        monkeypatch.setattr(
+            patient_backfill_module,
+            'resolve_code_revision',
+            lambda *args, **kwargs: (_ for _ in ()).throw(
+                patient_backfill_module.PatientBackfillError(code='CODE_REVISION_UNKNOWN')
+            ),
+        )
+
+    db.session.remove()
+    result = _invoca_apply_a2(runner, plan_file, report_file)
+    assert result.exit_code != 0
+    assert case in result.output
+    payload = json.loads(report_file.read_text(encoding='utf-8'))
+    assert payload['error_code'] == case
+    expected_phase = 'revalidation' if case == 'A1_NOT_READY' else 'preflight'
+    assert payload['error_phase'] == expected_phase
+    assert payload['blockers'] == {case: 1}
+    assert plan_file.exists()
+
+
+def test_paz_a2_cli_preserva_blocker_specifico_in_report_output_e_audit(app, runner, tmp_path):
+    _prepara_paz_a2_cli(app)
+    residual_phone = '3339998877'
+    _crea_sorgente_paz_a2(
+        nome='[dati anonimizzati]',
+        telefono=residual_phone,
+        email=None,
+        codice_fiscale=None,
+        dati_anonimizzati_il=datetime(2026, 9, 6, 12, 0, 0),
+    )
+    db.session.remove()
+
+    plan_file = tmp_path / 'blocked-plan.json'
+    failure_report = tmp_path / 'blocked-failure-report.json'
+    dry = _invoca_dry_run_a2(runner, plan_file)
+    assert dry.exit_code == 0, dry.output
+
+    plan_payload = json.loads(plan_file.read_text(encoding='utf-8'))
+    expected = {'ANONYMIZED_SOURCE_HAS_RESIDUAL_PII': 1}
+    assert plan_payload['summary']['blockers'] == expected
+
+    applied = _invoca_apply_a2(runner, plan_file, failure_report)
+    assert applied.exit_code != 0
+    assert 'ANONYMIZED_SOURCE_HAS_RESIDUAL_PII' in applied.output
+    assert residual_phone not in applied.output
+    assert failure_report.exists()
+    assert plan_file.exists()
+
+    report = json.loads(failure_report.read_text(encoding='utf-8'))
+    assert report['error_code'] == 'BACKFILL_BLOCKER'
+    assert report['blockers'] == expected
+    assert residual_phone not in json.dumps(report, sort_keys=True)
+
+    event = RegistroEvento.query.filter_by(categoria='pazienti_v2', esito='errore').one()
+    audit = json.loads(event.dettagli)
+    assert audit['error_code'] == 'BACKFILL_BLOCKER'
+    assert audit['blocker_codes'] == ['ANONYMIZED_SOURCE_HAS_RESIDUAL_PII']
+    assert residual_phone not in event.dettagli
 
 
 if __name__ == '__main__':

@@ -15,6 +15,25 @@ fileConfig(config.config_file_name)
 logger = logging.getLogger('alembic.env')
 
 
+# SQLite does not reflect names or ON DELETE options for foreign keys added as
+# inline columns. PAZ-A1 tests these exact constraints through PRAGMA and real
+# writes; excluding only these known reflection artifacts keeps ``db check``
+# useful for every other object.
+SQLITE_INLINE_PATIENT_FOREIGN_KEYS = {
+    ('appuntamento', ('persona_id',), ('persona.id',)),
+    ('call_sonno', ('persona_id',), ('persona.id',)),
+    ('iscrizione_corso', ('persona_v2_id',), ('persona.id',)),
+}
+
+
+def _foreign_key_signature(foreign_key):
+    return (
+        foreign_key.table.name,
+        tuple(element.parent.name for element in foreign_key.elements),
+        tuple(element.target_fullname for element in foreign_key.elements),
+    )
+
+
 def get_engine():
     try:
         # this works with Flask-SQLAlchemy<3 and Alchemical
@@ -90,13 +109,33 @@ def run_migrations_online():
                 directives[:] = []
                 logger.info('No changes in schema detected.')
 
-    conf_args = current_app.extensions['migrate'].configure_args
+    conf_args = dict(current_app.extensions['migrate'].configure_args)
     if conf_args.get("process_revision_directives") is None:
         conf_args["process_revision_directives"] = process_revision_directives
 
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        configured_include_object = conf_args.get('include_object')
+
+        def include_object(obj, name, type_, reflected, compare_to):
+            if configured_include_object is not None and not configured_include_object(
+                obj,
+                name,
+                type_,
+                reflected,
+                compare_to,
+            ):
+                return False
+            if (
+                connection.dialect.name == 'sqlite'
+                and type_ == 'foreign_key_constraint'
+                and _foreign_key_signature(obj) in SQLITE_INLINE_PATIENT_FOREIGN_KEYS
+            ):
+                return False
+            return True
+
+        conf_args['include_object'] = include_object
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),

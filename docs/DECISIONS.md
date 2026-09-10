@@ -927,6 +927,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: il P0 comprende almeno schema additivo, migrazione controllata delle identità, collegamento verificato delle pratiche e UI/cutover amministrativo sicuro; il cleanup distruttivo del legacy resta escluso dal gate iniziale. Le specifiche tecniche e le patch già revisionate restano candidate finché non sono integrate e collaudate nel checkout reale. Le proposte D-107–D-115 archiviate in `docs/proposte/` non diventano automaticamente decisioni approvate. Per il primo collaudo sul database Render confermato vuoto non è richiesta una copia dei dati inesistenti: vanno invece verificati assenza di dati, revisione Alembic e rollback tecnico. Prima del primo dato reale restano obbligatori PITR e backup cifrato. Restano inoltre obbligatori dry-run, test SQLite e PostgreSQL, protezione server-side, CSRF, header `no-store`, audit minimizzato e collaudo desktop/mobile prima del go-live.
 - Collegamenti: `ROADMAP.md`, `proposte/ROADMAP_PROPOSTA_2026-08-31.md`, `proposte/DECISIONS_PROPOSTA_2026-08-31.md`, D-092, D-095, D-096, D-097, D-106.
 
+## D-117 — Il lancio usa direttamente Pazienti 2.0 come unica anagrafica attiva
+
+- Data: 2026-09-09.
+- Stato: approvata dal committente e implementata localmente; deploy privato e collaudo Render ancora richiesti.
+- Decisione: dal lancio ogni nuova anagrafica e ogni nuovo collegamento tra paziente e pratica devono essere scritti esclusivamente in `Persona`, `RecapitoPersona` e nelle FK Pazienti 2.0. Non introdurre dual-write verso `PersonaCorso` o `CollegamentoPersona`. Le strutture legacy restano temporaneamente nello schema, in sola compatibilità per eventuali record precedenti, e saranno rimosse soltanto con PAZ-A5 dopo stabilizzazione e approvazione separata.
+- Motivo: il database destinato al primo collaudo non contiene pratiche o anagrafiche reali da mantenere sincronizzate. Scrivere contemporaneamente nel modello vecchio e in quello nuovo aggiungerebbe due fonti di verità, casi di divergenza e lavoro di riconciliazione senza offrire un vantaggio concreto in questo contesto.
+- Conseguenze: PAZ-A3 non deve inventare migrazioni su record inesistenti; prima del deploy deve verificare e registrare conteggi nulli e revisione Alembic, quindi concludersi come no-op. PAZ-A4 deve spostare elenco, scheda, creazione, modifica, ricerca, collegamento delle pratiche, storico e consensi dell'admin sul modello v2; appuntamenti, call sonno e iscrizioni corso conservano i propri dati storici e usano le FK v2. I dati legacy non vanno cancellati automaticamente e il rollback applicativo mantiene intatte le tabelle precedenti, ma non prevede di ricostruire automaticamente nel legacy i dati nati dopo il cutover.
+- Collegamenti: `PAZIENTI_2_0_IMPLEMENTATION.md`, `ROADMAP.md`, `OPERATIONS.md`, D-092, D-097, D-116.
+
 ## Modello per nuove decisioni
 
 ```markdown
