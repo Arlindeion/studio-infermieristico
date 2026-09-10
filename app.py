@@ -39,7 +39,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from sqlalchemy import event, false as sql_false, text as sql_text
-from sqlalchemy.orm import Session as SASession
+from sqlalchemy.orm import Session as SASession, selectinload
 from patient_backfill import (
     BackfillModels,
     PatientBackfillError,
@@ -7118,11 +7118,58 @@ def admin():
     }
 
     ricerca = request.args.get('q', '').strip()
+    filtro_pazienti = request.args.get('stato_paziente', 'attiva').strip()
+    if filtro_pazienti not in {'attiva', 'verifica', 'archiviata', 'tutte'}:
+        filtro_pazienti = 'attiva'
+    ordine_pazienti = request.args.get('ordine_pazienti', 'recenti').strip()
+    if ordine_pazienti not in {'recenti', 'nome'}:
+        ordine_pazienti = 'recenti'
     risultati_ricerca = []
-    pazienti_query = Persona.query.filter(
+    pazienti_base_query = Persona.query.options(
+        selectinload(Persona.recapiti),
+    ).filter(
         Persona.dati_anonimizzati_il.is_(None),
-        Persona.stato == 'attiva',
     )
+    pazienti_metriche_lista = pazienti_base_query.all()
+    pazienti_attivi = [
+        paziente for paziente in pazienti_metriche_lista
+        if paziente.stato == 'attiva'
+    ]
+    proprietari_recapiti = defaultdict(set)
+    for paziente in pazienti_attivi:
+        for recapito in paziente.recapiti:
+            if recapito.archiviato_il is None and recapito.valore_normalizzato:
+                proprietari_recapiti[
+                    (recapito.tipo, recapito.valore_normalizzato)
+                ].add(paziente.id)
+    pazienti_in_collisione = {
+        paziente_id
+        for proprietari in proprietari_recapiti.values()
+        if len(proprietari) > 1
+        for paziente_id in proprietari
+    }
+    metriche_pazienti = {
+        'totali': len(pazienti_attivi),
+        'da_verificare': sum(
+            1 for paziente in pazienti_attivi
+            if paziente.anagrafica_da_verificare
+        ),
+        'recapiti_incompleti': sum(
+            1 for paziente in pazienti_attivi
+            if not paziente.telefono or not paziente.email
+        ),
+        'collisioni': len(pazienti_in_collisione),
+    }
+    pazienti_query = pazienti_base_query
+    if filtro_pazienti == 'verifica':
+        pazienti_query = pazienti_query.filter(
+            Persona.stato == 'attiva',
+            Persona.anagrafica_da_verificare.is_(True),
+        )
+    elif filtro_pazienti != 'tutte':
+        pazienti_query = pazienti_query.filter(
+            Persona.stato == filtro_pazienti,
+        )
     if ricerca:
         criterio = f'%{ricerca}%'
         pazienti_query = pazienti_query.filter(db.or_(
@@ -7144,7 +7191,18 @@ def admin():
 
         for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
-    pazienti = pazienti_query.order_by(Persona.cognome, Persona.nome).all()
+    if ordine_pazienti == 'nome':
+        pazienti_query = pazienti_query.order_by(
+            Persona.cognome,
+            Persona.nome,
+            Persona.id,
+        )
+    else:
+        pazienti_query = pazienti_query.order_by(
+            Persona.aggiornato_il.desc(),
+            Persona.id.desc(),
+        )
+    pazienti = pazienti_query.all()
     practice_counts = load_patient_practice_counts(
         db.session,
         pazienti,
@@ -7302,6 +7360,10 @@ def admin():
                                else None
                            ),
                            ricerca=ricerca,
+                           filtro_pazienti=filtro_pazienti,
+                           ordine_pazienti=ordine_pazienti,
+                           metriche_pazienti=metriche_pazienti,
+                           pazienti_in_collisione=pazienti_in_collisione,
                            risultati_ricerca=risultati_ricerca,
                            pazienti=pazienti,
                            calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
@@ -7324,7 +7386,6 @@ def admin():
                            iscrizioni_corsi=iscrizioni_corsi,
                            iscrizioni_totali_count=iscrizioni_totali_count,
                            persone_corsi_count=len(persone_corsi),
-                           pazienti_count=len(persone_corsi),
                            iscrizioni_nuove_count=iscrizioni_nuove_count,
                            call_sonno=call_sonno,
                            call_sonno_in_attesa_count=call_sonno_in_attesa_count,

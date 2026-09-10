@@ -28,6 +28,8 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque/BricolageGrotesque-ExtraBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% set page_endpoint = request.endpoint or '' %}
+    {% set admin_endpoints = ['admin', 'dettaglio_admin', 'dettaglio_paziente_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
+    {% set admin_area = page_endpoint in admin_endpoints %}
     {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno', 'da_dove_parto'] %}
     {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'offerta_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
     {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
@@ -51,8 +53,8 @@
     {% elif page_endpoint in ['prestazioni', 'prenota'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/prestazioni.css') }}?v=1.5">
     {% endif %}
-    {% if page_endpoint in ['admin', 'dettaglio_admin', 'dettaglio_paziente_admin', 'modifica_appuntamento', 'modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=5.4">
+    {% if admin_area %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=6.0">
     {% endif %}
     {% if page_endpoint in ['da_dove_parto', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/orientamento.css') }}?v=1.1">
@@ -91,7 +93,7 @@
     }
     </script>
 </head>
-<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
+<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}{% if admin_area %} is-admin-area{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
 
 {% set current_endpoint = request.endpoint or '' %}
 {% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'condizioni_iscrizione_corsi', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
@@ -100,6 +102,7 @@
 
 <a class="skip-link" href="#contenuto-principale">Vai al contenuto</a>
 
+{% if not admin_area %}
 <header class="site-header" data-site-header>
     <div class="site-header__inner">
         <a href="/" class="site-brand" aria-label="S.C. Studio Infermieristico, homepage">
@@ -274,11 +277,13 @@
 {% if google_analytics_id %}
 <script src="{{ url_for('static', filename='js/analytics-consent.js') }}?v=1.1" defer></script>
 {% endif %}
+{% endif %}
 
     <main id="contenuto-principale" tabindex="-1">
         {% block contenuto %}{% endblock %}
     </main>
 
+{% if not admin_area %}
     <footer class="site-footer">
         <div class="site-footer-grid">
             <div>
@@ -329,6 +334,7 @@
         {{ sticky_label }}
     </a>
 </div>
+{% endif %}
 {% endif %}
 </body>
 </html>

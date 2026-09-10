@@ -1,28 +1,25 @@
-{% extends "base.html" %}
+{% extends "admin_layout.html" %}
 {% block titolo %}{{ paziente.nome_completo }} · Pazienti admin{% endblock %}
-{% block contenuto %}
-<main class="pagina-interna admin-page admin-detail-page admin-patient-detail">
+{% block admin_contenuto %}
+<div class="pagina-interna admin-page admin-detail-page admin-patient-detail">
     <div class="admin-detail-topbar">
         <a class="admin-back" href="{{ url_for('admin') }}#admin-pazienti">← Torna ai pazienti</a>
         <span class="admin-kicker">Anagrafica paziente</span>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}<div class="admin-flash-stack" role="status">{% for category, message in messages %}<p class="admin-flash admin-flash-{{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+        {% if messages %}<div class="admin-flash-stack" role="status" aria-live="polite">{% for category, message in messages %}<p class="admin-flash admin-flash-{{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
     {% endwith %}
 
     <header class="admin-detail-header admin-patient-header">
         <div>
             <p class="admin-eyebrow">Paziente #{{ paziente.id }}</p>
             <h1>{{ paziente.nome_completo }}</h1>
-            <p>
-                {% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% endif %}
-                {% if paziente.email %} · <a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% endif %}
-            </p>
+            <p>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}Telefono mancante{% endif %}{% if paziente.email %} · <a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %} · Email mancante{% endif %}</p>
         </div>
-        <div class="admin-patient-contact-status" aria-label="Completezza recapiti">
-            <span class="{% if paziente.telefono %}is-complete{% else %}is-missing{% endif %}">Telefono {% if paziente.telefono %}presente{% else %}mancante{% endif %}</span>
-            <span class="{% if paziente.email %}is-complete{% else %}is-missing{% endif %}">Email {% if paziente.email %}presente{% else %}mancante{% endif %}</span>
+        <div class="admin-patient-header-status">
+            {% if paziente.stato == 'archiviata' %}<span class="admin-patient-badge is-archived">Archiviata</span>{% elif paziente.anagrafica_da_verificare %}<span class="admin-patient-badge is-review">Da verificare</span>{% else %}<span class="admin-patient-badge is-active">Attiva</span>{% endif %}
+            <span class="admin-patient-record-id">Persona #{{ paziente.id }}</span>
         </div>
     </header>
 
@@ -31,89 +28,66 @@
         <p class="admin-eyebrow">Verifica manuale</p>
         <h2 id="duplicate-patient-title">Possibili anagrafiche duplicate</h2>
         <p>Telefono o email coincidono. I record non vengono uniti automaticamente.</p>
-        <div class="admin-history-links">
-            {% for duplicato in duplicati %}
-            <a href="{{ url_for('dettaglio_paziente_admin', id=duplicato.id) }}"><span>Paziente #{{ duplicato.id }}</span><strong>{{ duplicato.nome_completo }}</strong><small>{{ duplicato.telefono }}{% if duplicato.email %} · {{ duplicato.email }}{% endif %}</small></a>
-            {% endfor %}
-        </div>
+        <div class="admin-history-links">{% for duplicato in duplicati %}<a href="{{ url_for('dettaglio_paziente_admin', id=duplicato.id) }}"><span>Paziente #{{ duplicato.id }}</span><strong>{{ duplicato.nome_completo }}</strong><small>{{ duplicato.telefono or 'Telefono non indicato' }}{% if duplicato.email %} · {{ duplicato.email }}{% endif %}</small></a>{% endfor %}</div>
     </section>
     {% endif %}
 
-    <div class="admin-detail-grid admin-patient-detail-grid">
-        <section class="admin-surface admin-patient-form-section">
-            <p class="admin-eyebrow">Dati correnti</p>
-            <h2>Modifica anagrafica</h2>
-            <p class="filtro-descrizione">Le modifiche aggiornano questa scheda paziente. Appuntamenti, call e iscrizioni già registrati conservano i dati originari.</p>
-            <form class="admin-form-grid" method="post" action="{{ url_for('modifica_paziente_admin', id=paziente.id) }}">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <label>Nome *<input name="nome" value="{{ paziente.nome or '' }}" maxlength="100" autocomplete="given-name" required></label>
-                <label>Cognome *<input name="cognome" value="{{ paziente.cognome or '' }}" maxlength="100" autocomplete="family-name" required></label>
-                <label>Data di nascita<input type="date" name="data_nascita" value="{{ paziente.data_nascita.isoformat() if paziente.data_nascita else '' }}" autocomplete="bday"></label>
-                <label>Sesso anagrafico<select name="sesso_anagrafico"><option value="">Non indicato</option><option value="F" {% if paziente.sesso_anagrafico == 'F' %}selected{% endif %}>F</option><option value="M" {% if paziente.sesso_anagrafico == 'M' %}selected{% endif %}>M</option></select></label>
-                <label>Telefono<input type="tel" name="telefono" value="{{ paziente.telefono or '' }}" maxlength="20" autocomplete="tel"></label>
-                <label>Email<input type="email" name="email" value="{{ paziente.email or '' }}" maxlength="100" autocomplete="email"></label>
-                <label>Codice fiscale<input name="codice_fiscale" value="{{ paziente.codice_fiscale or '' }}" maxlength="32" autocapitalize="characters"></label>
-                <label>Comune di nascita<input name="comune_nascita" value="{{ paziente.comune_nascita or '' }}" maxlength="120"></label>
-                <label>Provincia di nascita<input name="provincia_nascita" value="{{ paziente.provincia_nascita or '' }}" maxlength="10"></label>
-                <label>Stato di nascita<input name="stato_nascita" value="{{ paziente.stato_nascita or '' }}" maxlength="120"></label>
-                <label class="admin-form-wide">Indirizzo di residenza<input name="indirizzo_residenza" value="{{ paziente.indirizzo_residenza or '' }}" maxlength="200" autocomplete="street-address"></label>
-                <label>CAP<input name="cap_residenza" value="{{ paziente.cap_residenza or '' }}" maxlength="12" autocomplete="postal-code"></label>
-                <label>Comune di residenza<input name="comune_residenza" value="{{ paziente.comune_residenza or '' }}" maxlength="120" autocomplete="address-level2"></label>
-                <label>Provincia di residenza<input name="provincia_residenza" value="{{ paziente.provincia_residenza or '' }}" maxlength="10" autocomplete="address-level1"></label>
-                <label>Stato di residenza<input name="stato_residenza" value="{{ paziente.stato_residenza or '' }}" maxlength="120" autocomplete="country-name"></label>
-                <button class="btn" type="submit">Salva modifiche</button>
-            </form>
-        </section>
-
-        <aside class="admin-surface admin-patient-record-meta">
-            <p class="admin-eyebrow">Registro</p>
-            <h2>Scheda paziente</h2>
-            <dl class="admin-facts">
-                <div><dt>Creata</dt><dd>{{ paziente.creato_il|local_timestamp }}</dd></div>
-                <div><dt>Aggiornata</dt><dd>{{ paziente.aggiornato_il|local_timestamp }}</dd></div>
-                <div><dt>Informativa privacy</dt><dd>{{ 'Presa visione registrata' if privacy_accettata else 'Non registrata' }}</dd></div>
-                <div class="admin-fact-wide"><dt>Pratiche collegate</dt><dd>{{ storico_persona|length }}</dd></div>
-            </dl>
-        </aside>
-    </div>
-
-    <section class="admin-surface admin-privacy-history" id="consensi-privacy">
-        <div class="admin-section-heading">
-            <div><p class="admin-eyebrow">Tracciabilità</p><h2>Prese visioni privacy</h2></div>
-            <span class="admin-total">{{ consensi_privacy|length }}</span>
+    <section class="admin-patient-tabs-shell" data-patient-tabs>
+        <div class="admin-patient-tabs" role="tablist" aria-label="Sezioni della scheda paziente">
+            <button type="button" role="tab" aria-selected="true" aria-controls="patient-overview" id="tab-patient-overview" data-patient-tab="overview">Panoramica</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="patient-profile" id="tab-patient-profile" data-patient-tab="profile">Anagrafica</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="patient-activity" id="tab-patient-activity" data-patient-tab="activity">Attività</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="patient-clinical" id="tab-patient-clinical" data-patient-tab="clinical">Cartella infermieristica</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="patient-notes" id="tab-patient-notes" data-patient-tab="notes">Note</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="patient-consents" id="tab-patient-consents" data-patient-tab="consents">Consensi e documenti</button>
         </div>
-        <p class="filtro-descrizione">Ogni stato resta associato alla pratica nella quale è stata presentata l’informativa.</p>
-        <div class="admin-consent-list">
-            {% for item in consensi_privacy %}
-            <article class="admin-consent-item">
-                <div>
-                    <span class="admin-consent-status {% if item.consent.accettato %}is-accepted{% else %}is-unrecorded{% endif %}">{{ 'Accettata' if item.consent.accettato else 'Non registrata' }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <p><strong>Pratica:</strong> {{ item.consent.entita_tipo }} #{{ item.consent.entita_id }} · {{ item.practice_date }}</p>
-                    <p><strong>Data presa visione:</strong> {{ item.consent.accettato_il|local_timestamp if item.consent.accettato_il else 'Non disponibile' }}</p>
-                </div>
-                {% if item.practice_available %}
-                <a class="admin-inline-link" href="{{ url_for('dettaglio_admin', tipo=item.consent.entita_tipo, entita_id=item.consent.entita_id) }}">Apri pratica</a>
-                {% endif %}
-            </article>
-            {% else %}
-            <p class="nota nota-lg">Nessuna presa visione dell’informativa registrata per questa anagrafica.</p>
-            {% endfor %}
+
+        <div class="admin-patient-tab-panel is-active" id="patient-overview" role="tabpanel" aria-labelledby="tab-patient-overview" data-patient-panel="overview">
+            <div class="admin-patient-overview-grid">
+                <section class="admin-surface">
+                    <p class="admin-eyebrow">Contatti principali</p><h2>Recapiti</h2>
+                    <dl class="admin-facts admin-patient-contact-facts"><div><dt>Telefono</dt><dd>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}Da aggiungere{% endif %}</dd></div><div><dt>Email</dt><dd>{% if paziente.email %}<a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %}Da aggiungere{% endif %}</dd></div></dl>
+                </section>
+                <aside class="admin-surface admin-patient-quality">
+                    <p class="admin-eyebrow">Qualità dei dati</p><h2>{% if paziente.anagrafica_da_verificare %}Verifica richiesta{% elif not paziente.telefono or not paziente.email %}Recapiti incompleti{% else %}Scheda aggiornata{% endif %}</h2>
+                    <ul><li class="{% if paziente.nome and paziente.cognome %}is-complete{% else %}is-missing{% endif %}">Nome e cognome</li><li class="{% if paziente.telefono %}is-complete{% else %}is-missing{% endif %}">Telefono</li><li class="{% if paziente.email %}is-complete{% else %}is-missing{% endif %}">Email</li><li class="{% if paziente.codice_fiscale %}is-complete{% else %}is-missing{% endif %}">Codice fiscale</li></ul>
+                    {% if paziente.stato == 'attiva' %}<button class="btn-azione blu" type="button" data-open-patient-tab="profile">Controlla l’anagrafica</button>{% endif %}
+                </aside>
+            </div>
+            <section class="admin-surface admin-patient-recent-activity">
+                <div class="admin-section-heading"><div><p class="admin-eyebrow">Cronologia</p><h2>Attività recenti</h2></div><button class="admin-inline-link" type="button" data-open-patient-tab="activity">Vedi tutto</button></div>
+                <ol class="admin-timeline">{% for voce in storico_persona[:3] %}<li><time>{{ voce.data or 'Data non indicata' }}</time><p><strong>{{ voce.tipo }}</strong> · {{ voce.titolo }}</p><a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}">Apri pratica</a></li>{% else %}<li><p>Nessuna pratica collegata a questa anagrafica.</p></li>{% endfor %}</ol>
+            </section>
+            <section class="admin-surface admin-patient-summary">
+                <p class="admin-eyebrow">Riepilogo</p><dl class="admin-facts"><div><dt>Creata</dt><dd>{{ paziente.creato_il|local_timestamp }}</dd></div><div><dt>Aggiornata</dt><dd>{{ paziente.aggiornato_il|local_timestamp }}</dd></div><div><dt>Informativa privacy</dt><dd>{{ 'Presa visione registrata' if privacy_accettata else 'Non registrata' }}</dd></div><div><dt>Pratiche collegate</dt><dd>{{ storico_persona|length }}</dd></div></dl>
+            </section>
+        </div>
+
+        <div class="admin-patient-tab-panel" id="patient-profile" role="tabpanel" aria-labelledby="tab-patient-profile" data-patient-panel="profile" hidden>
+            <section class="admin-surface admin-patient-form-section">
+                <p class="admin-eyebrow">Dati correnti</p><h2>{% if paziente.stato == 'attiva' %}Modifica anagrafica{% else %}Anagrafica archiviata{% endif %}</h2>
+                <p class="filtro-descrizione">Le pratiche già registrate conservano i dati originari. {% if paziente.stato == 'archiviata' %}Questa scheda è disponibile in sola lettura.{% endif %}</p>
+                <form class="admin-form-grid" method="post" action="{{ url_for('modifica_paziente_admin', id=paziente.id) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <label>Nome *<input name="nome" value="{{ paziente.nome or '' }}" maxlength="100" autocomplete="given-name" required {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Cognome *<input name="cognome" value="{{ paziente.cognome or '' }}" maxlength="100" autocomplete="family-name" required {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Data di nascita<input type="date" name="data_nascita" value="{{ paziente.data_nascita.isoformat() if paziente.data_nascita else '' }}" autocomplete="bday" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label>
+                    <label>Sesso anagrafico<select name="sesso_anagrafico" {% if paziente.stato != 'attiva' %}disabled{% endif %}><option value="">Non indicato</option><option value="F" {% if paziente.sesso_anagrafico == 'F' %}selected{% endif %}>F</option><option value="M" {% if paziente.sesso_anagrafico == 'M' %}selected{% endif %}>M</option></select></label><label>Telefono<input type="tel" name="telefono" value="{{ paziente.telefono or '' }}" maxlength="20" autocomplete="tel" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Email<input type="email" name="email" value="{{ paziente.email or '' }}" maxlength="100" autocomplete="email" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label>
+                    <label>Codice fiscale<input name="codice_fiscale" value="{{ paziente.codice_fiscale or '' }}" maxlength="32" autocapitalize="characters" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Comune di nascita<input name="comune_nascita" value="{{ paziente.comune_nascita or '' }}" maxlength="120" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Provincia di nascita<input name="provincia_nascita" value="{{ paziente.provincia_nascita or '' }}" maxlength="10" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Stato di nascita<input name="stato_nascita" value="{{ paziente.stato_nascita or '' }}" maxlength="120" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label>
+                    <label class="admin-form-wide">Indirizzo di residenza<input name="indirizzo_residenza" value="{{ paziente.indirizzo_residenza or '' }}" maxlength="200" autocomplete="street-address" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>CAP<input name="cap_residenza" value="{{ paziente.cap_residenza or '' }}" maxlength="12" autocomplete="postal-code" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Comune di residenza<input name="comune_residenza" value="{{ paziente.comune_residenza or '' }}" maxlength="120" autocomplete="address-level2" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Provincia di residenza<input name="provincia_residenza" value="{{ paziente.provincia_residenza or '' }}" maxlength="10" autocomplete="address-level1" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label><label>Stato di residenza<input name="stato_residenza" value="{{ paziente.stato_residenza or '' }}" maxlength="120" autocomplete="country-name" {% if paziente.stato != 'attiva' %}disabled{% endif %}></label>
+                    {% if paziente.stato == 'attiva' %}<button class="btn" type="submit">Salva modifiche</button>{% endif %}
+                </form>
+            </section>
+        </div>
+
+        <div class="admin-patient-tab-panel" id="patient-activity" role="tabpanel" aria-labelledby="tab-patient-activity" data-patient-panel="activity" hidden>
+            <section class="admin-surface admin-person-history" id="storico-paziente"><div class="admin-section-heading"><div><p class="admin-eyebrow">Cronologia completa</p><h2>Pratiche collegate</h2></div><span class="admin-total">{{ storico_persona|length }}</span></div><div class="admin-history-links">{% for voce in storico_persona %}<a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}"><span>{{ voce.tipo }}</span><strong>{{ voce.titolo }}</strong><small>{{ voce.data or 'Data non indicata' }}</small></a>{% else %}<p class="nota nota-lg">Nessuna pratica collegata a questa anagrafica.</p>{% endfor %}</div></section>
+        </div>
+        <div class="admin-patient-tab-panel" id="patient-clinical" role="tabpanel" aria-labelledby="tab-patient-clinical" data-patient-panel="clinical" hidden><section class="admin-surface admin-patient-future-area"><p class="admin-eyebrow">Area futura</p><h2>Cartella infermieristica</h2><p>La struttura è predisposta, ma non è ancora disponibile una cartella clinico-assistenziale. Nessun dato sanitario viene raccolto in questa sezione.</p></section></div>
+        <div class="admin-patient-tab-panel" id="patient-notes" role="tabpanel" aria-labelledby="tab-patient-notes" data-patient-panel="notes" hidden><section class="admin-surface admin-patient-future-area"><p class="admin-eyebrow">Area futura</p><h2>Note del paziente</h2><p>Le note collegate alle singole pratiche restano nelle rispettive schede. Le note generali versionate non sono ancora abilitate.</p></section></div>
+        <div class="admin-patient-tab-panel" id="patient-consents" role="tabpanel" aria-labelledby="tab-patient-consents" data-patient-panel="consents" hidden>
+            <section class="admin-surface admin-privacy-history" id="consensi-privacy"><div class="admin-section-heading"><div><p class="admin-eyebrow">Tracciabilità</p><h2>Prese visioni privacy</h2></div><span class="admin-total">{{ consensi_privacy|length }}</span></div><p class="filtro-descrizione">Ogni stato resta associato alla pratica nella quale è stata presentata l’informativa.</p><div class="admin-consent-list">{% for item in consensi_privacy %}<article class="admin-consent-item"><div><span class="admin-consent-status {% if item.consent.accettato %}is-accepted{% else %}is-unrecorded{% endif %}">{{ 'Accettata' if item.consent.accettato else 'Non registrata' }}</span><h3>{{ item.title }}</h3><p><strong>Pratica:</strong> {{ item.consent.entita_tipo }} #{{ item.consent.entita_id }} · {{ item.practice_date }}</p><p><strong>Data presa visione:</strong> {{ item.consent.accettato_il|local_timestamp if item.consent.accettato_il else 'Non disponibile' }}</p></div>{% if item.practice_available %}<a class="admin-inline-link" href="{{ url_for('dettaglio_admin', tipo=item.consent.entita_tipo, entita_id=item.consent.entita_id) }}">Apri pratica</a>{% endif %}</article>{% else %}<p class="nota nota-lg">Nessuna presa visione dell’informativa registrata per questa anagrafica.</p>{% endfor %}</div></section>
+            <section class="admin-surface admin-patient-future-area"><p class="admin-eyebrow">Archivio futuro</p><h2>Documenti</h2><p>Il caricamento e la conservazione dei documenti non sono ancora abilitati.</p></section>
         </div>
     </section>
-
-    <section class="admin-surface admin-person-history" id="storico-paziente">
-        <div class="admin-section-heading">
-            <div><p class="admin-eyebrow">Cronologia</p><h2>Pratiche collegate</h2></div>
-            <span class="admin-total">{{ storico_persona|length }}</span>
-        </div>
-        <div class="admin-history-links">
-            {% for voce in storico_persona %}
-            <a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}"><span>{{ voce.tipo }}</span><strong>{{ voce.titolo }}</strong><small>{{ voce.data or 'Data non indicata' }}</small></a>
-            {% else %}
-            <p class="nota nota-lg">Nessuna pratica collegata a questa anagrafica.</p>
-            {% endfor %}
-        </div>
-    </section>
-</main>
+</div>
+<script src="{{ url_for('static', filename='js/admin-patient-tabs.js') }}?v=1.0" defer></script>
 {% endblock %}

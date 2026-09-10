@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin_layout.html" %}
 {% block titolo %}{{ nome_entita }} · Admin{% endblock %}
-{% block contenuto %}
-<main class="pagina-interna admin-page admin-detail-page">
+{% block admin_contenuto %}
+<div class="pagina-interna admin-page admin-detail-page">
     <div class="admin-detail-topbar">
         <a class="admin-back" href="{{ url_for('admin') }}">← Torna all’agenda</a>
         <span class="admin-kicker">{{ tipo }}</span>
@@ -410,6 +410,6 @@ S.C. Studio Infermieristico</textarea></label>
     </div>
 
     <details class="admin-surface admin-audit"><summary>Registro modifiche ({{ modifiche_admin|length }})</summary><ol class="admin-timeline">{% for modifica in modifiche_admin %}<li><time>{{ modifica.creato_il|local_timestamp }}</time><p>{{ modifica.azione }}</p></li>{% else %}<li>Nessuna modifica registrata.</li>{% endfor %}</ol></details>
-</main>
+</div>
 <script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.4"></script>
 {% endblock %}

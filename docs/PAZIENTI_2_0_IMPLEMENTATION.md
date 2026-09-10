@@ -1,10 +1,10 @@
 # Area Pazienti 2.0 — specifica corrente e registro di revisione
 
-> **Stato al 10 settembre 2026:** PAZ-A1, PAZ-A2 v5 e PAZ-A4 sono integrate e verificate localmente nel branch `codex/pazienti-2-0`; il cutover diretto è approvato in D-117. Nessun deploy o uso di dati reali è autorizzato da questo documento.
+> **Stato al 10 settembre 2026:** PAZ-A1, PAZ-A2 v5 e il cutover dati PAZ-A4 sono integrati nel branch `integration/pazienti-2.0`; D-119 ha riaperto il completamento UI per adottare la preview Admin 2.0 nell’intera area amministrativa. Nessun deploy o uso di dati reali è autorizzato da questo documento.
 >
 > Le sezioni 1–38 conservano specifiche e registro delle revisioni A1/A2. Lo stato storico riportato dentro quelle sezioni descrive i pacchetti al momento delle singole review; non prevale sul presente riepilogo operativo.
 >
-> Integrazione corrente: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, aggiornamento roadmap `4276c1f`, PAZ-A4 `7e022bf`. La suite integrata corrente ha superato 410 test Python, 37 test JavaScript, 6 test PostgreSQL opt-in e i controlli Alembic SQLite/PostgreSQL. Queste evidenze locali non equivalgono a un deploy.
+> Fondazione integrata: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, PAZ-A4 `7e022bf`, integrazione `fa9ff40` e rinforzi finali `b8fadb0`. Questi commit non costituiscono da soli la UI Admin 2.0 approvata in D-119. Le evidenze locali non equivalgono a un deploy.
 
 ## 1. Regole di stato e fonti canoniche
 
@@ -2698,3 +2698,55 @@ collaudo sono stati eliminati al termine.
 
 Restano esterni a queste evidenze il deploy privato Render, il preflight sul
 database Render, gli smoke test post-deploy e il go-live pubblico.
+
+---
+
+## 40. Admin 2.0 — integrazione della preview completa
+
+> **Stato:** in implementazione nel branch `integration/pazienti-2.0`; deploy
+> privato non ancora autorizzato.
+
+D-119 chiarisce che il risultato atteso non è soltanto il cambio di modello
+dati. Sidebar, topbar, gerarchia e struttura responsive della preview completa
+devono diventare la shell reale di tutte le schermate amministrative.
+
+### 40.1 Perimetro obbligatorio
+
+- shell condivisa per dashboard, pratiche, corsi, aziende, pazienti, attività,
+  errori, impostazioni e archivi;
+- navigazione coerente anche nelle schede di dettaglio e nei moduli di modifica;
+- elenco Pazienti con metriche reali, ricerca, filtro di stato, ordinamento,
+  stato anagrafico e resa mobile;
+- scheda Pazienti con Panoramica, Anagrafica, Attività, Cartella
+  infermieristica, Note, Consensi e documenti;
+- dati e azioni reali soltanto dove esistono già dominio, route, CSRF e
+  persistenza server-side;
+- cartella infermieristica, note generali e documenti presentati come aree
+  future non operative finché non vengono progettati e approvati separatamente;
+- nessuna regressione sui flussi Calendar, email, corsi, sonno, aziende,
+  attività, audit e conservazione.
+
+### 40.2 Criteri di verifica prima del deploy
+
+1. suite Python completa e test JavaScript superati;
+2. 6 test PostgreSQL opt-in superati nel virtualenv autorizzato;
+3. `git diff --check`, compilazione Python e controlli Alembic superati;
+4. navigazione sidebar e tab della scheda verificata da tastiera;
+5. controllo visuale a 1440×900 e 390×844 senza overflow o comandi nascosti;
+6. logout, pulsante Indietro e accesso diretto alle route protette verificati;
+7. diff finale revisionato prima del commit candidato al deploy.
+
+### 40.3 Evidenze locali della prima integrazione
+
+```text
+suite completa Python                         428 passed, 6 skipped
+suite JavaScript                              41 passed
+python compile + git diff --check             OK
+controllo 1440x900 e 390x844                  OK, nessun overflow
+console browser                               nessun errore
+logout -> Indietro                            login nuovamente richiesto
+```
+
+I 6 skip restano i test PostgreSQL opt-in e devono essere eseguiti prima del
+deploy candidato. Il controllo visuale ha usato esclusivamente dati sintetici
+in un database SQLite in-memory.

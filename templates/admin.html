@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin_layout.html" %}
 {% block titolo %}Admin — Gestione{% endblock %}
 
-{% block contenuto %}
+{% block admin_contenuto %}
 {% macro admin_post_action(action, label, variant, confirmation='', current_filter='') -%}
 <form method="post" action="{{ action }}" class="admin-inline-action"{% if confirmation %} data-confirm="{{ confirmation }}"{% endif %}>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -78,11 +78,6 @@
 <section class="pagina-interna admin-page">
     <h1 class="visually-hidden">Area amministrativa</h1>
 
-    <div class="admin-topbar">
-        <p>Benvenuto, <strong>{{ current_user.username }}</strong></p>
-        <a href="/admin/logout" class="btn-azione rosso">Esci</a>
-    </div>
-
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="admin-flash-stack" role="status" aria-live="polite">
@@ -134,21 +129,6 @@
         <input id="admin-search" type="search" name="q" value="{{ ricerca }}" placeholder="Cerca paziente o pratica">
         <button type="submit">Cerca</button>
     </form>
-
-    <div class="admin-view-switch" role="tablist" aria-label="Sezioni admin">
-        <button type="button" class="admin-view-btn attivo" data-admin-target="agenda" role="tab" aria-selected="true"><span>Agenda</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="richieste" role="tab" aria-selected="false"><span>Richieste</span>{% if richieste_nuove_count %}<strong>{{ richieste_nuove_count }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="corsi" role="tab" aria-selected="false"><span>Corsi</span>{% if iscrizioni_nuove_count %}<strong>{{ iscrizioni_nuove_count }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="nuovo-corso" role="tab" aria-selected="false"><span>Nuovo corso</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="aziende" role="tab" aria-selected="false"><span>Aziende e gruppi</span>{% if richieste_azienda_aperte_count %}<strong>{{ richieste_azienda_aperte_count }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="pazienti" role="tab" aria-selected="false"><span>Pazienti</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="attivita" role="tab" aria-selected="false"><span>Attività</span>{% if attivita_admin %}<strong>{{ attivita_admin|length }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="errori" role="tab" aria-selected="false"><span>Errori</span>{% if errori_aperti %}<strong>{{ errori_aperti|length }}</strong>{% endif %}</button>
-        <button type="button" class="admin-view-btn" data-admin-target="impostazioni" role="tab" aria-selected="false"><span>Impostazioni</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="prenotazioni" role="tab" aria-selected="false"><span>Archivio appuntamenti</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="archivio-corsi" role="tab" aria-selected="false"><span>Archivio corsi</span></button>
-        <button type="button" class="admin-view-btn" data-admin-target="call-sonno" role="tab" aria-selected="false"><span>Archivio sonno</span></button>
-    </div>
 
 </section>
 
@@ -303,14 +283,16 @@
 
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="pazienti" id="admin-pazienti">
-    <div class="admin-section-heading">
-        <div><p class="admin-eyebrow">Anagrafica operativa</p><h2>Pazienti</h2></div>
-        <span class="admin-total">{{ pazienti_count }} in anagrafica</span>
-    </div>
-    <p class="filtro-descrizione">Apri una scheda per correggere telefono, email e dati anagrafici. Le pratiche già registrate conservano i recapiti originali come storico.</p>
-
-    <details class="admin-surface admin-patient-create">
-        <summary>Aggiungi paziente</summary>
+    <div class="admin-patient-hero">
+        <div>
+            <p class="admin-eyebrow">Anagrafica v2</p>
+            <h2>Pazienti</h2>
+            <p>Identità, recapiti, verifiche e storico delle attività in un’unica area.</p>
+        </div>
+        <details class="admin-patient-create">
+        <summary class="btn">+ Nuovo paziente</summary>
+        <div class="admin-surface admin-patient-create-panel">
+            <h3>Crea una nuova anagrafica</h3>
         <form class="admin-form-grid" method="post" action="{{ url_for('aggiungi_paziente_admin') }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <label>Nome *<input name="nome" maxlength="100" autocomplete="given-name" required></label>
@@ -322,25 +304,42 @@
             <label>Codice fiscale<input name="codice_fiscale" maxlength="32" autocapitalize="characters"></label>
             <button class="btn" type="submit">Salva paziente</button>
         </form>
-    </details>
+        </div>
+        </details>
+    </div>
+
+    <div class="admin-patient-metrics" aria-label="Riepilogo anagrafica">
+        <article><strong>{{ metriche_pazienti.totali }}</strong><span>persone attive</span></article>
+        <article><strong>{{ metriche_pazienti.da_verificare }}</strong><span>da verificare</span></article>
+        <article><strong>{{ metriche_pazienti.recapiti_incompleti }}</strong><span>recapiti incompleti</span></article>
+        <article><strong>{{ metriche_pazienti.collisioni }}</strong><span>collisioni da valutare</span></article>
+    </div>
+
+    <section class="admin-surface admin-patient-directory" aria-labelledby="patient-list-title">
+        <form class="admin-patient-toolbar" method="get" action="{{ url_for('admin') }}#admin-pazienti">
+            <label class="admin-patient-search">Cerca<input type="search" name="q" value="{{ ricerca }}" placeholder="Nome, telefono, email o codice fiscale"></label>
+            <label>Stato<select name="stato_paziente"><option value="attiva" {% if filtro_pazienti == 'attiva' %}selected{% endif %}>Attive</option><option value="verifica" {% if filtro_pazienti == 'verifica' %}selected{% endif %}>Da verificare</option><option value="archiviata" {% if filtro_pazienti == 'archiviata' %}selected{% endif %}>Archiviate</option><option value="tutte" {% if filtro_pazienti == 'tutte' %}selected{% endif %}>Tutte</option></select></label>
+            <label>Ordina<select name="ordine_pazienti"><option value="recenti" {% if ordine_pazienti == 'recenti' %}selected{% endif %}>Aggiornamento recente</option><option value="nome" {% if ordine_pazienti == 'nome' %}selected{% endif %}>Cognome e nome</option></select></label>
+            <button class="btn-azione blu" type="submit">Applica</button>
+        </form>
 
     <div class="admin-patient-list-heading">
-        <h3>{% if ricerca %}Pazienti trovati per “{{ ricerca }}”{% else %}Elenco pazienti{% endif %}</h3>
-        {% if ricerca %}<a href="{{ url_for('admin') }}#admin-pazienti">Azzera ricerca</a>{% endif %}
+        <h3 id="patient-list-title">{% if ricerca %}Pazienti trovati per “{{ ricerca }}”{% else %}Elenco pazienti{% endif %}</h3>
+        {% if ricerca %}<a href="{{ url_for('admin', stato_paziente=filtro_pazienti, ordine_pazienti=ordine_pazienti) }}#admin-pazienti">Azzera ricerca</a>{% endif %}
     </div>
     {% if pazienti %}
     <div class="admin-table-wrap admin-patient-table-wrap">
         <table class="tabella-admin tabella-desktop admin-patient-table">
-            <thead><tr><th scope="col">Paziente</th><th scope="col">Telefono</th><th scope="col">Email</th><th scope="col">Pratiche</th><th scope="col">Aggiornamento</th><th scope="col">Azione</th></tr></thead>
+            <thead><tr><th scope="col">Paziente</th><th scope="col">Recapiti</th><th scope="col">Stato</th><th scope="col">Pratiche</th><th scope="col">Aggiornamento</th><th scope="col">Azione</th></tr></thead>
             <tbody>
                 {% for paziente in pazienti %}
                 <tr>
-                    <td><strong class="admin-primary">{{ paziente.nome_completo }}</strong>{% if paziente.anagrafica_da_verificare %}<span class="admin-secondary">Dati da verificare</span>{% endif %}{% if paziente.codice_fiscale %}<span class="admin-secondary">CF {{ paziente.codice_fiscale }}</span>{% endif %}</td>
-                    <td>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
-                    <td>{% if paziente.email %}<a href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %}<span class="admin-missing-contact">Da aggiungere</span>{% endif %}</td>
+                    <td><strong class="admin-primary">{{ paziente.nome_completo }}</strong><span class="admin-secondary">Persona #{{ paziente.id }}{% if paziente.codice_fiscale %} · CF presente{% endif %}</span></td>
+                    <td>{% if paziente.telefono %}<a href="tel:{{ paziente.telefono }}">{{ paziente.telefono }}</a>{% else %}<span class="admin-missing-contact">Telefono mancante</span>{% endif %}{% if paziente.email %}<a class="admin-secondary" href="mailto:{{ paziente.email }}">{{ paziente.email }}</a>{% else %}<span class="admin-missing-contact admin-secondary">Email mancante</span>{% endif %}</td>
+                    <td>{% if paziente.stato == 'archiviata' %}<span class="admin-patient-badge is-archived">Archiviata</span>{% elif paziente.anagrafica_da_verificare %}<span class="admin-patient-badge is-review">Da verificare</span>{% else %}<span class="admin-patient-badge is-active">Attiva</span>{% endif %}{% if paziente.id in pazienti_in_collisione %}<span class="admin-patient-badge is-collision">Recapito condiviso</span>{% endif %}</td>
                     <td>{{ paziente.numero_pratiche }}</td>
                     <td>{{ paziente.aggiornato_il|local_timestamp }}</td>
-                    <td><a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a></td>
+                    <td>{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% else %}<span class="admin-secondary">Scheda non apribile</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -349,20 +348,20 @@
     <div class="card-admin-lista admin-patient-cards">
         {% for paziente in pazienti %}
         <article class="card-admin">
-            <div class="card-admin-header"><strong>{{ paziente.nome_completo }}</strong><span class="badge">{{ paziente.numero_pratiche }} pratiche</span></div>
+            <div class="card-admin-header"><strong>{{ paziente.nome_completo }}</strong><span>{% if paziente.stato == 'archiviata' %}<span class="admin-patient-badge is-archived">Archiviata</span>{% elif paziente.anagrafica_da_verificare %}<span class="admin-patient-badge is-review">Da verificare</span>{% else %}<span class="admin-patient-badge is-active">Attiva</span>{% endif %}{% if paziente.id in pazienti_in_collisione %}<span class="admin-patient-badge is-collision">Recapito condiviso</span>{% endif %}</span></div>
             <div class="card-admin-body">
                 <p><span>Telefono</span> {{ paziente.telefono or 'Da aggiungere' }}</p>
                 <p><span>Email</span> {{ paziente.email or 'Da aggiungere' }}</p>
+                <p><span>Pratiche</span> {{ paziente.numero_pratiche }}</p>
                 {% if paziente.codice_fiscale %}<p><span>Codice fiscale</span> {{ paziente.codice_fiscale }}</p>{% endif %}
             </div>
-            <div class="card-admin-azioni"><a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a></div>
+            <div class="card-admin-azioni">{% if paziente.stato == 'attiva' %}<a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id) }}">Apri scheda</a>{% else %}<span class="admin-secondary">Scheda non apribile</span>{% endif %}</div>
         </article>
         {% endfor %}
     </div>
     {% else %}
     <p class="nota nota-lg">{% if ricerca %}Nessun paziente corrisponde alla ricerca.{% else %}Nessun paziente in anagrafica. Usa “Aggiungi paziente” per creare la prima scheda.{% endif %}</p>
     {% endif %}
-
     {% if ricerca %}
     <div class="admin-patient-practice-results">
         <h3>Pratiche trovate</h3>
@@ -370,6 +369,7 @@
         <div class="admin-request-list">{% for item in risultati_ricerca %}<a class="admin-request-row" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo }}</span><strong>{{ item.nome }}</strong><p>{{ item.dettaglio }}</p></div></a>{% else %}<p class="nota">Nessuna pratica corrisponde alla ricerca.</p>{% endfor %}</div>
     </div>
     {% endif %}
+    </section>
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="attivita" id="admin-attivita">

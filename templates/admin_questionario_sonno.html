@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin_layout.html" %}
 {% block titolo %}Questionario sonno di {{ call.nome }} — Admin{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
-{% block contenuto %}
+{% block admin_contenuto %}
 <section class="pagina-interna admin-page admin-questionnaire-page">
     <p class="admin-eyebrow">{{ formula }} · compilato il {{ call.questionario.compilato_il|local_timestamp('%d/%m/%Y alle %H:%M %Z') }}</p>
     <h1>Questionario sonno di {{ call.nome }}</h1>

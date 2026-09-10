@@ -945,6 +945,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: durante questa fase il P0 `Pazienti 2.0` è l'unico P0 aperto in lavorazione. Configurazione dei pagamenti reali, pulizia conclusiva dei dati sintetici, verifica tecnica complessiva, protezione dati e rollback del go-live e decisione GO/NO-GO restano aperti e obbligatori, ma sono pianificati dopo il deploy di `Pazienti 2.0`. Il rinvio operativo non autorizza `APP_ENV=production`, dominio, DNS, indicizzazione, inserimento di dati reali o apertura pubblica. Il preflight e il rollback tecnico strettamente necessari al deploy di `Pazienti 2.0` restano parte del relativo P0 e non vengono rinviati.
 - Collegamenti: `ROADMAP.md`, `PAZIENTI_2_0_IMPLEMENTATION.md`, `OPERATIONS.md`, D-071, D-116, D-117.
 
+## D-119 — La preview Admin 2.0 definisce la struttura dell’intera area amministrativa
+
+- Data: 2026-09-10.
+- Stato: approvata dal committente; implementazione e collaudo in corso.
+- Decisione: adottare per tutta l’area amministrativa la sidebar, la topbar, la gerarchia delle sezioni e la struttura responsive della preview `studio-infermieristico-admin-2.0-automazioni-preview`, non soltanto per l’elenco e la scheda dei pazienti. La preview è il riferimento funzionale e visivo da integrare con le route e i dati reali del repository; non è codice da copiare alla cieca e non autorizza azioni prive di persistenza o controlli server-side.
+- Motivo: il commit `b8fadb0` completa la fondazione dati e i rinforzi del cutover Pazienti 2.0, ma conserva quasi interamente la precedente interfaccia admin. Considerarlo la Pazienti 2.0 finale non corrisponde al risultato atteso dal committente, che comprendeva la nuova esperienza amministrativa mostrata nella preview completa.
+- Conseguenze: il P0 #3 resta aperto e il deploy privato viene preceduto dall’integrazione della nuova shell su dashboard, pratiche, corsi, aziende, pazienti, attività, errori, impostazioni e archivi. Elenco e scheda paziente devono usare dati reali per metriche, ricerca, filtri, stato, cronologia e consensi. Le sezioni della preview prive di un dominio implementato, come cartella infermieristica, note generali e archivio documenti, devono essere indicate come future e non offrire comandi simulati. I flussi esistenti, CSRF, autenticazione, audit, Calendar, email e header `no-store` non cambiano implicitamente. Il criterio di uscita richiede suite automatica, controllo desktop/mobile, tastiera, focus, assenza di overflow e smoke test dopo il deploy.
+- Collegamenti: `ROADMAP.md`, `PAZIENTI_2_0_IMPLEMENTATION.md`, `templates/admin_layout.html`, `templates/admin.html`, `templates/admin_paziente.html`, `static/css/admin.css`, D-116, D-117, D-118.
+
 ## Modello per nuove decisioni
 
 ```markdown

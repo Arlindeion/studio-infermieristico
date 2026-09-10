@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin_layout.html" %}
 {% block titolo %}Modifica Appuntamento — Admin{% endblock %}
 
-{% block contenuto %}
+{% block admin_contenuto %}
 
 <section class="pagina-interna">
     <h1>{% if a.stato == 'In attesa' %}Imposta e conferma l’appuntamento{% else %}Modifica l’appuntamento{% endif %}</h1>

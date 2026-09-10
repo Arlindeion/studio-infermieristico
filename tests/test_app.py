@@ -5807,7 +5807,11 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=5.4' in scheda.text
+    assert '/static/css/admin.css?v=6.0' in scheda.text
+    assert 'class="admin-shell"' in scheda.text
+    assert 'Panoramica' in scheda.text
+    assert 'Cartella infermieristica' in scheda.text
+    assert 'Area futura' in scheda.text
 
     csrf = _csrf_admin(client)
     resp = client.post(f'/admin/paziente/{paziente_id}/modifica', data={
@@ -5894,6 +5898,39 @@ def test_admin_pazienti_filtra_anagrafica_e_mantiene_ricerca_pratiche(client):
     assert 'Giulia Bianchi' not in sezione_pazienti
     assert 'Pratiche trovate' in sezione_pazienti
     assert 'Medicazione semplice' in sezione_pazienti
+
+
+def test_admin_pazienti_espone_metriche_e_filtra_lo_stato(client):
+    with flask_app.app_context():
+        attiva = Persona(nome='Ada', cognome='Verdi')
+        da_verificare = Persona(
+            nome='Bruna',
+            cognome='Rosa',
+            anagrafica_da_verificare=True,
+        )
+        archiviata = Persona(
+            nome='Carla',
+            cognome='Blu',
+            stato='archiviata',
+            archiviato_il=app_module.utc_now(),
+        )
+        db.session.add_all([attiva, da_verificare, archiviata])
+        app_module._imposta_recapito_principale(attiva, 'telefono', '3331111111')
+        app_module._imposta_recapito_principale(attiva, 'email', 'ada@example.test')
+        app_module._imposta_recapito_principale(da_verificare, 'telefono', '3332222222')
+        db.session.commit()
+
+    _login_admin(client)
+    response = client.get('/admin?stato_paziente=verifica#admin-pazienti')
+
+    assert response.status_code == 200
+    section = response.text.split('id="admin-pazienti"', 1)[1].split('</section>', 1)[0]
+    assert '2</strong><span>persone attive' in section
+    assert '1</strong><span>da verificare' in section
+    assert '1</strong><span>recapiti incompleti' in section
+    assert 'Bruna Rosa' in section
+    assert 'Ada Verdi' not in section
+    assert 'Carla Blu' not in section
 
 
 def test_admin_crea_paziente_da_pratica_e_collega_lo_storico(client):

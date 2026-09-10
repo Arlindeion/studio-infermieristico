@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% set admin_endpoint = request.endpoint or '' %}
+{% if admin_endpoint == 'dettaglio_paziente_admin' %}
+    {% set admin_active_section = 'pazienti' %}
+{% elif admin_endpoint in ['modifica_call_sonno_admin', 'visualizza_questionario_sonno_admin'] %}
+    {% set admin_active_section = 'call-sonno' %}
+{% elif admin_endpoint == 'modifica_appuntamento' %}
+    {% set admin_active_section = 'prenotazioni' %}
+{% elif admin_endpoint == 'dettaglio_admin' and tipo is defined and tipo in ['Corso', 'IscrizioneCorso', 'IncontroAccompagnamento'] %}
+    {% set admin_active_section = 'corsi' %}
+{% elif admin_endpoint == 'dettaglio_admin' and tipo is defined and tipo == 'RichiestaAzienda' %}
+    {% set admin_active_section = 'aziende' %}
+{% elif admin_endpoint == 'dettaglio_admin' and tipo is defined and tipo == 'CallSonno' %}
+    {% set admin_active_section = 'call-sonno' %}
+{% elif admin_endpoint == 'dettaglio_admin' and tipo is defined and tipo == 'Appuntamento' and entita is defined and entita.stato == 'In attesa' %}
+    {% set admin_active_section = 'richieste' %}
+{% elif admin_endpoint == 'dettaglio_admin' and tipo is defined and tipo in ['Appuntamento', 'BloccoAgenda'] %}
+    {% set admin_active_section = 'agenda' %}
+{% else %}
+    {% set admin_active_section = 'agenda' %}
+{% endif %}
+
+{% macro admin_nav_link(target, label, short, count=0, archive=false) -%}
+<a
+    href="{{ url_for('admin') }}#admin-{{ target }}"
+    class="admin-shell-nav-link{% if admin_active_section == target %} attivo{% endif %}{% if archive %} is-archive{% endif %}"
+    data-admin-shell-link="{{ target }}"
+    {% if admin_endpoint == 'admin' %}data-admin-target="{{ target }}" role="tab" aria-selected="{{ 'true' if admin_active_section == target else 'false' }}"{% elif admin_active_section == target %}aria-current="page"{% endif %}
+>
+    <span class="admin-shell-nav-mark" aria-hidden="true">{{ short }}</span>
+    <span>{{ label }}</span>
+    {% if count %}<strong class="admin-shell-nav-count">{{ count }}</strong>{% endif %}
+</a>
+{%- endmacro %}
+
+{% block contenuto %}
+<div class="admin-shell">
+    <aside class="admin-shell-sidebar" aria-label="Navigazione amministrativa">
+        <a class="admin-shell-brand" href="{{ url_for('admin') }}#admin-agenda" aria-label="S.C. Studio Infermieristico, area amministrativa">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" width="48" height="48">
+            <span><strong>S.C.</strong><small>Studio Infermieristico</small></span>
+        </a>
+
+        <nav class="admin-shell-nav" aria-label="Sezioni admin"{% if admin_endpoint == 'admin' %} role="tablist"{% endif %}>
+            {{ admin_nav_link('agenda', 'Agenda', 'AG') }}
+            {{ admin_nav_link('richieste', 'Richieste', 'RI', richieste_nuove_count if richieste_nuove_count is defined else 0) }}
+            {{ admin_nav_link('corsi', 'Corsi', 'CO', iscrizioni_nuove_count if iscrizioni_nuove_count is defined else 0) }}
+            {{ admin_nav_link('nuovo-corso', 'Nuovo corso', '+') }}
+            {{ admin_nav_link('aziende', 'Aziende e gruppi', 'AZ', richieste_azienda_aperte_count if richieste_azienda_aperte_count is defined else 0) }}
+            {{ admin_nav_link('pazienti', 'Pazienti', 'PA') }}
+            {{ admin_nav_link('attivita', 'Attività', 'AT', attivita_admin|length if attivita_admin is defined else 0) }}
+            {{ admin_nav_link('errori', 'Errori', 'ER', errori_aperti|length if errori_aperti is defined else 0) }}
+            {{ admin_nav_link('impostazioni', 'Impostazioni', 'IM') }}
+            <span class="admin-shell-nav-separator" aria-hidden="true"></span>
+            {{ admin_nav_link('prenotazioni', 'Archivio appuntamenti', 'AP', 0, true) }}
+            {{ admin_nav_link('archivio-corsi', 'Archivio corsi', 'AC', 0, true) }}
+            {{ admin_nav_link('call-sonno', 'Archivio sonno', 'AS', call_sonno_in_attesa_count if call_sonno_in_attesa_count is defined else 0, true) }}
+        </nav>
+
+        <p class="admin-shell-sidebar-note">Area riservata<br>Dati protetti</p>
+    </aside>
+
+    <div class="admin-shell-main">
+        <header class="admin-shell-topbar">
+            <div>
+                <strong>Area amministrativa</strong>
+                <span>Gestione operativa dello studio</span>
+            </div>
+            <div class="admin-shell-account">
+                <span>{{ current_user.username }}</span>
+                <a href="{{ url_for('logout') }}">Esci</a>
+            </div>
+        </header>
+
+        <div class="admin-shell-content">
+            {% block admin_contenuto %}{% endblock %}
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/admin-shell.js') }}?v=1.0" defer></script>
+{% endblock %}
