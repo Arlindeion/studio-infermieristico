@@ -963,6 +963,15 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 - Conseguenze: l’elenco distingue `Apri scheda` da `Apri in sola lettura`; la scheda archiviata non mostra `Salva modifiche`, mentre una richiesta POST di modifica e il tentativo di collegarla a una nuova pratica restituiscono `404` o il rifiuto applicativo già previsto. La suite locale passa con 428 test Python, 6 skip PostgreSQL opt-in e 42 test JavaScript.
 - Collegamenti: `app.py`, `templates/admin.html`, `templates/admin_layout.html`, `templates/admin_paziente.html`, `static/js/admin-azioni.js`, `tests/test_app.py`, `tests/js/admin-shell.test.js`, D-119.
 
+## D-121 — L’agenda settimanale usa dettagli e azioni rapide contestuali
+
+- Data: 2026-09-13.
+- Stato: approvata dal committente, implementata e verificata localmente; commit e deploy della modifica ancora richiesti.
+- Decisione: rendere più compatta la testata dell’agenda mantenendo visibili periodo corrente, selezione diretta del mese e azione `Oggi`. Nella griglia settimanale mostrare dopo un secondo di puntamento il dettaglio di appuntamenti ed eventi esterni e aprirlo immediatamente con focus, tastiera o tocco. Consentire da questo dettaglio la modifica rapida e l’annullamento degli appuntamenti locali, preservandone lo storico e senza inviare email; salvare prima lo stato locale e trattare l’allineamento Calendar come operazione secondaria. Consentire modifica ed eliminazione diretta soltanto per eventi Calendar/Arzamed a orario che non risultano collegati a pratiche del sito. Prima di una modifica confrontare lo snapshot mostrato nell’agenda con lo stato corrente locale o remoto e richiedere il ricaricamento in caso di divergenza.
+- Motivo: l’agenda deve offrire le informazioni operative senza occupare spazio permanente, ma non deve perdere i controlli necessari per orientarsi nel periodo né introdurre scorciatoie che possano sovrascrivere modifiche concorrenti, eliminare lo storico locale o rendere Calendar una dipendenza bloccante per l’annullamento di una pratica.
+- Conseguenze: le nuove route rapide restano protette da login e CSRF. Gli eventi collegati al database continuano a essere gestiti dalla rispettiva scheda; gli eventi esterni giornalieri non sono modificabili dalla griglia oraria. Le azioni rapide dichiarano esplicitamente che non inviano email, registrano audit minimizzato e invalidano la cache Calendar quando necessario. Il dettaglio e il dialog usano focus visibile, target di circa 44 px e campi specifici per il tipo di evento. La suite locale passa con 439 test Python, 6 skip PostgreSQL opt-in e 52 test JavaScript; il controllo visivo con dati sintetici è superato a circa 1440×900 e 390×844 senza overflow o errori console.
+- Collegamenti: `app.py`, `templates/admin.html`, `static/css/admin.css`, `static/js/admin-azioni.js`, `tests/test_admin_week_agenda.py`, `tests/test_app.py`, `tests/js/admin-week-agenda.test.js`, `ROADMAP.md`, D-119.
+
 ## Modello per nuove decisioni
 
 ```markdown

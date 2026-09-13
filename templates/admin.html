@@ -75,7 +75,7 @@
 </article>
 {%- endmacro %}
 
-<section class="pagina-interna admin-page">
+<section class="pagina-interna admin-page admin-status-area">
     <h1 class="visually-hidden">Area amministrativa</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -124,38 +124,34 @@
     </dialog>
     {% endif %}
 
-    <form class="admin-global-search" method="get" action="{{ url_for('admin') }}#admin-pazienti">
-        <label class="visually-hidden" for="admin-search">Cerca un paziente o una pratica per nome, telefono, email o codice fiscale</label>
-        <input id="admin-search" type="search" name="q" value="{{ ricerca }}" placeholder="Cerca paziente o pratica">
-        <button type="submit">Cerca</button>
-    </form>
-
 </section>
 
 <section class="pagina-interna admin-page admin-panel" data-admin-panel="agenda" id="admin-agenda">
-    <div class="admin-section-heading">
-        <div><p class="admin-eyebrow">Oggi e prossimi impegni</p><h2>Agenda operativa</h2></div>
-        <div class="admin-agenda-controls">
-            <a class="filtro-btn {% if vista_agenda == 'mese' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='mese') }}#admin-agenda">Mese</a>
-            <a class="filtro-btn {% if vista_agenda == 'settimana' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='settimana') }}#admin-agenda">Settimana</a>
-            <a class="filtro-btn {% if vista_agenda == 'giorno' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='giorno') }}#admin-agenda">Giorno</a>
+    <div class="admin-agenda-toolbar">
+        <div class="admin-agenda-toolbar-title">
+            <h2>Agenda operativa</h2>
+            <p class="admin-period-label">{% if vista_agenda == 'mese' %}{{ etichetta_mese|capitalize }}{% else %}{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>
+        </div>
+        <div class="admin-agenda-toolbar-actions">
+            <div class="admin-agenda-controls" aria-label="Vista agenda">
+                <a class="filtro-btn {% if vista_agenda == 'settimana' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='settimana') }}#admin-agenda">Settimana</a>
+                <a class="filtro-btn {% if vista_agenda == 'mese' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='mese') }}#admin-agenda">Mese</a>
+                <a class="filtro-btn {% if vista_agenda == 'giorno' %}attivo{% endif %}" href="{{ url_for('admin', data=inizio_agenda.isoformat(), vista='giorno') }}#admin-agenda">Giorno</a>
+            </div>
+            <nav class="admin-period-navigation" aria-label="Cambia periodo dell’agenda">
+                <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_precedente.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese precedente{% else %}Periodo precedente{% endif %}">←</a>
+                {% if vista_agenda == 'mese' %}
+                <form class="admin-month-picker" method="get" action="{{ url_for('admin') }}#admin-agenda">
+                    <input type="hidden" name="vista" value="mese">
+                    <label class="visually-hidden" for="admin-month-input">Vai al mese</label>
+                    <input id="admin-month-input" type="month" name="mese" value="{{ inizio_agenda.strftime('%Y-%m') }}" min="2020-01" max="2100-12" data-submit-on-change>
+                </form>
+                {% endif %}
+                <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_successiva.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese successivo{% else %}Periodo successivo{% endif %}">→</a>
+                <a class="admin-calendar-today" href="{{ url_for('admin', data=oggi_admin.isoformat(), vista=vista_agenda) }}#admin-agenda">Oggi</a>
+            </nav>
         </div>
     </div>
-    <p class="admin-period-label">{% if vista_agenda == 'mese' %}{{ etichetta_mese|capitalize }}{% else %}{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>
-    <nav class="admin-period-navigation{% if vista_agenda == 'mese' %} is-month{% endif %}" aria-label="Cambia periodo dell’agenda">
-        <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_precedente.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese precedente{% else %}Periodo precedente{% endif %}">←</a>
-        {% if vista_agenda == 'mese' %}
-        <form class="admin-month-picker" method="get" action="{{ url_for('admin') }}#admin-agenda">
-            <input type="hidden" name="vista" value="mese">
-            <label for="admin-month-input">Vai al mese</label>
-            <input id="admin-month-input" type="month" name="mese" value="{{ inizio_agenda.strftime('%Y-%m') }}" min="2020-01" max="2100-12" data-submit-on-change>
-        </form>
-        {% else %}
-        <strong>{{ inizio_agenda.strftime('%d/%m/%Y') }}{% if fine_agenda != inizio_agenda %} — {{ fine_agenda.strftime('%d/%m/%Y') }}{% endif %}</strong>
-        {% endif %}
-        <a class="admin-calendar-arrow" href="{{ url_for('admin', data=agenda_successiva.isoformat(), vista=vista_agenda) }}#admin-agenda" aria-label="{% if vista_agenda == 'mese' %}Mese successivo{% else %}Periodo successivo{% endif %}">→</a>
-        <a class="admin-calendar-today" href="{{ url_for('admin', data=oggi_admin.isoformat(), vista=vista_agenda) }}#admin-agenda">Oggi</a>
-    </nav>
     <div class="admin-agenda-layout{% if vista_agenda == 'mese' %} is-month{% elif vista_agenda == 'settimana' %} is-week{% endif %}">
         <div class="admin-agenda-list">
         {% if vista_agenda == 'mese' %}
@@ -202,7 +198,16 @@
         {% elif vista_agenda == 'settimana' %}
         <div class="admin-week-scroll" data-admin-week-grid data-week-start-minute="420" data-week-end-minute="1320" data-week-snap-minute="15">
             <div class="admin-week-calendar">
-                <div class="admin-week-corner" aria-hidden="true"></div>
+                <div class="admin-week-corner">
+                    <button type="button" class="admin-week-search-toggle" data-week-search-toggle aria-expanded="false" aria-controls="admin-week-search-popover" aria-label="Cerca paziente o pratica">⌕</button>
+                    <form id="admin-week-search-popover" class="admin-week-search-popover" data-week-search-popover method="get" action="{{ url_for('admin') }}#admin-pazienti" hidden>
+                        <label for="admin-week-search-input">Cerca paziente o pratica</label>
+                        <div>
+                            <input id="admin-week-search-input" type="search" name="q" value="{{ ricerca }}" placeholder="Nome, telefono, email o CF">
+                            <button type="submit">Cerca</button>
+                        </div>
+                    </form>
+                </div>
                 {% for giorno in giorni_agenda %}
                 <header class="admin-week-day-header{% if giorno == oggi_admin %} is-today{% endif %}">
                     <span>{{ giorni_settimana_brevi[giorno.weekday()] }}</span>
@@ -231,12 +236,18 @@
                         data-event-date="{{ giorno.isoformat() }}"
                         data-event-start="{{ evento.inizio.strftime('%H:%M') }}"
                         data-event-end="{{ evento.fine.strftime('%H:%M') }}"
+                        data-event-title="{{ evento.titolo|e }}"
+                        data-event-name="{{ evento.get('edit_nome', '')|e }}"
+                        data-event-service="{{ evento.get('edit_servizio', '')|e }}"
+                        data-event-note="{{ (evento.note or '')|e }}"
+                        data-event-url="{{ evento.url or '' }}"
                         title="{{ evento.titolo }}"
                         style="top: {{ '%.6f'|format(evento.week_top_percent) }}%; height: {{ '%.6f'|format(evento.week_height_percent) }}%;"
                         {% if evento.week_hidden %}hidden{% endif %}
                         {% if spostabile %}draggable="true" data-week-draggable data-has-email="{{ '1' if evento.get('ha_email') else '0' }}"{% endif %}
                         {% if spostabile_locale %}data-week-appointment{% endif %}
                         {% if spostabile_esterno %}data-week-calendar-external{% endif %}
+                        {% if evento.tipo in ['Appuntamento', 'Esterno'] %}tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-label="Apri i dettagli di {{ evento.titolo }}"{% endif %}
                     >
                         <div class="admin-week-event-head">
                             <time data-week-event-time>{{ evento.inizio.strftime('%H:%M') }}–{{ evento.fine.strftime('%H:%M') }}</time>
@@ -246,6 +257,24 @@
                         <small>{{ evento.tipo|replace('CallSonno', 'Call sonno')|replace('IncontroAccompagnamento', 'Incontro')|replace('BloccoAgenda', 'Blocco') }} · {{ evento.stato }}</small>
                         {% if evento.url %}<a href="{{ evento.url }}" draggable="false" aria-label="Apri la scheda di {{ evento.titolo }}">Apri scheda</a>{% endif %}
                         {% if spostabile %}<span class="admin-week-drag-hint">{% if spostabile_esterno %}Trascina per spostare su Calendar{% else %}Trascina per spostare{% endif %}</span>{% endif %}
+                        {% if evento.tipo in ['Appuntamento', 'Esterno'] %}
+                        <template class="admin-week-detail-template">
+                            <article class="admin-week-detail-card">
+                                <p class="admin-week-detail-origin">{% if evento.tipo == 'Esterno' %}Calendar / Arzamed{% else %}Appuntamento sito{% endif %}</p>
+                                <h3>{{ evento.titolo }}</h3>
+                                <p class="admin-week-detail-time">{{ evento.inizio.strftime('%d/%m/%Y') }} · {{ evento.inizio.strftime('%H:%M') }}–{{ evento.fine.strftime('%H:%M') }}</p>
+                                {% if evento.dettagli %}
+                                <dl>{% for etichetta, valore in evento.dettagli %}<div><dt>{{ etichetta }}</dt><dd>{{ valore }}</dd></div>{% endfor %}</dl>
+                                {% endif %}
+                                {% if evento.note %}<p class="admin-week-detail-note"><strong>Note</strong><span>{{ evento.note }}</span></p>{% endif %}
+                                <div class="admin-week-detail-actions">
+                                    <button type="button" class="admin-week-detail-action" data-week-detail-edit>Modifica</button>
+                                    {% if evento.url %}<a class="admin-week-detail-action" href="{{ evento.url }}" data-week-detail-open>Scheda</a>{% endif %}
+                                    <button type="button" class="admin-week-detail-action is-danger" data-week-detail-delete>Elimina</button>
+                                </div>
+                            </article>
+                        </template>
+                        {% endif %}
                     </article>
                     {% endfor %}
                 </div>
@@ -334,6 +363,42 @@
                 <button type="button" class="btn-azione verde" data-drag-choice="no-mail">Conferma senza mail</button>
             </div>
         </div>
+    </dialog>
+    <dialog class="admin-week-edit-dialog" data-week-edit-dialog aria-labelledby="admin-week-edit-title">
+        <form class="admin-week-edit-form" data-week-edit-form>
+            <div class="admin-week-edit-heading">
+                <div>
+                    <p class="admin-eyebrow">Modifica rapida</p>
+                    <h3 id="admin-week-edit-title">Modifica appuntamento</h3>
+                </div>
+                <button type="button" class="admin-week-edit-close" data-week-edit-cancel aria-label="Chiudi">×</button>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="original_name">
+            <input type="hidden" name="original_service">
+            <input type="hidden" name="original_title">
+            <input type="hidden" name="original_date">
+            <input type="hidden" name="original_time">
+            <input type="hidden" name="original_end">
+            <input type="hidden" name="original_duration">
+            <input type="hidden" name="original_note">
+            <div data-week-edit-local>
+                <label>Nome<input name="nome" maxlength="100"></label>
+                <label>Prestazione<select name="servizio">{% for servizio in servizi_prenotabili %}<option value="{{ servizio }}">{{ servizio }}</option>{% endfor %}</select></label>
+            </div>
+            <label data-week-edit-external>Titolo<input name="titolo" maxlength="300"></label>
+            <div class="admin-week-edit-grid">
+                <label>Data<input name="data" type="date" required></label>
+                <label>Ora<input name="ora" type="time" required></label>
+                <label>Durata<input name="duration_minutes" type="number" min="1" max="480" required></label>
+            </div>
+            <label>Note<textarea name="note" rows="3"></textarea></label>
+            <p class="admin-week-edit-message" data-week-edit-message hidden></p>
+            <div class="admin-week-edit-actions">
+                <button type="button" class="btn-azione blu" data-week-edit-cancel>Annulla</button>
+                <button type="submit" class="btn-azione verde">Salva modifiche</button>
+            </div>
+        </form>
     </dialog>
 </section>
 
@@ -1485,5 +1550,5 @@
     {% endif %}
 </section>
 
-<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=1.9"></script>
+<script src="{{ url_for('static', filename='js/admin-azioni.js') }}?v=2.0"></script>
 {% endblock %}

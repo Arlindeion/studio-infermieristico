@@ -3515,6 +3515,8 @@ def _agenda_operativa(data_inizio, data_fine):
             ],
             'note': note,
             'ha_email': bool(getattr(entita, 'email', None)),
+            'edit_nome': getattr(entita, 'nome', None),
+            'edit_servizio': getattr(entita, 'servizio', None),
         })
 
     for elemento in Appuntamento.query.filter(Appuntamento.data.between(limite_inizio, limite_fine), Appuntamento.stato != 'Annullato', Appuntamento.archiviato_il.is_(None)).all():
@@ -8332,6 +8334,441 @@ def sposta_appuntamento_agenda_admin(id):
         'sincronizzazione': appuntamento.sincronizzazione,
     })
 
+
+
+@app.route('/admin/appuntamento/<int:id>/modifica-agenda', methods=['POST'])
+@login_required
+def update_appointment_from_week_admin(id):
+    """Modifica un appuntamento dal pannello rapido della settimana."""
+    if not _csrf_admin_valido():
+        return jsonify({
+            'ok': False,
+            'message': 'Sessione non valida. Ricarica l’agenda e riprova.',
+        }), 400
+
+    appuntamento = db.get_or_404(Appuntamento, id)
+    if appuntamento.archiviato_il is not None or appuntamento.stato == 'Annullato':
+        return jsonify({
+            'ok': False,
+            'message': 'Questo appuntamento non è più modificabile.',
+        }), 409
+    if appuntamento.sincronizzazione in {'difforme', 'eliminato_esternamente'}:
+        return jsonify({
+            'ok': False,
+            'message': 'Risolvi prima il conflitto con Google Calendar.',
+        }), 409
+
+    original_duration = parse_appointment_duration(
+        request.form.get('original_duration')
+    )
+    if (
+        request.form.get('original_name', '') != appuntamento.nome
+        or request.form.get('original_service', '') != appuntamento.servizio
+        or request.form.get('original_date', '') != appuntamento.data
+        or request.form.get('original_time', '') != appuntamento.ora
+        or original_duration
+        != (appuntamento.duration_minutes or DURATA_SLOT_MINUTI)
+        or request.form.get('original_note', '') != (appuntamento.note or '')
+    ):
+        return jsonify({
+            'ok': False,
+            'message': (
+                'L’appuntamento è cambiato dopo l’apertura dell’agenda. '
+                'Ricarica la pagina prima di modificarlo.'
+            ),
+        }), 409
+
+    nome = request.form.get('nome', '').strip()
+    servizio = request.form.get('servizio', '').strip()
+    data_str = request.form.get('data', '').strip()
+    ora = request.form.get('ora', '').strip()
+    durata = parse_appointment_duration(request.form.get('duration_minutes'))
+    note = request.form.get('note', '').strip()
+
+    if not nome or len(nome) > 100:
+        return jsonify({'ok': False, 'message': 'Inserisci un nome valido.'}), 422
+    if servizio not in SERVIZI_VALIDI:
+        return jsonify({'ok': False, 'message': 'Seleziona una prestazione valida.'}), 422
+    if durata is None:
+        return jsonify({'ok': False, 'message': 'Inserisci una durata valida.'}), 422
+
+    try:
+        _intervallo_locale(data_str, ora, durata)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Data o orario non validi.'}), 422
+
+    if data_str < local_today().isoformat():
+        return jsonify({
+            'ok': False,
+            'message': 'Non puoi spostare un appuntamento nel passato.',
+        }), 422
+
+    if not is_appointment_interval_bookable(data_str, ora, durata):
+        return jsonify({
+            'ok': False,
+            'message': 'L’intervallo non rientra negli orari disponibili dello studio.',
+        }), 422
+
+    occupato = (
+        slot_occupato_db(
+            data_str,
+            ora,
+            durata,
+            ignore_appuntamento_id=appuntamento.id,
+        )
+        or intervallo_occupato_da_calendario(
+            data_str,
+            ora,
+            durata,
+            ignore_google_event_id=appuntamento.google_event_id,
+        )
+    )
+    stesso_slot = (
+        data_str == appuntamento.data
+        and ora == appuntamento.ora
+        and durata == (appuntamento.duration_minutes or DURATA_SLOT_MINUTI)
+    )
+    if occupato and not stesso_slot:
+        return jsonify({
+            'ok': False,
+            'message': 'Il nuovo intervallo è occupato. Nessuna modifica salvata.',
+        }), 409
+
+    prima = {
+        'nome': appuntamento.nome,
+        'servizio': appuntamento.servizio,
+        'data': appuntamento.data,
+        'ora': appuntamento.ora,
+        'durata_minuti': appuntamento.duration_minutes or DURATA_SLOT_MINUTI,
+        'note': appuntamento.note,
+    }
+
+    appuntamento.nome = nome
+    appuntamento.servizio = servizio
+    appuntamento.data = data_str
+    appuntamento.ora = ora
+    appuntamento.duration_minutes = durata
+    appuntamento.note = note or None
+    db.session.commit()
+
+    calendar_ok = True
+    if appuntamento.stato == 'Confermato':
+        calendar_ok = crea_o_aggiorna_evento_calendario(appuntamento)
+
+    registra_modifica(
+        'modifica_rapida_agenda',
+        'Appuntamento',
+        appuntamento.id,
+        {
+            'prima': prima,
+            'dopo': {
+                'nome': nome,
+                'servizio': servizio,
+                'data': data_str,
+                'ora': ora,
+                'durata_minuti': durata,
+                'note': note or None,
+            },
+            'calendar_ok': calendar_ok,
+        },
+    )
+
+    return jsonify({
+        'ok': True,
+        'message': (
+            'Appuntamento aggiornato.'
+            if calendar_ok
+            else 'Appuntamento aggiornato; Google Calendar richiede verifica.'
+        ),
+        'calendar_ok': calendar_ok,
+    })
+
+
+@app.route('/admin/appuntamento/<int:id>/elimina-agenda', methods=['POST'])
+@login_required
+def cancel_appointment_from_week_admin(id):
+    """Annulla dalla settimana senza cancellare lo storico della pratica."""
+    if not _csrf_admin_valido():
+        return jsonify({
+            'ok': False,
+            'message': 'Sessione non valida. Ricarica l’agenda e riprova.',
+        }), 400
+
+    appuntamento = db.get_or_404(Appuntamento, id)
+    if appuntamento.archiviato_il is not None:
+        return jsonify({
+            'ok': False,
+            'message': 'Questo appuntamento è già archiviato.',
+        }), 409
+    if appuntamento.stato == 'Annullato':
+        return jsonify({'ok': True, 'message': 'Appuntamento già annullato.'})
+
+    stato_precedente = appuntamento.stato
+    google_event_id = appuntamento.google_event_id
+    appuntamento.stato = 'Annullato'
+    db.session.commit()
+    calendar_ok = elimina_evento_calendario(appuntamento)
+    registra_modifica(
+        'eliminazione_rapida_agenda',
+        'Appuntamento',
+        appuntamento.id,
+        {
+            'stato_precedente': stato_precedente,
+            'google_event_id': google_event_id,
+            'email_inviata': False,
+            'calendar_ok': calendar_ok,
+        },
+    )
+    return jsonify({
+        'ok': True,
+        'message': (
+            'Appuntamento annullato e rimosso dall’agenda.'
+            if calendar_ok
+            else 'Appuntamento annullato; Google Calendar richiede verifica.'
+        ),
+        'calendar_ok': calendar_ok,
+    })
+
+
+def _editable_external_calendar_event(event_id):
+    """Restituisce Calendar e servizio solo per eventi non collegati al DB."""
+    if not event_id or len(event_id) > 255:
+        return None, None, (
+            jsonify({'ok': False, 'message': 'Evento Calendar non valido.'}),
+            422,
+        )
+    for _, modello, _, _ in _modelli_sincronizzabili():
+        if modello.query.filter(modello.google_event_id == event_id).first():
+            return None, None, (
+                jsonify({
+                    'ok': False,
+                    'message': 'Questo evento è collegato a una pratica del sito: usa la relativa scheda.',
+                }),
+                409,
+            )
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    servizio = _ottieni_servizio_calendario()
+    if not calendar_id or servizio is None:
+        return None, None, (
+            jsonify({
+                'ok': False,
+                'message': 'Google Calendar non è disponibile in questo momento.',
+            }),
+            503,
+        )
+    return calendar_id, servizio, None
+
+
+@app.route('/admin/calendar-esterno/modifica-agenda', methods=['POST'])
+@login_required
+def update_external_calendar_event_admin():
+    """Modifica titolo, descrizione e slot di un evento esterno Calendar."""
+    if not _csrf_admin_valido():
+        return jsonify({
+            'ok': False,
+            'message': 'Sessione non valida. Ricarica l’agenda e riprova.',
+        }), 400
+
+    event_id = request.form.get('event_id', '').strip()
+    calendar_id, servizio, errore = _editable_external_calendar_event(event_id)
+    if errore:
+        return errore
+
+    titolo = request.form.get('titolo', '').strip()
+    descrizione = request.form.get('note', '').strip()
+    data_str = request.form.get('data', '').strip()
+    ora = request.form.get('ora', '').strip()
+    durata = parse_appointment_duration(request.form.get('duration_minutes'))
+
+    if not titolo or len(titolo) > 300:
+        return jsonify({'ok': False, 'message': 'Inserisci un titolo valido.'}), 422
+    if durata is None:
+        return jsonify({'ok': False, 'message': 'Inserisci una durata valida.'}), 422
+
+    try:
+        nuovo_inizio, nuovo_fine = _intervallo_locale(data_str, ora, durata)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Data o orario non validi.'}), 422
+
+    if data_str < local_today().isoformat():
+        return jsonify({
+            'ok': False,
+            'message': 'Non puoi spostare un evento nel passato.',
+        }), 422
+
+    try:
+        remoto = _esegui_richiesta_calendario(
+            servizio.events().get(
+                calendarId=calendar_id,
+                eventId=event_id,
+            ),
+            ignora_assenza_evento=True,
+        )
+    except Exception:
+        return jsonify({
+            'ok': False,
+            'message': 'Non riesco a rileggere l’evento Calendar. Riprova.',
+        }), 502
+
+    if not isinstance(remoto, dict) or remoto.get('status') == 'cancelled':
+        return jsonify({
+            'ok': False,
+            'message': 'L’evento non è più disponibile su Google Calendar.',
+        }), 409
+
+    start_remoto = remoto.get('start') or {}
+    end_remoto = remoto.get('end') or {}
+    if not start_remoto.get('dateTime') or not end_remoto.get('dateTime'):
+        return jsonify({
+            'ok': False,
+            'message': 'Gli eventi giornalieri non possono essere modificati dalla griglia oraria.',
+        }), 409
+
+    intervallo_corrente = _intervallo_da_evento_google(remoto)
+    if not intervallo_corrente:
+        return jsonify({
+            'ok': False,
+            'message': 'L’orario dell’evento Calendar non è leggibile. Ricarica l’agenda.',
+        }), 409
+    if (
+        request.form.get('original_title', '')
+        != (remoto.get('summary') or 'Impegno esterno')
+        or request.form.get('original_note', '')
+        != (remoto.get('description') or '')
+        or request.form.get('original_date', '')
+        != intervallo_corrente[0].date().isoformat()
+        or request.form.get('original_time', '')
+        != intervallo_corrente[0].strftime('%H:%M')
+        or request.form.get('original_end', '')
+        != intervallo_corrente[1].strftime('%H:%M')
+    ):
+        return jsonify({
+            'ok': False,
+            'message': (
+                'L’evento è cambiato su Calendar dopo l’apertura dell’agenda. '
+                'Ricarica la pagina prima di modificarlo.'
+            ),
+        }), 409
+
+    if (
+        slot_occupato_db(data_str, ora, durata)
+        or intervallo_occupato_da_calendario(
+            data_str,
+            ora,
+            durata,
+            ignore_google_event_id=event_id,
+        )
+    ):
+        stesso_slot = bool(
+            intervallo_corrente
+            and intervallo_corrente[0].date().isoformat() == data_str
+            and intervallo_corrente[0].strftime('%H:%M') == ora
+            and int(
+                (intervallo_corrente[1] - intervallo_corrente[0]).total_seconds()
+                // 60
+            ) == durata
+        )
+        if not stesso_slot:
+            return jsonify({
+                'ok': False,
+                'message': 'Il nuovo intervallo è occupato. Nessuna modifica salvata.',
+            }), 409
+
+    timezone_evento = (
+        start_remoto.get('timeZone')
+        or end_remoto.get('timeZone')
+        or getattr(FUSO_ORARIO, 'key', 'Europe/Rome')
+    )
+    corpo = {
+        'summary': titolo,
+        'description': descrizione,
+        'start': {
+            'dateTime': nuovo_inizio.isoformat(timespec='seconds'),
+            'timeZone': timezone_evento,
+        },
+        'end': {
+            'dateTime': nuovo_fine.isoformat(timespec='seconds'),
+            'timeZone': timezone_evento,
+        },
+    }
+
+    try:
+        aggiornato = _esegui_richiesta_calendario(
+            servizio.events().patch(
+                calendarId=calendar_id,
+                eventId=event_id,
+                body=corpo,
+                sendUpdates='none',
+            )
+        )
+    except Exception:
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar non ha confermato la modifica.',
+        }), 502
+
+    if not isinstance(aggiornato, dict):
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar ha restituito una risposta non valida.',
+        }), 502
+
+    _invalida_cache_calendario()
+    registra_evento(
+        'google_calendar',
+        'successo',
+        'Evento esterno modificato dal pannello rapido agenda.',
+        dettagli={'google_event_id': event_id},
+    )
+    return jsonify({
+        'ok': True,
+        'message': 'Evento Calendar aggiornato.',
+        'calendar_ok': True,
+    })
+
+
+@app.route('/admin/calendar-esterno/elimina-agenda', methods=['POST'])
+@login_required
+def delete_external_calendar_event_admin():
+    """Elimina da Calendar un evento esterno dopo conferma esplicita nel client."""
+    if not _csrf_admin_valido():
+        return jsonify({
+            'ok': False,
+            'message': 'Sessione non valida. Ricarica l’agenda e riprova.',
+        }), 400
+
+    event_id = request.form.get('event_id', '').strip()
+    calendar_id, servizio, errore = _editable_external_calendar_event(event_id)
+    if errore:
+        return errore
+
+    try:
+        _esegui_richiesta_calendario(
+            servizio.events().delete(
+                calendarId=calendar_id,
+                eventId=event_id,
+                sendUpdates='none',
+            ),
+            ignora_assenza_evento=True,
+        )
+    except Exception:
+        return jsonify({
+            'ok': False,
+            'message': 'Google Calendar non ha confermato l’eliminazione.',
+        }), 502
+
+    _invalida_cache_calendario()
+    registra_evento(
+        'google_calendar',
+        'successo',
+        'Evento esterno eliminato dal pannello rapido agenda.',
+        dettagli={'google_event_id': event_id},
+    )
+    return jsonify({
+        'ok': True,
+        'message': 'Evento eliminato da Google Calendar.',
+        'calendar_ok': True,
+    })
 
 
 @app.route('/admin/calendar-esterno/sposta-agenda', methods=['POST'])

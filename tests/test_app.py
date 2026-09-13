@@ -5807,7 +5807,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=6.1' in scheda.text
+    assert '/static/css/admin.css?v=6.2' in scheda.text
     assert 'class="admin-shell"' in scheda.text
     assert 'Panoramica' in scheda.text
     assert 'Cartella infermieristica' in scheda.text
@@ -7179,7 +7179,7 @@ def test_admin_apre_la_vista_settimanale_e_ordina_i_controlli(client):
     indice_mese = response.text.index('>Mese</a>')
     indice_settimana = response.text.index('>Settimana</a>')
     indice_giorno = response.text.index('>Giorno</a>')
-    assert indice_mese < indice_settimana < indice_giorno
+    assert indice_settimana < indice_mese < indice_giorno
     inizio_link_settimana = response.text.rfind('<a', 0, indice_settimana)
     assert 'filtro-btn attivo' in response.text[inizio_link_settimana:indice_settimana]
 

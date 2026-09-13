@@ -257,3 +257,219 @@ def test_drag_rifiuta_una_pagina_stale_senza_modificare_il_dato(app, client):
 
     assert response.status_code == 409
     assert db.session.get(Appuntamento, appointment_id).ora == '10:30'
+
+
+def test_modifica_rapida_appuntamento_aggiorna_db_e_calendar(app, client):
+    _login(client)
+    appuntamento = Appuntamento(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Controllo parametri vitali',
+        data='2026-09-11',
+        ora='10:00',
+        duration_minutes=30,
+        stato='Confermato',
+        sincronizzazione='sincronizzato',
+        consenso_privacy=True,
+    )
+    db.session.add(appuntamento)
+    db.session.commit()
+    appuntamento_id = appuntamento.id
+    token = _csrf(client)
+
+    with (
+        patch.object(app_module, 'local_today', return_value=date(2026, 9, 10)),
+        patch.object(app_module, 'is_appointment_interval_bookable', return_value=True),
+        patch.object(app_module, 'slot_occupato_db', return_value=False),
+        patch.object(app_module, 'intervallo_occupato_da_calendario', return_value=False),
+        patch.object(app_module, 'crea_o_aggiorna_evento_calendario', return_value=True) as calendar_mock,
+    ):
+        response = client.post(
+            f'/admin/appuntamento/{appuntamento_id}/modifica-agenda',
+            data={
+                '_csrf_token': token,
+                'original_name': 'Mario Rossi',
+                'original_service': 'Controllo parametri vitali',
+                'original_date': '2026-09-11',
+                'original_time': '10:00',
+                'original_duration': '30',
+                'original_note': '',
+                'nome': 'Mario Rossi',
+                'servizio': 'Medicazione semplice',
+                'data': '2026-09-11',
+                'ora': '11:15',
+                'duration_minutes': '45',
+                'note': 'Controllo ferita',
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    assert response.status_code == 200
+    assert response.get_json()['ok'] is True
+    aggiornato = db.session.get(Appuntamento, appuntamento_id)
+    assert aggiornato.servizio == 'Medicazione semplice'
+    assert aggiornato.ora == '11:15'
+    assert aggiornato.duration_minutes == 45
+    assert aggiornato.note == 'Controllo ferita'
+    calendar_mock.assert_called_once()
+
+
+def test_modifica_rapida_rifiuta_un_appuntamento_cambiato(app, client):
+    _login(client)
+    appuntamento = Appuntamento(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Controllo parametri vitali',
+        data='2026-09-11',
+        ora='10:30',
+        duration_minutes=30,
+        stato='Confermato',
+        sincronizzazione='sincronizzato',
+        consenso_privacy=True,
+    )
+    db.session.add(appuntamento)
+    db.session.commit()
+    token = _csrf(client)
+
+    response = client.post(
+        f'/admin/appuntamento/{appuntamento.id}/modifica-agenda',
+        data={
+            '_csrf_token': token,
+            'original_name': 'Mario Rossi',
+            'original_service': 'Controllo parametri vitali',
+            'original_date': '2026-09-11',
+            'original_time': '10:00',
+            'original_duration': '30',
+            'original_note': '',
+            'nome': 'Mario Rossi',
+            'servizio': 'Medicazione semplice',
+            'data': '2026-09-11',
+            'ora': '11:15',
+            'duration_minutes': '45',
+            'note': '',
+        },
+        headers={'X-Requested-With': 'XMLHttpRequest'},
+    )
+
+    assert response.status_code == 409
+    assert db.session.get(Appuntamento, appuntamento.id).ora == '10:30'
+
+
+def test_elimina_rapida_salva_localmente_anche_se_calendar_fallisce(app, client):
+    _login(client)
+    appuntamento = Appuntamento(
+        nome='Mario Rossi',
+        telefono='3331234567',
+        email='mario@example.com',
+        servizio='Controllo parametri vitali',
+        data='2026-09-11',
+        ora='10:00',
+        duration_minutes=30,
+        stato='Confermato',
+        sincronizzazione='sincronizzato',
+        google_event_id='evento-calendar',
+        consenso_privacy=True,
+    )
+    db.session.add(appuntamento)
+    db.session.commit()
+    token = _csrf(client)
+
+    with patch.object(app_module, 'elimina_evento_calendario', return_value=False):
+        response = client.post(
+            f'/admin/appuntamento/{appuntamento.id}/elimina-agenda',
+            data={'_csrf_token': token},
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    assert response.status_code == 200
+    assert response.get_json()['ok'] is True
+    assert response.get_json()['calendar_ok'] is False
+    assert db.session.get(Appuntamento, appuntamento.id).stato == 'Annullato'
+
+
+def test_modifica_evento_calendar_esterno_verifica_e_aggiorna_lo_snapshot(app, client):
+    _login(client)
+    token = _csrf(client)
+    app.config['GOOGLE_CALENDAR_ID'] = 'calendar-test'
+    servizio = MagicMock()
+    remoto = {
+        'id': 'evento-esterno-edit',
+        'status': 'confirmed',
+        'summary': 'Riunione esterna',
+        'description': 'Nota iniziale',
+        'start': {
+            'dateTime': '2026-09-11T10:00:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+        'end': {
+            'dateTime': '2026-09-11T10:30:00+02:00',
+            'timeZone': 'Europe/Rome',
+        },
+    }
+
+    with (
+        patch.object(app_module, 'local_today', return_value=date(2026, 9, 10)),
+        patch.object(app_module, '_ottieni_servizio_calendario', return_value=servizio),
+        patch.object(
+            app_module,
+            '_esegui_richiesta_calendario',
+            side_effect=[remoto, {**remoto, 'summary': 'Riunione aggiornata'}],
+        ),
+        patch.object(app_module, 'slot_occupato_db', return_value=False),
+        patch.object(app_module, 'intervallo_occupato_da_calendario', return_value=False),
+    ):
+        response = client.post(
+            '/admin/calendar-esterno/modifica-agenda',
+            data={
+                '_csrf_token': token,
+                'event_id': 'evento-esterno-edit',
+                'original_title': 'Riunione esterna',
+                'original_note': 'Nota iniziale',
+                'original_date': '2026-09-11',
+                'original_time': '10:00',
+                'original_end': '10:30',
+                'titolo': 'Riunione aggiornata',
+                'note': 'Nuova nota',
+                'data': '2026-09-11',
+                'ora': '11:00',
+                'duration_minutes': '45',
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    assert response.status_code == 200
+    assert response.get_json()['ok'] is True
+    kwargs_patch = servizio.events.return_value.patch.call_args.kwargs
+    assert kwargs_patch['eventId'] == 'evento-esterno-edit'
+    assert kwargs_patch['body']['summary'] == 'Riunione aggiornata'
+    assert kwargs_patch['body']['description'] == 'Nuova nota'
+
+
+def test_elimina_evento_calendar_esterno_richiede_calendar_e_non_tocca_db(app, client):
+    _login(client)
+    token = _csrf(client)
+    app.config['GOOGLE_CALENDAR_ID'] = 'calendar-test'
+    servizio = MagicMock()
+
+    with (
+        patch.object(app_module, '_ottieni_servizio_calendario', return_value=servizio),
+        patch.object(app_module, '_esegui_richiesta_calendario', return_value={}),
+        patch.object(app_module, '_invalida_cache_calendario') as invalida_cache,
+    ):
+        response = client.post(
+            '/admin/calendar-esterno/elimina-agenda',
+            data={
+                '_csrf_token': token,
+                'event_id': 'evento-esterno-delete',
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+
+    assert response.status_code == 200
+    assert response.get_json()['ok'] is True
+    kwargs_delete = servizio.events.return_value.delete.call_args.kwargs
+    assert kwargs_delete['eventId'] == 'evento-esterno-delete'
+    assert kwargs_delete['sendUpdates'] == 'none'
+    invalida_cache.assert_called_once()

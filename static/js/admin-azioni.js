@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
         eventi.forEach(posizionaEvento);
         agendaSettimanale.querySelectorAll('[data-week-draggable]').forEach(evento => {
             evento.addEventListener('dragstart', function(event) {
+                if (typeof chiudiDettaglio === 'function') chiudiDettaglio();
                 trascinato = this;
                 origine = {
                     canvas: this.parentElement,
@@ -539,6 +540,299 @@ document.addEventListener('DOMContentLoaded', function() {
             dialogSpostamento.close();
             azzeraTrascinamento();
         });
+
+
+        // Ricerca compatta nel riquadro in alto a sinistra della settimana.
+        const ricercaToggle = agendaSettimanale.querySelector('[data-week-search-toggle]');
+        const ricercaPopover = agendaSettimanale.querySelector('[data-week-search-popover]');
+        if (ricercaToggle && ricercaPopover) {
+            const ricercaInput = ricercaPopover.querySelector('input[type="search"]');
+            const chiudiRicerca = () => {
+                ricercaPopover.hidden = true;
+                ricercaToggle.setAttribute('aria-expanded', 'false');
+            };
+            ricercaToggle.addEventListener('click', event => {
+                event.stopPropagation();
+                const apri = ricercaPopover.hidden;
+                ricercaPopover.hidden = !apri;
+                ricercaToggle.setAttribute('aria-expanded', apri ? 'true' : 'false');
+                if (apri) ricercaInput?.focus();
+            });
+            ricercaPopover.addEventListener('click', event => event.stopPropagation());
+            document.addEventListener('click', chiudiRicerca);
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !ricercaPopover.hidden) {
+                    chiudiRicerca();
+                    ricercaToggle.focus();
+                }
+            });
+        }
+
+        // Hover 1 secondo: dettaglio operativo con Edit / Scheda / Elimina.
+        const HOVER_SETTIMANA_MS = 1000;
+        const CLOSE_SETTIMANA_MS = 180;
+        const dettaglioPopover = document.createElement('div');
+        dettaglioPopover.className = 'admin-week-detail-popover';
+        dettaglioPopover.setAttribute('role', 'dialog');
+        dettaglioPopover.setAttribute('aria-label', 'Dettagli appuntamento');
+        dettaglioPopover.hidden = true;
+        document.body.appendChild(dettaglioPopover);
+
+        const dialogEdit = document.querySelector('[data-week-edit-dialog]');
+        const formEdit = dialogEdit?.querySelector('[data-week-edit-form]');
+        const messaggioEdit = dialogEdit?.querySelector('[data-week-edit-message]');
+        let eventoDettaglio = null;
+        let timerDettaglio = null;
+        let timerChiusuraDettaglio = null;
+        let eventoInModifica = null;
+
+        function annullaTimerDettaglio() {
+            window.clearTimeout(timerDettaglio);
+            window.clearTimeout(timerChiusuraDettaglio);
+            timerDettaglio = null;
+            timerChiusuraDettaglio = null;
+        }
+
+        function posizionaDettaglio(evento) {
+            const margine = 12;
+            const spazio = 10;
+            const rect = evento.getBoundingClientRect();
+            const larghezza = Math.min(390, window.innerWidth - margine * 2);
+            dettaglioPopover.style.width = `${larghezza}px`;
+            let left = rect.right + spazio;
+            if (left + larghezza > window.innerWidth - margine) {
+                left = rect.left - larghezza - spazio;
+            }
+            left = Math.max(margine, Math.min(left, window.innerWidth - larghezza - margine));
+            const altezza = dettaglioPopover.offsetHeight;
+            let top = rect.top;
+            if (top + altezza > window.innerHeight - margine) {
+                top = window.innerHeight - altezza - margine;
+            }
+            dettaglioPopover.style.left = `${Math.round(left)}px`;
+            dettaglioPopover.style.top = `${Math.max(margine, Math.round(top))}px`;
+        }
+
+        function chiudiDettaglio(ripristinaFocus = false) {
+            annullaTimerDettaglio();
+            const eventoPrecedente = eventoDettaglio;
+            eventoDettaglio = null;
+            dettaglioPopover.classList.remove('is-visible');
+            dettaglioPopover.hidden = true;
+            dettaglioPopover.replaceChildren();
+            eventoPrecedente?.setAttribute('aria-expanded', 'false');
+            if (ripristinaFocus) eventoPrecedente?.focus();
+        }
+
+        function apriDettaglio(evento, portaFocus = false) {
+            if (trascinato || attesaConferma) return;
+            const template = evento.querySelector('.admin-week-detail-template');
+            if (!template) return;
+            annullaTimerDettaglio();
+            eventoDettaglio?.setAttribute('aria-expanded', 'false');
+            eventoDettaglio = evento;
+            evento.setAttribute('aria-expanded', 'true');
+            dettaglioPopover.replaceChildren(template.content.cloneNode(true));
+            dettaglioPopover.hidden = false;
+            dettaglioPopover.classList.remove('is-visible');
+            posizionaDettaglio(evento);
+            window.requestAnimationFrame(() => {
+                dettaglioPopover.classList.add('is-visible');
+                if (portaFocus) {
+                    dettaglioPopover.querySelector('button, a')?.focus();
+                }
+            });
+        }
+
+        function programmaDettaglio(evento) {
+            if (trascinato || attesaConferma) return;
+            window.clearTimeout(timerChiusuraDettaglio);
+            if (eventoDettaglio === evento) return;
+            window.clearTimeout(timerDettaglio);
+            timerDettaglio = window.setTimeout(
+                () => apriDettaglio(evento),
+                HOVER_SETTIMANA_MS
+            );
+        }
+
+        function programmaChiusuraDettaglio() {
+            window.clearTimeout(timerDettaglio);
+            window.clearTimeout(timerChiusuraDettaglio);
+            timerChiusuraDettaglio = window.setTimeout(
+                chiudiDettaglio,
+                CLOSE_SETTIMANA_MS
+            );
+        }
+
+        eventi.forEach(evento => {
+            if (!evento.querySelector('.admin-week-detail-template')) return;
+            evento.addEventListener('pointerenter', () => programmaDettaglio(evento));
+            evento.addEventListener('pointerleave', programmaChiusuraDettaglio);
+            evento.addEventListener('focus', () => apriDettaglio(evento));
+            evento.addEventListener('click', event => {
+                if (event.target.closest('a')) return;
+                apriDettaglio(evento, true);
+            });
+            evento.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                apriDettaglio(evento, true);
+            });
+        });
+
+        dettaglioPopover.addEventListener('pointerenter', () => {
+            window.clearTimeout(timerChiusuraDettaglio);
+        });
+        dettaglioPopover.addEventListener('pointerleave', programmaChiusuraDettaglio);
+
+        function apriEditor(evento) {
+            if (!dialogEdit || !formEdit) return;
+            eventoInModifica = evento;
+            const esterno = evento.dataset.eventType === 'Esterno';
+            const localFields = formEdit.querySelector('[data-week-edit-local]');
+            const externalField = formEdit.querySelector('[data-week-edit-external]');
+            localFields.hidden = esterno;
+            externalField.hidden = !esterno;
+
+            formEdit.elements.nome.value = evento.dataset.eventName || '';
+            formEdit.elements.servizio.value = evento.dataset.eventService || '';
+            formEdit.elements.titolo.value = evento.dataset.eventTitle || '';
+            formEdit.elements.data.value = evento.dataset.eventDate || '';
+            formEdit.elements.ora.value = evento.dataset.eventStart || '';
+            formEdit.elements.duration_minutes.value = String(durataEvento(evento));
+            formEdit.elements.note.value = evento.dataset.eventNote || '';
+            formEdit.elements.original_name.value = evento.dataset.eventName || '';
+            formEdit.elements.original_service.value = evento.dataset.eventService || '';
+            formEdit.elements.original_title.value = evento.dataset.eventTitle || '';
+            formEdit.elements.original_date.value = evento.dataset.eventDate || '';
+            formEdit.elements.original_time.value = evento.dataset.eventStart || '';
+            formEdit.elements.original_end.value = evento.dataset.eventEnd || '';
+            formEdit.elements.original_duration.value = String(durataEvento(evento));
+            formEdit.elements.original_note.value = evento.dataset.eventNote || '';
+            if (messaggioEdit) {
+                messaggioEdit.hidden = true;
+                messaggioEdit.textContent = '';
+            }
+            chiudiDettaglio();
+            dialogEdit.showModal();
+        }
+
+        if (dialogEdit && formEdit) {
+            dialogEdit.querySelectorAll('[data-week-edit-cancel]').forEach(button => {
+                button.addEventListener('click', () => {
+                    dialogEdit.close();
+                    eventoInModifica = null;
+                });
+            });
+            dialogEdit.addEventListener('cancel', event => {
+                event.preventDefault();
+                dialogEdit.close();
+                eventoInModifica = null;
+            });
+
+            formEdit.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!eventoInModifica) return;
+                const esterno = eventoInModifica.dataset.eventType === 'Esterno';
+                const data = new FormData(formEdit);
+                if (esterno) data.set('event_id', eventoInModifica.dataset.eventId || '');
+                const endpoint = esterno
+                    ? '/admin/calendar-esterno/modifica-agenda'
+                    : `/admin/appuntamento/${eventoInModifica.dataset.eventId}/modifica-agenda`;
+
+                const submit = formEdit.querySelector('button[type="submit"]');
+                submit.disabled = true;
+                try {
+                    const risposta = await fetch(endpoint, {
+                        method: 'POST',
+                        body: data,
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+                    const risultato = await risposta.json();
+                    if (!risposta.ok || !risultato.ok) {
+                        if (messaggioEdit) {
+                            messaggioEdit.textContent = risultato.message || 'Modifica non riuscita.';
+                            messaggioEdit.hidden = false;
+                        }
+                        return;
+                    }
+                    window.location.reload();
+                } catch (_errore) {
+                    if (messaggioEdit) {
+                        messaggioEdit.textContent = 'Connessione interrotta. Nessuna modifica confermata.';
+                        messaggioEdit.hidden = false;
+                    }
+                } finally {
+                    submit.disabled = false;
+                }
+            });
+        }
+
+        dettaglioPopover.addEventListener('click', async event => {
+            const edit = event.target.closest('[data-week-detail-edit]');
+            const elimina = event.target.closest('[data-week-detail-delete]');
+            if (edit && eventoDettaglio) {
+                apriEditor(eventoDettaglio);
+                return;
+            }
+            if (!elimina || !eventoDettaglio) return;
+
+            const evento = eventoDettaglio;
+            const esterno = evento.dataset.eventType === 'Esterno';
+            const titolo = evento.dataset.eventTitle || 'questo appuntamento';
+            const messaggio = esterno
+                ? `Eliminare “${titolo}” da Google Calendar? L’operazione non invierà email dal sito.`
+                : `Eliminare “${titolo}” dall’agenda? La pratica verrà annullata e resterà nello storico. Non verrà inviata un’email al paziente.`;
+            if (!window.confirm(messaggio)) return;
+
+            const data = new FormData();
+            data.set('_csrf_token', csrf?.value || '');
+            if (esterno) data.set('event_id', evento.dataset.eventId || '');
+            const endpoint = esterno
+                ? '/admin/calendar-esterno/elimina-agenda'
+                : `/admin/appuntamento/${evento.dataset.eventId}/elimina-agenda`;
+
+            elimina.disabled = true;
+            try {
+                const risposta = await fetch(endpoint, {
+                    method: 'POST',
+                    body: data,
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const risultato = await risposta.json();
+                if (!risposta.ok || !risultato.ok) {
+                    window.alert(risultato.message || 'Eliminazione non riuscita.');
+                    return;
+                }
+                chiudiDettaglio();
+                window.location.reload();
+            } catch (_errore) {
+                window.alert('Connessione interrotta: eliminazione non confermata.');
+            } finally {
+                elimina.disabled = false;
+            }
+        });
+
+        window.addEventListener('resize', chiudiDettaglio);
+        window.addEventListener('scroll', event => {
+            if (!(event.target instanceof Node) || !dettaglioPopover.contains(event.target)) {
+                chiudiDettaglio();
+            }
+        }, true);
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && eventoDettaglio && !dialogEdit?.open) {
+                chiudiDettaglio(true);
+            }
+        });
+
     }
 
 
