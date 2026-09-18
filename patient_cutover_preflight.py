@@ -19,6 +19,9 @@ from sqlalchemy.engine import Engine
 
 
 PAZ_A4_ALEMBIC_REVISION = "d4a7c2e9f610"
+POST_A4_DEPLOY_REVISIONS = (
+    "e8b1c4d7a902",
+)
 PRE_A1_DEPLOY_REVISIONS = (
     "d91e6b4f2a30",
     "e2f4a6b8c901",
@@ -100,7 +103,11 @@ def _count_rows(connection, available_tables: set[str], table_name: str) -> int:
     )
 
 
-def _a4_schema_is_complete(connection, available_tables: set[str]) -> bool:
+def _applied_schema_is_complete(
+    connection,
+    available_tables: set[str],
+    revision: str,
+) -> bool:
     if not PATIENTS_V2_TABLES <= available_tables:
         return False
     if "consenso_privacy_paziente" not in available_tables:
@@ -111,10 +118,15 @@ def _a4_schema_is_complete(connection, available_tables: set[str]) -> bool:
         column["name"]
         for column in inspector.get_columns("consenso_privacy_paziente")
     }
-    return (
+    a4_complete = (
         "dati_anonimizzati_il" in persona_columns
         and "persona_v2_id" in consent_columns
     )
+    if not a4_complete:
+        return False
+    if revision in POST_A4_DEPLOY_REVISIONS:
+        return "calendar_patient_decision" in available_tables
+    return True
 
 
 def build_patient_cutover_preflight(
@@ -139,8 +151,12 @@ def build_patient_cutover_preflight(
             if revision is None:
                 return _blocked("PAZ_A3_REVISIONE_NON_VERIFICABILE")
 
-            if revision == PAZ_A4_ALEMBIC_REVISION:
-                if not _a4_schema_is_complete(connection, available_tables):
+            if revision in (PAZ_A4_ALEMBIC_REVISION, *POST_A4_DEPLOY_REVISIONS):
+                if not _applied_schema_is_complete(
+                    connection,
+                    available_tables,
+                    revision,
+                ):
                     return _blocked(
                         "PAZ_A3_SCHEMA_INATTESO",
                         revision,

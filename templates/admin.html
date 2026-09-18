@@ -199,13 +199,14 @@
         <div class="admin-week-scroll" data-admin-week-grid data-week-start-minute="420" data-week-end-minute="1320" data-week-snap-minute="15">
             <div class="admin-week-calendar">
                 <div class="admin-week-corner">
-                    <button type="button" class="admin-week-search-toggle" data-week-search-toggle aria-expanded="false" aria-controls="admin-week-search-popover" aria-label="Cerca paziente o pratica">⌕</button>
+                    <button type="button" class="admin-week-search-toggle" data-week-search-toggle aria-expanded="false" aria-controls="admin-week-search-popover" aria-label="Cerca paziente, pratica o evento Calendar">⌕</button>
                     <form id="admin-week-search-popover" class="admin-week-search-popover" data-week-search-popover method="get" action="{{ url_for('admin') }}#admin-pazienti" hidden>
-                        <label for="admin-week-search-input">Cerca paziente o pratica</label>
+                        <label for="admin-week-search-input">Cerca paziente, pratica o evento Calendar</label>
                         <div>
-                            <input id="admin-week-search-input" type="search" name="q" value="{{ ricerca }}" placeholder="Nome, telefono, email o CF">
+                            <input id="admin-week-search-input" type="search" name="q" value="{{ ricerca }}" placeholder="Nome, telefono, email, CF o testo Calendar">
                             <button type="submit">Cerca</button>
                         </div>
+                        <small>La ricerca consulta automaticamente Google Calendar e invia a Google il testo inserito.</small>
                     </form>
                 </div>
                 {% for giorno in giorni_agenda %}
@@ -217,7 +218,7 @@
 
                 <div class="admin-week-time-axis" aria-hidden="true">
                     {% for ora in range(7, 23) %}
-                    <span style="top: {{ (ora - 7) * 72 }}px">{{ '%02d:00'|format(ora) }}</span>
+                    <span class="{% if ora == 7 %}is-first{% elif ora == 22 %}is-last{% endif %}" style="top: {{ (ora - 7) * 72 }}px">{{ '%02d:00'|format(ora) }}</span>
                     {% endfor %}
                 </div>
 
@@ -458,6 +459,7 @@
             <label>Ordina<select name="ordine_pazienti"><option value="recenti" {% if ordine_pazienti == 'recenti' %}selected{% endif %}>Aggiornamento recente</option><option value="nome" {% if ordine_pazienti == 'nome' %}selected{% endif %}>Cognome e nome</option></select></label>
             <button class="btn-azione blu" type="submit">Applica</button>
         </form>
+        <p class="admin-calendar-disclosure">Quando avvii una ricerca, lo stesso testo viene inviato anche a Google Calendar. Può includere nome, telefono, email o codice fiscale.</p>
 
     <div class="admin-patient-list-heading">
         <h3 id="patient-list-title">{% if ricerca %}Pazienti trovati per “{{ ricerca }}”{% else %}Elenco pazienti{% endif %}</h3>
@@ -503,6 +505,35 @@
         <h3>Pratiche trovate</h3>
         <p class="filtro-descrizione">Questi risultati possono non essere ancora collegati a un’anagrafica paziente.</p>
         <div class="admin-request-list">{% for item in risultati_ricerca %}<a class="admin-request-row" href="{{ url_for('dettaglio_admin', tipo=item.tipo, entita_id=item.id) }}"><div><span>{{ item.tipo }}</span><strong>{{ item.nome }}</strong><p>{{ item.dettaglio }}</p></div></a>{% else %}<p class="nota">Nessuna pratica corrisponde alla ricerca.</p>{% endfor %}</div>
+    </div>
+    <div class="admin-patient-practice-results admin-calendar-search-results">
+        <div class="admin-section-heading">
+            <div><p class="admin-eyebrow">Ricerca esterna</p><h3>Eventi Calendar</h3></div>
+            <span class="admin-total">{{ calendar_search_state.total }}</span>
+        </div>
+        {% if calendar_search_state.unavailable %}
+        <p class="nota" role="status">Google Calendar non è disponibile. I risultati locali restano completi; riprova la ricerca tra poco.</p>
+        {% else %}
+            {% if calendar_search_state.partial %}<p class="nota" role="status">La lettura di Calendar si è interrotta: i risultati mostrati sono parziali.</p>{% endif %}
+            <div class="admin-calendar-result-list">
+                {% for item in calendar_search_state['items'] %}
+                <article class="admin-calendar-result-item">
+                    <div><span>Calendar / Arzamed · {{ item.date_label }} · {{ item.time_label }}{% if item.end_time_label %}–{{ item.end_time_label }}{% endif %}</span><strong>{{ item.title }}</strong></div>
+                    <div class="admin-calendar-result-actions">
+                        {% if item.patient_url %}<a class="admin-inline-link" href="{{ item.patient_url }}">Apri paziente collegato</a>{% endif %}
+                        <a class="admin-inline-link" href="{{ item.agenda_url }}">Apri nell’agenda</a>
+                    </div>
+                </article>
+                {% else %}<p class="nota">Nessun evento Calendar corrisponde alla ricerca.</p>{% endfor %}
+            </div>
+            {% if calendar_search_state.pages > 1 %}
+            <nav class="admin-calendar-pagination" aria-label="Pagine dei risultati Calendar">
+                {% if calendar_search_state.page > 1 %}<a href="{{ url_for('admin', q=ricerca, stato_paziente=filtro_pazienti, ordine_pazienti=ordine_pazienti, calendar_page=calendar_search_state.page - 1) }}#admin-pazienti">← Precedenti</a>{% endif %}
+                <span>Pagina {{ calendar_search_state.page }} di {{ calendar_search_state.pages }}</span>
+                {% if calendar_search_state.page < calendar_search_state.pages %}<a href="{{ url_for('admin', q=ricerca, stato_paziente=filtro_pazienti, ordine_pazienti=ordine_pazienti, calendar_page=calendar_search_state.page + 1) }}#admin-pazienti">Successivi →</a>{% endif %}
+            </nav>
+            {% endif %}
+        {% endif %}
     </div>
     {% endif %}
     </section>

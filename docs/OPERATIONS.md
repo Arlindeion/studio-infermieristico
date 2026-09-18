@@ -419,6 +419,8 @@ passaggi CET/CEST.
 - `QuestionarioSonno`: risposte private raccolte soltanto dopo la call.
 - `Corso`: singola data di corso/laboratorio.
 - `Persona`, `RecapitoPersona`: anagrafica Pazienti 2.0 attiva e relativi recapiti normalizzati; dal cutover sono l'unica destinazione delle nuove scritture amministrative.
+- `CalendarPatientDecision`: riferimento tecnico e decisione amministrativa che collega o esclude un evento Calendar per una persona, senza copiarne titolo, orario, descrizione o note. Il vincolo parziale consente un solo collegamento `linked` per evento; le esclusioni `rejected` restano specifiche per persona.
+
 - `PersonaCorso`: anagrafica legacy mantenuta temporaneamente in sola lettura per i record precedenti; non riceve nuove righe dopo il cutover D-117.
 - `ConsensoPrivacyPaziente`: tabella storica che conserva stato e data della presa visione associata alla specifica pratica; ogni riga punta a una sola anagrafica, legacy oppure v2.
 - `AutorizzazioneImmagini`: consenso facoltativo per una singola persona, con finalità, canali, responsabilità genitoriale, versione dell’informativa e revoca.
@@ -432,6 +434,10 @@ passaggi CET/CEST.
 - `PropostaSlot`, `BloccoAgenda`: proposte accettabili e pause/chiusure sincronizzate.
 - `RegistroModifica`: audit amministrativo minimizzato.
 - `CollegamentoPersona`: collegamento legacy mantenuto in sola compatibilità di lettura; le nuove associazioni usano le FK Pazienti 2.0 sulle pratiche.
+
+La revisione `e8b1c4d7a902` può essere annullata soltanto prima della prima
+decisione Calendar-paziente. Se la tabella contiene anche una sola riga, il
+downgrade si interrompe per non eliminare collegamenti, esclusioni e audit.
 
 Le regole di prodotto e i conteggi posti sono descritti in `SITE_MAP_AND_FLOWS.md`.
 
@@ -847,7 +853,8 @@ partire.
 
 `--allow-applied` non aggira il controllo del primo cutover. Serve soltanto a
 rendere idempotente il hook nei deploy successivi: quando la revisione è già
-`d4a7c2e9f610`, il gate verifica che lo schema A4 sia completo e restituisce
+`d4a7c2e9f610` o una revisione post-A4 esplicitamente riconosciuta, il gate
+verifica che lo schema previsto per quella revisione sia completo e restituisce
 `status: cutover_gia_applicato` senza pretendere che un database ormai in uso
 torni vuoto. Il comando Flask `flask --app app patients preflight-cutover` resta
 disponibile come controllo diagnostico stretto: a revisione A4 esegue anche i
@@ -874,6 +881,9 @@ verifica almeno:
 - storico e consensi senza dati personali nei log;
 - logout e pulsante Indietro del browser, con nuova autenticazione richiesta;
 - resa e uso da tastiera dell'admin a 1440 px e 390 px.
+- ricerca locale e Calendar con informativa sulla trasmissione del testo, risultati paginati e nessuna descrizione esterna resa nell’HTML;
+- caricamento Calendar su richiesta nella scheda paziente, conferma e rifiuto manuali con CSRF e audit, unicità del collegamento, sola lettura delle anagrafiche archiviate e avviso esplicito per indisponibilità o risposta parziale;
+- esclusione e coda operativa idempotente degli eventi creati dal sito ma rimasti privi di collegamento locale.
 
 Al termine eliminare i record sintetici prima di qualunque uso reale. Dopo la
 prima identità v2 non usare il downgrade Alembic A4: il rollback strutturale non

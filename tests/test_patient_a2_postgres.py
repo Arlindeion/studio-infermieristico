@@ -11,7 +11,7 @@ import uuid
 import pytest
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 import patient_backfill as pb
@@ -176,6 +176,49 @@ def test_postgres_real_apply_and_db_check(postgres_runtime):
 
     check = _run_flask_db(project_root, test_url, "check")
     assert "No new upgrade operations detected" in check.stdout
+
+
+def test_postgres_allows_rejections_but_only_one_link_per_calendar_event(postgres_runtime):
+    engine, _test_url, _project_root = postgres_runtime
+    with engine.begin() as connection:
+        admin_id = connection.execute(text(
+            "INSERT INTO admin (username, password) "
+            "VALUES ('calendar-link-admin', 'test-hash') RETURNING id"
+        )).scalar_one()
+        first_patient_id = connection.execute(text(
+            "INSERT INTO persona (nome, cognome, stato) "
+            "VALUES ('Calendar', 'Uno', 'attiva') RETURNING id"
+        )).scalar_one()
+        second_patient_id = connection.execute(text(
+            "INSERT INTO persona (nome, cognome, stato) "
+            "VALUES ('Calendar', 'Due', 'attiva') RETURNING id"
+        )).scalar_one()
+        connection.execute(
+            text(
+                "INSERT INTO calendar_patient_decision "
+                "(persona_id, google_event_id, decision, admin_id) "
+                "VALUES (:patient_id, 'shared-event', 'linked', :admin_id)"
+            ),
+            {'patient_id': first_patient_id, 'admin_id': admin_id},
+        )
+        connection.execute(
+            text(
+                "INSERT INTO calendar_patient_decision "
+                "(persona_id, google_event_id, decision, admin_id) "
+                "VALUES (:patient_id, 'shared-event', 'rejected', :admin_id)"
+            ),
+            {'patient_id': second_patient_id, 'admin_id': admin_id},
+        )
+        with pytest.raises(IntegrityError):
+            with connection.begin_nested():
+                connection.execute(
+                    text(
+                        "UPDATE calendar_patient_decision SET decision = 'linked' "
+                        "WHERE persona_id = :patient_id "
+                        "AND google_event_id = 'shared-event'"
+                    ),
+                    {'patient_id': second_patient_id},
+                )
 
 
 def test_postgres_second_a2_writer_cannot_acquire_advisory_lock(postgres_runtime):

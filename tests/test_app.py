@@ -39,6 +39,7 @@ from app import (
     IscrizioneCorso,
     PersonaCorso,
     Persona,
+    CalendarPatientDecision,
     RecapitoPersona,
     ConsensoPrivacyPaziente,
     PercorsoAccompagnamento,
@@ -1298,6 +1299,11 @@ def test_conservazione_privacy_rimuove_identita_e_collegamenti_v2_scaduti(client
         app_module._imposta_recapito_principale(persona, 'telefono', '3331234567')
         app_module._imposta_recapito_principale(persona, 'email', 'anna@example.com')
         db.session.flush()
+        db.session.add(CalendarPatientDecision(
+            persona_id=persona.id,
+            google_event_id='calendar-privacy-test',
+            decision='linked',
+        ))
         app_module._sync_patient_privacy_consent(persona, 'Appuntamento', appuntamento)
         db.session.commit()
         persona_id = persona.id
@@ -1317,6 +1323,7 @@ def test_conservazione_privacy_rimuove_identita_e_collegamenti_v2_scaduti(client
         assert persona.dati_anonimizzati_il == riferimento
         assert RecapitoPersona.query.filter_by(persona_id=persona_id).count() == 0
         assert ConsensoPrivacyPaziente.query.count() == 0
+        assert CalendarPatientDecision.query.count() == 0
 
 
 def test_conferma_call_sonno_crea_solo_anagrafica_v2(client):
@@ -5808,7 +5815,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=6.2' in scheda.text
+    assert '/static/css/admin.css?v=6.3' in scheda.text
     assert 'class="admin-shell"' in scheda.text
     assert 'Panoramica' in scheda.text
     assert 'Cartella infermieristica' in scheda.text

@@ -19,6 +19,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from patient_cutover_preflight import (
     PAZ_A4_ALEMBIC_REVISION,
+    POST_A4_DEPLOY_REVISIONS,
     build_patient_cutover_preflight,
 )
 from patient_data import (
@@ -335,14 +336,14 @@ def test_predeploy_preflight_blocks_unexpected_v2_schema_before_a1():
     assert payload["schema_issue"] == "tabelle_v2_inattese"
 
 
-def _create_a4_schema(engine, *, with_patient=False):
+def _create_a4_schema(engine, *, with_patient=False, revision=PAZ_A4_ALEMBIC_REVISION):
     with engine.begin() as connection:
         connection.exec_driver_sql(
             "CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"
         )
         connection.exec_driver_sql(
             "INSERT INTO alembic_version(version_num) VALUES (?)",
-            (PAZ_A4_ALEMBIC_REVISION,),
+            (revision,),
         )
         connection.exec_driver_sql(
             "CREATE TABLE persona (id INTEGER PRIMARY KEY, dati_anonimizzati_il TEXT)"
@@ -365,6 +366,10 @@ def _create_a4_schema(engine, *, with_patient=False):
             "CREATE TABLE consenso_privacy_paziente "
             "(id INTEGER PRIMARY KEY, persona_v2_id INTEGER)"
         )
+        if revision in POST_A4_DEPLOY_REVISIONS:
+            connection.exec_driver_sql(
+                "CREATE TABLE calendar_patient_decision (id INTEGER PRIMARY KEY)"
+            )
         if with_patient:
             connection.exec_driver_sql("INSERT INTO persona(id) VALUES (1)")
 
@@ -383,6 +388,32 @@ def test_predeploy_allows_applied_a4_but_strict_diagnostic_still_counts():
     assert strict_payload["status"] == "bloccato"
     assert strict_payload["error_code"] == "PAZ_A3_DATABASE_NON_VUOTO"
     assert strict_payload["counts"]["persone_v2"] == 1
+
+
+def test_predeploy_allows_the_current_post_a4_revision():
+    engine = _sqlite_engine()
+    revision = POST_A4_DEPLOY_REVISIONS[-1]
+    _create_a4_schema(engine, with_patient=True, revision=revision)
+
+    payload = build_patient_cutover_preflight(engine, allow_applied=True)
+
+    assert payload == {
+        "status": "cutover_gia_applicato",
+        "alembic_revision": revision,
+    }
+
+
+def test_predeploy_rejects_incomplete_current_post_a4_schema():
+    engine = _sqlite_engine()
+    revision = POST_A4_DEPLOY_REVISIONS[-1]
+    _create_a4_schema(engine, revision=revision)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE calendar_patient_decision")
+
+    payload = build_patient_cutover_preflight(engine, allow_applied=True)
+
+    assert payload["status"] == "bloccato"
+    assert payload["error_code"] == "PAZ_A3_SCHEMA_INATTESO"
 
 
 def test_a4_downgrade_guard_blocks_even_an_a2_legacy_mapped_identity():

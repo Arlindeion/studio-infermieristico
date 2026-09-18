@@ -80,6 +80,63 @@
 
         <div class="admin-patient-tab-panel" id="patient-activity" role="tabpanel" aria-labelledby="tab-patient-activity" data-patient-panel="activity" hidden>
             <section class="admin-surface admin-person-history" id="storico-paziente"><div class="admin-section-heading"><div><p class="admin-eyebrow">Cronologia completa</p><h2>Pratiche collegate</h2></div><span class="admin-total">{{ storico_persona|length }}</span></div><div class="admin-history-links">{% for voce in storico_persona %}<a href="{{ url_for('dettaglio_admin', tipo=voce.tipo, entita_id=voce.id) }}"><span>{{ voce.tipo }}</span><strong>{{ voce.titolo }}</strong><small>{{ voce.data or 'Data non indicata' }}</small></a>{% else %}<p class="nota nota-lg">Nessuna pratica collegata a questa anagrafica.</p>{% endfor %}</div></section>
+            <section class="admin-surface admin-calendar-patient-history" aria-labelledby="calendar-patient-history-title">
+                <div class="admin-section-heading">
+                    <div><p class="admin-eyebrow">Storico esterno</p><h2 id="calendar-patient-history-title">Eventi Calendar</h2></div>
+                    {% if calendar_requested %}<span class="admin-total">{{ calendar_history_state.linked|length }} collegati</span>{% endif %}
+                </div>
+                <p class="filtro-descrizione">Gli eventi vengono caricati solo su richiesta. Nome e cognome producono possibili corrispondenze: diventano parte dello storico soltanto dopo una conferma manuale.</p>
+                {% if not calendar_requested %}
+                <a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id, calendar=1) }}#patient-activity">Cerca eventi su Calendar</a>
+                {% else %}
+                    {% if calendar_history_state.unavailable %}
+                    <p class="nota" role="status">Google Calendar non è disponibile. Nessun collegamento è stato modificato.</p>
+                    <a class="btn-azione blu" href="{{ url_for('dettaglio_paziente_admin', id=paziente.id, calendar=1) }}#patient-activity">Riprova</a>
+                    {% else %}
+                        {% if calendar_history_state.partial %}<p class="nota" role="status">La lettura di Calendar si è interrotta: lo storico mostrato potrebbe essere incompleto.</p>{% endif %}
+                        <div class="admin-calendar-history-group">
+                            <div class="admin-section-heading"><h3>Collegati manualmente</h3><span class="admin-total">{{ calendar_history_state.linked|length }}</span></div>
+                            <div class="admin-calendar-result-list">
+                                {% for item in calendar_history_state.linked %}
+                                <article class="admin-calendar-result-item is-linked">
+                                    <div><span>Calendar / Arzamed · {{ item.date_label }}{% if item.time_label %} · {{ item.time_label }}{% endif %}{% if item.end_time_label %}–{{ item.end_time_label }}{% endif %}</span><strong>{{ item.title }}</strong><small>Collegamento registrato il {{ item.decided_at|local_timestamp }}</small></div>
+                                    <div class="admin-calendar-result-actions">
+                                        {% if item.agenda_url %}<a class="admin-inline-link" href="{{ item.agenda_url }}">Apri nell’agenda</a>{% endif %}
+                                        {% if paziente.stato == 'attiva' %}<form method="post" action="{{ url_for('decide_patient_calendar_event', id=paziente.id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="google_event_id" value="{{ item.id }}"><input type="hidden" name="calendar_page" value="{{ calendar_history_state.page }}"><button class="admin-inline-link is-danger" type="submit" name="action" value="unlink">Scollega</button></form>{% endif %}
+                                    </div>
+                                </article>
+                                {% else %}<p class="nota">Nessun evento Calendar è stato collegato a questo paziente.</p>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="admin-calendar-history-group">
+                            <div class="admin-section-heading"><div><h3>Possibili corrispondenze</h3><p class="filtro-descrizione">Verifica titolo, data e orario prima di decidere.</p></div><span class="admin-total">{{ calendar_history_state.candidate_total }}</span></div>
+                            <div class="admin-calendar-result-list">
+                                {% for item in calendar_history_state.candidates %}
+                                <article class="admin-calendar-result-item is-candidate">
+                                    <div><span>Calendar / Arzamed · {{ item.date_label }} · {{ item.time_label }}{% if item.end_time_label %}–{{ item.end_time_label }}{% endif %}</span><strong>{{ item.title }}</strong></div>
+                                    {% if paziente.stato == 'attiva' %}
+                                    <form class="admin-calendar-decision-actions" method="post" action="{{ url_for('decide_patient_calendar_event', id=paziente.id) }}">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="google_event_id" value="{{ item.id }}">
+                                        <input type="hidden" name="calendar_page" value="{{ calendar_history_state.page }}">
+                                        <button class="btn-azione verde" type="submit" name="action" value="link">Collega al paziente</button>
+                                        <button class="btn-azione" type="submit" name="action" value="reject">Non appartiene</button>
+                                    </form>
+                                    {% else %}<span class="admin-secondary">Scheda archiviata: nessuna modifica disponibile.</span>{% endif %}
+                                </article>
+                                {% else %}<p class="nota">Nessuna nuova possibile corrispondenza.</p>{% endfor %}
+                            </div>
+                            {% if calendar_history_state.pages > 1 %}
+                            <nav class="admin-calendar-pagination" aria-label="Pagine delle possibili corrispondenze">
+                                {% if calendar_history_state.page > 1 %}<a href="{{ url_for('dettaglio_paziente_admin', id=paziente.id, calendar=1, calendar_page=calendar_history_state.page - 1) }}#patient-activity">← Precedenti</a>{% endif %}
+                                <span>Pagina {{ calendar_history_state.page }} di {{ calendar_history_state.pages }}</span>
+                                {% if calendar_history_state.page < calendar_history_state.pages %}<a href="{{ url_for('dettaglio_paziente_admin', id=paziente.id, calendar=1, calendar_page=calendar_history_state.page + 1) }}#patient-activity">Successivi →</a>{% endif %}
+                            </nav>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
         </div>
         <div class="admin-patient-tab-panel" id="patient-clinical" role="tabpanel" aria-labelledby="tab-patient-clinical" data-patient-panel="clinical" hidden><section class="admin-surface admin-patient-future-area"><p class="admin-eyebrow">Area futura</p><h2>Cartella infermieristica</h2><p>La struttura è predisposta, ma non è ancora disponibile una cartella clinico-assistenziale. Nessun dato sanitario viene raccolto in questa sezione.</p></section></div>
         <div class="admin-patient-tab-panel" id="patient-notes" role="tabpanel" aria-labelledby="tab-patient-notes" data-patient-panel="notes" hidden><section class="admin-surface admin-patient-future-area"><p class="admin-eyebrow">Area futura</p><h2>Note del paziente</h2><p>Le note collegate alle singole pratiche restano nelle rispettive schede. Le note generali versionate non sono ancora abilitate.</p></section></div>

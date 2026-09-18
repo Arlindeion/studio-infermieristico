@@ -36,9 +36,11 @@ EXPECTED_TABLES = {
     'relazione_persona',
     'segnalazione_duplicato',
     'fusione_persona',
+    'calendar_patient_decision',
 }
 
-LATEST_REVISION = 'd4a7c2e9f610'
+LATEST_REVISION = 'e8b1c4d7a902'
+PATIENT_CUTOVER_REVISION = 'd4a7c2e9f610'
 
 
 def _migration_env(database_path):
@@ -132,6 +134,13 @@ def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
     assert 'persona_v2_id' in _column_names(database_path, 'consenso_privacy_paziente')
     assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_id') is True
     assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_v2_id') is True
+    assert _column_names(database_path, 'calendar_patient_decision') >= {
+        'persona_id',
+        'google_event_id',
+        'decision',
+        'decided_at',
+        'admin_id',
+    }
 
     _run_flask(env, 'db', 'upgrade')
     check = _run_flask(env, 'db', 'check')
@@ -203,6 +212,7 @@ def test_cutover_pazienti_v2_downgrade_sicuro_prima_delle_scritture(tmp_path):
 
     assert 'dati_anonimizzati_il' not in _column_names(database_path, 'persona')
     assert 'persona_v2_id' not in _column_names(database_path, 'consenso_privacy_paziente')
+    assert 'calendar_patient_decision' not in _table_names(database_path)
     assert _column_nullable(database_path, 'consenso_privacy_paziente', 'persona_id') is False
 
 
@@ -223,7 +233,42 @@ def test_cutover_pazienti_v2_blocca_downgrade_dopo_una_nuova_anagrafica(tmp_path
         revision = connection.execute(
             'SELECT version_num FROM alembic_version'
         ).fetchone()[0]
+    assert revision == PATIENT_CUTOVER_REVISION
+
+
+def test_calendar_patient_decision_blocks_destructive_downgrade(tmp_path):
+    database_path = tmp_path / 'calendar_patient_decision_downgrade.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade')
+    with sqlite3.connect(database_path) as connection:
+        admin_id = connection.execute(
+            "INSERT INTO admin (username, password) VALUES ('admin-test', 'hash-test')"
+        ).lastrowid
+        patient_id = connection.execute(
+            "INSERT INTO persona (nome, cognome, stato) VALUES ('Anna', 'Neri', 'attiva')"
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO calendar_patient_decision
+                (persona_id, google_event_id, decision, admin_id)
+            VALUES (?, 'calendar-test-1', 'linked', ?)
+            """,
+            (patient_id, admin_id),
+        )
+        connection.commit()
+
+    with pytest.raises(subprocess.CalledProcessError):
+        _run_flask(env, 'db', 'downgrade', PATIENT_CUTOVER_REVISION)
+
+    with sqlite3.connect(database_path) as connection:
+        revision = connection.execute(
+            'SELECT version_num FROM alembic_version'
+        ).fetchone()[0]
+        decisions = connection.execute(
+            'SELECT COUNT(*) FROM calendar_patient_decision'
+        ).fetchone()[0]
     assert revision == LATEST_REVISION
+    assert decisions == 1
 
 
 def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):

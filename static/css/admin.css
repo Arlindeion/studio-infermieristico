@@ -2489,6 +2489,101 @@ button.admin-inline-link {
 .admin-timeline time { color: var(--grigio); font-size: 0.78rem; }
 .admin-timeline p { margin: 0.2rem 0; }
 
+.admin-calendar-disclosure {
+    background: var(--verde-chiaro-a55);
+    border-left: 4px solid var(--blu-filo);
+    color: var(--grigio);
+    font-size: 0.84rem;
+    margin: 0.75rem 0 1rem;
+    padding: 0.7rem 0.85rem;
+}
+
+.admin-calendar-patient-history,
+.admin-calendar-search-results {
+    margin-top: 1rem;
+}
+
+.admin-calendar-history-group + .admin-calendar-history-group {
+    border-top: 1px solid var(--verde-scuro-a14);
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+}
+
+.admin-calendar-result-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.admin-calendar-result-item {
+    align-items: center;
+    background: var(--verde-chiaro-a55);
+    border: 1px solid var(--verde-scuro-a10);
+    border-left: 4px solid var(--blu-filo);
+    border-radius: 10px;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.8rem 0.9rem;
+}
+
+.admin-calendar-result-item.is-candidate {
+    border-left-color: var(--rosso-cuore);
+}
+
+.admin-calendar-result-item > div:first-child {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.admin-calendar-result-item span,
+.admin-calendar-result-item small {
+    color: var(--grigio);
+    font-size: 0.8rem;
+}
+
+.admin-calendar-result-item strong {
+    color: var(--verde-scuro);
+    overflow-wrap: anywhere;
+}
+
+.admin-calendar-result-actions,
+.admin-calendar-decision-actions {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-calendar-result-actions form {
+    margin: 0;
+}
+
+.admin-calendar-result-actions .admin-inline-link,
+.admin-calendar-decision-actions .btn-azione {
+    min-height: 44px;
+}
+
+.admin-inline-link.is-danger {
+    color: var(--rosso-cuore);
+}
+
+.admin-calendar-pagination {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.admin-calendar-pagination a {
+    color: var(--verde-scuro);
+    font-weight: 800;
+    min-height: 44px;
+    padding: 0.65rem 0;
+}
+
 @media (max-width: 900px) {
     .admin-agenda-layout,
     .admin-detail-grid,
@@ -2821,6 +2916,14 @@ button.admin-inline-link {
     grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.admin-week-search-popover small {
+    color: var(--grigio);
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    margin-top: 0.55rem;
+}
+
 .admin-week-search-popover input {
     border: 1px solid var(--verde-scuro-a14);
     border-radius: 8px 0 0 8px;
@@ -3087,7 +3190,8 @@ button.admin-inline-link {
     border-radius: 14px;
     box-shadow: var(--ombra-card);
     max-width: 100%;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .admin-week-calendar {
@@ -3169,6 +3273,38 @@ button.admin-inline-link {
     position: absolute;
     right: 0;
     transform: translateY(-50%);
+}
+
+.admin-week-time-axis span.is-first {
+    top: 8px !important;
+    transform: none;
+}
+
+.admin-week-time-axis span.is-last {
+    top: calc(100% - 8px) !important;
+    transform: translateY(-100%);
+}
+
+@media (max-width: 640px) {
+    .admin-calendar-result-item {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-calendar-result-actions,
+    .admin-calendar-decision-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-calendar-result-actions > *,
+    .admin-calendar-decision-actions > * {
+        width: 100%;
+    }
+
+    .admin-calendar-pagination {
+        justify-content: space-between;
+    }
 }
 
 .admin-week-day-canvas {

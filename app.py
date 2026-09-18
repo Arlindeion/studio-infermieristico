@@ -39,6 +39,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from sqlalchemy import event, false as sql_false, text as sql_text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SASession, selectinload
 from patient_backfill import (
     BackfillModels,
@@ -2082,6 +2083,65 @@ class Persona(db.Model):
     )
 
 
+class CalendarPatientDecision(db.Model):
+    """Manual decision that links or excludes one Calendar event for a patient."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    persona_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            'persona.id',
+            name='fk_calendar_patient_decision_persona',
+            ondelete='RESTRICT',
+        ),
+        nullable=False,
+    )
+    google_event_id = db.Column(db.String(255), nullable=False)
+    decision = db.Column(db.String(20), nullable=False)
+    decided_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=utc_now,
+        server_default=db.func.current_timestamp(),
+    )
+    admin_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            'admin.id',
+            name='fk_calendar_patient_decision_admin',
+            ondelete='SET NULL',
+        ),
+        nullable=True,
+    )
+
+    persona = db.relationship('Persona', foreign_keys=[persona_id])
+    admin = db.relationship('Admin', foreign_keys=[admin_id])
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "decision IN ('linked','rejected')",
+            name='ck_calendar_patient_decision_value',
+        ),
+        db.UniqueConstraint(
+            'persona_id',
+            'google_event_id',
+            name='uq_calendar_patient_decision_patient_event',
+        ),
+        db.Index(
+            'ix_calendar_patient_decision_patient_status',
+            'persona_id',
+            'decision',
+        ),
+        db.Index(
+            'uq_calendar_patient_decision_linked_event',
+            'google_event_id',
+            unique=True,
+            sqlite_where=sql_text("decision = 'linked'"),
+            postgresql_where=sql_text("decision = 'linked'"),
+        ),
+    )
+
+
 class RecapitoPersona(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     persona_id = db.Column(db.Integer, db.ForeignKey('persona.id', name='fk_recapito_persona_persona', ondelete='RESTRICT'), nullable=False)
@@ -2936,6 +2996,9 @@ def applica_conservazione_privacy(adesso=None):
             RelazionePersona.persona_assistita_id == persona.id,
             RelazionePersona.persona_referente_id == persona.id,
         )).delete(synchronize_session=False)
+        CalendarPatientDecision.query.filter_by(persona_id=persona.id).delete(
+            synchronize_session=False
+        )
         persona.nome = None
         persona.cognome = None
         persona.data_nascita = None
@@ -3424,11 +3487,7 @@ def _eventi_calendar_esterni(data_inizio, data_fine):
     servizio = _ottieni_servizio_calendario()
     if not calendar_id or servizio is None:
         return []
-    collegati = {
-        entita.google_event_id
-        for _, modello, _, _ in _modelli_sincronizzabili()
-        for entita in modello.query.filter(modello.google_event_id.isnot(None)).all()
-    }
+    collegati = _site_calendar_event_ids()
     inizio = datetime.combine(data_inizio, datetime.min.time(), tzinfo=FUSO_ORARIO)
     fine = datetime.combine(data_fine + timedelta(days=1), datetime.min.time(), tzinfo=FUSO_ORARIO)
     try:
@@ -3471,6 +3530,413 @@ def _eventi_calendar_esterni(data_inizio, data_fine):
             ),
         })
     return eventi
+
+
+class CalendarReadUnavailable(RuntimeError):
+    """Raised when an admin Calendar read cannot return a reliable result."""
+
+
+CALENDAR_ADMIN_PAGE_SIZE = 20
+
+
+def _site_calendar_event_ids():
+    return {
+        entity.google_event_id
+        for _, model, _, _ in _modelli_sincronizzabili()
+        for entity in model.query.filter(model.google_event_id.isnot(None)).all()
+        if entity.google_event_id
+    }
+
+
+def _calendar_event_is_site_owned(event_data, linked_event_ids=None):
+    event_id = event_data.get('id')
+    if event_id and event_id in (linked_event_ids or set()):
+        return True
+    private_properties = (
+        (event_data.get('extendedProperties') or {}).get('private') or {}
+    )
+    return bool(
+        private_properties.get('studioSource') == 'sito-admin'
+        or (
+            private_properties.get('studioEntity')
+            and private_properties.get('studioEntityId')
+        )
+    )
+
+
+def _calendar_read_service():
+    calendar_id = app.config.get('GOOGLE_CALENDAR_ID')
+    if not calendar_id:
+        raise CalendarReadUnavailable('calendar_not_configured')
+    service = _ottieni_servizio_calendario()
+    if service is None:
+        raise CalendarReadUnavailable('calendar_service_unavailable')
+    return calendar_id, service
+
+
+def _calendar_list_all_events(query, *, time_max=None):
+    """Read every matching Calendar page and report an interrupted partial read."""
+    calendar_id, service = _calendar_read_service()
+    params = {
+        'calendarId': calendar_id,
+        'q': query,
+        'singleEvents': True,
+        'showDeleted': False,
+        'orderBy': 'startTime',
+        'maxResults': 2500,
+    }
+    if time_max is not None:
+        params['timeMax'] = time_max.isoformat()
+
+    events = []
+    page_token = None
+    partial = False
+    while True:
+        request_params = dict(params)
+        if page_token:
+            request_params['pageToken'] = page_token
+        try:
+            response = _esegui_richiesta_calendario(
+                service.events().list(**request_params)
+            )
+        except Exception:
+            if events:
+                partial = True
+                break
+            raise CalendarReadUnavailable('calendar_request_failed')
+        if not isinstance(response, dict):
+            if events:
+                partial = True
+                break
+            raise CalendarReadUnavailable('calendar_invalid_response')
+        events.extend(
+            event_data
+            for event_data in response.get('items', [])
+            if isinstance(event_data, dict)
+            and event_data.get('status') != 'cancelled'
+        )
+        page_token = response.get('nextPageToken')
+        if not page_token:
+            break
+    return events, partial
+
+
+def _calendar_get_event(event_id, *, service=None, calendar_id=None):
+    if not event_id or len(event_id) > 255:
+        raise CalendarReadUnavailable('calendar_invalid_event_id')
+    if service is None or calendar_id is None:
+        calendar_id, service = _calendar_read_service()
+    try:
+        event_data = _esegui_richiesta_calendario(
+            service.events().get(calendarId=calendar_id, eventId=event_id)
+        )
+    except Exception:
+        raise CalendarReadUnavailable('calendar_event_unavailable')
+    if not isinstance(event_data, dict) or event_data.get('status') == 'cancelled':
+        raise CalendarReadUnavailable('calendar_event_unavailable')
+    return event_data
+
+
+def _normalize_calendar_match_text(value):
+    return re.sub(
+        r'\s+',
+        ' ',
+        re.sub(r'[_\W]+', ' ', (value or '').casefold(), flags=re.UNICODE),
+    ).strip()
+
+
+def _calendar_event_matches_patient(event_data, patient):
+    first_name = _normalize_calendar_match_text(patient.nome)
+    last_name = _normalize_calendar_match_text(patient.cognome)
+    summary = _normalize_calendar_match_text(event_data.get('summary'))
+    if not first_name or not last_name or not summary:
+        return False
+    padded_summary = f' {summary} '
+    return any(
+        f' {phrase} ' in padded_summary
+        for phrase in (
+            f'{first_name} {last_name}',
+            f'{last_name} {first_name}',
+        )
+    )
+
+
+def _calendar_event_admin_view(event_data):
+    interval = _intervallo_da_evento_google(event_data)
+    if not interval:
+        return None
+    starts_at, ends_at, _ = interval
+    is_timed = bool((event_data.get('start') or {}).get('dateTime'))
+    return {
+        'id': event_data.get('id') or '',
+        'title': event_data.get('summary') or 'Impegno esterno',
+        'date': starts_at.date().isoformat(),
+        'date_label': starts_at.strftime('%d/%m/%Y'),
+        'time_label': starts_at.strftime('%H:%M') if is_timed else 'Giornata intera',
+        'end_time_label': ends_at.strftime('%H:%M') if is_timed else '',
+        'sort_key': starts_at,
+        'agenda_url': (
+            url_for(
+                'admin',
+                data=starts_at.date().isoformat(),
+                vista='settimana',
+            )
+            + '#admin-agenda'
+        ),
+    }
+
+
+def _paginate_admin_items(items, requested_page):
+    total = len(items)
+    pages = max(1, (total + CALENDAR_ADMIN_PAGE_SIZE - 1) // CALENDAR_ADMIN_PAGE_SIZE)
+    page = min(max(1, requested_page), pages)
+    start = (page - 1) * CALENDAR_ADMIN_PAGE_SIZE
+    return items[start:start + CALENDAR_ADMIN_PAGE_SIZE], page, pages, total
+
+
+def _queue_orphan_site_calendar_events(events, linked_event_ids):
+    """Create one generic operational task for each unlinked site-owned event."""
+    created = 0
+    for event_data in events:
+        event_id = event_data.get('id')
+        if (
+            not event_id
+            or event_id in linked_event_ids
+            or not _calendar_event_is_site_owned(event_data)
+        ):
+            continue
+        note = f'ID evento Calendar: {event_id}'
+        existing = AttivitaAdmin.query.filter_by(
+            titolo='Verificare evento Calendar creato dal sito',
+            stato='Aperta',
+            note=note,
+        ).first()
+        if existing:
+            continue
+        db.session.add(AttivitaAdmin(
+            titolo='Verificare evento Calendar creato dal sito',
+            stato='Aperta',
+            scadenza=local_now_naive(),
+            note=note,
+        ))
+        db.session.add(RegistroEvento(
+            categoria='google_calendar',
+            esito='avviso',
+            messaggio='Evento creato dal sito privo di un collegamento locale.',
+            dettagli=json.dumps({'google_event_id': event_id}),
+        ))
+        created += 1
+    if created:
+        db.session.commit()
+    return created
+
+
+def _record_calendar_read_status(context, issue=None, patient_id=None):
+    messages = {
+        'global_search': 'Ricerca amministrativa Calendar non disponibile.',
+        'patient_history': 'Storico Calendar paziente non disponibile.',
+    }
+    message = messages[context]
+    entity_type = 'Persona' if patient_id is not None else None
+    open_events = RegistroEvento.query.filter_by(
+        categoria='google_calendar',
+        messaggio=message,
+        entita_tipo=entity_type,
+        entita_id=patient_id,
+        risolto_il=None,
+    )
+    if issue:
+        if open_events.first() is None:
+            db.session.add(RegistroEvento(
+                categoria='google_calendar',
+                esito='avviso',
+                messaggio=message,
+                entita_tipo=entity_type,
+                entita_id=patient_id,
+                dettagli=json.dumps({'issue': issue}),
+            ))
+            db.session.commit()
+        return
+    resolved = open_events.update(
+        {
+            'risolto_il': utc_now(),
+            'nota_risoluzione': 'Lettura Calendar completata al tentativo successivo.',
+        },
+        synchronize_session=False,
+    )
+    if resolved:
+        db.session.commit()
+
+
+def _calendar_global_search(query, requested_page):
+    state = {
+        'items': [],
+        'page': 1,
+        'pages': 1,
+        'total': 0,
+        'unavailable': False,
+        'partial': False,
+    }
+    if not query:
+        return state
+    try:
+        events, partial = _calendar_list_all_events(query)
+    except CalendarReadUnavailable:
+        logger.warning('>>> Ricerca amministrativa Calendar non disponibile.', exc_info=True)
+        _record_calendar_read_status('global_search', issue='unavailable')
+        state['unavailable'] = True
+        return state
+
+    site_event_ids = _site_calendar_event_ids()
+    _queue_orphan_site_calendar_events(events, site_event_ids)
+    decisions = {
+        decision.google_event_id: decision
+        for decision in CalendarPatientDecision.query.filter_by(decision='linked').all()
+    }
+    items = []
+    for event_data in events:
+        if _calendar_event_is_site_owned(event_data, site_event_ids):
+            continue
+        item = _calendar_event_admin_view(event_data)
+        if not item:
+            continue
+        decision = decisions.get(item['id'])
+        if decision:
+            item['patient_url'] = (
+                url_for('dettaglio_paziente_admin', id=decision.persona_id)
+                + '?calendar=1#patient-activity'
+            )
+        else:
+            item['patient_url'] = None
+        items.append(item)
+    items.sort(key=lambda item: item['sort_key'], reverse=True)
+    page_items, page, pages, total = _paginate_admin_items(items, requested_page)
+    state.update({
+        'items': page_items,
+        'page': page,
+        'pages': pages,
+        'total': total,
+        'partial': partial,
+    })
+    _record_calendar_read_status(
+        'global_search',
+        issue='partial' if partial else None,
+    )
+    return state
+
+
+def _calendar_patient_history(patient, requested_page):
+    state = {
+        'linked': [],
+        'candidates': [],
+        'page': 1,
+        'pages': 1,
+        'candidate_total': 0,
+        'unavailable': False,
+        'partial': False,
+    }
+    decisions = CalendarPatientDecision.query.filter_by(persona_id=patient.id).all()
+    linked_decisions = {
+        decision.google_event_id: decision
+        for decision in decisions
+        if decision.decision == 'linked'
+    }
+    rejected_event_ids = {
+        decision.google_event_id
+        for decision in decisions
+        if decision.decision == 'rejected'
+    }
+    try:
+        events, partial = _calendar_list_all_events(
+            patient.cognome or patient.nome_completo,
+            time_max=local_now(),
+        )
+        calendar_id, service = _calendar_read_service()
+    except CalendarReadUnavailable:
+        logger.warning('>>> Storico Calendar del paziente non disponibile.', exc_info=True)
+        _record_calendar_read_status(
+            'patient_history',
+            issue='unavailable',
+            patient_id=patient.id,
+        )
+        state['unavailable'] = True
+        return state
+
+    event_by_id = {
+        event_data.get('id'): event_data
+        for event_data in events
+        if event_data.get('id')
+    }
+    for event_id in linked_decisions:
+        if event_id in event_by_id:
+            continue
+        try:
+            event_by_id[event_id] = _calendar_get_event(
+                event_id,
+                service=service,
+                calendar_id=calendar_id,
+            )
+        except CalendarReadUnavailable:
+            partial = True
+
+    site_event_ids = _site_calendar_event_ids()
+    _queue_orphan_site_calendar_events(events, site_event_ids)
+    linked_globally = {
+        decision.google_event_id: decision.persona_id
+        for decision in CalendarPatientDecision.query.filter_by(decision='linked').all()
+    }
+
+    linked_items = []
+    for event_id, decision in linked_decisions.items():
+        item = _calendar_event_admin_view(event_by_id[event_id]) if event_id in event_by_id else None
+        if item is None:
+            item = {
+                'id': event_id,
+                'title': 'Evento non più disponibile su Calendar',
+                'date': '',
+                'date_label': 'Data non disponibile',
+                'time_label': '',
+                'end_time_label': '',
+                'sort_key': datetime.min.replace(tzinfo=timezone.utc),
+                'agenda_url': None,
+            }
+        item['decided_at'] = decision.decided_at
+        linked_items.append(item)
+    linked_items.sort(key=lambda item: item['sort_key'], reverse=True)
+
+    candidate_items = []
+    for event_data in events:
+        event_id = event_data.get('id')
+        if (
+            not event_id
+            or event_id in rejected_event_ids
+            or event_id in linked_globally
+            or _calendar_event_is_site_owned(event_data, site_event_ids)
+            or not _calendar_event_matches_patient(event_data, patient)
+        ):
+            continue
+        item = _calendar_event_admin_view(event_data)
+        if item:
+            candidate_items.append(item)
+    candidate_items.sort(key=lambda item: item['sort_key'], reverse=True)
+    page_items, page, pages, total = _paginate_admin_items(
+        candidate_items,
+        requested_page,
+    )
+    state.update({
+        'linked': linked_items,
+        'candidates': page_items,
+        'page': page,
+        'pages': pages,
+        'candidate_total': total,
+        'partial': partial,
+    })
+    _record_calendar_read_status(
+        'patient_history',
+        issue='partial' if partial else None,
+        patient_id=patient.id,
+    )
+    return state
 
 
 def _agenda_operativa(data_inizio, data_fine):
@@ -7191,6 +7657,14 @@ def admin():
     if ordine_pazienti not in {'recenti', 'nome'}:
         ordine_pazienti = 'recenti'
     risultati_ricerca = []
+    calendar_search_state = {
+        'items': [],
+        'page': 1,
+        'pages': 1,
+        'total': 0,
+        'unavailable': False,
+        'partial': False,
+    }
     pazienti_base_query = Persona.query.options(
         selectinload(Persona.recapiti),
     ).filter(
@@ -7257,6 +7731,10 @@ def admin():
 
         for elemento in RichiestaAzienda.query.filter(db.or_(RichiestaAzienda.organizzazione.ilike(criterio), RichiestaAzienda.referente.ilike(criterio), RichiestaAzienda.telefono.ilike(criterio), RichiestaAzienda.email.ilike(criterio))).limit(20):
             risultati_ricerca.append({'tipo': 'RichiestaAzienda', 'id': elemento.id, 'nome': elemento.organizzazione, 'dettaglio': f'{elemento.referente} · {elemento.telefono}'})
+        calendar_search_state = _calendar_global_search(
+            ricerca,
+            request.args.get('calendar_page', 1, type=int) or 1,
+        )
     if ordine_pazienti == 'nome':
         pazienti_query = pazienti_query.order_by(
             Persona.cognome,
@@ -7432,6 +7910,7 @@ def admin():
                            metriche_pazienti=metriche_pazienti,
                            pazienti_in_collisione=pazienti_in_collisione,
                            risultati_ricerca=risultati_ricerca,
+                           calendar_search_state=calendar_search_state,
                            pazienti=pazienti,
                            calendar_configurato=bool(app.config.get('GOOGLE_CALENDAR_ID') and app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')),
                            mail_soppressa=bool(app.config.get('MAIL_SUPPRESS_SEND')),
@@ -7859,6 +8338,21 @@ def dettaglio_paziente_admin(id):
     if paziente is None:
         abort(404)
     consensi_privacy = _patient_privacy_history(paziente)
+    calendar_requested = request.args.get('calendar') == '1'
+    calendar_history_state = {
+        'linked': [],
+        'candidates': [],
+        'page': 1,
+        'pages': 1,
+        'candidate_total': 0,
+        'unavailable': False,
+        'partial': False,
+    }
+    if calendar_requested:
+        calendar_history_state = _calendar_patient_history(
+            paziente,
+            request.args.get('calendar_page', 1, type=int) or 1,
+        )
     return render_template(
         'admin_paziente.html',
         paziente=paziente,
@@ -7868,7 +8362,102 @@ def dettaglio_paziente_admin(id):
         privacy_accettata=any(
             item['consent'].accettato for item in consensi_privacy
         ),
+        calendar_requested=calendar_requested,
+        calendar_history_state=calendar_history_state,
     )
+
+
+@app.route('/admin/paziente/<int:id>/calendar-decision', methods=['POST'])
+@login_required
+def decide_patient_calendar_event(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    patient = _persona_v2_attiva(id)
+    if patient is None:
+        abort(404)
+    action = request.form.get('action', '').strip()
+    event_id = request.form.get('google_event_id', '').strip()
+    if action not in {'link', 'reject', 'unlink'} or not event_id or len(event_id) > 255:
+        abort(400)
+
+    redirect_url = (
+        url_for(
+            'dettaglio_paziente_admin',
+            id=patient.id,
+            calendar=1,
+            calendar_page=max(1, request.form.get('calendar_page', 1, type=int) or 1),
+        )
+        + '#patient-activity'
+    )
+    decision = CalendarPatientDecision.query.filter_by(
+        persona_id=patient.id,
+        google_event_id=event_id,
+    ).first()
+
+    if action == 'unlink':
+        if decision is None or decision.decision != 'linked':
+            flash('Il collegamento Calendar non è più presente.', 'error')
+            return redirect(redirect_url)
+        db.session.delete(decision)
+        db.session.commit()
+        registra_modifica(
+            'calendar_patient_unlinked',
+            'Persona',
+            patient.id,
+            {'google_event_id': event_id},
+        )
+        flash('Evento Calendar scollegato dal paziente.', 'success')
+        return redirect(redirect_url)
+
+    try:
+        event_data = _calendar_get_event(event_id)
+    except CalendarReadUnavailable:
+        flash('Google Calendar non è disponibile. Nessuna modifica è stata salvata.', 'error')
+        return redirect(redirect_url)
+    if _calendar_event_is_site_owned(event_data, _site_calendar_event_ids()):
+        flash('L’evento appartiene già a un flusso del sito e non può essere collegato qui.', 'error')
+        return redirect(redirect_url)
+    if not _calendar_event_matches_patient(event_data, patient):
+        flash('Il titolo dell’evento è cambiato: ricarica i risultati prima di decidere.', 'error')
+        return redirect(redirect_url)
+
+    if action == 'link':
+        linked_elsewhere = CalendarPatientDecision.query.filter(
+            CalendarPatientDecision.google_event_id == event_id,
+            CalendarPatientDecision.decision == 'linked',
+            CalendarPatientDecision.persona_id != patient.id,
+        ).first()
+        if linked_elsewhere:
+            flash('Questo evento è già collegato a un’altra anagrafica.', 'error')
+            return redirect(redirect_url)
+    if decision is None:
+        decision = CalendarPatientDecision(
+            persona_id=patient.id,
+            google_event_id=event_id,
+        )
+        db.session.add(decision)
+    decision.decision = 'linked' if action == 'link' else 'rejected'
+    decision.decided_at = utc_now()
+    decision.admin_id = current_user.id
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('L’evento è stato collegato altrove durante la verifica. Ricarica la pagina.', 'error')
+        return redirect(redirect_url)
+    registra_modifica(
+        f'calendar_patient_{decision.decision}',
+        'Persona',
+        patient.id,
+        {'google_event_id': event_id},
+    )
+    flash(
+        'Evento Calendar collegato al paziente.'
+        if action == 'link'
+        else 'Evento escluso dalle proposte per questo paziente.',
+        'success',
+    )
+    return redirect(redirect_url)
 
 
 @app.route('/admin/paziente/<int:id>/modifica', methods=['POST'])

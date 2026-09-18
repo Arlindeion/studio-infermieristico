@@ -100,3 +100,19 @@ test('quick editing hides fields that do not belong to the selected event type',
     assert.match(actions, /localFields\.hidden = esterno;/);
     assert.match(actions, /externalField\.hidden = !esterno;/);
 });
+
+test('weekly time boundaries stay visible while the page owns vertical scrolling', () => {
+    assert.match(template, /ora == 7/);
+    assert.match(template, /ora == 22/);
+    assert.match(adminCss, /\.admin-week-time-axis span\.is-first/);
+    assert.match(adminCss, /\.admin-week-time-axis span\.is-last/);
+    assert.match(adminCss, /overflow-x:\s*auto;/);
+    assert.match(adminCss, /overflow-y:\s*hidden;/);
+});
+
+test('automatic Calendar search discloses the external text transfer', () => {
+    assert.match(template, /Cerca paziente, pratica o evento Calendar/);
+    assert.match(template, /invia a Google il testo inserito/);
+    assert.match(template, /calendar_search_state\.unavailable/);
+    assert.doesNotMatch(template, /item\.description/);
+});
