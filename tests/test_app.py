@@ -1,4 +1,5 @@
 import os
+import html
 import base64
 import json
 import logging
@@ -6259,6 +6260,25 @@ def test_admin_nuovo_appuntamento_usa_calendario_e_select_ora(client):
     assert 'name="ora_ore"' in response.text
     assert 'name="ora_minuti"' in response.text
     assert '<option value="55">55</option>' in response.text
+
+    form = response.text.split('id="admin-new-appointment-form"', 1)[1].split('</form>', 1)[0]
+    service_options = re.search(r'<select name="servizio" required>(.*?)</select>', form, re.S).group(1)
+    displayed_prices = {
+        html.unescape(name): html.unescape(label)
+        for name, label in re.findall(r'<option value="([^"]+)">([^<]+)</option>', service_options)
+    }
+    expected_prices = {
+        service['nome']: f"{service['nome']} · {service['prezzo']}"
+        for category in app_module.PRESTAZIONI_CATEGORIE
+        for service in category['prestazioni']
+    }
+    assert displayed_prices == expected_prices
+
+    public_response = client.get('/prenota')
+    assert public_response.status_code == 200
+    for name, label in expected_prices.items():
+        price = label.removeprefix(f'{name} · ')
+        assert f'data-price="{html.escape(price, quote=True)}"' in public_response.text
 
 
 def test_filtri_archivio_appuntamenti_mantengono_aperto_il_pannello(client):

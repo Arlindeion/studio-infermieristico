@@ -315,7 +315,7 @@
                         <label>Email <small>facoltativa</small><input name="email" type="email" autocomplete="email"></label>
                     </div>
                     <p class="admin-field-help">Se uno dei contatti manca, ti verrà chiesta conferma prima del salvataggio.</p>
-                    <label>Prestazione<select name="servizio" required><option value="">Seleziona</option>{% for servizio in servizi_prenotabili %}<option>{{ servizio }}</option>{% endfor %}</select></label>
+                    <label>Prestazione<select name="servizio" required><option value="">Seleziona</option>{% for categoria in prestazioni_categorie %}{% for prestazione in categoria.prestazioni %}<option value="{{ prestazione.nome }}">{{ prestazione.nome }} · {{ prestazione.prezzo }}</option>{% endfor %}{% endfor %}</select></label>
                     <div class="admin-date-field">
                         <label for="admin-appointment-date">Data</label>
                         <div class="admin-date-control"><input id="admin-appointment-date" name="data" type="date" required><button type="button" data-open-date-picker aria-label="Apri il calendario">Calendario</button></div>
