@@ -1,5 +1,7 @@
 # Roadmap — proposta di aggiornamento del 31 agosto 2026
 
+> Archivio datato: i contenuti seguenti conservano proposte e consegne storiche. Per stato, priorità e prossime azioni prevale la [roadmap corrente](../ROADMAP.md), aggiornata secondo D-123.
+
 > **Documento di revisione, non applicato alla repository.**
 >
 > Base di riferimento: `docs/ROADMAP.md` della `main` corrente.

@@ -1,5 +1,7 @@
 # Checklist generale di produzione
 
+> Priorità e calendario operativi: [roadmap corrente](../ROADMAP.md), D-123. Questo materiale metodologico si usa senza introdurre nuovi gate per la pubblicazione del dominio.
+
 Ultimo aggiornamento: 4 agosto 2026.
 
 > TikTok è sospeso dal 13 agosto 2026. Le relative voci si applicano soltanto dopo una nuova decisione esplicita.

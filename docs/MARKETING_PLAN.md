@@ -1,13 +1,15 @@
 # Piano marketing operativo
 
-Ultimo aggiornamento: 4 agosto 2026.
+Ultimo aggiornamento operativo: 20 ottobre 2026.
+
+> Priorità corrente: [pubblicazione del dominio](ROADMAP.md), D-123. Questo piano viene eseguito dopo la stabilizzazione del sito; campagne, baseline pubblicitaria e nuove creatività non sono gate del dominio. Le rilevazioni esterne e il calendario agosto/settembre sotto restano storici; le nuove date richiedono un piano successivo.
 
 ## Executive Summary
 
 - **Il marketing deve sostenere due percorsi distinti.** I corsi in presenza sono l'offerta già validata e la priorità commerciale locale; la consulenza del sonno infantile è il servizio da validare online a livello nazionale senza limiti anagrafici nel modulo. Le prestazioni infermieristiche restano sempre accessibili, ma non diventano il centro della comunicazione.
-- **La scoperta organica esiste già, la conversione non è ancora dimostrata.** Nell'ultima fotografia Instagram disponibile, il 74% delle visualizzazioni proviene da non follower e le visite al profilo equivalgono a circa l'8,2% degli account raggiunti. Mancano però la data esatta della rilevazione, i clic al sito, i contatti e le prenotazioni attribuite: prima del lancio serve una nuova baseline completa.
+- **La scoperta organica esiste già, la conversione non è ancora dimostrata.** Nell'ultima fotografia Instagram disponibile, il 74% delle visualizzazioni proviene da non follower e le visite al profilo equivalgono a circa l'8,2% degli account raggiunti. Mancano però la data esatta della rilevazione, i clic al sito, i contatti e le prenotazioni attribuite: prima dell'attivazione della campagna serve una nuova baseline completa.
 - **Il sito deve essere il centro del sistema.** Instagram crea scoperta e fiducia; Google intercetta l'intenzione locale; il sito spiega l'offerta, separa i flussi e registra la conversione. TikTok è accantonato dal 13 agosto 2026 fino a nuova decisione. WhatsApp rimane secondario e contestuale.
-- **Il lancio non coincide con una data pubblica già promessa.** Il riferimento corretto è il checkpoint interno del 15 settembre 2026: sito sicuro e collaudato più prima campagna Meta pronta e misurabile. Nessuna campagna parte finché privacy, consenso, flussi reali e capacità operativa non sono verificati.
+- **Pubblicare il dominio precede la campagna.** Il checkpoint del 15 settembre è storico e sostituito da D-123. Il sito viene pubblicato appena superati i controlli essenziali; la campagna segue stabilità, misurazione con consenso e capacità operativa verificate.
 
 ## 1. Scopo e fonti di verità
 
@@ -106,7 +108,7 @@ Meta esamina creatività, targeting e pagina di destinazione. Le opzioni di pubb
 
 ### Privacy e misurazione
 
-Il Garante Privacy richiede che strumenti di tracciamento non tecnici siano inattivi prima del consenso e che la revoca abbia effetto. Il progetto ha già predisposto questo comportamento, ma GA4 e Meta non sono ancora configurati e la validazione professionale è aperta.
+Il Garante Privacy richiede che strumenti di tracciamento non tecnici siano inattivi prima del consenso e che la revoca abbia effetto. Il progetto ha già predisposto questo comportamento, ma GA4 e Meta non risultano configurati nelle evidenze di progetto; la roadmap registra la validazione professionale confermata il 9 settembre. Ogni attivazione richiede comunque il collaudo tecnico del consenso.
 
 **Implicazione:** non usare il Pixel, GA4 o eventi pubblicitari come prerequisito implicito al consenso. La campagna parte soltanto dopo il collaudo reale del banner, della revoca e degli eventi autorizzati.
 
@@ -368,7 +370,7 @@ Obiettivo: essere trovabili quando esiste un bisogno concreto, non generare doma
 - evitare comunicazione basata sul prezzo basso o confronti con prestazioni coperte dal SSN;
 - misurare richieste inviate e confermate separatamente da corsi e sonno.
 
-## 10. Calendario operativo verso il checkpoint
+## 10. Calendario storico agosto/settembre — non operativo
 
 Le date sono finestre interne e non costituiscono una promessa pubblica.
 
@@ -439,7 +441,7 @@ Le versioni Instagram e TikTok condividono il girato, ma non la chiusura: Instag
 
 ### 15 settembre — checkpoint interno
 
-Il checkpoint è superato soltanto se il sito è tecnicamente pronto e sicuro e la prima campagna è pronta, coerente, misurabile e sostenibile. La campagna parte dopo la stabilità iniziale del sito, non automaticamente allo scoccare della data.
+Questo era il criterio storico del checkpoint. Dal 20 ottobre D-123 e la roadmap corrente danno priorità al dominio; la campagna viene preparata e attivata dopo la stabilizzazione e non blocca la pubblicazione.
 
 ## 11. Misurazione
 

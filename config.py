@@ -74,8 +74,9 @@ class Config:
     # Collegamento della videochiamata, incluso nelle conferme delle call sonno
     # solo quando configurato. In alternativa Selene comunica la modalità.
     SONNO_CALL_URL = os.environ.get('SONNO_CALL_URL')
-    # Collegamenti PayPal Business a prezzo fisso. Restano facoltativi finché
-    # il checkout non viene attivato e non devono essere hardcoded nei template.
+    # D-123: PayPal sospeso fino a nuovo ordine. I link legacy non lo attivano;
+    # la ripresa richiede una modifica esplicita e un collaudo dedicato.
+    SONNO_PAYPAL_ENABLED = False
     PAYPAL_LINK_SONNO_MIRATA = os.environ.get('PAYPAL_LINK_SONNO_MIRATA')
     PAYPAL_LINK_SONNO_PERCORSO = os.environ.get('PAYPAL_LINK_SONNO_PERCORSO')
     PAYPAL_LINK_SONNO_AFFIANCAMENTO = os.environ.get('PAYPAL_LINK_SONNO_AFFIANCAMENTO')

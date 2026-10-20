@@ -2,6 +2,8 @@
 
 Ultimo aggiornamento: 13 agosto 2026.
 
+Priorità operative: [ROADMAP.md](ROADMAP.md), D-123. L'identità approvata resta valida; prima del dominio si correggono leggibilità, accessibilità e bug senza avviare un redesign.
+
 ## Idea guida
 
 L'identità deve unire fiducia sanitaria, calore familiare e riconoscibilità personale. Non deve sembrare una generica attività dedicata alla maternità né una struttura sanitaria fredda.

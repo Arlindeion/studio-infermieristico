@@ -1,5 +1,7 @@
 # Checklist di consegna del creator
 
+> Archivio datato: i contenuti seguenti conservano proposte e consegne storiche. Per stato, priorità e prossime azioni prevale la [roadmap corrente](../ROADMAP.md), aggiornata secondo D-123.
+
 Ultimo aggiornamento: 4 agosto 2026.
 
 > Archivio operativo: dal 13 agosto 2026 le attività TikTok sono sospese fino a nuova decisione.

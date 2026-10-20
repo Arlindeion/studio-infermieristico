@@ -1,5 +1,7 @@
 # Pacchetto contenuti, settimana DATA-DATA
 
+> Priorità e calendario operativi: [roadmap corrente](../ROADMAP.md), D-123. Questo materiale metodologico si usa senza introdurre nuovi gate per la pubblicazione del dominio.
+
 Ultimo aggiornamento: DATA.
 
 > Finché D-075 resta vigente, pianificare soltanto Instagram e lasciare vuoti gli slot TikTok.

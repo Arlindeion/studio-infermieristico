@@ -69,7 +69,10 @@
             </div>
             <div class="admin-shell-account">
                 <span>{{ current_user.username }}</span>
-                <a href="{{ url_for('logout') }}">Esci</a>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">Esci</button>
+                </form>
             </div>
         </header>
 

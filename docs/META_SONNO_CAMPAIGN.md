@@ -1,6 +1,8 @@
 # Campagna Meta — consulenza del sonno
 
-Ultimo aggiornamento: 29 luglio 2026.
+Ultimo aggiornamento operativo: 20 ottobre 2026.
+
+> Piano successivo alla stabilizzazione del dominio, secondo [ROADMAP.md](ROADMAP.md) e D-123. Preparazione e attivazione della campagna non bloccano la pubblicazione; il documento non avvia spesa o pubblicazioni. PayPal non è un prerequisito del funnel: al lancio il sonno usa il bonifico manuale.
 
 ## Obiettivo e vincoli
 

@@ -579,7 +579,7 @@
 }
 
 .admin-shell-brand img {
-    background: var(--bianco);
+    background: var(--verde-header-profondo);
     border-radius: 50%;
     flex: 0 0 42px;
     height: 42px;
@@ -727,7 +727,8 @@
 }
 
 .admin-shell-account span,
-.admin-shell-account a {
+.admin-shell-account a,
+.admin-shell-account button {
     border: 1px solid var(--verde-scuro-a14);
     border-radius: 999px;
     font-size: 0.78rem;
@@ -736,15 +737,30 @@
     padding: 0.55rem 0.8rem;
 }
 
-.admin-shell-account a {
+.admin-shell-account a,
+.admin-shell-account button {
     align-items: center;
     color: var(--rosa-antico);
     display: inline-flex;
     text-decoration: none;
 }
 
+.admin-shell-account form {
+    margin: 0;
+}
+
+.admin-shell-account button {
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+    min-width: 44px;
+}
+
 .admin-shell-account a:hover,
-.admin-shell-account a:focus-visible {
+.admin-shell-account a:focus-visible,
+.admin-shell-account button:hover,
+.admin-shell-account button:focus-visible {
     background: var(--rosa-chiaro);
 }
 

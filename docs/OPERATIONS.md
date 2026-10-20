@@ -1,6 +1,10 @@
 # Operatività tecnica
 
-Revisione documentale: 13 agosto 2026. Le ultime evidenze esterne registrate in questo documento risalgono al 30 luglio 2026 e non dimostrano da sole lo stato corrente dei pannelli.
+Revisione documentale: 20 ottobre 2026. Le evidenze esterne mantengono la propria data e non dimostrano da sole lo stato corrente dei pannelli.
+
+## Priorità di pubblicazione
+
+Seguire [ROADMAP.md](ROADMAP.md) e [PRE_GO_LIVE_CHECKLIST.md](PRE_GO_LIVE_CHECKLIST.md), secondo D-123. Pubblicare l'attuale sito dopo i controlli essenziali, senza attendere campagne o nuove funzioni. PayPal è sospeso fino a nuovo ordine: `SONNO_PAYPAL_ENABLED = False` è una configurazione applicativa fissa, non attivabile con una variabile d'ambiente. I link legacy sono ignorati per le nuove scelte; i pagamenti storici restano consultabili. Per il sonno verificare soltanto bonifico e conferma manuale. I riferimenti generici a PayPal nelle condizioni versionate descrivono modalità eventualmente rese disponibili e non ne dichiarano l'attivazione.
 
 ## Architettura
 
@@ -237,9 +241,9 @@ condiviso, per esempio Redis, e ripetere i test di concorrenza.
 | `GOOGLE_ANALYTICS_ID` | ID GA4 | No |
 | `PUBLIC_BASE_URL` | Origine HTTPS canonica del sito pubblico | No |
 | `SONNO_CALL_URL` | Link opzionale della videochiamata inserito nelle conferme | Potenzialmente |
-| `PAYPAL_LINK_SONNO_MIRATA` | Link PayPal Business HTTPS a prezzo fisso per la formula da 75 € | Potenzialmente |
-| `PAYPAL_LINK_SONNO_PERCORSO` | Link PayPal Business HTTPS a prezzo fisso per la formula da 200 € | Potenzialmente |
-| `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | Link PayPal Business HTTPS a prezzo fisso per la formula da 320 € | Potenzialmente |
+| `PAYPAL_LINK_SONNO_MIRATA` | Legacy inattivo: non configurare per il lancio, D-123 | Potenzialmente |
+| `PAYPAL_LINK_SONNO_PERCORSO` | Legacy inattivo: non configurare per il lancio, D-123 | Potenzialmente |
+| `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | Legacy inattivo: non configurare per il lancio, D-123 | Potenzialmente |
 | `BONIFICO_INTESTATARIO` | Intestatario mostrato nella proposta privata | Potenzialmente |
 | `BONIFICO_IBAN` | IBAN mostrato nella proposta privata | Sì |
 | `ADMIN_BOOTSTRAP_USERNAME` | Nome del primo amministratore, solo per il bootstrap | Sì |
@@ -362,7 +366,7 @@ Prima dell'apertura pubblica la produzione richiede inoltre:
 | `PUBLIC_BASE_URL` | origine HTTPS definitiva, senza percorso, per esempio `https://scstudioinfermieristico.it` |
 | `GOOGLE_ANALYTICS_ID` | facoltativo finché informativa, consenso e GA4 non sono validati |
 | `SONNO_CALL_URL` | facoltativo finché il collegamento non è definitivo |
-| `PAYPAL_LINK_SONNO_MIRATA` / `PAYPAL_LINK_SONNO_PERCORSO` / `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | facoltativi; abilitarli soltanto dopo aver verificato importo e descrizione di ciascun link PayPal Business |
+| `PAYPAL_LINK_SONNO_MIRATA` / `PAYPAL_LINK_SONNO_PERCORSO` / `PAYPAL_LINK_SONNO_AFFIANCAMENTO` | legacy inattivi; PayPal sospeso fino a nuovo ordine, non configurare per il lancio (D-123) |
 | `BONIFICO_INTESTATARIO` / `BONIFICO_IBAN` | facoltativi; configurarli nel secret manager per rendere disponibile il bonifico nella proposta privata |
 
 `MAIL_USE_TLS` e `MAIL_USE_SSL` non possono essere entrambe attive. Sessione,
@@ -906,6 +910,8 @@ git diff --check
 Aggiornare `requirements.txt` solo quando cambia realmente una dipendenza e controllare le differenze prodotte.
 
 ## Checklist di deploy
+
+La sequenza corrente è in [PRE_GO_LIVE_CHECKLIST.md](PRE_GO_LIVE_CHECKLIST.md). Al primo cutover il preflight deve sempre precedere `db upgrade`; con schema A4 già applicato non si richiede un nuovo database vuoto. I controlli seguenti restano riferimenti tecnici, non una riapertura del lavoro PayPal sospeso.
 
 - Stato Git pulito e commit identificabile.
 - Tutti i test superati.

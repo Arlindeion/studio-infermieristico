@@ -6,6 +6,10 @@
 >
 > Fondazione integrata: PAZ-A1 `e35fe65`, PAZ-A2 `9213d52`, PAZ-A4 `7e022bf`, integrazione `fa9ff40` e rinforzi finali `b8fadb0`. Il commit `cd6d084` aggiunge la UI Admin 2.0 approvata in D-119. Le evidenze locali non equivalgono a un deploy.
 
+## Perimetro operativo dal 20 ottobre 2026
+
+D-123 e la [roadmap corrente](ROADMAP.md) danno priorità al dominio: completare soltanto deploy e smoke test dell'attuale Pazienti 2.0, con le protezioni già previste. Le specifiche delle sezioni successive conservano valore storico; nuove tranche, cartella, documenti, ruoli e cleanup strutturale sono post-lancio. La revisione/schema effettivamente live va verificata sul servizio.
+
 ## 1. Regole di stato e fonti canoniche
 
 Gli stati ammessi per una tranche sono:

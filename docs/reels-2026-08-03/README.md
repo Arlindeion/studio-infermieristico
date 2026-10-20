@@ -1,5 +1,7 @@
 # Handoff creator Reel, settimana 3-9 agosto 2026
 
+> Archivio datato: i contenuti seguenti conservano proposte e consegne storiche. Per stato, priorità e prossime azioni prevale la [roadmap corrente](../ROADMAP.md), aggiornata secondo D-123.
+
 Ultimo aggiornamento: 4 agosto 2026.
 
 > Pacchetto storico: dal 13 agosto 2026 TikTok è accantonato fino a data da destinarsi. Le relative righe non sono consegne arretrate.

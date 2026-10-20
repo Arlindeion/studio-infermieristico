@@ -1,5 +1,7 @@
 # Font self-hosted
 
+Riferimenti di progetto e priorità operative: [indice della documentazione](../../docs/README.md). Il sistema tipografico approvato resta invariato nel perimetro di pubblicazione D-123.
+
 Il sito serve localmente le famiglie definite in `docs/BRAND_SYSTEM.md`:
 
 - Atkinson Hyperlegible, pesi 400 e 700;

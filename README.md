@@ -4,6 +4,10 @@ Applicazione Flask con sito pubblico, prenotazione delle prestazioni infermieris
 
 Il contesto dell'attività, l'identità e le priorità non sono duplicati in questo file. Prima di intervenire sul progetto leggere [AGENTS.md](AGENTS.md) e l'indice in [docs/README.md](docs/README.md).
 
+## Priorità corrente
+
+Pubblicazione sul dominio secondo [ROADMAP.md](docs/ROADMAP.md) e [PRE_GO_LIVE_CHECKLIST.md](docs/PRE_GO_LIVE_CHECKLIST.md). La revisione della roadmap allegata è in [ROADMAP_POST_PATCH_2026-10-20.md](docs/ROADMAP_POST_PATCH_2026-10-20.md). PayPal è sospeso fino a nuovo ordine; il flusso sonno usa il bonifico e la conferma manuale.
+
 ## Stack
 
 - Python 3.14 e Flask 3
@@ -72,9 +76,6 @@ GOOGLE_CALENDAR_ID=
 GOOGLE_ANALYTICS_ID=
 PUBLIC_BASE_URL=
 SONNO_CALL_URL=
-PAYPAL_LINK_SONNO_MIRATA=
-PAYPAL_LINK_SONNO_PERCORSO=
-PAYPAL_LINK_SONNO_AFFIANCAMENTO=
 BONIFICO_INTESTATARIO=
 BONIFICO_IBAN=
 

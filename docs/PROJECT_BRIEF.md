@@ -1,6 +1,6 @@
 # Brief del progetto
 
-Ultimo aggiornamento: 29 luglio 2026.
+Ultimo aggiornamento: 20 ottobre 2026.
 
 ## Scopo
 
@@ -17,18 +17,15 @@ L'obiettivo del lancio non è vendere tutto immediatamente, ma aumentare il valo
 - Lo studio è in affitto.
 - Il sito è il progetto centrale da cui dipendono il lancio nazionale delle consulenze, le campagne e una presenza social più riconoscibile.
 
-## Checkpoint interno del 15 settembre 2026
+## Priorità corrente: pubblicare il dominio
 
-Il lancio viene considerato riuscito se, entro il 15 settembre 2026, sono presenti entrambi questi risultati:
+Dal 20 ottobre 2026 l'obiettivo immediato è pubblicare `scstudioinfermieristico.it` nel minor tempo possibile completando i controlli essenziali dei flussi esistenti. Il piano e i criteri di uscita sono in [ROADMAP.md](ROADMAP.md), secondo D-123.
 
-1. sito tecnicamente pronto e sicuro, con attività P0 concluse e flussi principali collaudati;
-2. prima campagna pubblicitaria online/social pronta a partire con la nuova identità grafica, misurabile e utilizzabile come base per il test della consulenza del sonno.
-
-La data è un riferimento operativo interno, non una promessa pubblica. Non autorizza a pubblicare con problemi di sicurezza, privacy o perdita dei dati ancora aperti.
+PayPal è sospeso fino a nuovo ordine. Le consulenze possono usare il bonifico con conferma manuale; corsi e prestazioni conservano i propri flussi. Campagna, nuove creatività, attivazione GA4/Meta, redesign ed estensioni del gestionale seguono la stabilizzazione del dominio. Il precedente checkpoint congiunto sito/campagna del 15 settembre è storico e non è più un vincolo corrente.
 
 ## Obiettivi 2026-2028
 
-- Superare il checkpoint interno del 15 settembre 2026 senza sacrificare sicurezza, privacy e affidabilità dei flussi.
+- Pubblicare il dominio appena conclusi sicurezza, integrità e collaudi essenziali; ottimizzare successivamente sulla base dell'uso reale.
 - Rendere immediatamente riconoscibili sito, social e materiali commerciali come parti dello stesso sistema.
 - Consolidare i corsi in presenza, che hanno già domanda reale.
 - Validare la consulenza del sonno con le famiglie già interessate e con un test di campagna di tre mesi, mantenendo il servizio disponibile su scala nazionale.

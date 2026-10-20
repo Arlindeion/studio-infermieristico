@@ -1,5 +1,7 @@
 # Registro delle decisioni — proposta di aggiornamento
 
+> Archivio datato: i contenuti seguenti conservano proposte e consegne storiche. Per stato, priorità e prossime azioni prevale la [roadmap corrente](../ROADMAP.md), aggiornata secondo D-123.
+
 > **Documento di revisione, non applicato alla repository.**
 >
 > Base di riferimento: `main`, 31 agosto 2026, con `docs/DECISIONS.md` corrente fermo a D-105.

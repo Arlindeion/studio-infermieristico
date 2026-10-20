@@ -130,6 +130,17 @@ def generate_csrf_token():
         session['_csrf_token'] = secrets.token_hex(32)
     return session['_csrf_token']
 
+
+def validate_csrf_token():
+    """Validate the submitted form token without consuming the session token."""
+    supplied = request.form.get('_csrf_token')
+    expected = session.get('_csrf_token')
+    return bool(
+        supplied and supplied.isascii() and expected
+        and secrets.compare_digest(expected, supplied)
+    )
+
+
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 # La configurazione email (server, porta, TLS, username, password, mittente)
@@ -175,6 +186,9 @@ talisman = Talisman(
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
     session_cookie_http_only=True,
     session_cookie_samesite='Lax',
+    # Le URL dei questionari e delle proposte contengono token privati.
+    # La policy globale evita il leak anche se Talisman sovrascrive altri hook.
+    referrer_policy='no-referrer',
 )
 
 
@@ -639,6 +653,8 @@ def _formule_per_proposta_sonno(proposal_type):
 
 
 def _paypal_link_sonno(formula):
+    if not app.config.get('SONNO_PAYPAL_ENABLED', False):
+        return None
     config_key = {
         'mirata': 'PAYPAL_LINK_SONNO_MIRATA',
         'percorso': 'PAYPAL_LINK_SONNO_PERCORSO',
@@ -842,12 +858,22 @@ def orari_non_prenotabili_per_chiusura(data_str):
 
 
 def is_safe_redirect_target(target):
-    if not target:
+    """Accept local paths or absolute HTTP(S) URLs pointing to this host."""
+    if not target or any(char in target for char in ('\\', '\r', '\n')):
         return False
-
-    ref_url = urlsplit(request.host_url)
-    test_url = urlsplit(target)
-    return not test_url.netloc or test_url.netloc == ref_url.netloc
+    try:
+        ref_url = urlsplit(request.host_url)
+        test_url = urlsplit(target)
+    except ValueError:
+        return False
+    if test_url.scheme:
+        return (
+            test_url.scheme in {'http', 'https'}
+            and test_url.netloc == ref_url.netloc
+            and test_url.username is None
+            and test_url.password is None
+        )
+    return target.startswith('/') and not target.startswith('//') and not test_url.netloc
 
 # ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
 #
@@ -921,7 +947,10 @@ def _chiudi_circuito_calendario():
 
 def _registra_errore_lettura_calendario(tipo_errore, adesso, durata_cache):
     with _lock_stato_calendario:
-        if adesso < _cache_calendario['errore_registrato_il'] + durata_cache:
+        # Il valore 0 indica nessun errore ancora registrato. Un processo
+        # avviato da pochi secondi può avere monotonic() < durata_cache.
+        ultima_registrazione = _cache_calendario['errore_registrato_il']
+        if ultima_registrazione and adesso < ultima_registrazione + durata_cache:
             return
         _cache_calendario['errore_registrato_il'] = adesso
     registra_evento(
@@ -1103,13 +1132,13 @@ def intervallo_occupato_da_calendario(data_str, ora, durata_minuti, ignore_googl
     )
 
 
-def orari_occupati_da_calendario(data_str):
+def orari_occupati_da_calendario(data_str, ignore_google_event_id=None):
     """Restituisce gli slot sanitari da 30 minuti occupati su Calendar."""
     try:
         giorno = datetime.strptime(data_str, '%Y-%m-%d').date()
     except (TypeError, ValueError):
         return set()
-    intervalli = _intervalli_calendario(data_str)
+    intervalli = _intervalli_calendario(data_str, ignore_google_event_id)
     occupati = set()
     for ora in ORARI_DISPONIBILI:
         ore, minuti = map(int, ora.split(':'))
@@ -4545,6 +4574,20 @@ def proteggi_staging():
 
 @app.after_request
 def applica_header_sicurezza_risposta(response):
+    # Le URL con token privati non devono finire in cache, indici o Referer.
+    private_token_prefixes = (
+        '/offerta-sonno/',
+        '/questionario-sonno/',
+        '/proposta-slot/',
+        '/lista-attesa/',
+    )
+    if request.path.startswith(private_token_prefixes):
+        response.headers['Cache-Control'] = 'no-store, private, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+
     # Lo staging non deve mai essere indicizzato.
     if app.config.get('APP_ENV') == 'staging':
         response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
@@ -7065,7 +7108,11 @@ def conferma_call_sonno():
 def api_orari_call_sonno(data_str):
     if not re.match(r'^\d{4}-\d{2}-\d{2}$', data_str):
         abort(400)
-    if not _giorno_lavorativo_call(datetime.strptime(data_str, '%Y-%m-%d').date()):
+    try:
+        selected_date = datetime.strptime(data_str, '%Y-%m-%d').date()
+    except ValueError:
+        abort(400)
+    if not _giorno_lavorativo_call(selected_date):
         return jsonify({'occupati': ORARI_CALL_SONNO})
     return jsonify({'occupati': sorted(_orari_call_occupati(data_str))})
 
@@ -7449,11 +7496,13 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/admin/logout')
+@app.route('/admin/logout', methods=['POST'])
 @login_required
 def logout():
-    session.pop('conflitti_calendar_rimandati', None)
+    if not validate_csrf_token():
+        abort(400)
     logout_user()
+    session.clear()
     return redirect(url_for('login'))
 
 
@@ -7951,8 +8000,7 @@ def admin():
 
 
 def _csrf_admin_valido():
-    token = request.form.get('_csrf_token')
-    return bool(token and token == session.get('_csrf_token'))
+    return validate_csrf_token()
 
 
 def _url_dettaglio_admin(tipo, entita_id):
@@ -10072,6 +10120,8 @@ def proponi_slot_admin(tipo, entita_id):
 @app.route('/proposta-slot/<token>', methods=['GET', 'POST'])
 @limiter.limit('10 per hour', methods=['POST'])
 def accetta_proposta_slot(token):
+    if request.method == 'POST' and not validate_csrf_token():
+        abort(400)
     proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
     entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
     valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > utc_now())
@@ -10151,6 +10201,8 @@ def _segnala_prossimo_lista_attesa(corso):
 @app.route('/lista-attesa/<token>', methods=['GET', 'POST'])
 @limiter.limit('10 per hour', methods=['POST'])
 def accetta_invito_lista_attesa(token):
+    if request.method == 'POST' and not validate_csrf_token():
+        abort(400)
     iscrizione = IscrizioneCorso.query.filter_by(token_lista_attesa=token).first_or_404()
     corso = iscrizione.corso
     valida = bool(
@@ -11466,7 +11518,13 @@ def aggiorna_stato_iscrizione_corso(id, stato):
 @app.route('/api/orari-occupati/<data>')
 def orari_occupati(data):
     # Restituisce la lista degli orari occupati per la data specificata (YYYY-MM-DD)
-    ignore_id = request.args.get('ignore_id', type=int)
+    ignore_id = request.args.get('ignore_id', type=int) if current_user.is_authenticated else None
+    ignored_appointment = db.session.get(Appuntamento, ignore_id) if ignore_id else None
+    ignored_event_id = (
+        ignored_appointment.google_event_id
+        if ignored_appointment and ignored_appointment.data == data
+        else None
+    )
     orari = {
         ora for ora in ORARI_DISPONIBILI
         if slot_occupato_db(
@@ -11479,11 +11537,7 @@ def orari_occupati(data):
     # Aggiungi chiusure ricorrenti dello studio: domeniche, festivi e sabato pomeriggio
     orari |= orari_non_prenotabili_per_chiusura(data)
     # Aggiungi gli orari occupati su Arzamed/Google Calendar (appuntamenti e chiusure studio)
-    orari |= orari_occupati_da_calendario(data)
-    if ignore_id:
-        appuntamento_ignorato = db.session.get(Appuntamento, ignore_id)
-        if appuntamento_ignorato and appuntamento_ignorato.data == data:
-            orari.discard(appuntamento_ignorato.ora)
+    orari |= orari_occupati_da_calendario(data, ignored_event_id)
     return jsonify(sorted(orari))
 
 

@@ -2,6 +2,8 @@
 
 Ultimo aggiornamento: 29 luglio 2026.
 
+Priorità e calendario: [ROADMAP.md](ROADMAP.md), D-123. Nuovi materiali commerciali seguono la stabilizzazione del dominio e non sono un gate della pubblicazione.
+
 ## Scopo di questo documento
 
 Queste istruzioni sono vincolanti per qualsiasi AI che debba progettare, scrivere o aggiornare:

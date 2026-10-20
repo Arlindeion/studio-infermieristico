@@ -1,5 +1,7 @@
 # Sistema generale per contenuti Instagram e TikTok
 
+> Priorità e calendario operativi: [roadmap corrente](../ROADMAP.md), D-123. Questo materiale metodologico si usa senza introdurre nuovi gate per la pubblicazione del dominio.
+
 Ultimo aggiornamento: 4 agosto 2026.
 
 > Stato operativo dal 13 agosto 2026: lavorare su Instagram. TikTok è accantonato fino a nuova decisione; le istruzioni dedicate restano archivio metodologico e non generano consegne correnti.

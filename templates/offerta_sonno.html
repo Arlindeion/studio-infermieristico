@@ -63,12 +63,14 @@
         <fieldset class="sleep-choice-fieldset">
             <legend>2. Scegli il pagamento</legend>
             <div class="sleep-payment-methods">
-                <label class="sleep-payment-method{% if not paypal_available %} is-disabled{% endif %}">
-                    <input type="radio" name="metodo_pagamento" value="paypal" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'paypal' %}checked{% endif %} {% if not paypal_available %}disabled{% endif %} required>
+                {% if paypal_available %}
+                <label class="sleep-payment-method">
+                    <input type="radio" name="metodo_pagamento" value="paypal" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'paypal' %}checked{% endif %} required>
                     <span><strong>PayPal</strong><small>Pagamento sul sito PayPal. “Paga in 3 rate” compare soltanto se PayPal lo rende disponibile.</small></span>
                 </label>
+                {% endif %}
                 <label class="sleep-payment-method{% if not bank_transfer_available %} is-disabled{% endif %}">
-                    <input type="radio" name="metodo_pagamento" value="bonifico" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'bonifico' %}checked{% endif %} {% if not bank_transfer_available %}disabled{% endif %} required>
+                    <input type="radio" name="metodo_pagamento" value="bonifico" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'bonifico' or (not paypal_available and bank_transfer_available) %}checked{% endif %} {% if not bank_transfer_available %}disabled{% endif %} required>
                     <span><strong>Bonifico bancario</strong><small>La conferma arriva dopo la verifica dell’accredito o della documentazione richiesta.</small></span>
                 </label>
             </div>

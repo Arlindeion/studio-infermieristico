@@ -1,6 +1,8 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 31 agosto 2026.
+Ultimo aggiornamento: 20 ottobre 2026.
+
+Priorità operative: [ROADMAP.md](ROADMAP.md), D-123. Il lancio conserva questi flussi; nuove funzioni e campagna seguono la pubblicazione.
 
 ## Principio di architettura
 
@@ -153,7 +155,7 @@ Campagna/condivisione
 - `Percorso sonno personalizzato`: tre call da 60-75 minuti e diario quando più aspetti si influenzano; durata prevista 60 giorni e chiusura entro 75.
 - `Percorso sonno con affiancamento`: stesso percorso con WhatsApp per 60 giorni, massimo tre confronti raggruppati a settimana dal lunedì al venerdì e risposta entro il giorno lavorativo successivo.
 - I prezzi di lancio 75 €, 200 € e 320 € sono visibili prima della prenotazione; la call aiuta a scegliere, non nasconde il costo.
-- Il pagamento integrale avviene dopo la call gratuita tramite collegamento privato valido sette giorni. Il posto è confermato dopo la verifica del pagamento; l'eventuale opzione PayPal “Paga in 3 rate” dipende esclusivamente da PayPal.
+- Il pagamento integrale avviene dopo la call gratuita tramite proposta privata valida sette giorni e bonifico bancario con conferma manuale dello Studio. PayPal e ogni relativa rateizzazione sono sospesi fino a nuovo ordine (D-123), anche se esistono link legacy configurati.
 - Selene mantiene la decisione finale sull'appropriatezza del servizio prima dell'invio del collegamento di pagamento.
 - Una persona diversa dal genitore può regalare il servizio, ma non accetta il contratto al posto della famiglia. Prima dell'avvio firma un genitore o tutore, dichiarando responsabilità genitoriale o tutela e, se la responsabilità è condivisa, informazione e consenso dell'altro genitore; in caso di affido esclusivo dichiara l'esistenza del relativo provvedimento.
 - La prima data pubblica selezionabile è il giorno disponibile successivo; le call sono disponibili dal lunedì al sabato negli spazi liberi.
@@ -295,4 +297,4 @@ coerenza tra annuncio, landing, evento, messaggio/modulo e gestione del contatto
 
 - Prenotazione e pagamento dedicati alle consulenze.
 - Landing verticali per campagne specifiche: sonno infantile, disostruzione, open day nascita.
-- Pagamento online soltanto quando policy, stati, email, capienza e calendario sono stabili.
+- Pagamenti online e rateizzazione soltanto dopo stabilità dei flussi e nuova decisione. PayPal resta sospeso fino a nuovo ordine, non si attiva automaticamente dopo il lancio.

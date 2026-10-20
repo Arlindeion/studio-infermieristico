@@ -190,7 +190,7 @@ def test_area_admin_non_viene_memorizzata_ne_indicizzata(app, client, monkeypatc
     accesso_negato = client.get('/admin')
     _login_admin(client)
     admin = client.get('/admin')
-    logout = client.get('/admin/logout')
+    logout = client.post('/admin/logout', data={'_csrf_token': _csrf_admin(client)})
 
     for response in (login, accesso_negato, admin, logout):
         assert response.headers['Cache-Control'] == 'no-store, private, max-age=0'
@@ -201,6 +201,47 @@ def test_area_admin_non_viene_memorizzata_ne_indicizzata(app, client, monkeypatc
     pagina_pubblica = client.get('/')
     assert 'Cache-Control' not in pagina_pubblica.headers
     assert 'X-Robots-Tag' not in pagina_pubblica.headers
+
+
+def test_logout_admin_rejects_get_and_missing_or_invalid_csrf(client):
+    token = _login_admin(client)
+    assert client.get('/admin/logout').status_code == 405
+    assert client.post('/admin/logout').status_code == 400
+    assert client.post('/admin/logout', data={'_csrf_token': 'wrong'}).status_code == 400
+    assert client.post('/admin/logout', data={'_csrf_token': 'è'}).status_code == 400
+
+    response = client.post('/admin/logout', data={'_csrf_token': token})
+    assert response.status_code == 302
+    assert client.get('/admin').status_code == 302
+
+
+def test_private_token_pages_disable_caching_and_referrers(client):
+    for path in (
+        '/questionario-sonno/unknown-token',
+        '/offerta-sonno/unknown-token',
+        '/proposta-slot/unknown-token',
+        '/lista-attesa/unknown-token',
+    ):
+        response = client.get(path)
+        assert response.headers['Cache-Control'] == 'no-store, private, max-age=0'
+        assert response.headers['Pragma'] == 'no-cache'
+        assert response.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+        assert response.headers['Referrer-Policy'] == 'no-referrer'
+
+
+def test_first_calendar_failure_is_recorded_even_soon_after_startup(app, monkeypatch):
+    with app.app_context():
+        monkeypatch.setattr(app_module.time, 'monotonic', lambda: 42.0)
+        app_module._cache_calendario['errore_registrato_il'] = 0.0
+        app_module._registra_errore_lettura_calendario('TimeoutError', 42.0, 300)
+        events = RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).all()
+        assert len(events) == 1
+        app_module._registra_errore_lettura_calendario('TimeoutError', 43.0, 300)
+        assert RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).count() == 1
 
 
 def test_health_check_e_esente_dai_limiti_globali(app):
@@ -3284,6 +3325,23 @@ def test_errore_email_non_perde_prenotazione_e_viene_registrato(client):
         assert 'non inviata' in evento.messaggio
 
 
+@pytest.mark.parametrize(('target', 'expected'), [
+    ('/admin', True),
+    ('/admin?filtro=tutti', True),
+    ('https://localhost/admin', True),
+    ('javascript:alert(1)', False),
+    ('data:text/html,unsafe', False),
+    ('https://example.com/admin', False),
+    ('//example.com/admin', False),
+    ('///example.com/admin', False),
+    ('/\\example.com/admin', False),
+    ('admin', False),
+])
+def test_login_redirect_target_restricts_scheme_host_and_path(app, target, expected):
+    with app.test_request_context('http://localhost/admin/login'):
+        assert app_module.is_safe_redirect_target(target) is expected
+
+
 def test_login_admin_ignora_redirect_esterno(client):
     """Il parametro next non deve poter portare l'admin verso domini esterni."""
     from werkzeug.security import generate_password_hash
@@ -4427,6 +4485,8 @@ def test_admin_call_avvisa_se_email_fallisce_ma_calendar_riesce(
 def test_admin_offerta_pagamento_e_questionario_sonno(client, app, monkeypatch):
     monkeypatch.setitem(app.config, 'BONIFICO_INTESTATARIO', 'S.C. Studio Infermieristico')
     monkeypatch.setitem(app.config, 'BONIFICO_IBAN', 'IT00X0000000000000000000000')
+    monkeypatch.setitem(app.config, 'PAYPAL_LINK_SONNO_PERCORSO', 'https://www.paypal.com/synthetic-test')
+    monkeypatch.setitem(app.config, 'PAYPAL_LINK_SONNO_AFFIANCAMENTO', 'https://www.paypal.com/synthetic-test')
     with flask_app.app_context():
         call = CallSonno(
             nome='Anna Verdi',
@@ -4483,7 +4543,23 @@ def test_admin_offerta_pagamento_e_questionario_sonno(client, app, monkeypatch):
     assert 'Conferma la scelta della modalità di pagamento' in offer.text
     assert 'Conferma l’acquisto con obbligo di pagamento' not in offer.text
     assert 'Formula, prezzo e dichiarazioni vengono registrati' not in offer.text
+    assert 'value="paypal"' not in offer.text
+    assert app_module._paypal_link_sonno('percorso') is None
     offer_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', offer.text).group(1)
+
+    paypal_rejected = client.post(
+        f'/offerta-sonno/{proposal_token}',
+        data={
+            '_csrf_token': offer_csrf,
+            'formula_scelta': 'percorso',
+            'metodo_pagamento': 'paypal',
+            'condizioni_sonno': 'on',
+        },
+    )
+    assert paypal_rejected.status_code == 400
+    assert 'PayPal non è ancora disponibile' in paypal_rejected.text
+    assert db.session.get(CallSonno, call_id).condizioni_accettate_il is None
+    offer_csrf = re.search(r'name="_csrf_token" value="([^"]+)"', paypal_rejected.text).group(1)
 
     missing_terms = client.post(
         f'/offerta-sonno/{proposal_token}',
@@ -5815,7 +5891,7 @@ def test_admin_crea_e_modifica_anagrafica_paziente(client):
     assert 'Modifica anagrafica' in scheda.text
     assert 'Telefono mancante' in scheda.text
     assert 'Email mancante' in scheda.text
-    assert '/static/css/admin.css?v=6.3' in scheda.text
+    assert re.search(r'/static/css/admin\.css\?v=[0-9.]+', scheda.text)
     assert 'class="admin-shell"' in scheda.text
     assert 'Panoramica' in scheda.text
     assert 'Cartella infermieristica' in scheda.text

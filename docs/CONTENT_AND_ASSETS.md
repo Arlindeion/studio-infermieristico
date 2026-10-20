@@ -1,6 +1,10 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 27 agosto 2026.
+Ultimo aggiornamento: 20 ottobre 2026.
+
+## Perimetro corrente
+
+La [roadmap](ROADMAP.md) governa il lavoro verso il dominio (D-123). I contenuti pubblicati devono essere autorizzati e coerenti; nuovi master, campagne, testimonianze e rifiniture non bloccanti sono successivi. La proposta sonno presenta il bonifico; PayPal è sospeso e non viene offerto nelle nuove scelte. Le condizioni versionate, i prezzi e le immagini approvate restano invariati. Il logo chiaro nell'admin usa un fondo verde profondo per renderne leggibile il tratto.
 
 > Aggiornamento 13 agosto 2026: TikTok è accantonato fino a data da destinarsi. Le specifiche e le consegne TikTok presenti qui restano materiale storico o riutilizzabile, non un impegno corrente né un gate di lancio.
 

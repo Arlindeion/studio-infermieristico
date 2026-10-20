@@ -995,3 +995,12 @@ Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perch
 ```
 
 Una decisione sostituita non va cancellata: indicare quale nuova decisione la rimpiazza.
+
+## D-123 — Pubblicare il dominio prima delle estensioni; PayPal sospeso
+
+- Data: 2026-10-20.
+- Stato: approvata dal committente; applicata e verificata localmente, verifica Render e GO ancora necessari. Sostituisce il checkpoint congiunto sito/campagna del 15 settembre e l'esclusività di lavorazione di D-118; integra D-105 e D-106 per le modalità di pagamento disponibili.
+- Decisione: priorità alla pubblicazione su `https://scstudioinfermieristico.it` nel minor tempo possibile, completando sicurezza, integrità, configurazione e collaudi dei flussi già implementati. PayPal è accantonato fino a nuovo ordine: nessun lavoro di implementazione/configurazione o collaudo PayPal deve ritardare il dominio, e i link eventualmente configurati non attivano nuove scelte PayPal. Il sonno usa il bonifico con conferma manuale. Campagna, GA4/Meta, nuove testimonianze, redesign e ampliamenti del gestionale sono successivi alla stabilizzazione; i tracciamenti non attivati restano spenti.
+- Motivo: concentrare il lavoro sul sito utilizzabile e sicuro, senza estendere il perimetro prima di ricevere richieste reali. La gerarchia commerciale e le policy approvate restano valide.
+- Conseguenze: applicare e adattare localmente la patch PR #16, correggere preflight/migrazione e CSRF non ASCII, preservare dati e migrazioni e completare il solo Pazienti 2.0 già integrato. È ammesso preparare insieme le attività locali e le verifiche Render, senza attendere il deploy per risolvere bug autonomi. La presenza di record su schema A4 già applicato non richiede un nuovo backfill; il controllo vuoto precede soltanto il primo cutover legacy. PITR/backup/restore precedono il primo dato reale o interventi su dati da preservare. Commit, push, merge, deploy, cancellazioni, DNS e GO richiedono l'autorizzazione pertinente; la nuova priorità non li attesta già eseguiti. I documenti datati restano archivio e rimandano alla roadmap corrente.
+- Collegamenti: `AGENTS.md`, `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `ROADMAP_POST_PATCH_2026-10-20.md`, `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `config.py`, `app.py`, PR #16.

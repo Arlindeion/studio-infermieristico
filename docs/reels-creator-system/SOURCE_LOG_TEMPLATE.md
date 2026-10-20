@@ -1,5 +1,7 @@
 # Registro fonti del contenuto
 
+> Priorità e calendario operativi: [roadmap corrente](../ROADMAP.md), D-123. Questo materiale metodologico si usa senza introdurre nuovi gate per la pubblicazione del dominio.
+
 Ultimo aggiornamento: DATA.
 
 Compilare una riga per ogni affermazione sanitaria o di sicurezza. Una fonte può sostenere più frasi, ma il collegamento deve essere esplicito. Se una frase non ha una fonte adeguata, resta fuori dallo script fino alla verifica.

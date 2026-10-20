@@ -45,7 +45,7 @@ Gerarchia commerciale:
 2. consulenza del sonno infantile, da validare e lanciare a livello nazionale senza un limite anagrafico nel modulo di richiesta;
 3. prestazioni infermieristiche, sempre accessibili e prenotabili ma visivamente secondarie.
 
-Non trasformare la homepage in un catalogo e non lasciare che un solo servizio oscuri gli altri due livelli. Il checkpoint interno è il 15 settembre 2026: il sito deve essere tecnicamente pronto e sicuro e deve esistere una prima campagna online/social coerente con la nuova identità. Non è una scadenza pubblica e non giustifica il rinvio delle attività P0. Consultare brief e roadmap prima di ampliare l'ambito.
+Non trasformare la homepage in un catalogo e non lasciare che un solo servizio oscuri gli altri due livelli. Dal 20 ottobre 2026 la priorità è pubblicare sul dominio `scstudioinfermieristico.it` nel minor tempo possibile, chiudendo sicurezza, integrità e collaudi essenziali dei flussi esistenti. PayPal è sospeso fino a nuovo ordine; il sonno usa il bonifico con conferma manuale. Campagna, attivazione analytics, nuove funzioni e rifiniture estetiche non bloccanti seguono la stabilizzazione del dominio. Il checkpoint del 15 settembre resta storico. Consultare `docs/ROADMAP.md` e D-123 prima di ampliare l'ambito; deploy, DNS e GO restano passaggi espliciti.
 
 ## Design e UX
 
