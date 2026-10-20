@@ -14,7 +14,10 @@
         {% elif valida %}
         <h1>Conferma il nuovo orario</h1>
         <p>{{ proposta.data_proposta }} alle {{ proposta.ora_proposta }} · {{ proposta.durata_minuti }} minuti</p>
-        <form method="post"><button class="btn" type="submit">Accetta l’orario</button></form>
+        <form method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button class="btn" type="submit">Accetta l’orario</button>
+        </form>
         {% else %}
         <h1>Proposta non disponibile</h1>
         <p>Il link è scaduto o è già stato utilizzato. Contatta lo studio per concordare un nuovo orario.</p>

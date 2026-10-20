@@ -190,7 +190,7 @@ def test_area_admin_non_viene_memorizzata_ne_indicizzata(app, client, monkeypatc
     accesso_negato = client.get('/admin')
     _login_admin(client)
     admin = client.get('/admin')
-    logout = client.get('/admin/logout')
+    logout = client.post('/admin/logout', data={'_csrf_token': _csrf_admin(client)})
 
     for response in (login, accesso_negato, admin, logout):
         assert response.headers['Cache-Control'] == 'no-store, private, max-age=0'
@@ -201,6 +201,46 @@ def test_area_admin_non_viene_memorizzata_ne_indicizzata(app, client, monkeypatc
     pagina_pubblica = client.get('/')
     assert 'Cache-Control' not in pagina_pubblica.headers
     assert 'X-Robots-Tag' not in pagina_pubblica.headers
+
+
+def test_logout_admin_rejects_get_and_missing_or_invalid_csrf(client):
+    token = _login_admin(client)
+    assert client.get('/admin/logout').status_code == 405
+    assert client.post('/admin/logout').status_code == 400
+    assert client.post('/admin/logout', data={'_csrf_token': 'wrong'}).status_code == 400
+
+    response = client.post('/admin/logout', data={'_csrf_token': token})
+    assert response.status_code == 302
+    assert client.get('/admin').status_code == 302
+
+
+def test_private_token_pages_disable_caching_and_referrers(client):
+    for path in (
+        '/questionario-sonno/unknown-token',
+        '/offerta-sonno/unknown-token',
+        '/proposta-slot/unknown-token',
+        '/lista-attesa/unknown-token',
+    ):
+        response = client.get(path)
+        assert response.headers['Cache-Control'] == 'no-store, private, max-age=0'
+        assert response.headers['Pragma'] == 'no-cache'
+        assert response.headers['X-Robots-Tag'] == 'noindex, nofollow, noarchive'
+        assert response.headers['Referrer-Policy'] == 'no-referrer'
+
+
+def test_first_calendar_failure_is_recorded_even_soon_after_startup(app, monkeypatch):
+    with app.app_context():
+        monkeypatch.setattr(app_module.time, 'monotonic', lambda: 42.0)
+        app_module._cache_calendario['errore_registrato_il'] = 0.0
+        app_module._registra_errore_lettura_calendario('TimeoutError', 42.0, 300)
+        events = RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).all()
+        assert len(events) == 1
+        app_module._registra_errore_lettura_calendario('TimeoutError', 43.0, 300)
+        assert RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).count() == 1
 
 
 def test_health_check_e_esente_dai_limiti_globali(app):
@@ -3282,6 +3322,23 @@ def test_errore_email_non_perde_prenotazione_e_viene_registrato(client):
         assert appuntamento.stato == 'In attesa'
         assert appuntamento.consenso_privacy is True
         assert 'non inviata' in evento.messaggio
+
+
+@pytest.mark.parametrize(('target', 'expected'), [
+    ('/admin', True),
+    ('/admin?filtro=tutti', True),
+    ('https://localhost/admin', True),
+    ('javascript:alert(1)', False),
+    ('data:text/html,unsafe', False),
+    ('https://example.com/admin', False),
+    ('//example.com/admin', False),
+    ('///example.com/admin', False),
+    ('/\\example.com/admin', False),
+    ('admin', False),
+])
+def test_login_redirect_target_restricts_scheme_host_and_path(app, target, expected):
+    with app.test_request_context('http://localhost/admin/login'):
+        assert app_module.is_safe_redirect_target(target) is expected
 
 
 def test_login_admin_ignora_redirect_esterno(client):
