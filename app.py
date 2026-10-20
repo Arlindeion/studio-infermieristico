@@ -130,6 +130,14 @@ def generate_csrf_token():
         session['_csrf_token'] = secrets.token_hex(32)
     return session['_csrf_token']
 
+
+def validate_csrf_token():
+    """Validate the submitted form token without consuming the session token."""
+    supplied = request.form.get('_csrf_token')
+    expected = session.get('_csrf_token')
+    return bool(supplied and expected and secrets.compare_digest(expected, supplied))
+
+
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 # La configurazione email (server, porta, TLS, username, password, mittente)
@@ -842,12 +850,22 @@ def orari_non_prenotabili_per_chiusura(data_str):
 
 
 def is_safe_redirect_target(target):
-    if not target:
+    """Accept local paths or absolute HTTP(S) URLs pointing to this host."""
+    if not target or any(char in target for char in ('\\', '\r', '\n')):
         return False
-
-    ref_url = urlsplit(request.host_url)
-    test_url = urlsplit(target)
-    return not test_url.netloc or test_url.netloc == ref_url.netloc
+    try:
+        ref_url = urlsplit(request.host_url)
+        test_url = urlsplit(target)
+    except ValueError:
+        return False
+    if test_url.scheme:
+        return (
+            test_url.scheme in {'http', 'https'}
+            and test_url.netloc == ref_url.netloc
+            and test_url.username is None
+            and test_url.password is None
+        )
+    return target.startswith('/') and not target.startswith('//') and not test_url.netloc
 
 # ─── INTEGRAZIONE GOOGLE CALENDAR (via Arzamed) ───
 #
@@ -4545,6 +4563,20 @@ def proteggi_staging():
 
 @app.after_request
 def applica_header_sicurezza_risposta(response):
+    # Le URL con token privati non devono finire in cache, indici o Referer.
+    private_token_prefixes = (
+        '/offerta-sonno/',
+        '/questionario-sonno/',
+        '/proposta-slot/',
+        '/lista-attesa/',
+    )
+    if request.path.startswith(private_token_prefixes):
+        response.headers['Cache-Control'] = 'no-store, private, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+
     # Lo staging non deve mai essere indicizzato.
     if app.config.get('APP_ENV') == 'staging':
         response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
@@ -7449,11 +7481,13 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/admin/logout')
+@app.route('/admin/logout', methods=['POST'])
 @login_required
 def logout():
-    session.pop('conflitti_calendar_rimandati', None)
+    if not validate_csrf_token():
+        abort(400)
     logout_user()
+    session.clear()
     return redirect(url_for('login'))
 
 
@@ -7951,8 +7985,7 @@ def admin():
 
 
 def _csrf_admin_valido():
-    token = request.form.get('_csrf_token')
-    return bool(token and token == session.get('_csrf_token'))
+    return validate_csrf_token()
 
 
 def _url_dettaglio_admin(tipo, entita_id):
@@ -10072,6 +10105,8 @@ def proponi_slot_admin(tipo, entita_id):
 @app.route('/proposta-slot/<token>', methods=['GET', 'POST'])
 @limiter.limit('10 per hour', methods=['POST'])
 def accetta_proposta_slot(token):
+    if request.method == 'POST' and not validate_csrf_token():
+        abort(400)
     proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
     entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
     valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > utc_now())
@@ -10151,6 +10186,8 @@ def _segnala_prossimo_lista_attesa(corso):
 @app.route('/lista-attesa/<token>', methods=['GET', 'POST'])
 @limiter.limit('10 per hour', methods=['POST'])
 def accetta_invito_lista_attesa(token):
+    if request.method == 'POST' and not validate_csrf_token():
+        abort(400)
     iscrizione = IscrizioneCorso.query.filter_by(token_lista_attesa=token).first_or_404()
     corso = iscrizione.corso
     valida = bool(
