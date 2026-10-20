@@ -3353,6 +3353,9 @@ button.admin-inline-link {
     box-sizing: border-box;
     color: var(--testo);
     display: grid;
+    /* Keep the name row from collapsing when the timed card is crowded. */
+    align-content: start;
+    grid-auto-rows: max-content;
     gap: 0.12rem;
     left: 4px;
     min-height: 26px;
@@ -3413,13 +3416,16 @@ button.admin-inline-link {
 .admin-week-event time {
     color: var(--verde-scuro);
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .admin-week-event strong {
     font-size: 0.78rem;
     line-height: 1.15;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .admin-week-event small {

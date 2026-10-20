@@ -25,7 +25,7 @@ I risultati CI originari non certificano questi adattamenti; gli esiti della can
 - Il primo cutover legacy richiede conteggi zero **prima** di `db upgrade`; se ci sono dati, fermarsi e decidere la preservazione.
 - Su schema A4/post-A4 già applicato, `--allow-applied` può accettare dati presenti e non restituisce un inventario dei conteggi. Non richiede un nuovo backfill; usare conteggi aggregati separati quando necessari.
 - Con DB vuoto registrare l'evidenza senza creare dump inutili. Con dati da preservare, protezione e rollback precedono gli interventi rischiosi.
-- Non perdere i rilievi dell'audit precedente: la prova concorrente su PostgreSQL del rischio prestazione/call resta da eseguire; le altre correzioni richiedono regressioni e smoke pertinente.
+- Non perdere i rilievi dell'audit precedente: la prova concorrente PostgreSQL è stata eseguita e ha riprodotto le doppie richieste; il committente ha accettato il rischio e rinviato la correzione dopo la pubblicazione (D-125). Non è più un blocco al lancio. Stato e altre prove sono nel [resoconto](TEST_AUTONOMI_2026-10-20.md) e nella roadmap canonica.
 
 ## Prossimo passaggio esterno
 

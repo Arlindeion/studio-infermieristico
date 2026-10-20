@@ -52,6 +52,18 @@ test('weekly agenda removes summary cards and keeps appointment content readable
 });
 
 
+test('weekly event names keep an intrinsic row instead of collapsing under secondary content', () => {
+    const card = adminCss.match(/\.admin-week-event\s*\{([^}]+)\}/)[1];
+    const title = adminCss.match(/\.admin-week-event strong\s*\{([^}]+)\}/)[1];
+    const time = adminCss.match(/\.admin-week-event time\s*\{([^}]+)\}/)[1];
+    assert.match(card, /align-content:\s*start/);
+    assert.match(card, /grid-auto-rows:\s*max-content/);
+    assert.match(title, /min-width:\s*0/);
+    assert.match(title, /white-space:\s*nowrap/);
+    assert.match(title, /text-overflow:\s*ellipsis/);
+    assert.match(time, /white-space:\s*nowrap/);
+});
+
 test('weekly toolbar is compact, keeps the period controls and orders the views', () => {
     const agendaStart = template.indexOf('id="admin-agenda"');
     const agendaLayout = template.indexOf('class="admin-agenda-layout', agendaStart);

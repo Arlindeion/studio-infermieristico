@@ -1004,3 +1004,21 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Motivo: concentrare il lavoro sul sito utilizzabile e sicuro, senza estendere il perimetro prima di ricevere richieste reali. La gerarchia commerciale e le policy approvate restano valide.
 - Conseguenze: applicare e adattare localmente la patch PR #16, correggere preflight/migrazione e CSRF non ASCII, preservare dati e migrazioni e completare il solo Pazienti 2.0 già integrato. È ammesso preparare insieme le attività locali e le verifiche Render, senza attendere il deploy per risolvere bug autonomi. La presenza di record su schema A4 già applicato non richiede un nuovo backfill; il controllo vuoto precede soltanto il primo cutover legacy. PITR/backup/restore precedono il primo dato reale o interventi su dati da preservare. Commit, push, merge, deploy, cancellazioni, DNS e GO richiedono l'autorizzazione pertinente; la nuova priorità non li attesta già eseguiti. I documenti datati restano archivio e rimandano alla roadmap corrente.
 - Collegamenti: `AGENTS.md`, `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `ROADMAP_POST_PATCH_2026-10-20.md`, `PROJECT_BRIEF.md`, `SITE_MAP_AND_FLOWS.md`, `OPERATIONS.md`, `config.py`, `app.py`, PR #16.
+
+## D-124 — Calendar reale intoccabile durante test e pulizia degli agenti
+
+- Data: 2026-10-20.
+- Stato: approvata dal committente.
+- Decisione: gli agenti non devono creare, modificare, spostare o eliminare eventi Calendar reali. Le prove autonome usano database temporanei e integrazioni simulate; la pulizia richiesta su Render agisce esclusivamente sul database del sito, senza route o helper di annullamento che scrivano su Calendar.
+- Motivo: preservare integralmente gli appuntamenti presenti sul calendario anche quando viene rimossa una pratica di test dal sito.
+- Conseguenze: i test live di scrittura Calendar restano sospesi, non attestati come superati. La richiesta non autorizza cambiamenti alla configurazione live o al funzionamento dell'applicazione. Dopo inventario e conferma esplicita sono stati eliminati dal database otto appuntamenti test 2027, due corsi test e sei iscrizioni; nessuna modifica Calendar e nessun deploy. Altri appuntamenti, anagrafiche e storico restano preservati.
+- Collegamenti: `AGENTS.md`, `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `TEST_AUTONOMI_2026-10-20.md`.
+
+## D-125 — Concorrenza delle richieste rinviata al post-pubblicazione
+
+- Data: 2026-10-20.
+- Stato: approvata dal committente; rischio accettato per la prima pubblicazione.
+- Decisione: spostare la correzione delle doppie richieste simultanee prestazione/call nel backlog P1 dopo la pubblicazione. Il difetto riprodotto non blocca il GO; non viene dichiarato risolto né il relativo test superato.
+- Motivo: il committente considera remota la probabilità iniziale e privilegia la pubblicazione. Le nove prove forzate dimostrano la possibilità della collisione, non ne misurano la frequenza reale.
+- Conseguenze: mantenere la conferma manuale e ricontrollare le sovrapposizioni prima di confermare; correggere successivamente il controllo/salvataggio atomico condiviso e ricollaudare le tre combinazioni su PostgreSQL. Non cambiano gli altri gate di sicurezza, protezione dati, deploy e funzionamento essenziale; D-124 su Calendar resta valido. Questa decisione non autorizza deploy, DNS o apertura pubblica.
+- Collegamenti: `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `TEST_AUTONOMI_2026-10-20.md`.

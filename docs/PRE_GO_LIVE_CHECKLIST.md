@@ -10,7 +10,8 @@ Priorità del 20 ottobre 2026: [roadmap corrente](ROADMAP.md), decisione D-123. 
 - [x] API date impossibili: 400; esclusione del solo appuntamento/evento modificato senza nascondere altre occupazioni.
 - [x] PayPal assente dalle nuove scelte e rifiutato lato server anche con link legacy configurati; bonifico e conferma manuale verificati nei test locali.
 - [x] Test JavaScript, pytest, migrazioni pertinenti e `git diff --check`; sette test PostgreSQL opt-in superati su cluster UTF-8 usa-e-getta.
-- [ ] Prova concorrente PostgreSQL delle richieste prestazione/call; correggere eventuali collisioni confermate prima del GO.
+- [x] Nomi nell'agenda settimanale corretti localmente: 42 schede con durate da 15 a 240 minuti, riga del nome interamente visibile a 1440×900 e 390×844; dettaglio completo accessibile da tastiera. Da ricontrollare sul servizio dopo il deploy.
+- Concorrenza PostgreSQL: prova eseguita, doppia occupazione riprodotta in 9/9 casi forzati; **rischio accettato e correzione rinviata dopo la pubblicazione** per D-125. Non è un gate pre-lancio e non è un test superato; vedi [resoconto](TEST_AUTONOMI_2026-10-20.md).
 
 ## 2. Riconciliazione e deploy privato
 
@@ -54,3 +55,11 @@ Verifica locale del 20 ottobre 2026 sulla candidata aggiornata:
 - Chrome headless, SQLite in memoria e sole identità sintetiche: proposta privata con zero opzioni PayPal e bonifico selezionato, admin e logout a 1440×900/390×844, nessun overflow globale o errore JavaScript; logo leggibile e pulsante Esci con target minimo 44×44 px.
 - Logout → Indietro e nuova richiesta `/admin`: login richiesto in entrambi i casi.
 - Queste prove non includono richieste simultanee prestazione/call, stati admin densamente popolati, pagamenti/invii reali, stato Render o dominio pubblico. I relativi gate restano aperti sopra.
+
+### Prove autonome successive e pulizia Render
+
+Il [resoconto del 20 ottobre](TEST_AUTONOMI_2026-10-20.md) integra le evidenze precedenti: 472 Python superati, sette PostgreSQL opt-in superati separatamente e 54 JavaScript superati sulla candidata `016f93d`; concorrenza e agenda popolata avevano evidenziato due difetti. La concorrenza è rinviata al post-lancio per D-125, senza attestare la riuscita della prova. Il difetto dei nomi nell'agenda è stato poi corretto e verificato localmente: suite Python 472 passed, 7 skipped; JavaScript 55 passed con la nuova regressione CSS; controllo browser delle 42 schede superato alle due dimensioni.
+
+Pulizia autorizzata e verificata nel solo database del servizio Render di produzione: eliminati otto appuntamenti test del 2027, due corsi test e sei iscrizioni esplicitamente confermate dal committente. Preservati i tre altri appuntamenti del 2027, anagrafiche e storico; aggiunte sedici voci di audit. Nessuna operazione Calendar o email, nessun deploy. Questa pulizia circoscritta non certifica l'assenza di qualsiasi altro dato sintetico.
+
+Per D-124 gli agenti non devono modificare Calendar reale: i test locali usano simulazioni; le prove di scrittura esterne sopra elencate restano non eseguite e non autorizzate.

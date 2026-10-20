@@ -14,7 +14,7 @@ Il lavoro locale preparatorio può procedere insieme alla riconciliazione Render
 
 ## Stato verificato e limiti
 
-La base del checkout è `main` a `dd6c2be`. La patch PR #16 (`eefab033`, 2 commit, 9 file) è stata applicata localmente e adattata alla nuova priorità. I suoi log CI attestano 468 test Python superati, 7 PostgreSQL opt-in saltati e 54 JavaScript superati **sulla versione della PR**, non sulle successive modifiche locali. La verifica della candidata aggiornata è riportata nella [checklist](PRE_GO_LIVE_CHECKLIST.md).
+La candidata `016f93d` è stata committata e pubblicata su `origin/main`. La patch PR #16 (`eefab033`, 2 commit, 9 file), basata su `dd6c2be`, è stata applicata e adattata alla nuova priorità. I suoi log CI attestano 468 test Python superati, 7 PostgreSQL opt-in saltati e 54 JavaScript superati **sulla versione della PR**, non sulle successive modifiche. La verifica aggiornata è riportata nella [checklist](PRE_GO_LIVE_CHECKLIST.md) e nel [resoconto delle prove autonome](TEST_AUTONOMI_2026-10-20.md). La console del servizio Render di produzione ha restituito il commit `edd800444ab95de7ced8654c64b9144c2c9363c6`: il push della candidata non equivale al suo deploy.
 
 Le conferme precedenti su grafica Admin 2.0, policy professionali/legali, cache admin e collaudi SMTP/Calendar restano evidenze storiche; non sono invalidate da questa revisione. Commit live, revisione Alembic, dati e configurazione corrente di Render restano da riconciliare. Non dichiarare il deploy eseguito o assente senza evidenza del servizio.
 
@@ -41,7 +41,7 @@ Seguire [OPERATIONS.md](OPERATIONS.md#paz-a3a4--preflight-e-cutover-diretto-sul-
 
 L'[audit del 18 settembre](AUDIT_PRE_LANCIO_2026-09-18.md) resta un inventario storico. La candidata locale include le correzioni per data impossibile nell'API call, esclusione `ignore_id` senza cancellare altre occupazioni, logo admin leggibile e input CSRF non ASCII; la chiusura richiede i test della candidata e il collaudo privato pertinente.
 
-Il possibile conflitto tra richieste simultanee prestazione/call resta **un rischio dedotto, non ancora riprodotto**: in R4 serve una prova concorrente su PostgreSQL usa-e-getta e, se confermato, una correzione prima del GO. Il fallback Calendar senza cache fresca richiede riconciliazione e conferma manuale: non trasformare l'indisponibilità di Google in un errore che perda la richiesta locale.
+Il conflitto tra richieste simultanee prestazione/call è **riprodotto su PostgreSQL usa-e-getta**: nove prove su nove accettano due richieste per lo stesso orario (prestazione/prestazione, call/call e misto). La prova sincronizza l'esecuzione dopo il controllo reale della disponibilità senza falsificarne il risultato; non misura la probabilità nel traffico normale. Il committente ha accettato questo rischio per il lancio e rinviato la correzione al post-pubblicazione (D-125): **non blocca R4 né il GO e non è risolto**. I nomi invisibili nelle schede dell'agenda settimanale popolata sono stati corretti e ricollaudati localmente a 1440×900 e 390×844, con 42 appuntamenti da 15 a 240 minuti; resta la verifica della correzione dopo il deploy. Dettagli nel resoconto. Il fallback Calendar senza cache fresca richiede riconciliazione e conferma manuale: non trasformare l'indisponibilità di Google in un errore che perda la richiesta locale. Per ordine del committente, Calendar reale non deve essere modificato dagli agenti: ulteriori collaudi di scrittura restano sospesi e non vengono eseguiti in autonomia (D-124).
 
 ## Piano canonico 1–20
 
@@ -72,6 +72,7 @@ Numeri e stati storici non vengono riutilizzati. “Completato” indica il rela
 
 ## P1 — dopo la stabilizzazione del dominio
 
+- Correggere le doppie richieste simultanee prestazione/call con controllo e salvataggio atomici condivisi, poi ripetere le tre combinazioni su PostgreSQL. Rischio accettato per il lancio in D-125; nel frattempo ricontrollare le sovrapposizioni prima della conferma manuale. Nessuna stima quantitativa della probabilità disponibile.
 - Rifiniture estetiche oltre i difetti che impediscono lettura o uso, ottimizzazione foto e Open Graph, sitemap e SEO aggiuntiva.
 - Campagna sonno, nuove creatività, testimonianze reali autorizzate e attivazione delle misurazioni con consenso.
 - Ottimizzazioni del funnel e riduzione del carico manuale basate sui primi utilizzi.

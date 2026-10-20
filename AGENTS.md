@@ -100,6 +100,7 @@ Le regole dettagliate su stati, capienza, coppie, modifiche e conferme sono in `
 - Usare SQLAlchemy ORM e migrazioni esplicite per l'evoluzione dello schema.
 - Prima di modificare modelli o stati, verificare route, template, email, Calendar, migrazioni e test coinvolti.
 - Google Calendar resta il collante con Arzamed; gli eventi creati dal sito devono essere precisi e tracciabili.
+- Vincolo operativo del committente del 20 ottobre 2026: gli agenti non devono creare, modificare, spostare o eliminare eventi su Calendar reale. I test autonomi devono usare integrazioni simulate. La pulizia dei dati del sito va effettuata solo sul database, con bersagli verificati e autorizzazione pertinente, mai attraverso route di annullamento o helper che sincronizzano Calendar. Il vincolo non autorizza a cambiare configurazione o comportamento delle integrazioni live.
 
 ## Sicurezza e privacy
 
