@@ -228,6 +228,21 @@ def test_private_token_pages_disable_caching_and_referrers(client):
         assert response.headers['Referrer-Policy'] == 'no-referrer'
 
 
+def test_first_calendar_failure_is_recorded_even_soon_after_startup(app, monkeypatch):
+    with app.app_context():
+        monkeypatch.setattr(app_module.time, 'monotonic', lambda: 42.0)
+        app_module._cache_calendario['errore_registrato_il'] = 0.0
+        app_module._registra_errore_lettura_calendario('TimeoutError', 42.0, 300)
+        events = RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).all()
+        assert len(events) == 1
+        app_module._registra_errore_lettura_calendario('TimeoutError', 43.0, 300)
+        assert RegistroEvento.query.filter_by(
+            categoria='google_calendar', esito='errore'
+        ).count() == 1
+
+
 def test_health_check_e_esente_dai_limiti_globali(app):
     route_esenti = limiter.limit_manager._route_exemptions
 

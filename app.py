@@ -183,6 +183,9 @@ talisman = Talisman(
     session_cookie_secure=os.environ.get('FLASK_ENV') == 'production',
     session_cookie_http_only=True,
     session_cookie_samesite='Lax',
+    # Le URL dei questionari e delle proposte contengono token privati.
+    # La policy globale evita il leak anche se Talisman sovrascrive altri hook.
+    referrer_policy='no-referrer',
 )
 
 
@@ -939,7 +942,10 @@ def _chiudi_circuito_calendario():
 
 def _registra_errore_lettura_calendario(tipo_errore, adesso, durata_cache):
     with _lock_stato_calendario:
-        if adesso < _cache_calendario['errore_registrato_il'] + durata_cache:
+        # Il valore 0 indica nessun errore ancora registrato. Un processo
+        # avviato da pochi secondi può avere monotonic() < durata_cache.
+        ultima_registrazione = _cache_calendario['errore_registrato_il']
+        if ultima_registrazione and adesso < ultima_registrazione + durata_cache:
             return
         _cache_calendario['errore_registrato_il'] = adesso
     registra_evento(
