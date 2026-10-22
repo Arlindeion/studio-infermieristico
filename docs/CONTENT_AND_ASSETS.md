@@ -14,6 +14,8 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 
 ## Messaggi approvati
 
+- Ricontatto corsi senza date (22 ottobre 2026): usare «Lascia il tuo interesse», «L'invio non comporta alcuna iscrizione» e «Invia il tuo interesse», senza conferme d’iscrizione. Comportamento in `SITE_MAP_AND_FLOWS.md`, decisione D-130; nessuna nuova immagine.
+
 ### Sistema generale per il creator
 
 - Il sistema permanente per produzione, approvazione, consegna e misurazione è in [`reels-creator-system/README.md`](reels-creator-system/README.md).

@@ -1,0 +1,60 @@
+{% macro course_interest_form(form_data, topics, form_id='course-interest-form') %}
+        <form class="form-prenotazione course-interest-form" method="POST" action="{{ url_for('course_interest') }}" id="{{ form_id }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-ricontatto-intro">
+                <span>Modulo di ricontatto</span>
+                <p><strong>L'invio non comporta alcuna iscrizione.</strong></p>
+                <p>Riceverai un contatto soltanto quando ci sarà una nuova possibilità coerente con la tua scelta.</p>
+            </div>
+
+            <div class="form-gruppo">
+                <label for="nome">Nome e cognome *</label>
+                <input type="text" id="nome" name="nome" value="{{ form_data.get('nome', '') }}" autocomplete="name" maxlength="100" required>
+            </div>
+
+            <div class="form-riga">
+                <div class="form-gruppo">
+                    <label for="telefono">Telefono *</label>
+                    <input type="tel" id="telefono" name="telefono" value="{{ form_data.get('telefono', '') }}" autocomplete="tel" maxlength="20" pattern="[0-9+()./ \-]{6,20}" title="Usa da 6 a 20 caratteri: numeri, spazi, +, parentesi, punti, / o trattini." required>
+                </div>
+                <div class="form-gruppo">
+                    <label for="email">Email <span class="label-facoltativa">facoltativa</span></label>
+                    <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" autocomplete="email" maxlength="100">
+                </div>
+            </div>
+
+            <div class="form-gruppo">
+                <label for="tematica">Corso o tematica di interesse *</label>
+                <select id="tematica" name="tematica" required>
+                    <option value="">Seleziona una voce</option>
+                    {% for value, topic in topics.items() %}
+                    <option value="{{ value }}" {{ 'selected' if form_data.get('tematica') == value }}>{{ topic.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-gruppo">
+                <label for="note">Preferenze o domande <span class="label-facoltativa">facoltative</span></label>
+                <textarea id="note" name="note" rows="4" maxlength="2000" placeholder="Per esempio: giorni, fasce orarie o un dubbio sul corso">{{ form_data.get('note', '') }}</textarea>
+            </div>
+
+            <div class="form-gruppo">
+                <label class="privacy-label">
+                    <input type="checkbox" name="consenso_privacy" class="privacy-checkbox" required {{ 'checked' if form_data.get('consenso_privacy') }}>
+                    <span class="privacy-text">Dichiaro di aver letto l’<a href="/privacy" class="privacy-link" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire questa richiesta di ricontatto. *</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn" data-conversion="course_interest_submit">Invia il tuo interesse</button>
+            <p class="nota-form">Ti contatterò per proporti una data: potrai decidere in quel momento se richiedere l’iscrizione.</p>
+        </form>
+{% endmacro %}

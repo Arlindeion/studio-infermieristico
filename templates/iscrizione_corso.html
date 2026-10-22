@@ -51,7 +51,7 @@
             <h1>{{ corso.titolo }}</h1>
             <p class="corso-disostruzione-lead">Un corso teorico-pratico dedicato a genitori, nonni e caregiver, per ridurre i rischi a tavola e imparare come intervenire in caso di ostruzione delle vie aeree.</p>
             <p>Il corso si svolge presso S.C. Studio Infermieristico, in Via C. D’Agnese 43, 65015 Montesilvano (PE), e dura circa 2 ore e 30 minuti.</p>
-            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="corso_disostruzione_modulo">Iscriviti ora</a>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="corso_disostruzione_modulo">{{ 'Iscriviti ora' if corso.has_open_dates else 'Lascia il tuo interesse' }}</a>
         </div>
         <figure class="corso-disostruzione-hero__media">
             <img src="{{ url_for('static', filename='img/corso-disostruzione-copertina-studio.jpg') }}" width="1200" height="1600" alt="Sala dello studio pronta per il corso di disostruzione pediatrica e tagli sicuri" fetchpriority="high">
@@ -322,6 +322,10 @@
     </div>
     {% endif %}
 
+    {% if not corso.has_open_dates %}
+    {% from '_course_interest_form.html' import course_interest_form with context %}
+    {{ course_interest_form({'tematica': corso.interest_topic}, {corso.interest_topic: {'label': corso.titolo}}, form_anchor_id) }}
+    {% else %}
     <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}" data-course-registration-form>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
@@ -613,5 +617,6 @@
             {% endif %}
         </button>
     </form>
+    {% endif %}
 </section>
 {% endblock %}

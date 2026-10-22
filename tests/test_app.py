@@ -1138,6 +1138,8 @@ def test_privacy_policy_pubblica_il_testo_aggiornato(client):
 
 
 def test_checkbox_obbligatorie_distinguono_presa_visione_e_consensi_specifici(client):
+    for course_type in ('disostruzione-pediatrica', 'accompagnamento-nascita', 'bls-d', 'laboratorio-infanzia'):
+        _crea_data_corso(course_type, 'Edizione Test')
     prenotazione = client.get('/prenota')
     call = client.get('/prenota-call-sonno')
     corso = client.get('/iscrizione-corsi/disostruzione-pediatrica')
@@ -1854,7 +1856,7 @@ def test_pagina_disostruzione_presenta_contenuti_e_foto_del_corso(client):
     assert 'Selene nello studio' not in resp.text
     assert 'Per approfondire:' not in resp.text
     assert 'href="#richiesta-ricontatto"' in resp.text
-    assert 'data-conversion="corso_disostruzione_modulo">Iscriviti ora</a>' in resp.text
+    assert 'data-conversion="corso_disostruzione_modulo">Lascia il tuo interesse</a>' in resp.text
     assert resp.text.count('<h1>') == 1
 
 
@@ -2453,6 +2455,7 @@ def test_iscrizione_blsd_salva_richiesta_individuale(client):
 
 
 def test_pagina_blsd_usa_nuovo_slug_e_reindirizza_quello_precedente(client):
+    _crea_data_corso('bls-d', 'Corso BLSD')
     resp = client.get('/iscrizione-corsi/blsd')
 
     assert resp.status_code == 200
@@ -2575,7 +2578,7 @@ def test_ricontatto_blsd_non_richiede_checkbox_ridondanti(client):
     assert 'id="richiesta-ricontatto"' in page.text
     assert 'name="prove_pratiche"' not in page.text
     assert 'name="conferma_finale"' not in page.text
-    assert page.text.count('name="buono_stato_salute"') == 1
+    assert 'name="buono_stato_salute"' not in page.text
 
     response = client.post('/iscrizione-corsi/blsd', data={
         'nome': 'Giulia Bianchi',
@@ -2594,8 +2597,41 @@ def test_ricontatto_blsd_non_richiede_checkbox_ridondanti(client):
     with flask_app.app_context():
         iscrizione = IscrizioneCorso.query.one()
         assert iscrizione.tipo_richiesta == 'ricontatto'
-        assert iscrizione.extra_dict()['buono_stato_salute'] is True
+        assert 'buono_stato_salute' not in iscrizione.extra_dict()
+        assert iscrizione.codice_fiscale == ''
         assert 'prove_pratiche' not in iscrizione.extra_dict()
+
+
+@pytest.mark.parametrize('slug,topic', [
+    ('blsd', 'blsd'),
+    ('disostruzione-pediatrica', 'disostruzione-tagli-sicuri'),
+    ('accompagnamento-nascita', 'accompagnamento-nascita'),
+    ('laboratorio-infanzia', 'laboratori'),
+])
+def test_course_without_dates_uses_minimal_interest_form(client, slug, topic):
+    page = client.get(f'/iscrizione-corsi/{slug}')
+    assert page.status_code == 200
+    assert 'id="richiesta-ricontatto"' in page.text
+    assert 'action="/iscrizione-corsi/interesse"' in page.text
+    assert f'value="{topic}" selected' in page.text
+    assert "L'invio non comporta alcuna iscrizione." in page.text
+    for field in ('codice_fiscale', 'buono_stato_salute', 'consenso_dati_gravidanza',
+                  'dpp', 'conferma_finale', 'condizioni_corso', 'nome_bambino'):
+        assert f'name="{field}"' not in page.text
+    token = re.search(r'name="_csrf_token" value="([^"]+)"', page.text).group(1)
+    response = client.post(f'/iscrizione-corsi/{slug}', data={
+        'nome': 'Persona Test', 'telefono': '3331234567',
+        'consenso_privacy': 'on', '_csrf_token': token,
+    })
+    assert response.status_code == 302
+    assert response.headers['Location'] == '/iscrizione-corsi/interesse/conferma'
+    with flask_app.app_context():
+        interest = IscrizioneCorso.query.one()
+        assert interest.extra_dict()['tematica_interesse'] == topic
+        assert interest.codice_fiscale == ''
+        assert interest.tipo_richiesta == 'ricontatto'
+        assert interest.posti == interest.posti_richiesti == 0
+        assert interest.persona is None
 
 
 def test_modulo_interesse_corsi_raccoglie_temi_senza_dati_da_iscrizione(client):

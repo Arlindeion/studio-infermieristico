@@ -6456,6 +6456,10 @@ def _render_course_interest_error(message):
 @app.route('/iscrizione-corsi/interesse', methods=['GET', 'POST'])
 @limiter.limit('5 per minute', methods=['POST'])
 def course_interest():
+    return _handle_course_interest()
+
+
+def _handle_course_interest(topic_key=None):
     if request.method == 'POST':
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
@@ -6464,7 +6468,7 @@ def course_interest():
         name = request.form.get('nome', '').strip()
         phone = request.form.get('telefono', '').strip()
         email = request.form.get('email', '').strip()
-        topic_key = request.form.get('tematica', '').strip()
+        topic_key = topic_key or request.form.get('tematica', '').strip()
         notes = request.form.get('note', '').strip()
         privacy_consent = _checkbox_checked('consenso_privacy')
         topic = COURSE_INTEREST_TOPICS.get(topic_key)
@@ -6541,6 +6545,9 @@ def iscrizione_corso(corso_tipo):
 
     corso = _corso_iscrivibile_con_date(corso_tipo)
     if request.method == 'POST':
+        if not corso['has_open_dates']:
+            # Old open pages must not collect enrollment data for a callback.
+            return _handle_course_interest(corso['interest_topic'])
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             return _render_iscrizione_con_errore(corso_tipo, 'Richiesta non valida. Riprova.')

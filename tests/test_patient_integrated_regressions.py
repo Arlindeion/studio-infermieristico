@@ -507,7 +507,7 @@ def test_public_contact_fields_match_backend_limits_and_shared_validators():
         PROJECT_ROOT / "templates" / "iscrizione_corso.html",
         PROJECT_ROOT / "templates" / "iscrizione_accompagnamento_privata.html",
         PROJECT_ROOT / "templates" / "richiesta_azienda.html",
-        PROJECT_ROOT / "templates" / "interesse_corsi.html",
+        PROJECT_ROOT / "templates" / "_course_interest_form.html",
         PROJECT_ROOT / "templates" / "prenota_call_sonno.html",
     ]
     for path in public_templates:

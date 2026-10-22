@@ -71,7 +71,7 @@ Non trasformare la homepage in un catalogo e non lasciare che un solo servizio o
 - Non promettere risultati garantiti, diagnosi, terapie, soluzioni magiche o serenità universale.
 - Rendere visibili ruolo di Selene, iscrizione OPI Pescara, metodo e confini clinici.
 - Usare i nomi approvati in `BRAND_SYSTEM.md` e `CONTENT_AND_ASSETS.md`.
-- La landing `/consulenze-online` resta verticale sulla consulenza del sonno infantile. Non inserire fasce d’età o limiti anagrafici nel modulo di richiesta e non reinserire ciuccio, spannolinamento e routine generiche.
+- La landing `/consulenze-online` resta verticale sulla consulenza del sonno infantile. La call richiede obbligatoriamente l’età del bambino in mesi, senza fasce d’età o limiti anagrafici di ammissione (D-130). Non reinserire ciuccio, spannolinamento e routine generiche.
 - `Consulenza mirata` riguarda una difficoltà circoscritta; `Percorso sonno personalizzato` è l'offerta principale quando più aspetti si influenzano.
 - I prezzi non sono la leva principale del sito e i dati economici interni del brief non vanno pubblicati automaticamente.
 - Usare soltanto testimonianze reali e autorizzate, senza alterarne il significato.

@@ -163,7 +163,7 @@ Campagna/condivisione
 - Ogni conflitto con prestazioni, corsi, call, eventi manuali o Arzamed/Google Calendar rende lo slot non prenotabile.
 - Lo stato `In attesa` blocca immediatamente lo slot ma non equivale a conferma. La pagina e l'email devono dirlo senza ambiguità.
 - Se l'orario cambia, Selene può concordarlo direttamente oppure inviare dall’admin una proposta modificabile via email. Il link dura 48 ore, ricontrolla lo slot al momento dell’accettazione e conferma solo se resta libero.
-- Prima della call vengono richiesti contatti, ruolo di genitore/tutore, difficoltà e durata, obiettivo facoltativo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesta l’età e non viene richiesto il diario.
+- Prima della call vengono richiesti contatti, età del bambino in mesi obbligatoria (senza limite anagrafico di ammissione), ruolo di genitore/tutore, difficoltà e durata, obiettivo facoltativo del contatto, presa visione dei prezzi, conferma del confine educativo e slot. Non viene richiesto il diario. L’età obbligatoria è confermata dal committente il 22 ottobre 2026 (D-130).
 - Il questionario completo viene inviato immediatamente dopo la conferma del pagamento. È ospitato sul sito, non indicizzato e protetto da token personale non prevedibile. Se non è stato richiesto l’avvio anticipato, la compilazione non autorizza analisi o lavoro professionale prima del quattordicesimo giorno dalla conferma del pagamento.
 - WhatsApp resta il canale secondario per chi è indeciso, non sostituisce la prenotazione dedicata.
 - Conferme e promemoria automatici vengono inviati esclusivamente via email; WhatsApp resta un contatto umano contestuale e non fa parte dell'automazione della prenotazione.

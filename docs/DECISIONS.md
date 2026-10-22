@@ -1022,3 +1022,12 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Motivo: il committente considera remota la probabilità iniziale e privilegia la pubblicazione. Le nove prove forzate dimostrano la possibilità della collisione, non ne misurano la frequenza reale.
 - Conseguenze: mantenere la conferma manuale e ricontrollare le sovrapposizioni prima di confermare; correggere successivamente il controllo/salvataggio atomico condiviso e ricollaudare le tre combinazioni su PostgreSQL. Non cambiano gli altri gate di sicurezza, protezione dati, deploy e funzionamento essenziale; D-124 su Calendar resta valido. Questa decisione non autorizza deploy, DNS o apertura pubblica.
 - Collegamenti: `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `TEST_AUTONOMI_2026-10-20.md`.
+
+## D-130 — Ricontatto corsi minimo ed età obbligatoria nella call sonno
+
+- Data: 2026-10-22.
+- Stato: approvata dal committente; correzione locale del ricontatto, deploy e verifica Render ancora necessari.
+- Decisione: quando non sono disponibili date, tutte le pagine corso usano lo stesso modulo minimo di interesse, con tematica preselezionata: nome, telefono, email facoltativa, note facoltative e presa visione privacy. Nessun codice fiscale, dato sanitario o accettazione/conferma d’iscrizione. Le iscrizioni a edizioni disponibili restano invariate.
+- Precisazione sonno: l’età del bambino in mesi resta obbligatoria, come già implementato; non è un limite di ammissione. La frase del flusso che escludeva la raccolta dell’età era obsoleta, non un difetto del modulo. Questa precisazione integra D-106 e corregge la fonte competente `SITE_MAP_AND_FLOWS.md`.
+- Conseguenze: riuso del modulo e del salvataggio ricontatti esistenti, zero posti e nessuna anagrafica creata. Anche gli invii da vecchie pagine senza date ignorano i dati amministrativi/sanitari del vecchio modulo. Nessuna migrazione né intervento su Calendar reale.
+- Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `AGENTS.md`.
