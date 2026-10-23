@@ -4,9 +4,9 @@ Questa cartella raccoglie la memoria stabile di S.C. Studio Infermieristico: con
 
 `AGENTS.md` resta la fonte prevalente per le regole che devono essere rispettate durante gli interventi sul repository. Questa cartella deve spiegare il progetto e conservarne le decisioni senza trasformare il `README.md` tecnico o le conversazioni in fonti parallele e contraddittorie.
 
-## Lavoro corrente — 20 ottobre 2026
+## Lavoro corrente — 22 ottobre 2026
 
-La [roadmap](ROADMAP.md) è la fonte unica delle priorità verso il dominio. La [checklist di pubblicazione](PRE_GO_LIVE_CHECKLIST.md) raccoglie le verifiche; [ROADMAP_POST_PATCH_2026-10-20.md](ROADMAP_POST_PATCH_2026-10-20.md) riconcilia il documento allegato con la patch applicata e D-123. I documenti storici e le proposte rimandano a queste fonti senza riattivare vecchie scadenze o consegne.
+Il dominio definitivo è collegato e funziona con password, non è aperto al pubblico (D-131). La [roadmap di sviluppo](ROADMAP.md) è la fonte unica per collaudo privato, futuro GO, stabilizzazione e backlog P1/P2. La [checklist di pubblicazione](PRE_GO_LIVE_CHECKLIST.md) raccoglie le verifiche e il [resoconto del 22 ottobre](VERIFICHE_RILASCIO_2026-10-22.md) distingue conferme del committente, controlli diretti e limiti. La [riconciliazione post-patch](ROADMAP_POST_PATCH_2026-10-20.md) e le altre proposte datate restano archivio, non piani paralleli. Nessun documento apre il sito, avvia spesa o riattiva PayPal.
 
 ## Ordine di lettura
 

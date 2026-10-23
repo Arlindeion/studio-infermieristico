@@ -1,8 +1,10 @@
 # Istruzioni per locandine e materiali commerciali
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Ultimo aggiornamento: 29 luglio 2026.
 
-Priorità e calendario: [ROADMAP.md](ROADMAP.md), D-123. Nuovi materiali commerciali seguono la stabilizzazione del dominio e non sono un gate della pubblicazione.
+Priorità e calendario: [ROADMAP.md](ROADMAP.md), D-123 e D-131–D-132. Il dominio collegato con password non avvia nuove consegne: nuovi materiali commerciali seguono l'apertura pubblica e la stabilizzazione; non sono un gate del lancio.
 
 ## Scopo di questo documento
 

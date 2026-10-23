@@ -1,10 +1,12 @@
 # Checklist di pubblicazione sul dominio
 
+Aggiornamento 22 ottobre 2026: **dominio funzionante con password, nessun GO pubblico** (D-131). Stato e ordine del lavoro in [ROADMAP.md](ROADMAP.md); fonti delle prove in [VERIFICHE_RILASCIO_2026-10-22.md](VERIFICHE_RILASCIO_2026-10-22.md). Le caselle aperte non cancellano le evidenze storiche: indicano controlli non interamente documentati sulla candidata e sul dominio correnti.
+
 Priorità del 20 ottobre 2026: [roadmap corrente](ROADMAP.md), decisione D-123. PayPal è sospeso; il flusso sonno usa il bonifico con conferma manuale. Campagna, nuove funzioni e redesign non sono gate della prima pubblicazione.
 
 ## 1. Candidata locale
 
-- [ ] Identificare il commit candidato e chiudere i test locali; i risultati CI della PR #16 non attestano modifiche successive.
+- [x] Candidata `3fe6033`, commit e push verificati; manual deploy confermato. Test locali ricontatto/sonno e grafica desktop/mobile eseguiti; perimetro del worktree e skip nel resoconto del 22 ottobre. La CI della PR #16 non attesta queste modifiche.
 - [x] CSRF: proposta orario, lista d'attesa e logout POST; rifiuto di token assenti, errati e non ASCII senza errori 500.
 - [x] Redirect login locali/sullo stesso host; cache/noindex delle quattro famiglie di URL con token e policy no-referrer.
 - [x] API date impossibili: 400; esclusione del solo appuntamento/evento modificato senza nascondere altre occupazioni.
@@ -17,7 +19,9 @@ Priorità del 20 ottobre 2026: [roadmap corrente](ROADMAP.md), decisione D-123. 
 
 Seguire [OPERATIONS.md](OPERATIONS.md#paz-a3a4--preflight-e-cutover-diretto-sul-database-render-vuoto). Sul servizio autorizzato:
 
-- [ ] Registrare commit live/candidato, revisione Alembic, stato del servizio e configurazione non segreta; mantenere Basic Auth/noindex e auto-deploy disattivato.
+- [x] Commit candidato e manual deploy `3fe6033` registrati; ricontatto minimo osservato sul servizio dopo deploy. Basic Auth mantenuta sul dominio secondo conferma del committente.
+- [x] Registrato preflight `cutover_gia_applicato`, revisione `e8b1c4d7a902` e validazioni staging/production riferite dal committente prima dell'ultima correzione senza migrazioni. Production validata con override temporaneo, non attivata stabilmente.
+- [ ] Riconfermare health, log, header noindex, runtime non segreto e auto-deploy/Sync dal pannello prima del GO; non leggere o registrare segreti.
 - [ ] **Prima di qualunque migrazione del primo cutover**, eseguire `python patient_cutover_preflight.py --allow-applied`.
 - [ ] Se schema legacy con dati: fermarsi e decidere la preservazione; niente backfill automatico o cancellazioni per aggirare il gate.
 - [ ] Se `cutover_gia_applicato`: non richiedere un DB vuoto o un nuovo backfill; inventario aggregato separato se serve.
@@ -38,13 +42,24 @@ Seguire [OPERATIONS.md](OPERATIONS.md#paz-a3a4--preflight-e-cutover-diretto-sul-
 
 ## 4. GO e dominio
 
+- [x] Collegamento privato del dominio autorizzato: DNS OVH apex/`www` configurati e verificati su Render, record posta preservati nello screenshot, certificato apex emesso; `PUBLIC_BASE_URL` sul dominio e funzionamento con password confermati dal committente.
+- [ ] Confermare certificato `www` emesso e redirect HTTPS/`www` → apex; ultimo stato esplicito ancora pending. Verificare accesso anonimo bloccato, canonical, robots/noindex sul dominio protetto.
+
 - [ ] GO esplicito sulla candidata e piano di ritorno applicativo compatibile con i dati A4.
-- [ ] Impostare intenzionalmente `APP_ENV=production` e `PUBLIC_BASE_URL=https://scstudioinfermieristico.it`; rimuovere protezione staging soltanto nel cutover concordato.
+- [ ] Solo dopo nuovo GO: impostare intenzionalmente `APP_ENV=production`, mantenere `PUBLIC_BASE_URL=https://scstudioinfermieristico.it` e rimuovere le sole credenziali `STAGING_AUTH_*` nel cutover concordato; login admin sempre protetto. Oggi resta staging con password.
 - [ ] DNS apex/`www` secondo pannello Render, HTTPS, redirect canonici, cookie sicuri, URL email, Open Graph e indicizzabilità delle sole pagine pubbliche.
 - [ ] Mittente email e SPF/DKIM/DMARC verificati; smoke sul dominio e monitoraggio di errori, invii, Calendar e database.
 - [ ] Campagna e PayPal non vengono attivati da questo GO.
 
 ## Evidenze della candidata
+
+### Evidenze correnti — 22 ottobre 2026
+
+Il [resoconto corrente](VERIFICHE_RILASCIO_2026-10-22.md) registra `3fe6033`, quattro regressioni ricontatto e la conferma dell'età obbligatoria nella call. Esito locale del worktree (con test backup non ancora committati): **504 passed, 12 skipped**, **55 JavaScript passed**, `git diff --check` superato. Controllo delle quattro pagine corso a 1440×900 e 390×844 senza overflow. Nessun nuovo invio live né collaudo completo admin sul dominio.
+
+Backup e monitor Mac/Windows attivi; restore Windows isolato con 28 tabelle riuscito secondo output del committente. Restano evidenze delle scadenze ordinarie, recupero fisico stop/riavvio e restore dell'archivio reale Mac, come in [OPERATIONS.md](OPERATIONS.md#backup-e-ripristino-postgresql).
+
+### Evidenze storiche precedenti alla candidata corrente
 
 La patch originale PR #16 ha CI verde con 468 Python, 7 PostgreSQL saltati e 54 JavaScript. Questa evidenza precede gli adattamenti locali del 20 ottobre; riportare qui gli esiti aggiornati dopo l'esecuzione, senza dati personali o segreti.
 

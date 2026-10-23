@@ -1,8 +1,10 @@
 # Campagna Meta — consulenza del sonno
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Ultimo aggiornamento operativo: 20 ottobre 2026.
 
-> Piano successivo alla stabilizzazione del dominio, secondo [ROADMAP.md](ROADMAP.md) e D-123. Preparazione e attivazione della campagna non bloccano la pubblicazione; il documento non avvia spesa o pubblicazioni. PayPal non è un prerequisito del funnel: al lancio il sonno usa il bonifico manuale.
+> Piano successivo al GO pubblico e alla stabilizzazione, secondo [ROADMAP.md](ROADMAP.md), D-123 e D-131–D-132. Il dominio con password non avvia campagna o misurazione. Preparazione e attivazione non bloccano il lancio; questo documento non autorizza spesa o pubblicazioni. PayPal non è un prerequisito del funnel: il sonno usa il bonifico manuale.
 
 ## Obiettivo e vincoli
 

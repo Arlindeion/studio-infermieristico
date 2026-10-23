@@ -6,7 +6,7 @@ Il contesto dell'attività, l'identità e le priorità non sono duplicati in que
 
 ## Priorità corrente
 
-Pubblicazione sul dominio secondo [ROADMAP.md](docs/ROADMAP.md) e [PRE_GO_LIVE_CHECKLIST.md](docs/PRE_GO_LIVE_CHECKLIST.md). La revisione della roadmap allegata è in [ROADMAP_POST_PATCH_2026-10-20.md](docs/ROADMAP_POST_PATCH_2026-10-20.md). PayPal è sospeso fino a nuovo ordine; il flusso sonno usa il bonifico e la conferma manuale.
+Al 22 ottobre 2026 il dominio `https://scstudioinfermieristico.it` funziona con password, secondo conferma del committente: resta staging protetto, non pubblico. `3fe6033` è stato distribuito con deploy manuale confermato; ricontatto minimo verificato sul servizio. La [roadmap di sviluppo](docs/ROADMAP.md) separa collaudo privato, GO futuro, P1 e P2; [checklist](docs/PRE_GO_LIVE_CHECKLIST.md) ed [evidenze](docs/VERIFICHE_RILASCIO_2026-10-22.md) distinguono prove e attività mancanti. PayPal resta sospeso; sonno con bonifico manuale. Configurazione dominio e backup attuali in [OPERATIONS.md](docs/OPERATIONS.md), decisioni D-128–D-132.
 
 ## Stack
 

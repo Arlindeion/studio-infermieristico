@@ -1,8 +1,10 @@
 # Contenuti e materiali
 
-Ultimo aggiornamento: 20 ottobre 2026.
+Allineamento operativo: 22 ottobre 2026; le date degli inventari e dei materiali sottostanti restano storiche.
 
 ## Perimetro corrente
+
+Dominio definitivo disponibile con password, non apertura pubblica: stato e prossimi passi in [ROADMAP.md](ROADMAP.md), D-131–D-132. Ricontatto minimo D-130 distribuito in `3fe6033`, osservato sul servizio dopo deploy; età in mesi obbligatoria nella call confermata. Nessun nuovo prezzo, immagine o materiale è approvato da questa revisione.
 
 La [roadmap](ROADMAP.md) governa il lavoro verso il dominio (D-123). I contenuti pubblicati devono essere autorizzati e coerenti; nuovi master, campagne, testimonianze e rifiniture non bloccanti sono successivi. La proposta sonno presenta il bonifico; PayPal è sospeso e non viene offerto nelle nuove scelte. Le condizioni versionate, i prezzi e le immagini approvate restano invariati. Il logo chiaro nell'admin usa un fondo verde profondo per renderne leggibile il tratto.
 

@@ -2,6 +2,8 @@
 
 Le decisioni precedenti sono registrate retrospettivamente nel luglio 2026 perché inizialmente vivevano nelle conversazioni e in `AGENTS.md`.
 
+Allineamento al 22 ottobre 2026: per operatività e prossimi passi prevale [ROADMAP.md](ROADMAP.md); le decisioni storiche restano datate, non attestazioni correnti. D-128–D-129 aggiornano backup/monitor; D-130 ricontatto ed età sonno; D-131 dominio privato, non GO; D-132 roadmap di sviluppo. Evidenze e limiti in [VERIFICHE_RILASCIO_2026-10-22.md](VERIFICHE_RILASCIO_2026-10-22.md).
+
 ## D-001 — Crescita controllata
 
 - Stato: approvata.
@@ -1023,11 +1025,66 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Conseguenze: mantenere la conferma manuale e ricontrollare le sovrapposizioni prima di confermare; correggere successivamente il controllo/salvataggio atomico condiviso e ricollaudare le tre combinazioni su PostgreSQL. Non cambiano gli altri gate di sicurezza, protezione dati, deploy e funzionamento essenziale; D-124 su Calendar resta valido. Questa decisione non autorizza deploy, DNS o apertura pubblica.
 - Collegamenti: `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `TEST_AUTONOMI_2026-10-20.md`.
 
+## D-126 — Backup fisico su Mac e secondo computer
+
+- Data: 2026-10-20.
+- Stato: soluzione approvata dal committente; automazione e ripristino da configurare e verificare.
+- Decisione: confermare per ora la copia del backup su Mac e su un altro computer per ridondanza, affiancando il PITR Render. Non adottare in questa fase il servizio di backup S3 proposto in chat.
+- Motivo: usare supporti fisici controllati dall'attività, senza introdurre ora un ulteriore servizio cloud.
+- Precisazione del committente: il secondo computer è Windows 11 Pro 25H2, normalmente acceso e connesso, dedicato a questi scopi e su un'altra rete; entrambe le copie possono risiedere nella memoria interna dei computer, senza supporti esterni.
+- Conseguenze: definire percorsi e accessi; mantenere cifratura, conservazione, controllo dell'esito e prova di ripristino. Le due reti suggeriscono due job indipendenti, proposta descritta in `OPERATIONS.md` al posto della replica dal Mac inizialmente suggerita. Non sono attestati backup attivi o restore riusciti; non si autorizzano formattazioni, apertura dell'accesso PostgreSQL, nuove credenziali, acquisti o operazioni Calendar.
+- Collegamenti: `OPERATIONS.md`, `PRE_GO_LIVE_CHECKLIST.md`, D-124.
+
+## D-127 — Pacchetto Windows di backup cifrato, senza attivazione live
+
+- Data: 2026-10-21.
+- Stato: implementato localmente su richiesta del committente; installazione e collaudo Windows/Render ancora necessari.
+- Decisione: preparare script PowerShell compatibili per sintassi con 5.1, usando age per la cifratura autenticata a chiave pubblica e DPAPI Windows per la password PostgreSQL. Non introdurre crittografia personalizzata. Conservare una copia separata della chiave privata di recupero, necessaria anche se il PC o il profilo Windows vengono persi.
+- Motivo: produrre archivi recuperabili anche su Mac senza esporre password nella riga di comando, nei log o nei file degli script e senza dipendere dall'accensione dell'altro computer.
+- Conseguenze: il pacchetto richiede il client PostgreSQL e age; impone TLS con verifica del server, una sessione sorgente di sola lettura, cartelle private, controllo d'integrita, conservazione limitata a propri archivi riconoscibili e codici di errore non zero. La verifica di decifratura non sostituisce un restore completo. Il collaudo sintetico del nucleo usa PowerShell su macOS e PostgreSQL locale isolato; non certifica DPAPI, ACL, TLS Render o Task Scheduler sul PC Windows. Nessun job o accesso di rete e attivato automaticamente; nessuna operazione Calendar. Il formato age e distinto dal vecchio formato OpenSSL macOS.
+- Collegamenti: `OPERATIONS.md`, `scripts/windows-backup/README.md`, `tests/test_windows_backup.py`, D-124, D-126.
+
+## D-128 — Backup indipendenti age e pianificazione Mac compatibile con lo stop
+
+- Data: 2026-10-22.
+- Stato: approvato dal committente; installato su Mac, primo backup reale riuscito e job attivato. Lo stato operativo corrente e i collaudi ancora mancanti in `OPERATIONS.md` superano le indicazioni storiche di preparazione in D-126 e D-127.
+- Decisione: entrambi i computer esportano direttamente da Render con `studio_backup` e TLS verificato; cifratura age con la stessa chiave pubblica. Windows alle 21:00; Mac alle 22:00 con LaunchAgent all'accesso, recupero al risveglio e tentativi orari se necessari. Il Mac può restare spento: non garantisce da solo un RPO di 24 ore. Non cambiare impostazioni energetiche globali.
+- Sicurezza: password Mac nel solo elemento dedicato del Portachiavi, inserita localmente dall'utente; nessuna lettura della chiave privata. Accesso Render limitato al singolo IP pubblico Mac `/32`, autorizzato espressamente, mantenendo Windows. Nessun segreto nei job; nessuna integrazione Flask/Calendar. Il vecchio restore OpenSSL resta distinto dal formato age.
+- Verifica: collaudo sintetico isolato completo richiesto, poi primo backup reale prima di attivare il job. Controllo quotidiano e restore periodico restano necessari; avvisi remoti non ancora configurati. Windows reale verificato tramite gli esiti riportati dal committente, non tramite accesso diretto dell'agente al PC.
+- Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, `scripts/macos-backup/README.md`, `tests/test_macos_backup.py`, D-124, D-126, D-127.
+
+## D-129 — Un avviso remoto dopo 72 ore senza backup su una delle macchine
+
+- Data: 2026-10-22.
+- Stato: approvato dal committente; controlli collegati e attivi su entrambe le macchine, segnali distinti e consegna email verificati. Evidenze e limiti in `OPERATIONS.md`.
+- Decisione: Healthchecks piano gratuito, controlli Mac e Windows separati; un'email alla casella Gmail dello studio al superamento delle 72 ore senza nuovo backup riuscito anche su una sola macchina. Nessun avviso immediato per singolo errore, riepilogo periodico, reminder ripetuto o email di ripristino.
+- Meccanismo: periodo 71 ore più 1 ora di tolleranza. Segnale vuoto solo dopo nuovo backup con codice 0, mai per controlli o esecuzioni saltate. Nessun invio di dati, log o archivi. Il fornitore vede IP e orario; URL protetti con Portachiavi/DPAPI. Nessuna modifica a Calendar.
+- Limiti: il controllo remoto si arma al primo vero segnale; l'assenza di un primo segnale non equivale a protezione attiva. Il monitor non sostituisce verifica delle copie e restore; errori di notifica non devono invalidare un backup riuscito. Mac spento può generare l'avviso dopo tre giorni come richiesto. Installazione e collaudo Windows richiedono accesso al PC.
+- Collegamenti: `OPERATIONS.md`, `scripts/macos-backup/README.md`, `scripts/windows-backup/README.md`, D-128.
+
 ## D-130 — Ricontatto corsi minimo ed età obbligatoria nella call sonno
 
 - Data: 2026-10-22.
-- Stato: approvata dal committente; correzione locale del ricontatto, deploy e verifica Render ancora necessari.
+- Stato: approvata dal committente; commit `3fe6033` pubblicato su `origin/main`, manual deploy confermato e ricontatto minimo osservato sul servizio Render. Invio live non eseguito; nessun GO pubblico.
 - Decisione: quando non sono disponibili date, tutte le pagine corso usano lo stesso modulo minimo di interesse, con tematica preselezionata: nome, telefono, email facoltativa, note facoltative e presa visione privacy. Nessun codice fiscale, dato sanitario o accettazione/conferma d’iscrizione. Le iscrizioni a edizioni disponibili restano invariate.
 - Precisazione sonno: l’età del bambino in mesi resta obbligatoria, come già implementato; non è un limite di ammissione. La frase del flusso che escludeva la raccolta dell’età era obsoleta, non un difetto del modulo. Questa precisazione integra D-106 e corregge la fonte competente `SITE_MAP_AND_FLOWS.md`.
 - Conseguenze: riuso del modulo e del salvataggio ricontatti esistenti, zero posti e nessuna anagrafica creata. Anche gli invii da vecchie pagine senza date ignorano i dati amministrativi/sanitari del vecchio modulo. Nessuna migrazione né intervento su Calendar reale.
 - Collegamenti: `SITE_MAP_AND_FLOWS.md`, `ROADMAP.md`, `AGENTS.md`.
+
+## D-131 — Dominio definitivo collegato, sito ancora privato fino a nuovo GO
+
+- Data: 2026-10-22.
+- Stato: scelta esplicita del committente, configurazione eseguita dal committente e funzionamento con password confermato.
+- Decisione: usare `https://scstudioinfermieristico.it` già ora, mantenendo `APP_ENV=staging`, `STAGING_AUTH_USERNAME` e `STAGING_AUTH_PASSWORD`; impostare `PUBLIC_BASE_URL` sul dominio definitivo. Non passare ancora alla configurazione pubblica e non rimuovere la password. Questa decisione supera il precedente accorpamento tra collegamento DNS e apertura pubblica in D-123 e nelle procedure iniziali.
+- Evidenze: OVH apex A verso Render e `www` CNAME verificati nello screenshot, record della posta preservati; verifica DNS Render confermata. Certificato apex emesso; ultimo stato esplicito di `www` pending, da verificare. Il committente ha poi confermato il funzionamento del dominio con password, non tutti i singoli controlli HTTPS/redirect/header.
+- Conseguenze: mantenere noindex e blocco robots di staging; PayPal sospeso, nessuna nuova attivazione analytics o campagna. Il giorno del lancio richiede nuovo GO, passaggio a `APP_ENV=production`, rimozione delle sole credenziali staging e verifiche sul dominio. Admin, CSRF e protezioni private restano attivi. Non basta eliminare una password lasciando staging. Nessun cambiamento Calendar autorizzato.
+- Collegamenti: `OPERATIONS.md`, `ROADMAP.md`, `PRE_GO_LIVE_CHECKLIST.md`, `VERIFICHE_RILASCIO_2026-10-22.md`.
+
+## D-132 — Roadmap unica per collaudo privato, lancio e sviluppo successivo
+
+- Data: 2026-10-22.
+- Stato: aggiornamento documentale richiesto dal committente; sviluppi futuri proposti, non autorizzati automaticamente.
+- Decisione: usare `ROADMAP.md` come unica coda operativa, distinguendo fase A (collaudo protetto), B (futuro GO), C (P1 post-lancio), D (P2 da validare). I Markdown tematici rimandano a questa fonte e le proposte/decisioni datate conservano la loro natura storica.
+- Motivo: dominio collegato non significa sito pubblico; completamento di test locali non significa collaudo live. Evitare riaperture implicite di PayPal, campagne, redesign o tranche Pazienti mentre si chiudono le verifiche essenziali.
+- Conseguenze: dare priorità a correttezza e recuperabilità, poi UX/accessibilità, immagini/SEO, misurazione consentita e campagne. L'ordine del backlog è una proposta da confermare con bisogni osservati. D-124 resta vincolante e D-125 resta rischio temporaneamente accettato; questa revisione non autorizza commit, push, deploy, DNS, apertura anonima, spesa o trasmissione di dati.
+- Collegamenti: `ROADMAP.md`, `README.md`, `VERIFICHE_RILASCIO_2026-10-22.md`, D-123–D-131.

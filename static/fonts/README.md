@@ -1,5 +1,7 @@
 # Font self-hosted
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](../../docs/ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Riferimenti di progetto e priorità operative: [indice della documentazione](../../docs/README.md). Il sistema tipografico approvato resta invariato nel perimetro di pubblicazione D-123.
 
 Il sito serve localmente le famiglie definite in `docs/BRAND_SYSTEM.md`:

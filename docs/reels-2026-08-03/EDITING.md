@@ -1,5 +1,7 @@
 # Guida di montaggio ed esportazione
 
+> Allineamento del 22 ottobre 2026: archivio datato, non stato corrente né autorizzazione operativa. Per dominio privato, GO futuro e prossimi sviluppi prevale la [roadmap corrente](../ROADMAP.md), D-131–D-132. Conservare le evidenze e le proposte sottostanti con la loro data; i loro identificativi decisionali non sostituiscono il registro canonico.
+
 > Archivio datato: i contenuti seguenti conservano proposte e consegne storiche. Per stato, priorità e prossime azioni prevale la [roadmap corrente](../ROADMAP.md), aggiornata secondo D-123.
 
 Ultimo aggiornamento: 4 agosto 2026.

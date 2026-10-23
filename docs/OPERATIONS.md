@@ -1,6 +1,28 @@
 # Operatività tecnica
 
-Revisione documentale: 20 ottobre 2026. Le evidenze esterne mantengono la propria data e non dimostrano da sole lo stato corrente dei pannelli.
+Revisione documentale: 22 ottobre 2026. Le evidenze esterne mantengono la propria data e non dimostrano da sole lo stato corrente dei pannelli.
+
+## Stato operativo corrente — dominio privato, D-131
+
+Il committente conferma il manual deploy di `3fe6033` e il funzionamento di `https://scstudioinfermieristico.it` con password. Il servizio resta una preproduzione privata su risorse pagate: non è stato autorizzato il GO pubblico. [Evidenze e limiti](VERIFICHE_RILASCIO_2026-10-22.md).
+
+| Impostazione | Stato concordato / confermato dal committente |
+|---|---|
+| `FLASK_ENV` | `production`, runtime sicuro; distinto da `APP_ENV` |
+| `APP_ENV` | `staging`, non cambiarlo prima del GO |
+| `PUBLIC_BASE_URL` | `https://scstudioinfermieristico.it`, senza percorso |
+| `STAGING_AUTH_USERNAME` / `STAGING_AUTH_PASSWORD` | mantenute, valori segreti; la Basic Auth resta obbligatoria |
+| Dominio apex | DNS verificato e certificato emesso; accesso con password confermato |
+| `www` | DNS verificato; ultimo certificato esplicitamente riferito ancora pending, da ricontrollare |
+| Indicizzazione | mantenere blocco staging, `Disallow: /` e noindex; verifica diretta sul dominio ancora da documentare |
+| Email / Calendar | nessuna modifica alle integrazioni in questa fase; D-124 resta vincolante per gli agenti |
+| PayPal / Analytics | PayPal sospeso; nessuna nuova attivazione di analytics o campagna |
+
+DNS OVH: apex A `216.24.57.1`, `www` CNAME `sc-studio-infermieristico-production.onrender.com.`. Non cambiare i record della posta o ripristinare la zona. Collegamento del dominio e apertura anonima sono operazioni distinte: ora è autorizzato soltanto il primo. Non togliere `STAGING_AUTH_*` restando staging.
+
+Nel giorno scelto dal committente: verifiche della [checklist](PRE_GO_LIVE_CHECKLIST.md), GO esplicito, `APP_ENV=production`, stessa origine canonica, rimozione delle sole credenziali staging e deploy controllato. Protezioni admin, CSRF, rate limiting e privacy restano. Verificare HTTPS, redirect, URL email, pagine pubbliche indicizzabili e route private escluse prima di disabilitare l'eventuale sottodominio Render. Il codice di `3fe6033` non richiede una nuova migrazione.
+
+Il Blueprint preparatorio non rappresenta automaticamente il pannello: prima di qualunque Sync confrontare ambiente, dominio e regole IP backup. Non eseguire un Sync per allineare questi documenti. Le sezioni datate seguenti conservano la storia di attivazione; per stato attuale prevale questo riepilogo e la sezione backup.
 
 ## Priorità di pubblicazione
 
@@ -95,19 +117,17 @@ Starter e il PostgreSQL Basic-256mb separati dallo staging gratuito. Auto Sync
 modificare la configurazione e avviare un deploy, quindi richiede un gate
 intenzionale.
 
-Il file mantiene intenzionalmente sicura la preproduzione privata:
+Il Blueprint è una base di preproduzione privata; non certifica da solo le successive modifiche del pannello. Per dominio e accessi backup correnti vedere il riepilogo iniziale. In particolare:
 
 - usa `main`, da portare sempre esattamente al commit approvato e verificato;
 - crea Web Service Starter e PostgreSQL Basic-256mb separati in Francoforte;
 - fissa il disco iniziale a 1 GB e disabilita l'autoscaling per evitare aumenti
   automatici di costo;
 - colloca le risorse in un ambiente Render protetto e con rete privata isolata;
-- blocca ogni connessione PostgreSQL esterna con `ipAllowList: []`;
-- mantiene `APP_ENV=staging`, Basic Auth, `noindex`, invii email soppressi e
-  integrazioni reali disattivate;
+- nel file `ipAllowList: []` è la base chiusa; nel pannello sono state autorizzate soltanto le sorgenti backup puntuali, da preservare e verificare prima di un Sync;
+- mantiene `APP_ENV=staging`, Basic Auth e `noindex`; email e integrazioni reali hanno avuto un'attivazione separata documentata nello storico, non modificarle per collegare il dominio;
 - mantiene auto-deploy e preview disattivati;
-- non collega il dominio e conserva il sottodominio Render soltanto per il
-  collaudo privato;
+- non dichiara il dominio nel file; il collegamento privato è stato effettuato dal pannello il 22 ottobre. Il sottodominio Render non è ancora attestato come disattivato;
 - usa un pre-deploy separato per migrazioni e verifica dell'admin esistente,
   lasciando a Gunicorn il solo avvio dell'applicazione.
 
@@ -156,15 +176,13 @@ La sequenza seguente è obbligatoria e non può essere anticipata:
    `/healthz` e assenza di dati reali;
 7. ottenere autorizzazioni separate prima di caricare il secret file Google,
    abilitare email reali o consentire scritture Calendar;
-8. collaudare i flussi con dati sintetici e rimuovere gli eventi di prova;
+8. collaudare i flussi con dati sintetici secondo le autorizzazioni: dal 20 ottobre D-124 vieta agli agenti ogni modifica di Calendar reale, inclusa la creazione o rimozione di eventi di prova; usare simulazioni;
 9. restringere l'accesso esterno al database alla sola sorgente necessaria per
    il backup cifrato, dopo aver scelto una provenienza IP stabile; non usare
    `0.0.0.0/0`;
-10. chiudere tutti i P0 e ottenere un ordine esplicito distinto prima di
-    impostare `APP_ENV=production`, collegare DNS/dominio o rendere pubblico il
-    servizio.
+10. il collegamento DNS/dominio con password è autorizzato e confermato in D-131. Chiudere i gate essenziali e ottenere un ordine distinto prima di impostare `APP_ENV=production` o rendere pubblico il servizio.
 
-L'attivazione delle integrazioni in preproduzione richiede una modifica
+Il dominio può quindi essere usato in staging protetto prima del GO. L'attivazione delle integrazioni in preproduzione richiede una modifica
 intenzionale e congiunta di `STAGING_LIVE_INTEGRATIONS=true` e
 `MAIL_SUPPRESS_SEND=false`. Il cutover finale richiede invece
 `APP_ENV=production`, `PUBLIC_BASE_URL=https://scstudioinfermieristico.it`,
@@ -623,7 +641,7 @@ rappresentativo popolato. Non usare `db.create_all()` per database operativi.
 ### Livelli di protezione
 
 1. **Render PITR:** obbligatorio prima dei dati reali. Sul workspace Hobby il database PostgreSQL a pagamento conserva una finestra point-in-time di 3 giorni. Un ripristino genera un nuovo database da verificare prima di cambiare `DATABASE_URL`.
-2. **Export logico locale:** `scripts/backup_postgres.sh` esegue ogni giorno `pg_dump` in formato custom, cifra il dump con AES-256 e PBKDF2, genera SHA-256 e conserva la copia sul PC dell'attività.
+2. **Export logico locale:** due job indipendenti Mac/Windows, dump custom cifrato age e SHA-256 (D-126–D-128). Stato corrente e procedure sono nella sezione seguente; il precedente script OpenSSL resta solo per compatibilità storica.
 3. **Export Render manuale:** creare un export dalla sezione Recovery prima di migrazioni rischiose o interventi straordinari; Render conserva questi export per 7 giorni, quindi scaricarli se devono durare più a lungo.
 
 Il database gratuito resta soltanto uno staging storico con dati fittizi e non
@@ -635,7 +653,7 @@ logico cifrato esterno.
 
 ### Obiettivi e conservazione
 
-- backup locale: ogni giorno alle 21:00, con controllo dell'esito il mattino successivo;
+- backup locale: Windows alle 21:00, Mac alle 22:00, con controllo dell'esito il mattino successivo;
 - giornalieri: 14 giorni;
 - settimanali: 8 settimane, copia della domenica;
 - mensili: 12 mesi, copia del primo giorno del mese;
@@ -651,7 +669,135 @@ password di cifratura. I backup contengono dati personali e potenzialmente
 sanitari anche se cifrati; non vanno sincronizzati su servizi personali non
 valutati.
 
-### Preparazione del PC
+### Stato corrente Mac e Windows — 22 ottobre 2026
+
+Le due macchine eseguono export indipendenti: non si replicano a specchio e non
+richiedono porte aperte tra le reti. Il PC Windows normalmente acceso sostiene
+l'obiettivo della copia entro 24 ore; il Mac può essere spento o in stop.
+Le due reti non attestano due sedi fisiche distinte. Le copie online non sono
+immutabili né sostituiscono PITR e chiave di recupero separata.
+
+- **Windows:** il committente ha riportato BitLocker attivo, backup cifrato e
+  controllo integri, decifratura riuscita e restore locale isolato con 28
+  tabelle; database di collaudo eliminato. L'attività `SCStudioBackup`, account
+  Windows corrispondente al profilo che ha configurato DPAPI, è pianificata alle
+  21:00. Avvio da Task Scheduler del 21 ottobre 23:43:19: risultato 0 e stato
+  `success`. Restano da provare esecuzione dopo disconnessione/riavvio; avviso
+  remoto a 72 ore attivo come descritto sotto. Procedura:
+  [pacchetto Windows](../scripts/windows-backup/README.md).
+- **Mac:** FileVault confermato attivo; client PostgreSQL 18.4 e age 1.3.2
+  disponibili. Pacchetto [macOS](../scripts/macos-backup/README.md) installato
+  nella cartella privata `~/Library/Application Support/SCStudioBackup`.
+  Collaudo sintetico completo dump/cifratura/decifratura/restore riuscito su
+  PostgreSQL temporaneo, senza dati reali o chiave privata esistente. Primo
+  backup reale cifrato riuscito il 22 ottobre, controllo locale di integrità
+  superato e password dedicata salvata nel Portachiavi con inserimento locale
+  del committente. LaunchAgent attivato alle 22:00: primo controllo automatico
+  concluso con codice 0, export saltato perché già coperto dal backup manuale.
+  Collaudo aggiuntivo del 22 ottobre: nuovo export reale eseguito da un job
+  `launchd` temporaneo in background, accesso al Portachiavi senza inserimento
+  interattivo, archivio integro, una sola esecuzione e codice 0; job temporaneo
+  rimosso, pianificazione notturna invariata. Un primo job di collaudo con
+  `launchctl submit` era stato rilanciato da macOS e ha creato copie aggiuntive
+  valide: rimosso e sostituito per la verifica da un plist con `KeepAlive=false`.
+  Nessuna copia reale cancellata. La prima esportazione alla scadenza delle
+  22:00, il recupero fisico dopo stop/riavvio e il restore del nuovo archivio
+  reale Mac non sono ancora collaudati.
+- **Rete Render:** aggiunta con autorizzazione la sola regola `/32` dell'IP
+  pubblico corrente del Mac, conservando invariata la regola Windows. Nessuna
+  apertura indiscriminata. Con IP dinamici aggiornare solo la regola puntuale
+  dopo verifica. Usare `studio_backup`, TLS `verify-full` e credenziali protette
+  da DPAPI/Portachiavi, mai nei job o nella documentazione.
+
+Il nuovo Mac usa la stessa chiave **pubblica** age del Windows. La chiave
+privata di recupero, già copiata separatamente secondo conferma del committente,
+non viene letta dalla procedura di backup. Pianificazione Mac prevista con
+LaunchAgent: 22:00 locali, verifica all'accesso e tentativi orari solo se dovuti.
+In stop recupera al risveglio; da spento non esegue e riparte solo dopo login.
+Nessuna modifica alle impostazioni energetiche globali. Per gli avvisi remoti
+vedere la sezione seguente; verificare comunque `logs/status.json` e `--check`.
+
+Entrambe le destinazioni hanno ora una copia reale riuscita; non è ancora
+attestata la continuità delle esecuzioni dopo stop/riavvio. Nessuna operazione su Calendar; nessun
+avvio dell'applicazione durante dump e restore isolati. A5 (ex R5) resta aperta per i
+collaudi mancanti e il controllo operativo degli errori.
+
+Il collaudo autonomo Mac comprende 18 prove dedicate, incluso il ciclo reale
+di strumenti PostgreSQL/age con dati sintetici e confronto dopo restore su
+database isolato. Guasti simulati di Portachiavi, dump, verifica e cifratura
+preservano la copia precedente, puliscono i temporanei e consentono un nuovo
+tentativo riuscito; spazio insufficiente blocca prima di leggere credenziali.
+Verificate anche corruzione, conservazione protetta, mutua esclusione,
+scadenze/ora legale e permessi. Queste prove non attestano la consegna di un
+avviso remoto. Non è stata interrotta la rete reale,
+né messo il Mac in stop o riavviato. Il PostgreSQL temporaneo è stato arrestato
+al termine; applicazione e Calendar non sono stati avviati.
+
+### Monitor remoto dei backup — D-129
+
+Su richiesta del committente sono stati creati nell'account Healthchecks dello
+studio due controlli indipendenti, `Backup Mac` e `Backup Windows`, con periodo
+71 ore e tolleranza 1 ora: avviso dopo 72 ore senza segnale di un nuovo backup
+riuscito anche su una sola macchina. Integrazione email alla casella Gmail
+dello studio già verificata, **solo down**; report mensili/settimanali/giornalieri
+e reminder ripetuti disattivati, nessuna email di ripristino. Non è un reminder
+di calendario e non interviene su Calendar.
+
+Stato: servizio esterno configurato; Mac collegato e attivo dopo nuovo backup
+reale riuscito, segnale confermato dal client e visibile in Healthchecks.
+Email tecnica di prova inviata: Healthchecks riporta `Delivered`; ricezione
+effettiva nella casella confermata dal committente. Windows aggiornato con i tre
+file aggiuntivi verificati tramite SHA-256, URL protetto con DPAPI e prova
+manuale riuscita. Il committente ha poi aggiornato l'azione dell'attività
+esistente, riconfermando localmente la password dello stesso account Microsoft.
+La modifica senza credenziale era stata rifiutata e verificata come non
+applicata; nessuna attività è stata cancellata o ricreata. Definizione precedente
+conservata in `config/SCStudioBackup-before-monitor.xml` sul PC, non nel repository.
+
+Collaudo Windows tramite avvio dell'attività del 22 ottobre alle 00:49:34 locali:
+stato finale `Ready`, `LastTaskResult=0`, nuovo backup `success/completato` alle
+00:49:35 locali e monitor `success` alle 00:49:41; prossima esecuzione alle
+21:00 del 22 ottobre. Esiti locali riportati dal committente tramite AnyDesk;
+nessun accesso diretto dell'agente al PC. Verifica diretta della dashboard
+Healthchecks: entrambi i controlli verdi, segnale Windows recente e distinto
+da quello Mac. Entrambi i monitor sono quindi armati e attivi. Non è stato
+simulato un guasto reale di tre giorni o un riavvio fisico delle macchine.
+Un eventuale nuovo controllo `Never` non è armato: non inviare segnali fittizi.
+
+Per preservare le correzioni già applicate sul PC, l'aggiornamento Windows è
+un'aggiunta separata: `Backup-Monitored.ps1`, `StudioMonitor.psm1`,
+`Enable-Monitor.ps1`. Non sovrascrive il backup o il modulo originali. Dopo
+configurazione DPAPI e nuovo backup/segnale verificati, sostituire nell'unica
+azione del task esistente il file `Backup.ps1` con `Backup-Monitored.ps1`,
+conservando account, opzioni, eseguibile, orario e cartella di lavoro.
+Collaudo sintetico del wrapper su PowerShell 7: nuovo successo invia il
+segnale; errore e successo senza nuova data non lo inviano; codice di uscita
+del vecchio backup preservato. Sintassi dei sette file PowerShell verificata.
+Questa prova non certifica DPAPI o la rete sul PC Windows.
+
+I client inviano un POST HTTPS vuoto soltanto dopo una nuova copia con codice
+0, non per controlli di integrità, esecuzioni saltate o singoli errori. Il
+monitor vede IP/orario ma non riceve dati clinici, log, credenziali database o
+contenuti degli archivi. URL univoci protetti nel Portachiavi Mac o con DPAPI
+Windows, mai nel repository o nei job. Timeout breve, TLS verificato e nessun
+reindirizzamento. Errori di consegna in `logs/monitor.json`, senza invalidare
+il backup. Nessun reinvio di vecchi successi che sposti in avanti le 72 ore.
+Il guasto del monitor può produrre un avviso prudenziale anche con backup
+locale riuscito: confrontare sempre lo stato locale. Conservazione in avviso
+(codice 2) non invia segnali: regola conservativa finché l'esito non torna 0.
+
+Procedure: [Mac](../scripts/macos-backup/README.md#avviso-remoto-dopo-72-ore),
+[Windows](../scripts/windows-backup/README.md#avviso-remoto-opzionale-dopo-72-ore--aggiornamento-22-ottobre).
+Gate iniziale del monitor superato: nuovi export, segnali distinti ricevuti e
+email tecnica consegnata e confermata. Verificare nel normale esercizio le
+scadenze delle 21:00 Windows e delle 22:00 Mac; restano separati i collaudi
+fisici dopo stop/riavvio e il restore dell'archivio reale Mac.
+
+### Procedura storica OpenSSL Mac (non usare per i nuovi archivi age)
+
+Le istruzioni seguenti e la vecchia sezione di preparazione descrivono lo stato
+precedente a D-128, non quello operativo corrente riportato sopra. Il restore
+OpenSSL è esclusivamente per file `.enc`; per `.age` seguire i pacchetti dedicati.
 
 Installare una versione di client PostgreSQL uguale o più recente del server.
 Sul Mac di gestione sono stati installati PostgreSQL 18.4 e i relativi
@@ -676,12 +822,73 @@ Esecuzione manuale, usando un percorso di esempio da sostituire:
 BACKUP_ROOT=/percorso/sc-studio-backups scripts/backup_postgres.sh
 ```
 
-Programmare lo stesso comando ogni giorno alle 21:00 con `launchd` dopo la
-creazione del database Render. Il job non deve contenere segreti: gli script li
-leggono dal Portachiavi. Se il PC è spento o offline, l'esecuzione manca e va
-recuperata manualmente; controllare data e checksum dell'ultimo file ogni
-mattina. Log e notifiche automatiche vengono configurati insieme al database
-reale, senza registrare l'URL di connessione.
+Programmare lo stesso comando ogni giorno alle 21:00 con `launchd`, usando
+`StartCalendarInterval`, dopo la creazione del database Render. Il job non deve
+contenere segreti: gli script li leggono dal Portachiavi. Se il Mac dorme,
+l'esecuzione programmata viene recuperata al risveglio; se è spento non è
+garantito il recupero prima della successiva scadenza. Prevedere un controllo
+all'accesso e un nuovo tentativo quando rete e destinazioni sono disponibili.
+Controllare data e checksum dell'ultimo file ogni mattina. Log e notifiche
+automatiche vengono configurati insieme al database reale, senza registrare
+l'URL di connessione.
+
+### Ridondanza fisica confermata; automazione ancora da configurare
+
+Aggiornamento del 21 ottobre 2026: il pacchetto Windows e le istruzioni sono in
+[`scripts/windows-backup/README.md`](../scripts/windows-backup/README.md),
+secondo D-127. Implementa configurazione locale protetta da DPAPI, cifratura age
+autenticata, backup PostgreSQL, integrita, conservazione e verifica di decifratura.
+Non installa job, non abilita connessioni Render e non configura notifiche email
+o remote. Il nucleo ha superato il collaudo sintetico su macOS/PowerShell e
+PostgreSQL temporaneo; ACL, DPAPI, TLS e pianificazione vanno verificati sul PC
+Windows. Non equivale a un backup reale gia attivo. Il vecchio script macOS
+OpenSSL mantiene il suo formato; non usarlo per decifrare archivi `.age`.
+
+D-126 conferma per ora Mac e un computer Windows dedicato ai backup, collegato
+a un'altra rete, senza introdurre il backup S3 proposto in chat. Il committente
+ha confermato Windows 11 Pro 25H2, normalmente acceso e connesso. Entrambi usano
+la memoria interna: non sono richiesti supporti USB. Restano da definire
+percorsi, disponibilità del Mac e accessi sicuri.
+
+Con le reti separate, la configurazione ora raccomandata è eseguire due backup
+indipendenti direttamente da Render, uno su ciascun computer. Il secondo non
+dipende così dall'accensione del Mac e non occorrono cartelle condivise o porte
+aperte tra le due reti. Questo modifica la precedente proposta di replica dal
+Mac, non un sistema già installato. Ogni macchina necessita di client PostgreSQL,
+accesso sicuro al database e cifratura locale; preferire credenziali dedicate e
+limitate, da autorizzare separatamente. Non salvare segreti nei file dei job.
+
+Il Mac usa `launchd`; Windows dispone ora del pacchetto dedicato, ancora da
+installare e configurare con Utilità di pianificazione, recupero delle esecuzioni
+mancate e nuovi tentativi su errore. Lo script Bash macOS non è un job Windows.
+Usare cartelle private non sincronizzate automaticamente in iCloud/OneDrive,
+con cifratura del disco e del singolo archivio, conservazione e controllo dello
+spazio su entrambe le destinazioni. Le copie devono essere datate e verificate,
+non sincronizzate a specchio. Gli orari possono essere sfalsati ma non sono
+ancora concordati. Il blocco automatico dell'applicazione non è richiesto.
+
+Il pacchetto Windows implementa pubblicazione della cartella completata,
+checksum, controllo dello spazio e verifica della copia entro 24 ore. Prima
+di automatizzare restano il collaudo sul PC e la configurazione di tentativi
+e monitoraggio degli errori. Non dichiarare riuscita la
+ridondanza finché entrambe le destinazioni non sono verificate. Avvisi eseguiti
+solo su un PC spento non possono notificare il guasto mentre è spento; il
+controllo operativo dell'ultima copia resta necessario.
+
+Le due reti non dimostrano da sole due sedi fisiche distinte. La password di
+decifratura va conservata in modo recuperabile ma separato dai file. Due copie
+online non equivalgono a una copia offline/immutabile; il PITR resta un livello
+separato. Gli accessi di rete al database richiedono una verifica dedicata: il
+Blueprint prevede `ipAllowList: []`; non aprire automaticamente PostgreSQL a
+Internet per abilitare i due client. Con IP dinamici occorre concordare un
+accesso controllato, non autorizzare indiscriminatamente tutti gli indirizzi.
+
+Prima del GO servono un backup reale riuscito, la verifica delle copie e un
+restore su un database isolato, con applicazione, scheduler, email e Calendar
+disattivati finché non sia predisposto un ambiente di collaudo sicuro. Nessun
+backup reale, accesso al Portachiavi o job è stato attivato con questa revisione
+documentale o con la preparazione del pacchetto. Non sono autorizzate operazioni
+su Calendar.
 
 ### Ripristino
 

@@ -8,6 +8,8 @@
 
 ## Perimetro operativo dal 20 ottobre 2026
 
+Allineamento 22 ottobre 2026: il codice attuale è distribuito su Render secondo conferma del committente e il dominio funziona in staging con password (D-131). Preflight riferito: `cutover_gia_applicato`, revisione `e8b1c4d7a902`. Il controllo completo Pazienti/admin sul dominio non è attestato; nessun nuovo backfill, ampliamento o scrittura Calendar è autorizzato. Le sezioni datate restano registro, non stato corrente. Coda operativa in [ROADMAP.md](ROADMAP.md), evidenze in [VERIFICHE_RILASCIO_2026-10-22.md](VERIFICHE_RILASCIO_2026-10-22.md).
+
 D-123 e la [roadmap corrente](ROADMAP.md) danno priorità al dominio: completare soltanto deploy e smoke test dell'attuale Pazienti 2.0, con le protezioni già previste. Le specifiche delle sezioni successive conservano valore storico; nuove tranche, cartella, documenti, ruoli e cleanup strutturale sono post-lancio. La revisione/schema effettivamente live va verificata sul servizio.
 
 ## 1. Regole di stato e fonti canoniche

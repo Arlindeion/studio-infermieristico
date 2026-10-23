@@ -1,8 +1,10 @@
 # Identità visiva e verbale
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Ultimo aggiornamento: 13 agosto 2026.
 
-Priorità operative: [ROADMAP.md](ROADMAP.md), D-123. L'identità approvata resta valida; prima del dominio si correggono leggibilità, accessibilità e bug senza avviare un redesign.
+Priorità operative: [ROADMAP.md](ROADMAP.md), D-123 e D-131–D-132. L'identità approvata resta valida; nel collaudo privato si correggono leggibilità, accessibilità e bug. Rifiniture e redesign non bloccanti seguono l'apertura pubblica e la stabilizzazione, non il solo collegamento del dominio.
 
 ## Idea guida
 

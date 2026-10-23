@@ -1,8 +1,8 @@
 # Mappa del sito e flussi
 
-Ultimo aggiornamento: 20 ottobre 2026.
+Allineamento operativo: 22 ottobre 2026.
 
-Priorità operative: [ROADMAP.md](ROADMAP.md), D-123. Il lancio conserva questi flussi; nuove funzioni e campagna seguono la pubblicazione.
+Priorità operative: [ROADMAP.md](ROADMAP.md), D-123 e D-130–D-132. Queste sono route pubbliche di prodotto, ma l'intero dominio è ancora protetto da password staging. Il lancio conserva i flussi; nuove funzioni e campagna seguono l'apertura esplicita al pubblico.
 
 ## Principio di architettura
 
@@ -72,7 +72,7 @@ La homepage non deve diventare un catalogo né ripetere gli stessi percorsi nel 
 Homepage/pagina corsi
   → se esistono date: scelta tipologia → data → modulo di iscrizione
   → se le date esistono ma non sono compatibili: modulo minimo con tematica preselezionata → ricontatto
-  → se non esistono date: modulo unico → scelta tematica → ricontatto
+  → se non esistono date: modulo minimo condiviso (tematica preselezionata nella pagina corso) → ricontatto
   → richiesta salvata + notifica Zimbra allo studio
   → nessuna mail automatica al partecipante
   → conferma admin → mail di conferma al partecipante
@@ -92,6 +92,7 @@ Homepage/pagina corsi
 - Nei moduli di iscrizione la scelta mostra soltanto data e ora; il luogo dell’edizione compare in un campo non modificabile e si aggiorna con la data selezionata. `Nessuna data è compatibile con le tue esigenze?` resta un’azione separata dal menu delle date e apre il modulo minimo di ricontatto con la tematica già selezionata.
 - Se il server rifiuta un dato, il modulo resta il punto visibile della pagina: il messaggio viene mostrato al suo interno, il campo da correggere riceve evidenza e focus e i valori già inseriti restano disponibili. Nel corso di disostruzione i dati del secondo partecipante compaiono soltanto scegliendo `Coppia`; il nome è obbligatorio, il codice fiscale resta facoltativo.
 - Quando la homepage non mostra date future, `Lascia il tuo interesse` apre direttamente il modulo unico. Le opzioni sono disostruzione pediatrica e tagli sicuri, BLSD, accompagnamento alla nascita, laboratori per l'infanzia e gioco e sviluppo. Il modulo raccoglie soltanto nome, telefono, email facoltativa, tematica, note facoltative e presa visione dell’informativa; non richiede i dati amministrativi necessari a una vera iscrizione.
+- D-130, distribuita in `3fe6033`: senza date tutte e quattro le pagine corso includono lo stesso modulo minimo con tematica preselezionata e invio a `/iscrizione-corsi/interesse`. Nessuna accettazione d’iscrizione, dato sanitario o CF. Il server tratta anche vecchi invii alle pagine corso senza date come ricontatti, ignorando i dati amministrativi/sanitari aggiuntivi; zero posti e nessuna anagrafica creata. Con date disponibili restano i moduli e i consensi completi.
 - Le tipologie corso usano stati `Aperto`, `Completo`, `Chiuso`, `Annullato`, `Concluso`.
 
 ## Flusso corso di accompagnamento alla nascita

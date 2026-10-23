@@ -29,4 +29,4 @@ I risultati CI originari non certificano questi adattamenti; gli esiti della can
 
 ## Prossimo passaggio esterno
 
-Riconciliare commit live, Alembic e configurazione non segreta di Render; preparare la release candidata verificata per il deploy privato, poi chiudere gli smoke test e il GO sul dominio secondo la roadmap. Nessun collaudo storico attesta da solo lo stato attuale del servizio.
+Aggiornamento del 22 ottobre 2026: `3fe6033` distribuito con manual deploy confermato, ricontatto minimo osservato sul servizio; preflight/schema e validazioni riportati nel [resoconto corrente](VERIFICHE_RILASCIO_2026-10-22.md). Dominio collegato e funzionante con password: il GO pubblico non è autorizzato. I prossimi passi sono soltanto nella [roadmap corrente](ROADMAP.md), fasi A–D; questo documento resta la riconciliazione storica della PR #16.

@@ -1,8 +1,10 @@
 # Piano marketing operativo
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Ultimo aggiornamento operativo: 20 ottobre 2026.
 
-> Priorità corrente: [pubblicazione del dominio](ROADMAP.md), D-123. Questo piano viene eseguito dopo la stabilizzazione del sito; campagne, baseline pubblicitaria e nuove creatività non sono gate del dominio. Le rilevazioni esterne e il calendario agosto/settembre sotto restano storici; le nuove date richiedono un piano successivo.
+> Priorità corrente: [roadmap](ROADMAP.md), D-123 e D-131–D-132. Il dominio è ancora privato; questo piano si esegue dopo GO pubblico e stabilizzazione, non dopo il solo collegamento DNS. Campagne, baseline pubblicitaria e nuove creatività non sono gate del lancio. Rilevazioni esterne e calendario agosto/settembre restano storici; nuove date e spesa richiedono riconferma.
 
 ## Executive Summary
 

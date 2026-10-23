@@ -1,5 +1,7 @@
 # Audit pre-lancio pubblico — 18 settembre 2026
 
+> Allineamento del 22 ottobre 2026: archivio datato, non stato corrente né autorizzazione operativa. Per dominio privato, GO futuro e prossimi sviluppi prevale la [roadmap corrente](ROADMAP.md), D-131–D-132. Conservare le evidenze e le proposte sottostanti con la loro data; i loro identificativi decisionali non sostituiscono il registro canonico.
+
 ## Aggiornamento operativo del 20 ottobre 2026
 
 Questo rapporto resta la fotografia del 18 settembre. Stato, priorità e criteri correnti sono in [ROADMAP.md](ROADMAP.md) e nella [checklist](PRE_GO_LIVE_CHECKLIST.md), secondo D-123: dominio prioritario, PayPal sospeso fino a nuovo ordine, campagne ed estensioni dopo la stabilizzazione. I rilievi sotto non equivalgono a una verifica dello stato live attuale. La candidata locale riprende esplicitamente i bug e il rischio concorrente; nessun punto storico si considera chiuso senza l'evidenza pertinente.

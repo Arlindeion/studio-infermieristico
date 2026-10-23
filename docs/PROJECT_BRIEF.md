@@ -1,5 +1,7 @@
 # Brief del progetto
 
+> Allineamento operativo del 22 ottobre 2026: stato del dominio, verifiche residue e prossimi sviluppi sono nella [roadmap corrente](ROADMAP.md), D-131–D-132. Questo documento resta un riferimento tematico, non autorizza apertura pubblica, spesa o nuove attivazioni.
+
 Ultimo aggiornamento: 20 ottobre 2026.
 
 ## Scopo
@@ -17,11 +19,11 @@ L'obiettivo del lancio non è vendere tutto immediatamente, ma aumentare il valo
 - Lo studio è in affitto.
 - Il sito è il progetto centrale da cui dipendono il lancio nazionale delle consulenze, le campagne e una presenza social più riconoscibile.
 
-## Priorità corrente: pubblicare il dominio
+## Priorità corrente: completare il collaudo privato, poi apertura scelta dal committente
 
-Dal 20 ottobre 2026 l'obiettivo immediato è pubblicare `scstudioinfermieristico.it` nel minor tempo possibile completando i controlli essenziali dei flussi esistenti. Il piano e i criteri di uscita sono in [ROADMAP.md](ROADMAP.md), secondo D-123.
+Dal 22 ottobre il dominio è collegato e utilizzabile con password, ma l'apertura anonima è esplicitamente rinviata al giorno scelto dal committente (D-131). Completare i controlli essenziali dei flussi esistenti, senza introdurre nuovi servizi. Piano e criteri di uscita sono soltanto in [ROADMAP.md](ROADMAP.md), fasi A–D, secondo D-123 e D-132.
 
-PayPal è sospeso fino a nuovo ordine. Le consulenze possono usare il bonifico con conferma manuale; corsi e prestazioni conservano i propri flussi. Campagna, nuove creatività, attivazione GA4/Meta, redesign ed estensioni del gestionale seguono la stabilizzazione del dominio. Il precedente checkpoint congiunto sito/campagna del 15 settembre è storico e non è più un vincolo corrente.
+PayPal è sospeso fino a nuovo ordine. Le consulenze possono usare il bonifico con conferma manuale; corsi e prestazioni conservano i propri flussi. Campagna, nuove creatività, attivazione GA4/Meta, redesign ed estensioni del gestionale seguono la pubblicazione effettiva e la stabilizzazione del sito, non il solo collegamento DNS. Il precedente checkpoint congiunto sito/campagna del 15 settembre è storico e non è più un vincolo corrente.
 
 ## Obiettivi 2026-2028
 

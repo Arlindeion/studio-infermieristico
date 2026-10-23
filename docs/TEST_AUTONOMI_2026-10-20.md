@@ -1,5 +1,7 @@
 # Prove autonome e pulizia — 20 ottobre 2026
 
+> Allineamento del 22 ottobre 2026: archivio datato, non stato corrente né autorizzazione operativa. Per dominio privato, GO futuro e prossimi sviluppi prevale la [roadmap corrente](ROADMAP.md), D-131–D-132. Conservare le evidenze e le proposte sottostanti con la loro data; i loro identificativi decisionali non sostituiscono il registro canonico.
+
 ## Esito
 
 Esito originario: **NO-GO sulla candidata `016f93d`**, con due difetti riprodotti e verifiche di rilascio ancora aperte. Decisione successiva del committente (D-125, 20 ottobre): la concorrenza è un rischio accettato per il lancio, da correggere dopo la pubblicazione; non è più un blocco al GO. Successivamente è stata richiesta e verificata la correzione dei nomi nell'agenda, descritta sotto. Restano i controlli di rilascio sulla versione effettivamente distribuita. Nessun deploy è stato eseguito.
