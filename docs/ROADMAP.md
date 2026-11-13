@@ -4,6 +4,8 @@ Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scel
 
 ## Stato attuale: dominio pronto per il collaudo privato, non lancio pubblico
 
+- Aggiornamento locale del 13 novembre 2026: collaudo Nexi HPP su copia temporanea isolata (D-133) completato per desktop/mobile, Visa, 3DS, ritorno e notifiche HTTPS. Anomalia su due Mastercard di test da chiarire con Nexi; evidenze e limiti in [NEXI_SANDBOX.md](NEXI_SANDBOX.md). Non cambia lo stato del dominio, non attiva Nexi sul sito operativo e non riapre PayPal.
+
 - Il commit `3fe6033` è su `origin/main`; manual deploy confermato dal committente. Il ricontatto minimo è stato osservato sul servizio Render dopo il deploy.
 - `https://scstudioinfermieristico.it` funziona e richiede ancora la password, secondo conferma del committente. `APP_ENV=staging`, `STAGING_AUTH_*` conservate e `PUBLIC_BASE_URL` sul dominio definitivo: il collegamento del dominio non è un GO pubblico.
 - DNS OVH configurati e domini verificati su Render. Certificato apex emesso; ultimo stato esplicito di `www`: pending. Non dichiararlo risolto sulla sola conferma generale di funzionamento.

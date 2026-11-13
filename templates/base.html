@@ -32,7 +32,7 @@
     {% set admin_area = page_endpoint in admin_endpoints %}
     {% set narrative_endpoints = ['chi_siamo', 'faq', 'iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'consulenze_online', 'prestazioni', 'privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno', 'da_dove_parto'] %}
     {% set operational_endpoints = ['prenota', 'prenota_call_sonno', 'offerta_sonno', 'questionario_sonno', 'iscrizione_accompagnamento_privata', 'course_interest', 'accetta_proposta_slot', 'accetta_invito_lista_attesa', 'richiesta_azienda'] %}
-    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'not_found', 'server_error'] %}
+    {% set outcome_endpoints = ['conferma', 'conferma_call_sonno', 'conferma_iscrizione_corso', 'conferma_iscrizione_accompagnamento', 'questionario_sonno_completato', 'course_interest_confirmation', 'richiesta_azienda_conferma', 'nexi_sandbox.result', 'not_found', 'server_error'] %}
     {% set instant_content_endpoints = ['privacy', 'condizioni_iscrizione_corsi', 'condizioni_consulenza_sonno'] %}
     {% set internal_page_mode = 'narrative' if page_endpoint in narrative_endpoints else ('operational' if page_endpoint in operational_endpoints else ('outcome' if page_endpoint in outcome_endpoints else '')) %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
@@ -44,7 +44,7 @@
     {% endif %}
     {% if page_endpoint == 'homepage' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}?v=7.6">
-    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'offerta_sonno', 'questionario_sonno'] %}
+    {% elif page_endpoint in ['consulenze_online', 'prenota_call_sonno', 'conferma_call_sonno', 'offerta_sonno', 'questionario_sonno', 'nexi_sandbox.result'] %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/consulenza.css') }}?v=4.5">
     {% elif page_endpoint == 'prima_della_nascita' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/accompagnamento.css') }}?v=1.1">

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titolo %}Esito del pagamento di prova | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Verifica del pagamento simulato nell’ambiente di collaudo Nexi.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+{% block contenuto %}
+<section class="sleep-offer-page">
+    <header class="sleep-offer-page__intro">
+        <p class="eyebrow">Ambiente di prova · Nexi</p>
+        <h1>Esito del pagamento di prova</h1>
+        <p>Questa operazione è simulata: non sono stati incassati pagamenti reali.</p>
+    </header>
+    <div class="sleep-payment-state{% if payment.status == 'confirmed' %} sleep-payment-state--confirmed{% endif %}" role="status">
+        {% if payment.status == 'confirmed' %}
+        <h2>Pagamento simulato confermato</h2>
+        <p>La pratica fittizia è stata confermata. Il questionario è disponibile; l’invio email è simulato.</p>
+        {% elif payment.status == 'authorized' %}
+        <h2>Autorizzazione ricevuta</h2>
+        <p>Nexi ha autorizzato il pagamento, ma l’incasso non risulta completato. La pratica resta in attesa.</p>
+        {% elif payment.status in ['failed', 'initialization_failed'] %}
+        <h2>Pagamento di prova non completato</h2>
+        <p>La pratica non è stata confermata. Puoi tornare alla proposta e riprovare.</p>
+        {% elif payment.status == 'review' %}
+        <h2>È necessario controllare l’operazione</h2>
+        <p>L’esito richiede una verifica. Non avviare un altro pagamento finché il controllo non è concluso.</p>
+        {% else %}
+        <h2>Verifica del pagamento in corso</h2>
+        <p>Non abbiamo ancora un esito definitivo. Puoi controllare nuovamente senza avviare un altro pagamento.</p>
+        {% endif %}
+        {% if verification_unavailable %}<p>In questo momento non riusciamo a verificare l’esito con Nexi. La pratica e il tentativo sono salvati.</p>{% endif %}
+        <dl class="sleep-payment-details">
+            <div><dt>Importo di prova</dt><dd>{{ '%.2f'|format(payment.amount_cents / 100)|replace('.', ',') }} €</dd></div>
+            <div><dt>Riferimento</dt><dd>{{ payment.order_id }}</dd></div>
+        </dl>
+    </div>
+    {% if payment.status == 'confirmed' and call.token_questionario %}
+    <p><a class="btn" href="{{ url_for('questionario_sonno', token=call.token_questionario) }}">Apri il questionario di prova</a></p>
+    {% endif %}
+    {% if payment.status not in ['confirmed', 'initialization_failed', 'failed'] %}
+    <p><a class="btn" href="{{ url_for('nexi_sandbox.result', access_token=payment.access_token) }}">Controlla nuovamente l’esito</a></p>
+    {% endif %}
+    {% if checkout_available %}<p><a class="btn-azione blu" href="{{ payment.checkout_url }}" rel="noreferrer">Torna alla cassa di prova Nexi</a></p>{% endif %}
+    <p><a class="btn-azione blu" href="{{ url_for('offerta_sonno', token=call.proposta_token, modifica=1 if payment.status in ['failed', 'initialization_failed'] else None) }}">Torna alla proposta di prova</a></p>
+</section>
+{% endblock %}

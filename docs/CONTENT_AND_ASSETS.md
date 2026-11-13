@@ -1,5 +1,10 @@
 # Contenuti e materiali
 
+- 13 novembre 2026, D-133: nella sola copia di collaudo sono presenti la scelta
+  `Carta · prova Nexi`, l'avviso esplicito di simulazione e la pagina di esito con
+  pagamento confermato, autorizzato, fallito o da verificare. Nessun nuovo testo
+  commerciale o prezzo sul sito operativo; procedura in [NEXI_SANDBOX.md](NEXI_SANDBOX.md).
+
 Allineamento operativo: 22 ottobre 2026; le date degli inventari e dei materiali sottostanti restano storiche.
 
 ## Perimetro corrente

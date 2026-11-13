@@ -82,6 +82,9 @@ class Config:
     PAYPAL_LINK_SONNO_AFFIANCAMENTO = os.environ.get('PAYPAL_LINK_SONNO_AFFIANCAMENTO')
     BONIFICO_INTESTATARIO = os.environ.get('BONIFICO_INTESTATARIO')
     BONIFICO_IBAN = os.environ.get('BONIFICO_IBAN')
+    NEXI_SANDBOX_ENABLED = False
+    NEXI_SANDBOX_API_KEY = None
+    NEXI_SANDBOX_ISOLATED = False
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
@@ -163,10 +166,28 @@ class PazA2PostgresTestingConfig(TestingConfig):
         os.environ.get('PAZ_A2_TEST_DATABASE_URL')
     )
 
+class PaymentSandboxConfig(TestingConfig):
+    """Disposable payment demo; never inherits a real database or integrations."""
+    TESTING = False
+    APP_ENV = 'payment_sandbox'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    NEXI_SANDBOX_ENABLED = True
+    NEXI_SANDBOX_ISOLATED = True
+    NEXI_SANDBOX_API_KEY = os.environ.get('NEXI_SANDBOX_API_KEY')
+    PUBLIC_BASE_URL = os.environ.get('NEXI_SANDBOX_PUBLIC_BASE_URL')
+    SECRET_KEY = secrets.token_hex(32)
+    MAIL_SERVER = None
+    MAIL_USERNAME = None
+    MAIL_PASSWORD = None
+    MAIL_DEFAULT_SENDER = 'sandbox@example.invalid'
+    MAIL_ADMIN_RECIPIENT = None
+
+
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
     'paz_a2_postgres_testing': PazA2PostgresTestingConfig,
+    'payment_sandbox': PaymentSandboxConfig,
     'default': DevelopmentConfig
 }

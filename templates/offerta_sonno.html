@@ -5,6 +5,13 @@
 
 {% block contenuto %}
 <section class="sleep-offer-page">
+    {% if sandbox_mode %}
+    <div class="sleep-payment-state" role="status">
+        <p class="eyebrow">Ambiente di prova</p>
+        <p>Questa proposta è fittizia. Usa soltanto le carte di test Nexi: non vengono incassati pagamenti reali.</p>
+        {% if not sandbox_available %}<p>Il collaudo non è ancora configurato. Nessun pagamento con carta può essere avviato.</p>{% endif %}
+    </div>
+    {% endif %}
     <header class="sleep-offer-page__intro">
         <p class="eyebrow">Proposta privata · valida 7 giorni</p>
         <h1>{{ call.nome }}, scegli come proseguire.</h1>
@@ -30,7 +37,12 @@
         <div class="sleep-payment-state">
             <p class="eyebrow">Pagamento da verificare</p>
             <h2>{{ formula_labels.get(call.formula_scelta, call.formula_scelta) }}</h2>
+            {% if call.metodo_pagamento == 'nexi_sandbox' %}
+            <p>Hai avviato un pagamento di prova con Nexi. L’esito viene verificato prima di confermare la pratica fittizia.</p>
+            {% if sandbox_payment %}<p><a class="btn-azione blu" href="{{ url_for('nexi_sandbox.result', access_token=sandbox_payment.access_token) }}">Controlla il pagamento di prova</a></p>{% endif %}
+            {% else %}
             <p>Hai scelto {{ 'il bonifico bancario' if call.metodo_pagamento == 'bonifico' else 'PayPal' }}. La prenotazione diventa effettiva soltanto quando lo Studio conferma il pagamento.</p>
+            {% endif %}
             {% if call.metodo_pagamento == 'bonifico' and bank_transfer_available %}
             <dl class="sleep-payment-details">
                 <div><dt>Intestatario</dt><dd>{{ bank_holder }}</dd></div>
@@ -63,6 +75,12 @@
         <fieldset class="sleep-choice-fieldset">
             <legend>2. Scegli il pagamento</legend>
             <div class="sleep-payment-methods">
+                {% if sandbox_available %}
+                <label class="sleep-payment-method">
+                    <input type="radio" name="metodo_pagamento" value="nexi_sandbox" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'nexi_sandbox' or (not bank_transfer_available and not paypal_available) %}checked{% endif %} required>
+                    <span><strong>Carta · prova Nexi</strong><small>Si apre la cassa di test Nexi. Nessun addebito reale.</small></span>
+                </label>
+                {% endif %}
                 {% if paypal_available %}
                 <label class="sleep-payment-method">
                     <input type="radio" name="metodo_pagamento" value="paypal" {% if form_data.get('metodo_pagamento', call.metodo_pagamento) == 'paypal' %}checked{% endif %} required>
@@ -74,7 +92,7 @@
                     <span><strong>Bonifico bancario</strong><small>La conferma arriva dopo la verifica dell’accredito o della documentazione richiesta.</small></span>
                 </label>
             </div>
-            {% if not bank_transfer_available and not paypal_available %}<p class="sleep-payment-unavailable">I metodi di pagamento non sono ancora attivi. La proposta resta consultabile, ma l’acquisto non può essere completato.</p>{% endif %}
+            {% if not bank_transfer_available and not paypal_available and not sandbox_available %}<p class="sleep-payment-unavailable">I metodi di pagamento non sono ancora attivi. La proposta resta consultabile, ma l’acquisto non può essere completato.</p>{% endif %}
         </fieldset>
 
         <div class="sleep-contract-checks">
@@ -89,7 +107,7 @@
             <p><strong>Se non selezioni la seconda casella, riceverai comunque subito il questionario, ma analisi e lavoro professionale non inizieranno prima che siano trascorsi 14 giorni dalla conferma del pagamento.</strong></p>
         </div>
 
-        <button class="btn" type="submit" {% if not bank_transfer_available and not paypal_available %}disabled{% endif %}>Conferma la scelta della modalità di pagamento</button>
+        <button class="btn" type="submit" {% if not bank_transfer_available and not paypal_available and not sandbox_available %}disabled{% endif %}>{% if sandbox_available %}Prosegui al pagamento di prova{% else %}Conferma la scelta della modalità di pagamento{% endif %}</button>
     </form>
         {% endif %}
     {% endif %}

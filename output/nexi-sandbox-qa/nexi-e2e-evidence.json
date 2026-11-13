@@ -1,0 +1,353 @@
+{
+  "events": [
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "EXECUTED",
+          "amount": "20000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "FAILED",
+          "amount": "32000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "FAILED",
+          "amount": "32000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "THREEDS_FAILED",
+          "amount": "32000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.notification",
+      "method": "POST",
+      "status": 403
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "THREEDS_FAILED",
+          "amount": "32000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "CANCELED",
+          "amount": "20000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "CANCELED",
+          "amount": "20000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "offerta_sonno",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "FAILED",
+          "amount": "32000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_sandbox.result",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "attempts": [
+    {
+      "order_id": "NXdf27848192412494",
+      "status": "confirmed",
+      "amount_cents": 20000,
+      "operation_id": "291497215582063179"
+    },
+    {
+      "order_id": "NX9b8178925638fa0e",
+      "status": "failed",
+      "amount_cents": 32000,
+      "operation_id": null
+    },
+    {
+      "order_id": "NXf81bcebc726e9d81",
+      "status": "failed",
+      "amount_cents": 32000,
+      "operation_id": null
+    },
+    {
+      "order_id": "NX4ac61717bf1f4f78",
+      "status": "failed",
+      "amount_cents": 20000,
+      "operation_id": null
+    },
+    {
+      "order_id": "NX7fc70b2353dd0a96",
+      "status": "failed",
+      "amount_cents": 32000,
+      "operation_id": null
+    }
+  ],
+  "calls": [
+    {
+      "id": 1,
+      "payment_status": "Confermato",
+      "questionnaire_created": true
+    },
+    {
+      "id": 2,
+      "payment_status": "In attesa",
+      "questionnaire_created": false
+    },
+    {
+      "id": 3,
+      "payment_status": "In attesa",
+      "questionnaire_created": false
+    }
+  ],
+  "qa_notes": {
+    "environment": "Nexi sandbox, synthetic records, memory database, suppressed SMTP, Calendar disabled",
+    "visa_success": "200 EUR, EXECUTED, real sandbox callback received before browser return",
+    "visa_failure": "320 EUR, THREEDS_FAILED, no questionnaire created",
+    "cancel": "200 EUR, CANCELED, retry and change to 320 EUR available",
+    "mastercard": "Two documented test cards ending 2903 and 5836 returned FAILED before 3DS. GET order and operation returned NOT_DEFINED circuit and no warnings. GET payment_methods lists MC. Cause not established; successful Mastercard checkout not verified.",
+    "security": "Forged notification rejected with 403; private no-store/noindex/no-referrer headers verified. Temporary public app restricts routes."
+  },
+  "automated_checks": {
+    "passed": 538,
+    "skipped": 12,
+    "failed": 4,
+    "failures": "preexisting tests/test_macos_backup.py::test_failure_and_retry_preserve_old_backup, four parameter variants; backup date consistency",
+    "diff_check": "passed",
+    "python_compilation": "passed"
+  }
+}

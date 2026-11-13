@@ -1088,3 +1088,11 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Motivo: dominio collegato non significa sito pubblico; completamento di test locali non significa collaudo live. Evitare riaperture implicite di PayPal, campagne, redesign o tranche Pazienti mentre si chiudono le verifiche essenziali.
 - Conseguenze: dare priorità a correttezza e recuperabilità, poi UX/accessibilità, immagini/SEO, misurazione consentita e campagne. L'ordine del backlog è una proposta da confermare con bisogni osservati. D-124 resta vincolante e D-125 resta rischio temporaneamente accettato; questa revisione non autorizza commit, push, deploy, DNS, apertura anonima, spesa o trasmissione di dati.
 - Collegamenti: `ROADMAP.md`, `README.md`, `VERIFICHE_RILASCIO_2026-10-22.md`, D-123–D-131.
+
+## D-133 — Primo collaudo pagamenti Nexi in ambiente isolato
+
+- Data: 2026-11-13.
+- Stato: sviluppo locale richiesto dal committente; nessuna attivazione commerciale o distribuzione.
+- Decisione: preparare Hosted Payment Page Nexi sandbox sulla proposta sonno, con credenziali di test e profilo dedicato `payment_sandbox`. Database temporaneo in memoria, nessuna lettura di `.env`, nessuna email reale, scheduler e Calendar disabilitati. Le configurazioni ordinarie mantengono Nexi spento.
+- Conseguenze: tentativi registrati prima della chiamata al gateway, importi dal server, notifica verificata e stato letto da Nexi, conferma atomica e idempotente. Le prove non autorizzano pagamenti reali, rate, deploy o apertura pubblica. Bonifico e sospensione PayPal restano invariati fuori dalla copia di collaudo.
+- Collegamenti: `NEXI_SANDBOX.md`, `ROADMAP.md`, D-123, D-124, D-131.

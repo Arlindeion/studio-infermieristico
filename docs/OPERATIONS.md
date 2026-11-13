@@ -30,6 +30,10 @@ Seguire [ROADMAP.md](ROADMAP.md) e [PRE_GO_LIVE_CHECKLIST.md](PRE_GO_LIVE_CHECKL
 
 ## Architettura
 
+Il collaudo locale Nexi HPP usa un profilo isolato distinto da questi ambienti:
+[procedura Nexi sandbox](NEXI_SANDBOX.md), D-133. Nessun cambio automatico a Render,
+alle integrazioni live o alla protezione staging.
+
 - Applicazione Flask monolitica in `app.py`.
 - Rendering server-side con Jinja2.
 - SQLAlchemy ORM; SQLite locale e PostgreSQL in produzione.

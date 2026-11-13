@@ -78,6 +78,7 @@ from sleep_terms import (
     SLEEP_TERMS_UPDATED_LABEL,
     SLEEP_TERMS_VERSION,
 )
+from payment_sandbox import register_payment_sandbox
 
 # Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
 # locale resta disponibile in sviluppo e non viene mai usato come archivio.
@@ -1992,6 +1993,35 @@ class QuestionarioSonno(db.Model):
             return json.loads(self.risposte)
         except (TypeError, json.JSONDecodeError):
             return {}
+
+
+class SandboxPaymentAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.String(18), unique=True, nullable=False)
+    access_token = db.Column(db.String(96), unique=True, nullable=False)
+    sleep_call_id = db.Column(
+        db.Integer,
+        db.ForeignKey('call_sonno.id', name='fk_sandbox_payment_sleep_call', ondelete='CASCADE'),
+        nullable=False,
+    )
+    active_call_id = db.Column(db.Integer, unique=True, nullable=True)
+    amount_cents = db.Column(db.Integer, nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='EUR')
+    formula = db.Column(db.String(30), nullable=False)
+    terms_version = db.Column(db.String(20), nullable=False)
+    accepted_at = db.Column(db.DateTime, nullable=False)
+    proposal_digest = db.Column(db.String(64), nullable=False)
+    status = db.Column(db.String(30), nullable=False, default='creating')
+    security_token_hash = db.Column(db.String(64), nullable=True)
+    checkout_url = db.Column(db.Text, nullable=True)
+    operation_id = db.Column(db.String(120), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    verified_at = db.Column(db.DateTime, nullable=True)
+    sleep_call = db.relationship(
+        'CallSonno',
+        backref=db.backref('sandbox_payments', cascade='all, delete-orphan'),
+    )
 
 
 class Corso(db.Model):
@@ -4589,7 +4619,7 @@ def applica_header_sicurezza_risposta(response):
         response.headers['Referrer-Policy'] = 'no-referrer'
 
     # Lo staging non deve mai essere indicizzato.
-    if app.config.get('APP_ENV') == 'staging':
+    if app.config.get('APP_ENV') in {'staging', 'payment_sandbox'}:
         response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
 
     # L'area amministrativa può contenere dati personali e sanitari. Impedire
@@ -7376,6 +7406,13 @@ def condizioni_consulenza_sonno():
     )
 
 
+payment_sandbox = register_payment_sandbox(
+    app, db, CallSonno, SandboxPaymentAttempt,
+    lambda call: invia_email_questionario_sonno(call),
+    lambda *args, **kwargs: registra_evento(*args, **kwargs),
+)
+
+
 @app.route('/offerta-sonno/<token>', methods=['GET', 'POST'])
 @limiter.limit('10 per hour', methods=['POST'])
 def offerta_sonno(token):
@@ -7416,6 +7453,13 @@ def offerta_sonno(token):
             terms_version=SLEEP_TERMS_VERSION,
             formula_labels=FORMULE_SONNO,
             format_euro=format_euro,
+            sandbox_mode=payment_sandbox['enabled'](),
+            sandbox_available=payment_sandbox['ready'](),
+            sandbox_payment=(
+                SandboxPaymentAttempt.query.filter_by(sleep_call_id=call.id)
+                .order_by(SandboxPaymentAttempt.id.desc()).first()
+                if payment_sandbox['enabled']() else None
+            ),
         ), status_code
 
     if request.method == 'POST':
@@ -7430,6 +7474,10 @@ def offerta_sonno(token):
             flash('Richiesta non valida. Riprova.', 'error')
             return render_offer(request.form, 400)
 
+        active_payment = payment_sandbox['active_payment'](call.id)
+        if active_payment:
+            return redirect(payment_sandbox['result_location'](active_payment), code=303)
+
         formula = request.form.get('formula_scelta', '').strip()
         payment_method = request.form.get('metodo_pagamento', '').strip()
         errors = []
@@ -7437,8 +7485,10 @@ def offerta_sonno(token):
             errors.append('Seleziona una delle formule proposte.')
         if not _checkbox_checked('condizioni_sonno'):
             errors.append('Devi dichiarare di aver letto e accettato le Condizioni della consulenza sonno.')
-        if payment_method not in {'paypal', 'bonifico'}:
+        if payment_method not in {'paypal', 'bonifico', 'nexi_sandbox'}:
             errors.append('Seleziona un metodo di pagamento disponibile.')
+        elif payment_method == 'nexi_sandbox' and not payment_sandbox['ready']():
+            errors.append('Il pagamento di prova non è disponibile.')
         elif payment_method == 'paypal' and (formula not in formulas or not _paypal_link_sonno(formula)):
             errors.append('Il pagamento PayPal non è ancora disponibile per questa formula.')
         elif payment_method == 'bonifico' and not _bonifico_sonno_configurato():
@@ -7469,6 +7519,8 @@ def offerta_sonno(token):
         )
         if payment_method == 'paypal':
             return redirect(_paypal_link_sonno(formula))
+        if payment_method == 'nexi_sandbox':
+            return payment_sandbox['start_checkout'](call)
         return redirect(url_for('offerta_sonno', token=token))
 
     return render_offer()

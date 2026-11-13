@@ -37,9 +37,10 @@ EXPECTED_TABLES = {
     'segnalazione_duplicato',
     'fusione_persona',
     'calendar_patient_decision',
+    'sandbox_payment_attempt',
 }
 
-LATEST_REVISION = 'e8b1c4d7a902'
+LATEST_REVISION = 'f3c8a1b6d902'
 PATIENT_CUTOVER_REVISION = 'd4a7c2e9f610'
 
 
@@ -267,7 +268,7 @@ def test_calendar_patient_decision_blocks_destructive_downgrade(tmp_path):
         decisions = connection.execute(
             'SELECT COUNT(*) FROM calendar_patient_decision'
         ).fetchone()[0]
-    assert revision == LATEST_REVISION
+    assert revision == 'e8b1c4d7a902'
     assert decisions == 1
 
 
