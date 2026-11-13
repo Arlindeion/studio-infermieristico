@@ -17,6 +17,12 @@ backups/
 sc-studio-*.dump
 sc-studio-*.dump.enc
 sc-studio-*.dump.enc.sha256
+# Backup Windows locali: mai versionare archivi, credenziali o chiavi private.
+SCStudioBackup/
+*.agekey
+*.credential.xml
+*.dump.age
+*.dump.age.sha256
 # Artefatti operativi PAZ-A2 (pseudonimi e riservati)
 paz-a2-plan*.json
 paz-a2-report*.json

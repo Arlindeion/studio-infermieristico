@@ -10,7 +10,7 @@ Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scel
 - `https://scstudioinfermieristico.it` funziona e richiede ancora la password, secondo conferma del committente. `APP_ENV=staging`, `STAGING_AUTH_*` conservate e `PUBLIC_BASE_URL` sul dominio definitivo: il collegamento del dominio non è un GO pubblico.
 - DNS OVH configurati e domini verificati su Render. Certificato apex emesso; ultimo stato esplicito di `www`: pending. Non dichiararlo risolto sulla sola conferma generale di funzionamento.
 - Schema `e8b1c4d7a902`, preflight `cutover_gia_applicato` e validazione staging riferiti dal committente; validazione production riuscita con override temporaneo, non attivazione della produzione.
-- Backup age e monitor a 72 ore attivi su Mac e Windows; restore reale Windows riuscito. Continuità delle scadenze ordinarie, recupero fisico dopo stop/riavvio e restore del nuovo archivio reale Mac restano da documentare.
+- Backup age e monitor a 72 ore installati su Mac e Windows; restore reale Windows riuscito. Riscontro del 13 novembre: Mac caricato, ultimo backup e monitor riusciti il 12 novembre alle 22:02 italiane; Windows non riverificato dopo le evidenze del 22 ottobre. Dettagli in [OPERATIONS.md](OPERATIONS.md#riscontro-locale-del-13-novembre-2026). Continuità, recupero fisico dopo stop/riavvio e restore del nuovo archivio reale Mac restano da documentare.
 - PayPal sospeso fino a nuovo ordine. Sonno: bonifico e conferma manuale. Età in mesi obbligatoria, senza limite di ammissione. Ricontatti senza date: modulo minimo, non iscrizione.
 - Non sono certificati tutti i flussi live, l'admin popolato sul nuovo dominio o il GO. Gli agenti non devono modificare Calendar reale (D-124).
 

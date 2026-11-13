@@ -100,6 +100,9 @@ Esiti locali del 13 novembre 2026:
   del backup Mac. I quattro errori sono riprodotti copiando soltanto gli script
   backup e i relativi test in una cartella temporanea esterna al progetto;
   l'errore riguarda il confronto temporale del backup. Nessun file backup modificato.
+  Esito storico del primo collaudo: nel successivo consolidamento è stato corretto
+  l'orologio simulato del test, con suite completa ora superata. Dettagli nella
+  [verifica dei backup](OPERATIONS.md#riscontro-locale-del-13-novembre-2026).
 - Compilazione dei nuovi moduli e `git diff --check` riusciti.
 - Controllo desktop ripetuto con successo in Chrome a 1440 x 900: proposta ed
   esito senza overflow orizzontale o sovrapposizioni, un solo `h1` per pagina,

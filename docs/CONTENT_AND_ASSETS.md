@@ -209,6 +209,8 @@ I ritagli sono scontornati nel browser con sagome diverse per ogni fotografia. N
 | `output/pdf/percorso_sonno_pilota.pdf` | Famiglie interessate al percorso base | Aggiornato alla formula da 200 €; il nome file storico resta invariato per non rompere link già condivisi |
 | `output/pdf/consulenza_sonno_opzioni_e_prezzi.pdf` | Famiglie già interessate che chiedono percorso e prezzi | Copia sincronizzata della scheda comparativa corrente |
 | `output/pdf/consulenza_sonno_opzioni_prezzi_senza_foto.pdf` | Stesso pubblico, senza fotografia iniziale | Versione sorgente preferita; include le tre formule da 75 €, 200 € e 320 € |
+| `output/pdf/consulenza_sonno_formule_e_prezzi.pdf` | Famiglie interessate alle tre formule sonno | Verificato e aggiornato il 13 novembre 2026: prezzi 75/200/320 €, call sul dominio definitivo e terza call entro 75 giorni dall'invio del questionario compilato. Due pagine controllate visivamente; correzioni ripetibili con `tools/update_sleep_offer_pdf.py` |
+| `output/pdf/condizioni_contrattuali_consulenza_sonno_2026-08-31.pdf` | Famiglie che ricevono la proposta privata | Copia generale, impaginata e non personalizzata delle condizioni versionate in `sleep_terms.py`; formula, prezzo, pagamento e avvio anticipato restano nel riepilogo individuale |
 
 I generatori sono in `tools/genera_pdf_percorso_sonno.py` e `tools/genera_pdf_opzioni_sonno.py`. Se cambiano palette, naming o offerta, aggiornare sia i generatori sia i PDF prodotti.
 

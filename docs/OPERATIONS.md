@@ -673,7 +673,38 @@ password di cifratura. I backup contengono dati personali e potenzialmente
 sanitari anche se cifrati; non vanno sincronizzati su servizi personali non
 valutati.
 
-### Stato corrente Mac e Windows — 22 ottobre 2026
+### Riscontro locale del 13 novembre 2026
+
+Verifica in sola lettura di pianificazione e metadati operativi, senza avviare
+export, leggere archivi o credenziali, inviare segnali o modificare Calendar:
+
+- Mac: LaunchAgent caricato, ultimo codice di uscita 0, 72 esecuzioni registrate;
+  pianificazione alle 22:00, all'accesso e ogni ora. Ultimo backup dichiarato
+  `success/completato` nei metadati: 12 novembre 2026 alle 21:02:43 UTC
+  (22:02:43 italiane). Anche il monitor riporta `success` per la stessa copia.
+  `backup.py` e `install.py` installati nella cartella operativa privata sono
+  identici alle rispettive copie nel progetto. Questa verifica non è un nuovo
+  controllo di integrità o restore dell'archivio.
+- Windows: restano valide le evidenze storiche sotto riportate; stato corrente
+  dell'attività e ultimo backup non osservati. Non è disponibile accesso diretto
+  al PC e la dashboard Healthchecks richiede una nuova autenticazione. Non
+  dedurre continuità delle copie dalla sola installazione del 22 ottobre.
+
+Gli script installati sulle macchine funzionano indipendentemente dal repository
+del sito. Il push Nexi `88dc413` ha escluso gli script backup già non versionati;
+il successivo consolidamento del 13 novembre include sorgenti Mac/Windows,
+monitor e test, lasciando fuori archivi e credenziali. Non modifica le copie
+installate o la pianificazione operativa.
+
+Verifiche del consolidamento: 28 test backup superati, 5 prove native opt-in
+saltate; suite completa 542 superati e 12 saltati, test JavaScript 55 superati.
+I quattro errori precedenti erano nel test del retry Mac: la data simulata
+dell'archivio veniva confrontata con l'orologio reale usato per lo stato di
+completamento. Il test ora controlla anche tale orologio; nessuna modifica al
+programma operativo di backup. Le prove native richiedono PowerShell o un
+PostgreSQL temporaneo dedicato e non attestano lo stato corrente del PC Windows.
+
+### Attivazione documentata Mac e Windows — 22 ottobre 2026
 
 Le due macchine eseguono export indipendenti: non si replicano a specchio e non
 richiedono porte aperte tra le reti. Il PC Windows normalmente acceso sostiene
