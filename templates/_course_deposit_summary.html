@@ -1,0 +1,8 @@
+{% macro deposit_summary(extra) %}
+{% if extra.get('nexi_deposit') %}
+{% set quote = extra.nexi_deposit %}
+<p class="text-muted">Acconto Nexi del 50%: {{ '%.2f'|format(quote.deposit_cents / 100)|replace('.', ',') }} € · {{ 'verificato' if extra.get('nexi_payment', {}).get('status') == 'paid' else 'da completare' }}<br>Saldo in presenza: {{ '%.2f'|format(quote.balance_cents / 100)|replace('.', ',') }} €</p>
+{% if extra.get('nexi_payment', {}).get('email_status') in ['failed', 'pending'] %}<p class="text-muted">Email di conferma: da verificare o reinviare.</p>{% endif %}
+{% if quote.total_cents == 6000 %}<p class="text-muted">Se partecipa una sola persona: quota 34 €, saldo 4 €; sconto coppia non applicabile.</p>{% endif %}
+{% endif %}
+{% endmacro %}

@@ -4,6 +4,8 @@ Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scel
 
 ## Stato attuale: dominio pronto per il collaudo privato, non lancio pubblico
 
+- Aggiornamento locale D-135, 14 novembre 2026: nuovo percorso disostruzione con acconto 50% (17/30 €), conferma automatica dopo verifica Nexi, email e nominativi nella scheda corso. Condizioni aggiornate con preavviso sonno, perdita dell’acconto per assenza senza preavviso valido e quota singola 34 € se partecipa una sola persona della coppia (saldo 4 €). Nessuna attivazione reale o deploy implicito; [procedura e verifiche](NEXI_SANDBOX.md).
+
 - Aggiornamento locale del 14 novembre 2026: Nexi sandbox esteso a disostruzione pediatrica e tagli sicuri, singolo 34 € e coppia 60 € (D-134). Sono preservate capienza, lista d'attesa e conferma manuale del posto; nessuna attivazione online. Evidenze in [NEXI_SANDBOX.md](NEXI_SANDBOX.md).
 - Aggiornamento locale del 13 novembre 2026: collaudo Nexi HPP su copia temporanea isolata (D-133) completato per desktop/mobile, Visa, 3DS, ritorno e notifiche HTTPS. Anomalia su due Mastercard di test da chiarire con Nexi; evidenze e limiti in [NEXI_SANDBOX.md](NEXI_SANDBOX.md). Non cambia lo stato del dominio, non attiva Nexi sul sito operativo e non riapre PayPal.
 

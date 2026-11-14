@@ -10,14 +10,21 @@
         <p>Questa operazione è simulata: nessun addebito reale.</p>
         <div class="confirmation-pending-notice" role="status">
             {% if payment.status == 'confirmed' %}
+            {% if deposit and registration.stato == 'Confermato' %}
+            <h2>Iscrizione confermata</h2>
+            <p>L’acconto simulato del 50% è stato verificato. Il tuo posto è confermato e il nominativo è registrato nell’edizione scelta.</p>
+            {% if delivery_status == 'sent' %}<p>L’email di conferma è stata preparata correttamente. In questo ambiente di prova l’invio è simulato.</p>
+            {% else %}<p>L’iscrizione resta confermata, ma l’invio dell’email richiede una verifica dello studio.</p>{% endif %}
+            {% else %}
             <h2>Pagamento simulato confermato</h2>
-            <p>La richiesta è salvata. Lo studio verificherà l’iscrizione e confermerà il posto: il pagamento non sostituisce questa comunicazione.</p>
+            <p>La richiesta è salvata. Stato iscrizione: {{ registration.stato }}. Per eventuali verifiche contatta lo studio.</p>
+            {% endif %}
             {% elif payment.status == 'authorized' %}
             <h2>Autorizzazione ricevuta</h2>
-            <p>Il pagamento non risulta ancora completato.</p>
+            <p>Il pagamento non risulta ancora completato: il posto non è confermato.</p>
             {% elif payment.status in ['failed', 'initialization_failed'] %}
             <h2>Pagamento di prova non completato</h2>
-            <p>La richiesta è conservata. Puoi riprovare sulla stessa iscrizione senza inviare di nuovo i dati.</p>
+            <p>Il posto non è confermato. La richiesta è conservata: puoi riprovare sulla stessa iscrizione senza inviare di nuovo i dati.</p>
             {% elif payment.status == 'review' %}
             <h2>È necessario controllare l’operazione</h2>
             <p>Il corso o l’iscrizione richiedono una verifica. Non avviare altri pagamenti prima del controllo dello studio.</p>
@@ -29,6 +36,10 @@
         </div>
         <p><strong>{{ registration.corso_titolo }}</strong><br>{{ registration.data_corso }}</p>
         <p>{{ 'Coppia · 2 partecipanti' if payment.participation == 'Coppia 60 euro' else 'Singolo · 1 partecipante' }}<br><strong>Importo di prova: {{ '%.2f'|format(payment.amount_cents / 100)|replace('.', ',') }} €</strong></p>
+        {% if deposit %}
+        <p>Quota totale: {{ '%.2f'|format(deposit.total_cents / 100)|replace('.', ',') }} €<br>Acconto del 50%: {{ '%.2f'|format(deposit.deposit_cents / 100)|replace('.', ',') }} €<br><strong>Saldo in presenza il giorno del corso: {{ '%.2f'|format(deposit.balance_cents / 100)|replace('.', ',') }} €</strong></p>
+        {% if payment.participation == 'Coppia 60 euro' %}<p>Se partecipa una sola persona: quota singola di 34 €, saldo di 4 € dopo l’acconto già versato di 30 €.</p>{% endif %}
+        {% endif %}
         <p>Riferimento: {{ payment.order_id }}</p>
         {% if retry_available %}
         <form method="post" action="{{ url_for('nexi_course_sandbox.retry', access_token=payment.access_token) }}">

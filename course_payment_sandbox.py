@@ -9,6 +9,7 @@ from flask import Blueprint, abort, current_app, redirect, render_template, requ
 from sqlalchemy.exc import IntegrityError
 
 from nexi_gateway import NexiError, NexiSandboxClient, ORDER_PATTERN, safe_checkout_url, token_digest
+from patient_service import AmbiguousPatientMatchError
 from payment_sandbox import (
     FAILURE_RESULTS, TOKEN_PATTERN, sandbox_enabled, sandbox_ready, utc_now,
     verified_order_operations,
@@ -18,10 +19,25 @@ from payment_sandbox import (
 COURSE_PRICES = {'Singolo 34 euro': 3400, 'Coppia 60 euro': 6000}
 
 
+def deposit_quote(participation):
+    total = COURSE_PRICES[participation]
+    return {'total_cents': total, 'deposit_cents': total // 2, 'balance_cents': total // 2}
+
+
+def expected_payment_amount(registration):
+    # Historical full-price attempts keep their original consent and workflow.
+    deposit = registration.extra_dict().get('nexi_deposit')
+    if deposit is None:
+        return COURSE_PRICES.get(registration.partecipazione)
+    if deposit != deposit_quote(registration.partecipazione):
+        return None
+    return deposit['deposit_cents']
+
+
 def purchase_digest(registration):
     course = registration.corso
     extra = registration.extra_dict()
-    return token_digest(json.dumps({
+    snapshot = {
         'course_id': registration.corso_id,
         'date': course.data if course else None,
         'time': course.ora if course else None,
@@ -31,7 +47,16 @@ def purchase_digest(registration):
         'requested_seats': registration.posti_richiesti,
         'terms': extra.get('condizioni_corso_versione'),
         'accepted_at': extra.get('condizioni_corso_accettate_il'),
-    }, sort_keys=True))
+    }
+    if extra.get('nexi_deposit') is not None:
+        snapshot.update({
+            'deposit': extra['nexi_deposit'],
+            'name': registration.nome, 'tax_code': registration.codice_fiscale,
+            'email': registration.email,
+            'second_name': extra.get('nome_secondo_partecipante'),
+            'deposit_accepted_at': extra.get('acconto_condizioni_accettate_il'),
+        })
+    return token_digest(json.dumps(snapshot, sort_keys=True))
 
 
 def registration_eligible(registration):
@@ -54,7 +79,8 @@ def registration_eligible(registration):
     )
 
 
-def register_course_payment_sandbox(app, db, registration_model, payment_model, validate_csrf, record_event, limit):
+def register_course_payment_sandbox(app, db, registration_model, payment_model, validate_csrf,
+                                    record_event, limit, prepare_confirmation, send_confirmation):
     blueprint = Blueprint('nexi_course_sandbox', __name__, url_prefix='/payments/nexi/sandbox/courses')
 
     def client():
@@ -82,7 +108,7 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
         payment = payment_model(
             registration_id=registration.id, active_registration_id=registration.id,
             order_id='NX' + secrets.token_hex(8), access_token=secrets.token_urlsafe(48),
-            amount_cents=COURSE_PRICES[registration.partecipazione], currency='EUR',
+            amount_cents=expected_payment_amount(registration), currency='EUR',
             participation=registration.partecipazione, purchase_digest=purchase_digest(registration),
             status='creating', expires_at=utc_now() + timedelta(minutes=15),
         )
@@ -128,14 +154,12 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
             if (
                 len(successful) != 1 or other or not registration_eligible(registration)
                 or purchase_digest(registration) != payment.purchase_digest
-                or COURSE_PRICES.get(registration.partecipazione) != payment.amount_cents
+                or expected_payment_amount(registration) != payment.amount_cents
             ):
                 payment.status = 'review'
                 db.session.commit()
                 record_error(payment, 'Pagamento di prova ricevuto; iscrizione o corso da verificare manualmente.')
                 return
-            # Payment and enrollment confirmation are deliberately separate.
-            # Enrollment keeps its existing state, seats, and manual confirmation.
             updated = payment_model.query.filter(
                 payment_model.id == payment.id,
                 payment_model.status.notin_(['confirmed', 'review']),
@@ -145,11 +169,27 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
                 payment_model.operation_id: successful[0]['operationId'],
                 payment_model.verified_at: utc_now(),
             }, synchronize_session=False)
+            confirmation_context = None
+            if updated and registration.extra_dict().get('nexi_deposit'):
+                try:
+                    confirmation_context = prepare_confirmation(registration, payment)
+                except AmbiguousPatientMatchError:
+                    db.session.rollback()
+                    payment.status = 'review'
+                    db.session.commit()
+                    record_error(payment, 'Acconto verificato; anagrafica da controllare prima della conferma.')
+                    return
             db.session.commit()
             db.session.refresh(payment)
             if updated:
                 record_event('nexi_course_sandbox', 'successo', 'Pagamento corso di prova verificato.',
                              'IscrizioneCorso', registration.id, {'order_id': payment.order_id})
+                if confirmation_context is not None:
+                    try:
+                        send_confirmation(registration, payment, confirmation_context)
+                    except Exception:
+                        db.session.rollback()
+                        record_error(payment, 'Iscrizione confermata; email o registrazione secondaria non riuscita.')
             return
         if any(op.get('operationResult') == 'AUTHORIZED' for op in operations):
             payment.status = 'authorized'
@@ -187,6 +227,8 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
         registration = db.session.get(registration_model, payment.registration_id)
         return render_template(
             'nexi_course_sandbox_result.html', payment=payment, registration=registration,
+            deposit=registration.extra_dict().get('nexi_deposit'),
+            delivery_status=registration.extra_dict().get('nexi_payment', {}).get('email_status'),
             verification_unavailable=unavailable,
             retry_available=payment.status in {'failed', 'initialization_failed'} and registration_eligible(registration),
             checkout_available=payment.status == 'pending' and payment.expires_at > utc_now()

@@ -1169,14 +1169,17 @@ def test_condizioni_iscrizione_corsi_pubblica_testo_integrale(client):
     assert response.status_code == 200
     assert response.text.count('<h1>') == 1
     assert '<h1>Condizioni di iscrizione ai corsi</h1>' in response.text
-    assert 'pagamento è previsto in presenza il giorno dell’attività' in response.text
-    assert 'L’invio del modulo online costituisce una richiesta di iscrizione' in response.text
-    assert 'Non è richiesto alcun pagamento anticipato' in response.text
-    assert 'senza costi e senza penali' in response.text
-    assert 'di richiedere il pagamento anticipato della quota di partecipazione' in response.text
-    assert 'La richiesta di spostamento non comporta automaticamente la prenotazione' in response.text
-    assert 'in caso di annullamento precedente allo svolgimento non vi sono somme anticipate da rimborsare' in response.text
-    assert 'Tali indicazioni costituiscono parte integrante delle condizioni di partecipazione' in response.text
+    assert 'acconto pari al 50%' in response.text
+    assert 'singolo 34 €' in response.text and 'coppia 60 €' in response.text
+    assert '17 € di acconto' in response.text and '30 € di acconto' in response.text
+    assert 'posto è confermato automaticamente solo dopo la verifica del pagamento' in response.text
+    assert 'almeno 24 ore' in response.text and 'ore 18 del venerdì precedente' in response.text
+    assert 'ultimo giorno lavorativo precedente' in response.text
+    assert 'perde l’acconto già versato' in response.text
+    assert 'saldo da pagare in presenza è di 4 €' in response.text
+    assert 'Per gli altri corsi e per le richieste gestite senza pagamento online' in response.text
+    assert 'rimborsato integralmente' in response.text
+    assert 'diritti inderogabili del consumatore' in response.text
 
 
 def test_scheda_iscrizione_registra_revoca_immagini_e_informativa_in_presenza(client):
@@ -1996,7 +1999,7 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.extra_dict()['eta_bambino'] == '3 anni'
         assert iscrizione.extra_dict()['nome_secondo_partecipante'] == ''
         assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
-        assert iscrizione.extra_dict()['condizioni_corso_versione'] == '2026-08-30'
+        assert iscrizione.extra_dict()['condizioni_corso_versione'] == app_module.VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI
         assert iscrizione.extra_dict()['condizioni_corso_accettate_il']
         assert '16/07/2099' in iscrizione.data_corso
         assert iscrizione.stato == 'Nuova'
@@ -4120,7 +4123,7 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
         iscrizione = IscrizioneCorso.query.one()
         iscrizione_id = iscrizione.id
         extra = iscrizione.extra_dict()
-        assert extra['condizioni_corso_versione'] == '2026-08-30'
+        assert extra['condizioni_corso_versione'] == app_module.VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI
         assert extra['condizioni_corso_accettate_il']
         assert iscrizione.percorso_accompagnamento_id == percorso_id
         assert iscrizione.stato == 'Nuova'
@@ -4139,7 +4142,7 @@ def test_modulo_privato_accompagnamento_conferma_iscrizione_e_presenze(client):
     csrf = _login_admin(client)
     dettaglio = client.get(f'/admin/pratica/IscrizioneCorso/{iscrizione_id}')
     assert 'Condizioni corsi' in dettaglio.text
-    assert 'Accettate · versione 2026-08-30' in dettaglio.text
+    assert 'Accettate · versione ' + app_module.VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI in dettaglio.text
     with patch.object(app_module.mail, 'send') as confirmation_send:
         stato_resp = client.post(
             f'/admin/iscrizione-corso/{iscrizione_id}/Confermato',

@@ -79,7 +79,10 @@ from sleep_terms import (
     SLEEP_TERMS_VERSION,
 )
 from payment_sandbox import register_payment_sandbox
-from course_payment_sandbox import COURSE_PRICES, register_course_payment_sandbox
+from course_payment_sandbox import COURSE_PRICES, deposit_quote, register_course_payment_sandbox
+from course_terms import (
+    COURSE_TERMS_VERSION, COURSE_TERMS_UPDATED_LABEL, COURSE_TERMS_SECTIONS, course_terms_text,
+)
 
 # Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
 # locale resta disponibile in sviluppo e non viene mai usato come archivio.
@@ -369,7 +372,7 @@ STATI_ISCRIZIONE_DA_GESTIRE = {'Nuova', 'Contattato', 'Lista attesa', 'Invitato'
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
 VERSIONE_INFORMATIVA_PRIVACY = '2026-08-29'
-VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI = '2026-08-30'
+VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI = COURSE_TERMS_VERSION
 GIORNI_CONSERVAZIONE_RICHIESTE = 180
 GIORNI_CONSERVAZIONE_CORSI_E_SONNO = 365
 GIORNI_CONSERVAZIONE_PRENOTAZIONI = 730
@@ -5240,7 +5243,7 @@ def _firma_email_studio():
 
 
 def invia_email_conferma_iscrizione_corso(iscrizione):
-    """Comunica la conferma soltanto dopo il passaggio admin a Confermato."""
+    """Send confirmation after a verified deposit or a manual confirmation."""
     if iscrizione.percorso_accompagnamento:
         return invia_email_iscrizione_accompagnamento(
             iscrizione,
@@ -5256,6 +5259,21 @@ def invia_email_conferma_iscrizione_corso(iscrizione):
             flags=re.IGNORECASE,
         )
     )
+    extra = iscrizione.extra_dict()
+    deposit = extra.get('nexi_deposit')
+    payment = extra.get('nexi_payment', {})
+    payment_details = ''
+    if deposit and payment.get('status') == 'paid':
+        def euros(cents):
+            return f'{cents / 100:.2f}'.replace('.', ',') + ' €'
+        payment_details = (
+            'Operazione simulata Nexi: nessun addebito reale.\n'
+            f'Quota totale: {euros(deposit["total_cents"])}\n'
+            f'Acconto del 50% verificato: {euros(deposit["deposit_cents"])}\n'
+            f'Saldo in presenza il giorno del corso: {euros(deposit["balance_cents"])}\n'
+            f'Riferimento Nexi: {payment["order_id"]}\n\n'
+            f'{extra.get("condizioni_corso_testo", course_terms_text())}\n\n'
+        )
     return _invia_email_partecipante_corso(
         iscrizione,
         f'Posto confermato - {iscrizione.corso_titolo}',
@@ -5264,6 +5282,7 @@ def invia_email_conferma_iscrizione_corso(iscrizione):
             f'il tuo posto per {iscrizione.corso_titolo} è confermato.\n\n'
             f'Data e luogo: {data_confermata}\n'
             f'Partecipazione: {iscrizione.partecipazione or "Non indicata"}\n\n'
+            f'{payment_details}'
             'Se hai bisogno di comunicare una variazione, contatta lo studio.\n\n'
             f'{_firma_email_studio()}'
         ),
@@ -6169,6 +6188,38 @@ def _audit_automatic_course_patient_link(registration, patient, patient_created,
     )
 
 
+def prepare_paid_course_registration(registration, payment):
+    """Persist the paid enrollment and patient link in the payment transaction."""
+    patient, created = _ensure_patient_for_course_registration(registration)
+    extra = registration.extra_dict()
+    extra['nexi_payment'] = {
+        'status': 'paid', 'order_id': payment.order_id,
+        'paid_cents': payment.amount_cents, 'confirmed_at': utc_now().isoformat(),
+        'email_status': 'pending',
+    }
+    registration.dati_extra = json.dumps(extra, ensure_ascii=False)
+    registration.stato = 'Confermato'
+    registration.scadenza_gestione = None
+    return patient, created
+
+
+def send_paid_course_confirmation(registration, payment, context):
+    """Send once, after commit; delivery errors never undo a paid enrollment."""
+    patient, created = context
+    _audit_automatic_course_patient_link(
+        registration, patient, created, 'creazione_anagrafica_da_acconto',
+    )
+    sent = invia_email_conferma_iscrizione_corso(registration)
+    extra = registration.extra_dict()
+    extra['nexi_payment']['email_status'] = 'sent' if sent is True else 'failed'
+    registration.dati_extra = json.dumps(extra, ensure_ascii=False)
+    db.session.commit()
+    if sent is not True:
+        registra_evento('nexi_course_sandbox', 'errore',
+                        'Iscrizione e acconto confermati; email al partecipante da reinviare.',
+                        'IscrizioneCorso', registration.id, {'order_id': payment.order_id})
+
+
 def _slugify(value):
     value = (value or '').strip().lower()
     value = re.sub(r'[^a-z0-9]+', '-', value)
@@ -6613,6 +6664,8 @@ def iscrizione_corso(corso_tipo):
         sandbox_payment_requested = request.form.get('payment_method') == 'nexi_sandbox'
         if sandbox_payment_requested and not corso['sandbox_payment_available']:
             return _render_iscrizione_con_errore(corso_tipo, 'Il pagamento di prova Nexi non è disponibile.')
+        if corso['sandbox_payment_available']:
+            sandbox_payment_requested = True
 
         nome = request.form.get('nome', '').strip()
         telefono = request.form.get('telefono', '').strip()
@@ -6668,6 +6721,11 @@ def iscrizione_corso(corso_tipo):
                 corso_tipo,
                 'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.',
                 'condizioni_corso',
+            )
+        if sandbox_payment_requested and not _checkbox_checked('acconto_condizioni'):
+            return _render_iscrizione_con_errore(
+                corso_tipo, 'Accetta le condizioni dell’acconto e della mancata presentazione.',
+                'acconto_condizioni',
             )
 
         if nome_bambino:
@@ -6800,6 +6858,11 @@ def iscrizione_corso(corso_tipo):
                 posti_richiesti,
             )
 
+        if sandbox_payment_requested and not in_lista_attesa:
+            extra['nexi_deposit'] = deposit_quote(partecipazione)
+            extra['condizioni_corso_testo'] = course_terms_text()
+            extra['acconto_condizioni_accettate_il'] = extra['condizioni_corso_accettate_il']
+
         iscrizione = IscrizioneCorso(
             corso_id=corso_id,
             corso_tipo=corso_tipo,
@@ -6846,12 +6909,6 @@ def iscrizione_corso(corso_tipo):
                 'creazione_anagrafica_da_lista_attesa',
             )
         if sandbox_payment_requested and not in_lista_attesa:
-            try:
-                invia_email_alert_nuova_iscrizione(iscrizione)
-            except Exception:
-                registra_evento('nexi_course_sandbox', 'errore',
-                                'Iscrizione di prova salvata; avviso email non riuscito.',
-                                'IscrizioneCorso', iscrizione.id)
             return course_payment_sandbox['start_checkout'](iscrizione)
         invia_email_alert_nuova_iscrizione(iscrizione)
         if in_lista_attesa:
@@ -7433,7 +7490,10 @@ def privacy():
 
 @app.route('/condizioni-iscrizione-corsi')
 def condizioni_iscrizione_corsi():
-    return render_template('condizioni_iscrizione_corsi.html')
+    return render_template(
+        'condizioni_iscrizione_corsi.html', terms_sections=COURSE_TERMS_SECTIONS,
+        terms_version=COURSE_TERMS_VERSION, terms_updated_label=COURSE_TERMS_UPDATED_LABEL,
+    )
 
 
 @app.route('/condizioni-consulenza-sonno')
@@ -7455,6 +7515,8 @@ course_payment_sandbox = register_course_payment_sandbox(
     app, db, IscrizioneCorso, SandboxCoursePaymentAttempt,
     validate_csrf_token, lambda *args, **kwargs: registra_evento(*args, **kwargs),
     limiter.limit,
+    lambda registration, payment: prepare_paid_course_registration(registration, payment),
+    lambda registration, payment, context: send_paid_course_confirmation(registration, payment, context),
 )
 
 
@@ -10166,6 +10228,15 @@ def reinvia_email_admin(id):
     msg = Message(subject=precedente.oggetto, recipients=[precedente.destinatario], body=precedente.corpo)
     try:
         _invia_email_tracciata(msg, precedente.entita_tipo, precedente.entita_id)
+        if (precedente.entita_tipo == 'IscrizioneCorso'
+                and precedente.oggetto.startswith('Posto confermato -')):
+            registration = db.session.get(IscrizioneCorso, precedente.entita_id)
+            if registration:
+                extra = registration.extra_dict()
+                if extra.get('nexi_payment', {}).get('status') == 'paid':
+                    extra['nexi_payment']['email_status'] = 'sent'
+                    registration.dati_extra = json.dumps(extra, ensure_ascii=False)
+                    db.session.commit()
         flash('Email reinviata.', 'success')
     except Exception:
         flash('Nuovo invio fallito. Controlla il registro errori.', 'error')
@@ -11537,6 +11608,11 @@ def aggiorna_stato_iscrizione_corso(id, stato):
         flash('Richiesta non valida. Riprova.', 'error')
         return redirect(url_for('admin'))
     iscrizione = db.get_or_404(IscrizioneCorso, id)
+    extra = iscrizione.extra_dict()
+    if (stato == 'Confermato' and extra.get('nexi_deposit')
+            and extra.get('nexi_payment', {}).get('status') != 'paid'):
+        flash('Per questa iscrizione il posto si conferma soltanto dopo l’acconto Nexi verificato.', 'error')
+        return redirect(_url_dettaglio_admin('IscrizioneCorso', iscrizione.id))
     stato_precedente = iscrizione.stato
     patient = None
     patient_created = False

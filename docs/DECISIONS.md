@@ -1100,8 +1100,17 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 ## D-134 — Collaudo Nexi per disostruzione, singolo e coppia
 
 - Data: 2026-11-14.
-- Stato: implementazione locale richiesta dal committente, nel profilo isolato D-133.
+- Stato: implementazione locale richiesta dal committente, nel profilo isolato D-133; sostituita da D-135 per i nuovi acquisti.
 - Decisione: aggiungere Nexi sandbox alla richiesta di iscrizione a disostruzione pediatrica e tagli sicuri. Il committente conferma 34 € singolo e 60 € coppia; il precedente riferimento a 35 € nel brief è superato. Il server calcola la quota dalla partecipazione, senza fidarsi di importi inviati dal browser.
 - Conseguenze: salvataggio della richiesta prima della cassa, nessun pagamento per ricontatti o lista d'attesa, capienza invariata (compresa la coppia sull'ultimo posto nominale). Il pagamento verificato non sostituisce la conferma manuale del posto. Riprova sulla stessa richiesta soltanto dopo un fallimento certo; timeout e modifiche a edizione, condizioni o partecipazione richiedono verifica. Stato e riferimento sono visibili nella pratica admin di prova.
 - Confini: database in memoria, email simulate, Calendar disabilitato; nessuna attivazione di carte reali, nessuna modifica alle condizioni operative dei corsi o al sito online. Le condizioni correnti per pagamento in presenza non vengono usate per introdurre implicitamente un incasso anticipato reale.
 - Collegamenti: `NEXI_SANDBOX.md`, `SITE_MAP_AND_FLOWS.md`, `PROJECT_BRIEF.md`, D-133.
+
+## D-135 — Acconto disostruzione e conferma automatica
+
+- Data: 2026-11-14.
+- Decisione del committente: per il nuovo acquisto del corso disostruzione, modulo → acconto Nexi del 50% → conferma automatica del posto, email e nominativo nella scheda corso admin. Totali invariati 34 € singolo e 60 € coppia; acconti 17/30 €, saldi in presenza 17/30 €.
+- Precisazioni del committente: la comunicazione di assenza segue il preavviso della consulenza sonno (lunedì entro venerdì ore 18; altrimenti almeno 24 ore; se festivo, entro le 18 dell'ultimo lavorativo precedente). L'assenza senza il preavviso richiesto comporta la perdita dell'acconto, senza richiedere il saldo. Se della coppia partecipa una sola persona, perde lo sconto e paga la quota singola di 34 €: 30 € già anticipati e saldo 4 €, senza un'altra trattenuta per l'assente.
+- Implementazione: importi dal server, accettazione esplicita e copia versionata delle condizioni, conferma e collegamento paziente nella transazione del pagamento, email successiva e idempotente. Guasti email non annullano la pratica; conflitti anagrafici o modifiche dell'acquisto richiedono controllo. Ricontatti e lista d'attesa non pagano. Ordini storici e consensi precedenti non vengono convertiti retroattivamente.
+- Confini: le uniche credenziali disponibili sono di test. Il percorso è verificato nel profilo isolato, con database in memoria e invii simulati; D-133 resta valido per l'isolamento. Nessuna attivazione reale, modifica Calendar, apertura pubblica o deploy implicito. Le regole commerciali aggiornate sono in `course_terms.py`, condivise da pagina e copia email.
+- Sostituisce: D-134 per i nuovi acquisti; per gli altri corsi resta la conferma manuale.

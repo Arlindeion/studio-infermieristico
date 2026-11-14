@@ -4,7 +4,8 @@ Stato al 14 novembre 2026: collaudo della proposta sonno completato su copia
 temporanea, con esito positivo Visa e un'anomalia Mastercard ancora da chiarire
 con Nexi. Completato anche il collaudo Visa del corso di disostruzione, singolo
 34 EUR e coppia 60 EUR. Nessuna attivazione commerciale, nessun deploy, nessun
-pagamento reale. D-133 e D-134.
+pagamento reale. D-133 e D-134. Il nuovo percorso D-135 usa acconti 17/30 EUR
+e conferma automatica dopo la verifica, come descritto sotto.
 
 ## Isolamento
 
@@ -150,7 +151,7 @@ esiti sono nella stessa cartella, in particolare `nexi-esito-200-1440.png`,
 `nexi-annullato-200-mobile.png`. Il collegamento HTTPS e i processi temporanei
 sono chiusi a fine collaudo; i dati in memoria non vengono trasferiti al sito.
 
-## Corso di disostruzione: singolo e coppia
+## Corso di disostruzione: acconto e conferma automatica (D-135)
 
 Il parametro `--course` aggiunge un'edizione fittizia futura e ne stampa il
 collegamento al modulo. Per provare l'intero percorso:
@@ -162,12 +163,17 @@ venv/bin/python scripts/nexi_sandbox.py --course --public-base-url https://sandb
 Vale lo stesso isolamento descritto sopra; sostituire l'origine di esempio con
 quella HTTPS temporanea. Con `--course --no-key` si vede il modulo ordinario,
 senza cassa Nexi disponibile. Non occorre migrare un database dello studio:
-lo script crea lo schema in memoria. La revisione `b7e2d9c4a601` aggiunge soltanto
+lo script crea lo schema in memoria. D-135 usa i campi esistenti e non introduce nuove migrazioni. La revisione
+`b7e2d9c4a601` aggiunge soltanto
 la tabella dei tentativi corso; il downgrade rifiuta di eliminarla se contiene dati.
 
-Il prezzo è calcolato sul server: 3400 centesimi per il singolo e 6000 per la
-coppia, rispettivamente uno e due posti. Le condizioni e i campi obbligatori,
-compreso il secondo partecipante, restano quelli del modulo. L'iscrizione viene
+Il prezzo è calcolato sul server: quote totali 3400/6000 centesimi e acconti
+1700/3000 centesimi, rispettivamente uno e due posti. Il saldo del restante 50%
+(17/30 EUR) è previsto in presenza. Una coppia con una sola persona presente
+perde lo sconto: quota singola 34 EUR, acconto già versato 30 EUR e saldo 4 EUR. Le condizioni e i campi obbligatori,
+compreso il secondo partecipante, restano quelli del modulo. È aggiunta
+l’accettazione esplicita dell’acconto e delle regole di assenza. Versione, istante
+e testo integrale delle condizioni sono conservati nella pratica. L'iscrizione viene
 salvata prima dell'avvio del gateway. I collegamenti dedicati sono:
 
 - ritorno: `/payments/nexi/sandbox/courses/result/<token>`;
@@ -176,10 +182,14 @@ salvata prima dell'avvio del gateway. I collegamenti dedicati sono:
   tramite POST con CSRF, sulla stessa iscrizione.
 
 Il gateway verifica importo, valuta e ordine con una richiesta indipendente.
-Il pagamento riuscito lascia l'iscrizione in `Nuova`: lo studio deve ancora
-confermare il posto. Il dettaglio admin distingue il pagamento di prova dallo
-stato dell'iscrizione. Non viene inviata una conferma automatica né creato un
-evento Calendar. Le regole di capienza non cambiano: la coppia può occupare
+Il pagamento riuscito conferma automaticamente l’iscrizione (`Confermato`)
+e crea o collega l’anagrafica del richiedente nella stessa transazione. La scheda
+corso riporta il nominativo e, per la coppia, anche il secondo partecipante.
+Dopo il commit parte l’email di conferma con acconto, saldo, riferimento e copia
+delle condizioni accettate. Ripetere una notifica o il ritorno non reinvia
+l’email. Un errore email lascia il posto confermato ed è visibile in admin;
+il reinvio manuale non crea un nuovo pagamento. Nessun evento Calendar viene
+creato o modificato. Un conflitto anagrafico porta l’esito in verifica manuale. Le regole di capienza non cambiano: la coppia può occupare
 l'ultimo posto nominale secondo il flusso esistente; una richiesta in lista
 d'attesa non apre la cassa e non viene addebitata.
 
@@ -189,11 +199,16 @@ di un vecchio ordine, mentre ne esiste un altro attivo, richiede verifica manual
 Una modifica di data, sede, partecipazione o condizioni dopo l'avvio, oppure una
 revoca, porta il pagamento riuscito in verifica manuale. Un tentativo fallito o
 scaduto non annulla l'iscrizione e non libera automaticamente i posti: resta
-applicabile la gestione manuale ordinaria. Le condizioni contrattuali commerciali
-che prevedono il pagamento in presenza non sono state modificate per il collaudo;
-l'attivazione reale richiede un intervento distinto su configurazione e contratto.
+applicabile la gestione manuale ordinaria. Le condizioni commerciali aggiornate sono centralizzate in `course_terms.py`
+e condivise da pagina pubblica e copia email. Il preavviso segue quello sonno;
+un’assenza senza preavviso valido comporta la perdita dell’acconto, senza saldo
+ulteriore. Rimangono salvi i diritti inderogabili del consumatore. Gli ordini
+storici a quota intera restano nel precedente flusso manuale e non vengono
+convertiti retroattivamente. L’attivazione reale richiede credenziali,
+configurazione e collaudo operativi distinti; la chiave disponibile è solo di test.
 
-Collaudo del 14 novembre 2026 con il gateway Nexi sandbox e carta Visa ufficiale
+Collaudo iniziale D-134 del 14 novembre 2026, a quota intera e conferma manuale,
+con il gateway Nexi sandbox e carta Visa ufficiale
 di test, senza email, Calendar o database dello studio:
 
 | Prova | Risultato osservato |
@@ -211,6 +226,31 @@ dei moduli e `git diff --check` verificati. Evidenze senza chiavi, token o dati 
 `output/nexi-course-qa/e2e-evidence.json`, `form-singolo-1440.jpg`,
 `esito-singolo-1440.jpg`, `form-coppia-390.jpg` ed `esito-coppia-390.jpg`
 nella stessa cartella. Il collegamento HTTPS temporaneo è chiuso a fine collaudo.
+
+### Verifica del nuovo acconto D-135
+
+Il successivo collaudo del 14 novembre 2026 ha verificato il nuovo percorso con
+carta Visa ufficiale Nexi e autentica 3DS riuscita:
+
+| Prova | Risultato osservato |
+| --- | --- |
+| Singolo, desktop 1440 x 900 | Acconto 17 EUR, `EXECUTED`, notifica HTTPS 200 prima del ritorno. Iscrizione `Confermato`, un posto, anagrafica collegata e email generata con invio simulato. Saldo 17 EUR. |
+| Coppia, mobile 390 x 844 | Acconto 30 EUR, `EXECUTED`, notifica HTTPS 200 prima del ritorno. Iscrizione `Confermato`, due posti, anagrafica collegata e email generata con invio simulato. Saldo 30 EUR; indicazione del saldo 4 EUR per una sola presenza. |
+| Scheda corso admin, desktop e mobile | Entrambe le iscrizioni confermate, nome del secondo partecipante, acconti e saldi visibili. |
+| Condizioni e modulo | Condizioni versione 2026-11-14, consenso acconto obbligatorio anche sul server; senza spunta il browser blocca l'invio e porta il focus al campo. Un `h1` e nessun overflow a 1440/390 px. |
+
+Esito automatico finale: 47 test corso, suite completa 602 superati e 12 saltati,
+55 test JavaScript superati. Sono verificati anche email fallita e reinvio senza
+nuovo ordine, assenza di conferma prima del pagamento, conflitto anagrafico,
+richieste di lista d'attesa e compatibilità degli ordini storici a quota intera.
+Non sono previste nuove migrazioni per D-135. `git diff --check` e compilazione
+dei moduli completati.
+
+Evidenze: `output/nexi-deposit-qa/e2e-evidence.json`, schermate di modulo,
+esito, condizioni e scheda corso nella stessa cartella. Sono presenti solo dati
+fittizi; nessuna chiave o token privato. Il server e il collegamento HTTPS
+temporanei sono stati chiusi. Rimborsi e saldo in presenza restano operazioni
+manuali: non sono state aggiunte API di rimborso o addebiti del saldo.
 
 Un'inizializzazione HPP riuscita non prova ricezione delle notifiche, autentica
 3DS, incasso bancario reale, disponibilità dell'offerta o commissioni.

@@ -331,8 +331,8 @@
         {% if corso.sandbox_payment_available %}
         <input type="hidden" name="payment_method" value="nexi_sandbox">
         <div class="confirmation-pending-notice" role="status">
-            <strong>Pagamento di prova Nexi</strong>
-            <span>Questa copia usa dati fittizi e carte di test: nessun addebito reale. Scegli singolo (34 €) o coppia (60 €); dopo l’invio si apre la cassa Nexi. Se la data è piena, la richiesta entra in lista d’attesa senza pagamento. La conferma del posto resta allo studio.</span>
+            <strong>Acconto del 50% · prova Nexi</strong>
+            <span>Questa copia usa dati fittizi e carte di test: nessun addebito reale. Singolo: quota 34 €, acconto 17 €, saldo 17 €. Coppia: quota 60 €, acconto 30 €, saldo 30 €. Il saldo si versa in presenza il giorno del corso. Dopo il pagamento verificato, il posto è confermato e ricevi una email. Una data piena comporta solo la lista d’attesa, senza pagamento.</span>
         </div>
         {% endif %}
 
@@ -373,7 +373,7 @@
         <div class="form-gruppo">
             <label for="email">Email{% if corso.has_open_dates %} *{% endif %}</label>
             <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}" maxlength="100" {% if corso.has_open_dates %}required{% endif %}>
-            {% if corso.has_open_dates %}<small>La userò per inviarti la conferma del posto dopo la verifica dello studio.</small>{% endif %}
+            {% if corso.has_open_dates %}<small>{% if corso.sandbox_payment_available %}Riceverai la conferma dell’iscrizione dopo la verifica dell’acconto Nexi.{% else %}La userò per inviarti la conferma del posto dopo la verifica dello studio.{% endif %}</small>{% endif %}
         </div>
 
         {% if corso_tipo in ['disostruzione-pediatrica', 'laboratorio-infanzia'] %}
@@ -495,6 +495,14 @@
             </label>
         </div>
         {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
+        {% if corso.sandbox_payment_available %}
+        <div class="form-gruppo checkbox-stack">
+            <label>
+                <input type="checkbox" name="acconto_condizioni" required {{ 'checked' if form_data.get('acconto_condizioni') }}>
+                <span>Accetto il pagamento dell’acconto del 50% e le regole di rinuncia e mancata presentazione: senza il preavviso previsto dalle condizioni perdo l’acconto. Se della coppia partecipa una sola persona si applica la quota singola di 34 €, con saldo di 4 € dopo l’acconto di 30 €. *</span>
+            </label>
+        </div>
+        {% endif %}
         {% elif corso_tipo == 'accompagnamento-nascita' %}
         <h3>Dati anagrafici</h3>
         <div class="form-riga">
@@ -616,7 +624,7 @@
 
         <button type="submit" class="btn" data-conversion="course_registration_submit">
             {% if corso.sandbox_payment_available %}
-                Continua al pagamento di prova
+                Paga l’acconto del 50% · prova Nexi
             {% elif not corso.has_open_dates %}
                 Lascia i dati per essere ricontattato
             {% elif corso_tipo == 'accompagnamento-nascita' %}

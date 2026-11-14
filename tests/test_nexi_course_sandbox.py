@@ -69,7 +69,7 @@ def enroll(client, course, **changes):
         'telefono': '3330000000', 'email': 'prova@example.invalid',
         'partecipazione': 'Singolo 34 euro', 'data_corso': str(course.id),
         'scopo_informativo': 'on', 'no_certificazione': 'on', 'buono_stato_salute': 'on',
-        'consenso_privacy': 'on', 'condizioni_corso': 'on',
+        'consenso_privacy': 'on', 'condizioni_corso': 'on', 'acconto_condizioni': 'on',
     }
     form.update(changes)
     return client.post(COURSE_URL, data=form)
@@ -96,7 +96,7 @@ def notify(client, payment, **changes):
 
 
 @pytest.mark.parametrize('participation,seats,amount', [
-    ('Singolo 34 euro', 1, 3400), ('Coppia 60 euro', 2, 6000),
+    ('Singolo 34 euro', 1, 1700), ('Coppia 60 euro', 2, 3000),
 ])
 def test_server_prices_and_seats_saved_before_gateway(client, course, gateway, participation, seats, amount):
     def create(*args, **kwargs):
@@ -117,7 +117,7 @@ def test_server_prices_and_seats_saved_before_gateway(client, course, gateway, p
 
 
 @pytest.mark.parametrize('changes', [
-    {'_csrf_token': 'wrong'}, {'condizioni_corso': ''}, {'partecipazione': 'Coppia 60 euro'},
+    {'_csrf_token': 'wrong'}, {'condizioni_corso': ''}, {'acconto_condizioni': ''}, {'partecipazione': 'Coppia 60 euro'},
     {'partecipazione': 'Singolo 1 euro'},
 ])
 def test_invalid_forms_do_not_create_orders(client, course, gateway, changes):
@@ -164,16 +164,16 @@ def test_no_dates_show_interest_only(client, course, gateway):
     gateway[0].assert_not_called()
 
 
-def test_paid_course_keeps_manual_confirmation_and_repeated_callback_is_idempotent(client, course, gateway):
+def test_paid_deposit_confirms_enrollment_and_repeated_callback_is_idempotent(client, course, gateway):
     enroll(client, course)
     payment = attempt()
     gateway[1].return_value = {'operations': [operation(payment)]}
     assert notify(client, payment).status_code == 200
-    assert payment.status == 'confirmed' and payment.registration.stato == 'Nuova'
+    assert payment.status == 'confirmed' and payment.registration.stato == 'Confermato'
     assert payment.registration.posti == 1
     assert notify(client, payment).status_code == 200
     page = client.get(BASE + '/result/' + payment.access_token + '?esito=KO&cancel=1')
-    assert 'Pagamento simulato confermato' in page.text
+    assert 'Iscrizione confermata' in page.text
     assert page.headers['Cache-Control'].startswith('no-store')
     assert page.headers['Referrer-Policy'] == 'no-referrer'
     assert 'noindex' in page.headers['X-Robots-Tag']
@@ -189,7 +189,7 @@ def test_forged_notification_rejected(client, course, gateway):
     gateway[1].assert_not_called()
 
 
-def test_admin_can_review_payment_without_automatic_enrollment_confirmation(client, course, gateway):
+def test_admin_can_review_automatically_confirmed_enrollment(client, course, gateway):
     enroll(client, course)
     payment = attempt()
     gateway[1].return_value = {'operations': [operation(payment)]}
@@ -207,8 +207,8 @@ def test_admin_can_review_payment_without_automatic_enrollment_confirmation(clie
     response = client.get(path)
     assert response.status_code == 200
     assert 'Pagamento Nexi di prova' in response.text
-    assert payment.order_id in response.text and '34,00 €' in response.text
-    assert payment.registration.stato == 'Nuova'
+    assert payment.order_id in response.text and '17,00 €' in response.text
+    assert payment.registration.stato == 'Confermato'
 
 
 @pytest.mark.parametrize('changes', [{'operationAmount': '1'}, {'operationCurrency': 'USD'}, {'orderId': 'NX'+'a'*16}])
@@ -289,10 +289,12 @@ def test_false_browser_success_and_gateway_outage_do_not_confirm(client, course,
     assert notify(client, payment).status_code == 503
 
 
-def test_alert_email_failure_does_not_prevent_checkout(client, course, gateway, monkeypatch):
-    monkeypatch.setattr(site, 'invia_email_alert_nuova_iscrizione', Mock(side_effect=RuntimeError('synthetic')))
+def test_no_studio_alert_is_sent_before_payment(client, course, gateway, monkeypatch):
+    alert = Mock(side_effect=RuntimeError('synthetic'))
+    monkeypatch.setattr(site, 'invia_email_alert_nuova_iscrizione', alert)
     assert enroll(client, course).status_code == 303
     assert site.IscrizioneCorso.query.count() == site.SandboxCoursePaymentAttempt.query.count() == 1
+    alert.assert_not_called()
 
 
 def test_gateway_separates_course_callbacks_from_sleep(monkeypatch):
@@ -303,3 +305,165 @@ def test_gateway_separates_course_callbacks_from_sleep(monkeypatch):
     session = transport.call_args.args[2]['paymentSession']
     assert '/courses/result/' in session['resultUrl']
     assert session['notificationUrl'].endswith('/courses/notification')
+
+
+@pytest.mark.parametrize('participation,amount,balance,seats', [
+    ('Singolo 34 euro', 1700, 1700, 1), ('Coppia 60 euro', 3000, 3000, 2),
+])
+def test_deposit_confirms_patient_and_email_once(client, course, gateway, monkeypatch,
+                                                participation, amount, balance, seats):
+    sender = Mock()
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course, partecipazione=participation,
+           nome_secondo_partecipante='Secondo partecipante di prova')
+    payment = attempt()
+    assert sender.call_count == 0 and payment.registration.persona_v2_id is None
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    for _ in range(2):
+        assert notify(client, payment).status_code == 200
+        assert client.get(BASE + '/result/' + payment.access_token).status_code == 200
+    registration = payment.registration
+    assert registration.stato == 'Confermato' and registration.posti == seats
+    assert registration.persona_v2_id is not None and registration.scadenza_gestione is None
+    assert site.Persona.query.count() == 1
+    data = registration.extra_dict()
+    assert data['nexi_deposit']['balance_cents'] == balance
+    assert data['nexi_payment']['paid_cents'] == amount
+    assert data['nexi_payment']['email_status'] == 'sent'
+    sender.assert_called_once()
+    body = sender.call_args.args[0].body
+    assert 'Acconto del 50% verificato' in body
+    assert 'Saldo in presenza il giorno del corso' in body
+    assert 'versione 2026-11-14' in body and 'almeno 24 ore' in body
+    assert 'saldo da pagare in presenza è di 4 €' in body
+    assert payment.order_id in body
+
+
+def test_deposit_flow_cannot_be_bypassed_by_removing_payment_field(client, course, gateway):
+    response = enroll(client, course, payment_method='')
+    assert response.status_code == 303 and response.location == CHECKOUT
+    assert attempt().amount_cents == 1700
+
+
+@pytest.mark.parametrize('result', ['AUTHORIZED', 'FAILED', 'CANCELED', 'THREEDS_FAILED'])
+def test_unpaid_or_authorized_deposit_does_not_confirm_or_email(client, course, gateway, monkeypatch, result):
+    sender = Mock()
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course)
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment, operationResult=result)]}
+    assert notify(client, payment).status_code == 200
+    assert payment.registration.stato == 'Nuova'
+    assert payment.registration.persona_v2_id is None
+    sender.assert_not_called()
+
+
+def test_confirmation_email_failure_keeps_paid_enrollment(client, course, gateway, monkeypatch):
+    sender = Mock(side_effect=RuntimeError('synthetic mail failure'))
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course)
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    assert notify(client, payment).status_code == 200
+    assert payment.status == 'confirmed' and payment.registration.stato == 'Confermato'
+    assert payment.registration.extra_dict()['nexi_payment']['email_status'] == 'failed'
+    assert site.EmailOperativa.query.filter_by(stato='fallita').count() == 1
+    assert notify(client, payment).status_code == 200
+    sender.assert_called_once()
+    assert 'invio dell’email richiede una verifica' in client.get(BASE+'/result/'+payment.access_token).text
+
+
+def test_ambiguous_patient_keeps_deposit_for_manual_review(client, course, gateway, monkeypatch):
+    from patient_service import AmbiguousPatientMatchError
+    enroll(client, course)
+    payment = attempt()
+    monkeypatch.setattr(site, '_ensure_patient_for_course_registration',
+                        Mock(side_effect=AmbiguousPatientMatchError()))
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    assert notify(client, payment).status_code == 200
+    assert payment.status == 'review' and payment.registration.stato == 'Nuova'
+    assert site.Persona.query.count() == 0
+
+
+def test_historical_full_payment_keeps_original_manual_confirmation(client, course, gateway, monkeypatch):
+    sender = Mock()
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course)
+    payment = attempt()
+    registration = payment.registration
+    data = registration.extra_dict()
+    data.pop('nexi_deposit')
+    data.pop('condizioni_corso_testo')
+    data.pop('acconto_condizioni_accettate_il')
+    data['condizioni_corso_versione'] = '2026-08-30'
+    registration.dati_extra = json.dumps(data)
+    payment.amount_cents = 3400
+    payment.purchase_digest = token_digest(json.dumps({
+        'course_id': registration.corso_id, 'date': course.data,
+        'time': course.ora, 'location': course.luogo,
+        'participation': registration.partecipazione, 'seats': registration.posti,
+        'requested_seats': registration.posti_richiesti,
+        'terms': data['condizioni_corso_versione'],
+        'accepted_at': data['condizioni_corso_accettate_il'],
+    }, sort_keys=True))
+    site.db.session.commit()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    assert notify(client, payment).status_code == 200
+    assert payment.status == 'confirmed' and registration.stato == 'Nuova'
+    sender.assert_not_called()
+
+
+def login_admin(client):
+    site.db.session.add(site.Admin(username='synthetic-admin', password=generate_password_hash('synthetic-password')))
+    site.db.session.commit()
+    client.post('/admin/login', data={
+        '_csrf_token': csrf(client, '/admin/login'),
+        'username': 'synthetic-admin', 'password': 'synthetic-password',
+    })
+
+
+def test_admin_cannot_confirm_a_new_unpaid_deposit(client, course, gateway, monkeypatch):
+    sender = Mock()
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course)
+    payment = attempt()
+    login_admin(client)
+    path = f'/admin/pratica/IscrizioneCorso/{payment.registration_id}'
+    token = csrf(client, path)
+    response = client.post(f'/admin/iscrizione-corso/{payment.registration_id}/Confermato',
+                           data={'_csrf_token': token})
+    assert response.status_code == 302
+    assert payment.registration.stato == 'Nuova'
+    sender.assert_not_called()
+
+
+def test_course_sheet_contains_both_couple_names_and_adjusted_single_balance(client, course, gateway):
+    enroll(client, course, partecipazione='Coppia 60 euro',
+           nome_secondo_partecipante='Secondo partecipante di prova')
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    notify(client, payment)
+    login_admin(client)
+    page = client.get(f'/admin/pratica/Corso/{course.id}')
+    assert page.status_code == 200
+    for expected in ['Partecipante di prova', 'Secondo partecipante di prova', 'Confermato',
+                     'Acconto Nexi del 50%: 30,00 €', 'quota 34 €, saldo 4 €']:
+        assert expected in page.text
+
+
+def test_failed_confirmation_can_be_resent_without_new_payment(client, course, gateway, monkeypatch):
+    sender = Mock(side_effect=RuntimeError('synthetic mail failure'))
+    monkeypatch.setattr(site.mail, 'send', sender)
+    enroll(client, course)
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    notify(client, payment)
+    failed = site.EmailOperativa.query.filter_by(stato='fallita').one()
+    login_admin(client)
+    sender.side_effect = None
+    token = csrf(client, f'/admin/pratica/IscrizioneCorso/{payment.registration_id}')
+    response = client.post(f'/admin/email/{failed.id}/reinvia', data={'_csrf_token': token})
+    assert response.status_code == 302
+    assert payment.registration.extra_dict()['nexi_payment']['email_status'] == 'sent'
+    assert payment.registration.stato == 'Confermato'
+    gateway[0].assert_called_once()
