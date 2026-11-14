@@ -4,6 +4,7 @@ Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scel
 
 ## Stato attuale: dominio pronto per il collaudo privato, non lancio pubblico
 
+- Aggiornamento locale del 14 novembre 2026: Nexi sandbox esteso a disostruzione pediatrica e tagli sicuri, singolo 34 € e coppia 60 € (D-134). Sono preservate capienza, lista d'attesa e conferma manuale del posto; nessuna attivazione online. Evidenze in [NEXI_SANDBOX.md](NEXI_SANDBOX.md).
 - Aggiornamento locale del 13 novembre 2026: collaudo Nexi HPP su copia temporanea isolata (D-133) completato per desktop/mobile, Visa, 3DS, ritorno e notifiche HTTPS. Anomalia su due Mastercard di test da chiarire con Nexi; evidenze e limiti in [NEXI_SANDBOX.md](NEXI_SANDBOX.md). Non cambia lo stato del dominio, non attiva Nexi sul sito operativo e non riapre PayPal.
 
 - Il commit `3fe6033` è su `origin/main`; manual deploy confermato dal committente. Il ricontatto minimo è stato osservato sul servizio Render dopo il deploy.

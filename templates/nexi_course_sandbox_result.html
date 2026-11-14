@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titolo %}Pagamento di prova del corso | S.C. Studio Infermieristico{% endblock %}
+{% block meta_description %}Verifica del pagamento simulato del corso di disostruzione pediatrica e tagli sicuri.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow,noarchive">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        <p class="eyebrow">Ambiente di prova · Nexi</p>
+        <h1>Pagamento di prova del corso</h1>
+        <p>Questa operazione è simulata: nessun addebito reale.</p>
+        <div class="confirmation-pending-notice" role="status">
+            {% if payment.status == 'confirmed' %}
+            <h2>Pagamento simulato confermato</h2>
+            <p>La richiesta è salvata. Lo studio verificherà l’iscrizione e confermerà il posto: il pagamento non sostituisce questa comunicazione.</p>
+            {% elif payment.status == 'authorized' %}
+            <h2>Autorizzazione ricevuta</h2>
+            <p>Il pagamento non risulta ancora completato.</p>
+            {% elif payment.status in ['failed', 'initialization_failed'] %}
+            <h2>Pagamento di prova non completato</h2>
+            <p>La richiesta è conservata. Puoi riprovare sulla stessa iscrizione senza inviare di nuovo i dati.</p>
+            {% elif payment.status == 'review' %}
+            <h2>È necessario controllare l’operazione</h2>
+            <p>Il corso o l’iscrizione richiedono una verifica. Non avviare altri pagamenti prima del controllo dello studio.</p>
+            {% else %}
+            <h2>Verifica del pagamento in corso</h2>
+            <p>Puoi controllare nuovamente l’esito senza avviare un altro pagamento.</p>
+            {% endif %}
+            {% if verification_unavailable %}<p>La verifica con Nexi è temporaneamente non disponibile. La richiesta e il tentativo sono salvati.</p>{% endif %}
+        </div>
+        <p><strong>{{ registration.corso_titolo }}</strong><br>{{ registration.data_corso }}</p>
+        <p>{{ 'Coppia · 2 partecipanti' if payment.participation == 'Coppia 60 euro' else 'Singolo · 1 partecipante' }}<br><strong>Importo di prova: {{ '%.2f'|format(payment.amount_cents / 100)|replace('.', ',') }} €</strong></p>
+        <p>Riferimento: {{ payment.order_id }}</p>
+        {% if retry_available %}
+        <form method="post" action="{{ url_for('nexi_course_sandbox.retry', access_token=payment.access_token) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button class="btn" type="submit">Riprova il pagamento di prova</button>
+        </form>
+        {% endif %}
+        {% if payment.status not in ['confirmed', 'failed', 'initialization_failed'] %}
+        <p><a class="btn" href="{{ url_for('nexi_course_sandbox.result', access_token=payment.access_token) }}">Controlla nuovamente l’esito</a></p>
+        {% endif %}
+        {% if checkout_available %}<p><a class="btn" href="{{ payment.checkout_url }}" rel="noreferrer">Torna alla cassa di prova Nexi</a></p>{% endif %}
+        <p><a href="{{ url_for('iscrizione_corso', corso_tipo='disostruzione-pediatrica') }}">Torna alle informazioni sul corso</a></p>
+    </div>
+</section>
+{% endblock %}

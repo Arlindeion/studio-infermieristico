@@ -58,7 +58,7 @@ Questi dati sono contesto gestionale. Non devono essere pubblicati o modificati 
 | Servizio | Prezzo di riferimento | Frequenza/capienza | Note |
 |---|---:|---|---|
 | BLSD | 60-75 € a persona | Circa mensile; classe standard fino a 10 | Sono state gestite anche 14 persone con due istruttori. I manichini sono già ammortizzati. |
-| Disostruzione pediatrica e tagli sicuri | 35 € singolo; 60 € coppia | Circa mensile; abitualmente 6-8, massimo indicativo 10 | Corso rivolto a genitori e caregiver. |
+| Disostruzione pediatrica e tagli sicuri | 34 € singolo; 60 € coppia | Circa mensile; abitualmente 6-8, massimo indicativo 10 | Prezzi riconfermati dal committente per il collaudo Nexi (D-134); corso rivolto a genitori e caregiver. |
 | Laboratori alimentari/gioco | 20-25 € a bambino | Circa 4 al mese; gruppi di 4-6 bambini | I bambini che ritornano sono il pubblico più ricorrente. |
 | Corso di accompagnamento alla nascita | 225 € a coppia | 9 incontri; media 5 coppie; capienza 7-8 | Il prezzo è per coppia. Una coppia conta come un posto nel percorso. |
 | Consulenza mirata sul sonno | 75 € | Singola difficoltà circoscritta | Formula breve, non sostitutiva del percorso quando più fattori si influenzano. |

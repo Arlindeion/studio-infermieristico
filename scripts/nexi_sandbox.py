@@ -11,6 +11,7 @@ import sys
 def main():
     parser = argparse.ArgumentParser(description='Collaudo isolato Nexi, solo pagamenti simulati.')
     parser.add_argument('--port', type=int, default=5055)
+    parser.add_argument('--course', action='store_true', help='Aggiungi un’edizione fittizia del corso di disostruzione.')
     parser.add_argument('--public-base-url', help='Origine HTTPS della sola copia di collaudo.')
     parser.add_argument('--no-key', action='store_true', help='Apri la proposta senza collegarti a Nexi.')
     parser.add_argument('--probe', action='store_true', help='Verifica solo le credenziali sandbox, senza avviare il server.')
@@ -41,7 +42,7 @@ def main():
         print('Credenziali accettate dal gateway sandbox. Nessun pagamento avviato.')
         return 0
 
-    from app import app, db, CallSonno, utc_now, timedelta
+    from app import app, db, CallSonno, Corso, local_today, utc_now, timedelta
     with app.app_context():
         db.create_all()
         token = secrets.token_urlsafe(48)
@@ -53,7 +54,16 @@ def main():
             proposta_scade_il=utc_now() + timedelta(days=7),
         )
         db.session.add(demo)
+        if args.course:
+            course = Corso(
+                titolo='Disostruzione pediatrica e tagli sicuri · prova', tipo='disostruzione-pediatrica',
+                data=(local_today() + timedelta(days=30)).isoformat(), ora='10:00',
+                luogo='Sede di prova', durata_ore=2.5, capienza_massima=10, stato='Aperto',
+            )
+            db.session.add(course)
         db.session.commit()
+        if args.course:
+            print(f'Corso fittizio: http://127.0.0.1:{args.port}/iscrizione-corsi/disostruzione-pediatrica?corso_id={course.id}#modulo-iscrizione-corso')
     print('Ambiente temporaneo: database in memoria, email simulate, Calendar disabilitato.')
     print(f'Proposta fittizia: http://127.0.0.1:{args.port}/offerta-sonno/{token}')
     if not app.config.get('PUBLIC_BASE_URL'):

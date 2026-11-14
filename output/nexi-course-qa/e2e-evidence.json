@@ -1,0 +1,154 @@
+{
+  "events": [
+    {
+      "event": "request",
+      "endpoint": "iscrizione_corso",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "iscrizione_corso",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "EXECUTED",
+          "amount": "3400",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_course_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_course_sandbox.result",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "iscrizione_corso",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "event": "gateway",
+      "method": "POST",
+      "kind": "hpp",
+      "operations": []
+    },
+    {
+      "event": "request",
+      "endpoint": "iscrizione_corso",
+      "method": "POST",
+      "status": 303
+    },
+    {
+      "event": "gateway",
+      "method": "GET",
+      "kind": "order",
+      "operations": [
+        {
+          "type": "AUTHORIZATION",
+          "result": "EXECUTED",
+          "amount": "6000",
+          "currency": "EUR"
+        }
+      ]
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_course_sandbox.notification",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "endpoint": "nexi_course_sandbox.result",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "attempts": [
+    {
+      "order_id": "NXd020247b6e1e6892",
+      "status": "confirmed",
+      "amount_cents": 3400,
+      "operation_id": "253311579188263189",
+      "registration_id": 1
+    },
+    {
+      "order_id": "NXeae2a1b6cbb78a15",
+      "status": "confirmed",
+      "amount_cents": 6000,
+      "operation_id": "719386710681963189",
+      "registration_id": 2
+    }
+  ],
+  "registrations": [
+    {
+      "id": 1,
+      "seats": 1,
+      "status": "Nuova",
+      "participation": "Singolo 34 euro"
+    },
+    {
+      "id": 2,
+      "seats": 2,
+      "status": "Nuova",
+      "participation": "Coppia 60 euro"
+    }
+  ],
+  "test_date": "2026-11-14",
+  "environment": "Nexi sandbox; disposable in-memory database; no Calendar or SMTP",
+  "ui_checks": [
+    {
+      "participation": "single",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "amount_eur": 34,
+      "three_ds": "success",
+      "horizontal_overflow": false,
+      "h1_count": 1
+    },
+    {
+      "participation": "couple",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "amount_eur": 60,
+      "three_ds": "success",
+      "horizontal_overflow": false,
+      "h1_count": 1
+    }
+  ],
+  "automated_checks": {
+    "course_tests_passed": 33,
+    "python_passed": 576,
+    "python_skipped": 12,
+    "javascript_passed": 55,
+    "diff_check": "passed",
+    "temporary_server_and_https_tunnel": "stopped"
+  }
+}

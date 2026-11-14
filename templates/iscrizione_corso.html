@@ -328,6 +328,13 @@
     {% else %}
     <form class="form-prenotazione form-iscrizione-corso" method="POST" action="{{ url_for('iscrizione_corso', corso_tipo=corso_slug) }}" id="{{ form_anchor_id }}" data-course-registration-form>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        {% if corso.sandbox_payment_available %}
+        <input type="hidden" name="payment_method" value="nexi_sandbox">
+        <div class="confirmation-pending-notice" role="status">
+            <strong>Pagamento di prova Nexi</strong>
+            <span>Questa copia usa dati fittizi e carte di test: nessun addebito reale. Scegli singolo (34 €) o coppia (60 €); dopo l’invio si apre la cassa Nexi. Se la data è piena, la richiesta entra in lista d’attesa senza pagamento. La conferma del posto resta allo studio.</span>
+        </div>
+        {% endif %}
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -608,7 +615,9 @@
         </div>
 
         <button type="submit" class="btn" data-conversion="course_registration_submit">
-            {% if not corso.has_open_dates %}
+            {% if corso.sandbox_payment_available %}
+                Continua al pagamento di prova
+            {% elif not corso.has_open_dates %}
                 Lascia i dati per essere ricontattato
             {% elif corso_tipo == 'accompagnamento-nascita' %}
                 Iscriviti all'open day

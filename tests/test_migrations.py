@@ -38,9 +38,10 @@ EXPECTED_TABLES = {
     'fusione_persona',
     'calendar_patient_decision',
     'sandbox_payment_attempt',
+    'sandbox_course_payment_attempt',
 }
 
-LATEST_REVISION = 'f3c8a1b6d902'
+LATEST_REVISION = 'b7e2d9c4a601'
 PATIENT_CUTOVER_REVISION = 'd4a7c2e9f610'
 
 
@@ -270,6 +271,28 @@ def test_calendar_patient_decision_blocks_destructive_downgrade(tmp_path):
         ).fetchone()[0]
     assert revision == 'e8b1c4d7a902'
     assert decisions == 1
+
+
+def test_course_payment_downgrade_preserves_existing_attempt(tmp_path):
+    database_path = tmp_path / 'course_payment_downgrade.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade')
+    setup = """
+from app import app, db, IscrizioneCorso, SandboxCoursePaymentAttempt, utc_now, timedelta
+with app.app_context():
+    registration = IscrizioneCorso(corso_tipo='disostruzione-pediatrica', corso_titolo='Corso di prova', nome='Partecipante di prova', telefono='0000000000', codice_fiscale='TESTONLY00000000')
+    db.session.add(registration)
+    db.session.flush()
+    db.session.add(SandboxCoursePaymentAttempt(registration_id=registration.id, active_registration_id=registration.id, order_id='NX'+'a'*16, access_token='a'*64, amount_cents=3400, currency='EUR', participation='Singolo 34 euro', purchase_digest='b'*64, status='pending', expires_at=utc_now()+timedelta(minutes=15)))
+    db.session.commit()
+"""
+    subprocess.run([sys.executable, '-c', setup], cwd=PROJECT_ROOT, env=env, check=True,
+                   capture_output=True, text=True)
+    with pytest.raises(subprocess.CalledProcessError):
+        _run_flask(env, 'db', 'downgrade', 'f3c8a1b6d902')
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute('SELECT COUNT(*) FROM sandbox_course_payment_attempt').fetchone()[0] == 1
+        assert connection.execute('SELECT version_num FROM alembic_version').fetchone()[0] == LATEST_REVISION
 
 
 def test_upgrade_durata_appuntamento_preserva_righe_esistenti(tmp_path):

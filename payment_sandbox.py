@@ -17,6 +17,31 @@ FAILURE_RESULTS = {'DECLINED', 'CANCELED', 'CANCELLED', 'THREEDS_FAILED', 'DENIE
 TOKEN_PATTERN = re.compile(r'^[A-Za-z0-9_-]{64}$')
 
 
+def verified_order_operations(payment, result):
+    """Validate gateway operations against the server's immutable order snapshot."""
+    operations = result.get('operations')
+    if not isinstance(operations, list):
+        raise NexiError(uncertain=True)
+    matching = []
+    for operation in operations:
+        if not isinstance(operation, dict):
+            raise NexiError(uncertain=True)
+        if operation.get('operationType') not in {'AUTHORIZATION', 'CAPTURE'}:
+            continue
+        amount = operation.get('operationAmount')
+        operation_id = operation.get('operationId')
+        if (
+            operation.get('orderId') != payment.order_id
+            or operation.get('operationCurrency') != payment.currency
+            or not isinstance(amount, str) or not amount.isascii() or not amount.isdigit()
+            or int(amount) != payment.amount_cents
+            or not isinstance(operation_id, str) or not 1 <= len(operation_id) <= 120
+        ):
+            raise NexiError(uncertain=True)
+        matching.append(operation)
+    return matching
+
+
 def utc_now():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -157,27 +182,7 @@ def register_payment_sandbox(app, db, call_model, payment_model, send_questionna
         if payment.status in {'confirmed', 'review'}:
             return
         result = client().get_order(payment.order_id)
-        operations = result.get('operations')
-        if not isinstance(operations, list):
-            raise NexiError(uncertain=True)
-        matching = []
-        for operation in operations:
-            if not isinstance(operation, dict):
-                raise NexiError(uncertain=True)
-            if operation.get('operationType') not in {'AUTHORIZATION', 'CAPTURE'}:
-                continue
-            amount = operation.get('operationAmount')
-            operation_id = operation.get('operationId')
-            if (
-                operation.get('orderId') != payment.order_id
-                or operation.get('operationCurrency') != payment.currency
-                or not isinstance(amount, str) or not amount.isascii() or not amount.isdigit()
-                or int(amount) != payment.amount_cents
-                or not isinstance(operation_id, str) or not 1 <= len(operation_id) <= 120
-            ):
-                record_error(payment, 'Esito sandbox non coerente con ordine, importo o valuta; nessuna conferma.')
-                raise NexiError(uncertain=True)
-            matching.append(operation)
+        matching = verified_order_operations(payment, result)
         successful = [op for op in matching if op.get('operationResult') == 'EXECUTED']
         if len(successful) == 1:
             confirm_payment(payment, successful[0])

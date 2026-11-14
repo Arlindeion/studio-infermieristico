@@ -1096,3 +1096,12 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Decisione: preparare Hosted Payment Page Nexi sandbox sulla proposta sonno, con credenziali di test e profilo dedicato `payment_sandbox`. Database temporaneo in memoria, nessuna lettura di `.env`, nessuna email reale, scheduler e Calendar disabilitati. Le configurazioni ordinarie mantengono Nexi spento.
 - Conseguenze: tentativi registrati prima della chiamata al gateway, importi dal server, notifica verificata e stato letto da Nexi, conferma atomica e idempotente. Le prove non autorizzano pagamenti reali, rate, deploy o apertura pubblica. Bonifico e sospensione PayPal restano invariati fuori dalla copia di collaudo.
 - Collegamenti: `NEXI_SANDBOX.md`, `ROADMAP.md`, D-123, D-124, D-131.
+
+## D-134 — Collaudo Nexi per disostruzione, singolo e coppia
+
+- Data: 2026-11-14.
+- Stato: implementazione locale richiesta dal committente, nel profilo isolato D-133.
+- Decisione: aggiungere Nexi sandbox alla richiesta di iscrizione a disostruzione pediatrica e tagli sicuri. Il committente conferma 34 € singolo e 60 € coppia; il precedente riferimento a 35 € nel brief è superato. Il server calcola la quota dalla partecipazione, senza fidarsi di importi inviati dal browser.
+- Conseguenze: salvataggio della richiesta prima della cassa, nessun pagamento per ricontatti o lista d'attesa, capienza invariata (compresa la coppia sull'ultimo posto nominale). Il pagamento verificato non sostituisce la conferma manuale del posto. Riprova sulla stessa richiesta soltanto dopo un fallimento certo; timeout e modifiche a edizione, condizioni o partecipazione richiedono verifica. Stato e riferimento sono visibili nella pratica admin di prova.
+- Confini: database in memoria, email simulate, Calendar disabilitato; nessuna attivazione di carte reali, nessuna modifica alle condizioni operative dei corsi o al sito online. Le condizioni correnti per pagamento in presenza non vengono usate per introdurre implicitamente un incasso anticipato reale.
+- Collegamenti: `NEXI_SANDBOX.md`, `SITE_MAP_AND_FLOWS.md`, `PROJECT_BRIEF.md`, D-133.

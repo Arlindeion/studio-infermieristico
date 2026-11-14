@@ -79,6 +79,7 @@ from sleep_terms import (
     SLEEP_TERMS_VERSION,
 )
 from payment_sandbox import register_payment_sandbox
+from course_payment_sandbox import COURSE_PRICES, register_course_payment_sandbox
 
 # Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
 # locale resta disponibile in sviluppo e non viene mai usato come archivio.
@@ -439,7 +440,7 @@ CORSI_ISCRIVIBILI = {
     },
     'disostruzione-pediatrica': {
         'titolo': 'Disostruzione pediatrica e tagli sicuri',
-        'partecipazione_options': ['Singolo 34 euro', 'Coppia 60 euro'],
+        'partecipazione_options': list(COURSE_PRICES),
     },
     'accompagnamento-nascita': {
         'titolo': 'Corso di accompagnamento alla nascita',
@@ -2022,6 +2023,30 @@ class SandboxPaymentAttempt(db.Model):
         'CallSonno',
         backref=db.backref('sandbox_payments', cascade='all, delete-orphan'),
     )
+
+
+class SandboxCoursePaymentAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.String(18), unique=True, nullable=False)
+    access_token = db.Column(db.String(96), unique=True, nullable=False)
+    registration_id = db.Column(db.Integer, db.ForeignKey(
+        'iscrizione_corso.id', name='fk_sandbox_course_payment_registration', ondelete='CASCADE',
+    ), nullable=False)
+    active_registration_id = db.Column(db.Integer, unique=True, nullable=True)
+    amount_cents = db.Column(db.Integer, nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='EUR')
+    participation = db.Column(db.String(100), nullable=False)
+    purchase_digest = db.Column(db.String(64), nullable=False)
+    status = db.Column(db.String(30), nullable=False, default='creating')
+    security_token_hash = db.Column(db.String(64), nullable=True)
+    checkout_url = db.Column(db.Text, nullable=True)
+    operation_id = db.Column(db.String(120), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    verified_at = db.Column(db.DateTime, nullable=True)
+    registration = db.relationship('IscrizioneCorso', backref=db.backref(
+        'sandbox_payment_attempts', cascade='all, delete-orphan', order_by='SandboxCoursePaymentAttempt.id',
+    ))
 
 
 class Corso(db.Model):
@@ -6350,6 +6375,9 @@ def _corso_iscrivibile_con_date(corso_tipo):
     corso['data_options'] = _opzioni_date_corso(corso_tipo)
     corso['has_open_dates'] = len(corso['data_options']) > 0
     corso['interest_topic'] = COURSE_INTEREST_TOPIC_BY_TYPE[corso_tipo]
+    corso['sandbox_payment_available'] = (
+        corso_tipo == 'disostruzione-pediatrica' and course_payment_sandbox['ready']()
+    )
     return corso
 
 
@@ -6582,6 +6610,10 @@ def iscrizione_corso(corso_tipo):
         if not token or token != request.form.get('_csrf_token'):
             return _render_iscrizione_con_errore(corso_tipo, 'Richiesta non valida. Riprova.')
 
+        sandbox_payment_requested = request.form.get('payment_method') == 'nexi_sandbox'
+        if sandbox_payment_requested and not corso['sandbox_payment_available']:
+            return _render_iscrizione_con_errore(corso_tipo, 'Il pagamento di prova Nexi non è disponibile.')
+
         nome = request.form.get('nome', '').strip()
         telefono = request.form.get('telefono', '').strip()
         email = request.form.get('email', '').strip()
@@ -6813,6 +6845,14 @@ def iscrizione_corso(corso_tipo):
                 patient_created,
                 'creazione_anagrafica_da_lista_attesa',
             )
+        if sandbox_payment_requested and not in_lista_attesa:
+            try:
+                invia_email_alert_nuova_iscrizione(iscrizione)
+            except Exception:
+                registra_evento('nexi_course_sandbox', 'errore',
+                                'Iscrizione di prova salvata; avviso email non riuscito.',
+                                'IscrizioneCorso', iscrizione.id)
+            return course_payment_sandbox['start_checkout'](iscrizione)
         invia_email_alert_nuova_iscrizione(iscrizione)
         if in_lista_attesa:
             return redirect(url_for('conferma_iscrizione_corso', lista_attesa='1'))
@@ -7410,6 +7450,11 @@ payment_sandbox = register_payment_sandbox(
     app, db, CallSonno, SandboxPaymentAttempt,
     lambda call: invia_email_questionario_sonno(call),
     lambda *args, **kwargs: registra_evento(*args, **kwargs),
+)
+course_payment_sandbox = register_course_payment_sandbox(
+    app, db, IscrizioneCorso, SandboxCoursePaymentAttempt,
+    validate_csrf_token, lambda *args, **kwargs: registra_evento(*args, **kwargs),
+    limiter.limit,
 )
 
 

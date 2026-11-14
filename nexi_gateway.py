@@ -100,12 +100,15 @@ class NexiSandboxClient:
         except (URLError, TimeoutError, OSError, ValueError):
             raise NexiError(uncertain=True) from None
 
-    def create_checkout(self, order_id, amount_cents, origin, access_token):
+    def create_checkout(self, order_id, amount_cents, origin, access_token, *, checkout_kind='sleep'):
         if not ORDER_PATTERN.fullmatch(order_id) or not valid_public_origin(origin):
             raise NexiError()
         if type(amount_cents) is not int or amount_cents <= 0:
             raise NexiError()
-        result_url = f'{origin.rstrip("/")}/payments/nexi/sandbox/result/{access_token}'
+        if checkout_kind not in {'sleep', 'course'}:
+            raise NexiError()
+        route_prefix = '/payments/nexi/sandbox' + ('/courses' if checkout_kind == 'course' else '')
+        result_url = f'{origin.rstrip("/")}{route_prefix}/result/{access_token}'
         result = self._request('POST', '/orders/hpp', {
             'order': {'orderId': order_id, 'amount': str(amount_cents), 'currency': 'EUR'},
             'paymentSession': {
@@ -116,7 +119,7 @@ class NexiSandboxClient:
                 'recurrence': {'action': 'NO_RECURRING'},
                 'resultUrl': f'{result_url}?orderId={order_id}',
                 'cancelUrl': f'{result_url}?orderId={order_id}&cancel=1',
-                'notificationUrl': f'{origin.rstrip("/")}/payments/nexi/sandbox/notification',
+                'notificationUrl': f'{origin.rstrip("/")}{route_prefix}/notification',
             },
         })
         security_token = result.get('securityToken')

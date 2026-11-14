@@ -1,9 +1,10 @@
 # Collaudo Nexi HPP prima del contratto
 
-Stato al 13 novembre 2026: collaudo della proposta sonno completato su copia
+Stato al 14 novembre 2026: collaudo della proposta sonno completato su copia
 temporanea, con esito positivo Visa e un'anomalia Mastercard ancora da chiarire
-con Nexi. Nessuna attivazione commerciale, nessun deploy, nessun pagamento reale.
-D-133.
+con Nexi. Completato anche il collaudo Visa del corso di disostruzione, singolo
+34 EUR e coppia 60 EUR. Nessuna attivazione commerciale, nessun deploy, nessun
+pagamento reale. D-133 e D-134.
 
 ## Isolamento
 
@@ -55,6 +56,9 @@ Il parametro è letto solo da `NEXI_SANDBOX_PUBLIC_BASE_URL`, mai dal generico
 
 ## Percorso verificato dall'applicazione
 
+Questa sequenza riguarda la proposta sonno; il corso mantiene la conferma manuale
+dell'iscrizione, come descritto nella sezione dedicata più avanti.
+
 1. Selezione formula e accettazione delle condizioni, con CSRF.
 2. Salvataggio locale dell'acquisto e del tentativo prima della richiesta Nexi.
 3. `POST /orders/hpp` sandbox con prezzo calcolato dal server, in centesimi,
@@ -79,7 +83,8 @@ manuale. L'esito del pagamento è salvato prima dell'email, il cui errore viene
 registrato in `RegistroEvento`.
 
 Non sono implementati rimborsi o contabilizzazioni manuali via API, pagamenti
-di corsi/prestazioni, rate, produzione o riconciliazione pianificata. Se manca la
+di altri corsi/prestazioni oltre al collaudo disostruzione descritto sotto,
+rate, produzione o riconciliazione pianificata. Se manca la
 notifica si può recuperare lo stato dalla pagina personale di esito finché il
 processo temporaneo resta acceso.
 
@@ -144,6 +149,68 @@ esiti sono nella stessa cartella, in particolare `nexi-esito-200-1440.png`,
 `nexi-esito-200-mobile.png`, `nexi-3ds-fallita-320-mobile.png` e
 `nexi-annullato-200-mobile.png`. Il collegamento HTTPS e i processi temporanei
 sono chiusi a fine collaudo; i dati in memoria non vengono trasferiti al sito.
+
+## Corso di disostruzione: singolo e coppia
+
+Il parametro `--course` aggiunge un'edizione fittizia futura e ne stampa il
+collegamento al modulo. Per provare l'intero percorso:
+
+```bash
+venv/bin/python scripts/nexi_sandbox.py --course --public-base-url https://sandbox.example.invalid
+```
+
+Vale lo stesso isolamento descritto sopra; sostituire l'origine di esempio con
+quella HTTPS temporanea. Con `--course --no-key` si vede il modulo ordinario,
+senza cassa Nexi disponibile. Non occorre migrare un database dello studio:
+lo script crea lo schema in memoria. La revisione `b7e2d9c4a601` aggiunge soltanto
+la tabella dei tentativi corso; il downgrade rifiuta di eliminarla se contiene dati.
+
+Il prezzo è calcolato sul server: 3400 centesimi per il singolo e 6000 per la
+coppia, rispettivamente uno e due posti. Le condizioni e i campi obbligatori,
+compreso il secondo partecipante, restano quelli del modulo. L'iscrizione viene
+salvata prima dell'avvio del gateway. I collegamenti dedicati sono:
+
+- ritorno: `/payments/nexi/sandbox/courses/result/<token>`;
+- notifica: `/payments/nexi/sandbox/courses/notification`;
+- nuovo tentativo dopo fallimento certo: `/payments/nexi/sandbox/courses/result/<token>/retry`,
+  tramite POST con CSRF, sulla stessa iscrizione.
+
+Il gateway verifica importo, valuta e ordine con una richiesta indipendente.
+Il pagamento riuscito lascia l'iscrizione in `Nuova`: lo studio deve ancora
+confermare il posto. Il dettaglio admin distingue il pagamento di prova dallo
+stato dell'iscrizione. Non viene inviata una conferma automatica né creato un
+evento Calendar. Le regole di capienza non cambiano: la coppia può occupare
+l'ultimo posto nominale secondo il flusso esistente; una richiesta in lista
+d'attesa non apre la cassa e non viene addebitata.
+
+Fallimenti certi permettono un nuovo tentativo sulla pratica già salvata;
+timeout ed esiti incerti lo bloccano per evitare doppi ordini. Una conferma tardiva
+di un vecchio ordine, mentre ne esiste un altro attivo, richiede verifica manuale.
+Una modifica di data, sede, partecipazione o condizioni dopo l'avvio, oppure una
+revoca, porta il pagamento riuscito in verifica manuale. Un tentativo fallito o
+scaduto non annulla l'iscrizione e non libera automaticamente i posti: resta
+applicabile la gestione manuale ordinaria. Le condizioni contrattuali commerciali
+che prevedono il pagamento in presenza non sono state modificate per il collaudo;
+l'attivazione reale richiede un intervento distinto su configurazione e contratto.
+
+Collaudo del 14 novembre 2026 con il gateway Nexi sandbox e carta Visa ufficiale
+di test, senza email, Calendar o database dello studio:
+
+| Prova | Risultato osservato |
+| --- | --- |
+| Singolo, desktop 1440 x 900 | HPP da 34 EUR, autenticazione 3DS riuscita, `EXECUTED`, notifica HTTPS 200 prima del ritorno; iscrizione `Nuova`, un posto. |
+| Coppia, mobile 390 x 844 | HPP da 60 EUR, autenticazione 3DS riuscita, `EXECUTED`, notifica HTTPS 200 prima del ritorno; iscrizione `Nuova`, due posti. |
+| Modulo ed esito | Un solo `h1`, nessun overflow orizzontale; campi etichettati, consensi utilizzabili anche da tastiera. |
+
+I test automatici coprono anche importi manipolati, CSRF, consensi mancanti,
+capienza, lista d'attesa, notifiche contraffatte o ripetute, risposte incoerenti,
+retry, guasti di rete e modifica o revoca dell'iscrizione. Le prove automatiche
+non contattano servizi reali. Esito finale: 33 test corso superati; suite completa
+576 superati e 12 saltati; 55 test JavaScript superati. Migrazioni, compilazione
+dei moduli e `git diff --check` verificati. Evidenze senza chiavi, token o dati personali reali:
+`output/nexi-course-qa/e2e-evidence.json`, `form-singolo-1440.jpg`,
+`esito-singolo-1440.jpg`, `form-coppia-390.jpg` ed `esito-coppia-390.jpg`
+nella stessa cartella. Il collegamento HTTPS temporaneo è chiuso a fine collaudo.
 
 Un'inizializzazione HPP riuscita non prova ricezione delle notifiche, autentica
 3DS, incasso bancario reale, disponibilità dell'offerta o commissioni.
