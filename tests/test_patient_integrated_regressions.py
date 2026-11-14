@@ -14,6 +14,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from alembic.script import ScriptDirectory
 from sqlalchemy import Integer, String, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
@@ -312,11 +313,12 @@ def test_predeploy_preflight_accepts_known_empty_pre_a1_revisions(revision):
     assert all(count == 0 for count in payload["counts"].values())
 
 
-def test_predeploy_preflight_blocks_non_empty_database_without_reading_values():
+@pytest.mark.parametrize("allow_applied", [False, True])
+def test_predeploy_preflight_blocks_non_empty_database_without_reading_values(allow_applied):
     engine = _sqlite_engine()
     _create_pre_a1_schema(engine, with_row=True)
 
-    payload = build_patient_cutover_preflight(engine)
+    payload = build_patient_cutover_preflight(engine, allow_applied=allow_applied)
 
     assert payload["status"] == "bloccato"
     assert payload["error_code"] == "PAZ_A3_DATABASE_NON_VUOTO"
@@ -370,29 +372,38 @@ def _create_a4_schema(engine, *, with_patient=False, revision=PAZ_A4_ALEMBIC_REV
             connection.exec_driver_sql(
                 "CREATE TABLE calendar_patient_decision (id INTEGER PRIMARY KEY)"
             )
+        if revision in {"f3c8a1b6d902", "b7e2d9c4a601"}:
+            connection.exec_driver_sql(
+                "CREATE TABLE sandbox_payment_attempt (id INTEGER PRIMARY KEY)"
+            )
+        if revision == "b7e2d9c4a601":
+            connection.exec_driver_sql(
+                "CREATE TABLE sandbox_course_payment_attempt (id INTEGER PRIMARY KEY)"
+            )
         if with_patient:
             connection.exec_driver_sql("INSERT INTO persona(id) VALUES (1)")
 
 
-def test_predeploy_allows_applied_a4_but_strict_diagnostic_still_counts():
+@pytest.mark.parametrize("revision", [PAZ_A4_ALEMBIC_REVISION, *POST_A4_DEPLOY_REVISIONS])
+def test_predeploy_allows_applied_a4_but_strict_diagnostic_still_counts(revision):
     engine = _sqlite_engine()
-    _create_a4_schema(engine, with_patient=True)
+    _create_a4_schema(engine, with_patient=True, revision=revision)
 
     deploy_payload = build_patient_cutover_preflight(engine, allow_applied=True)
     strict_payload = build_patient_cutover_preflight(engine)
 
     assert deploy_payload == {
         "status": "cutover_gia_applicato",
-        "alembic_revision": PAZ_A4_ALEMBIC_REVISION,
+        "alembic_revision": revision,
     }
     assert strict_payload["status"] == "bloccato"
     assert strict_payload["error_code"] == "PAZ_A3_DATABASE_NON_VUOTO"
     assert strict_payload["counts"]["persone_v2"] == 1
 
 
-def test_predeploy_allows_the_current_post_a4_revision():
+@pytest.mark.parametrize("revision", ["e8b1c4d7a902", "f3c8a1b6d902", "b7e2d9c4a601"])
+def test_predeploy_allows_the_current_post_a4_revision(revision):
     engine = _sqlite_engine()
-    revision = POST_A4_DEPLOY_REVISIONS[-1]
     _create_a4_schema(engine, with_patient=True, revision=revision)
 
     payload = build_patient_cutover_preflight(engine, allow_applied=True)
@@ -401,6 +412,34 @@ def test_predeploy_allows_the_current_post_a4_revision():
         "status": "cutover_gia_applicato",
         "alembic_revision": revision,
     }
+
+
+def test_predeploy_recognizes_every_post_cutover_migration():
+    scripts = ScriptDirectory(str(PROJECT_ROOT / "migrations"))
+    descendants = {
+        migration.revision
+        for migration in scripts.iterate_revisions("heads", PAZ_A4_ALEMBIC_REVISION)
+    }
+    assert set(POST_A4_DEPLOY_REVISIONS) == descendants
+
+
+@pytest.mark.parametrize("missing_table", [
+    "calendar_patient_decision", "sandbox_payment_attempt", "sandbox_course_payment_attempt",
+])
+def test_predeploy_rejects_missing_post_a4_table(missing_table):
+    engine = _sqlite_engine()
+    _create_a4_schema(engine, revision="b7e2d9c4a601")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(f'DROP TABLE "{missing_table}"')
+    payload = build_patient_cutover_preflight(engine, allow_applied=True)
+    assert payload["error_code"] == "PAZ_A3_SCHEMA_INATTESO"
+
+
+def test_predeploy_rejects_unknown_revision_even_with_allow_applied():
+    engine = _sqlite_engine()
+    _create_a4_schema(engine, revision="unknown-revision")
+    payload = build_patient_cutover_preflight(engine, allow_applied=True)
+    assert payload["error_code"] == "PAZ_A3_REVISIONE_NON_VALIDA"
 
 
 def test_predeploy_rejects_incomplete_current_post_a4_schema():

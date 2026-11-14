@@ -19,9 +19,14 @@ from sqlalchemy.engine import Engine
 
 
 PAZ_A4_ALEMBIC_REVISION = "d4a7c2e9f610"
-POST_A4_DEPLOY_REVISIONS = (
-    "e8b1c4d7a902",
-)
+POST_A4_REQUIRED_TABLES = {
+    "e8b1c4d7a902": frozenset({"calendar_patient_decision"}),
+    "f3c8a1b6d902": frozenset({"calendar_patient_decision", "sandbox_payment_attempt"}),
+    "b7e2d9c4a601": frozenset({
+        "calendar_patient_decision", "sandbox_payment_attempt", "sandbox_course_payment_attempt",
+    }),
+}
+POST_A4_DEPLOY_REVISIONS = tuple(POST_A4_REQUIRED_TABLES)
 PRE_A1_DEPLOY_REVISIONS = (
     "d91e6b4f2a30",
     "e2f4a6b8c901",
@@ -124,9 +129,7 @@ def _applied_schema_is_complete(
     )
     if not a4_complete:
         return False
-    if revision in POST_A4_DEPLOY_REVISIONS:
-        return "calendar_patient_decision" in available_tables
-    return True
+    return POST_A4_REQUIRED_TABLES.get(revision, frozenset()) <= available_tables
 
 
 def build_patient_cutover_preflight(
@@ -137,7 +140,7 @@ def build_patient_cutover_preflight(
     """Return a PII-free report without performing writes.
 
     ``allow_applied`` is for the persistent Render pre-deploy hook.  It permits
-    later normal deploys once A4 is already the actual database revision, but it
+    later normal deploys once A4 or a recognized descendant is applied, but it
     never bypasses the empty-database check during the first pre-A1 cutover.
     """
 

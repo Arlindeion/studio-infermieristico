@@ -1106,6 +1106,21 @@ torni vuoto. Il comando Flask `flask --app app patients preflight-cutover` resta
 disponibile come controllo diagnostico stretto: a revisione A4 esegue anche i
 conteggi e quindi segnala un database non vuoto.
 
+Correzione locale del 14 novembre 2026: un tentativo di deploy ha riportato
+`PAZ_A3_REVISIONE_NON_VALIDA` con database alla revisione Nexi sonno
+`f3c8a1b6d902`, prima di eseguire `db upgrade`. Il gate riconosce ora sia questa
+revisione sia `b7e2d9c4a601` del collaudo corsi, oltre ad A4 e Calendar.
+Richiede le tabelle post-A4 previste per ciascuna revisione; revisioni sconosciute
+e schemi incompleti restano bloccati. Un test confronta l'elenco riconosciuto con
+l'intera catena Alembic successiva ad A4, così una nuova migrazione richiede anche
+l'aggiornamento del gate. La sequenza di pre-deploy resta invariata: non usare
+`stamp`, downgrade o rimozione del controllo per risolvere questo errore.
+La correzione e i test locali non attestano un nuovo deploy Render riuscito.
+Verifica locale: 41 test integrati/migrazioni superati; suite completa con
+587 superati e 12 saltati. Aggiunta anche la prova esplicita che
+`--allow-applied` non ammetta un database pre-A1 non vuoto: 20 test mirati del
+gate superati dopo quest'ultima aggiunta. Nessuna operazione sul database Render.
+
 Se la revisione non è ammessa, lo schema è inatteso, il preflight non è
 eseguibile o anche un solo conteggio del primo cutover è diverso da zero:
 

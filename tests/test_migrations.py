@@ -5,6 +5,9 @@ import sys
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine
+
+from patient_cutover_preflight import build_patient_cutover_preflight
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +95,24 @@ def _column_nullable(database_path, table_name, column_name):
     with sqlite3.connect(database_path) as connection:
         rows = connection.execute(f'PRAGMA table_info({table_name})').fetchall()
     return next(row[3] == 0 for row in rows if row[1] == column_name)
+
+
+def test_predeploy_accepts_sleep_revision_then_course_upgrade_and_redeploy(tmp_path):
+    database_path = tmp_path / 'nexi_predeploy.sqlite'
+    env = _migration_env(database_path)
+    _run_flask(env, 'db', 'upgrade', 'f3c8a1b6d902')
+    engine = create_engine(f'sqlite:///{database_path}')
+    try:
+        assert build_patient_cutover_preflight(engine, allow_applied=True) == {
+            'status': 'cutover_gia_applicato', 'alembic_revision': 'f3c8a1b6d902',
+        }
+        _run_flask(env, 'db', 'upgrade')
+        _run_flask(env, 'db', 'check')
+        assert build_patient_cutover_preflight(engine, allow_applied=True) == {
+            'status': 'cutover_gia_applicato', 'alembic_revision': LATEST_REVISION,
+        }
+    finally:
+        engine.dispose()
 
 
 def test_upgrade_crea_schema_vuoto_ed_e_idempotente(tmp_path):
