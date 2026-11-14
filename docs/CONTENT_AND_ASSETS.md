@@ -1,5 +1,6 @@
 # Contenuti e materiali
 
+- 14 novembre 2026, D-136: avviso Nexi esplicito anche nel profilo staging del corso, con invito a usare dati e carte fittizi. Le email dei nuovi acconti hanno prefisso `[PROVA NEXI]`; l'esito distingue invio simulato da invio secondo la configurazione SMTP dello staging. [Attivazione](NEXI_SANDBOX.md#collaudo-del-corso-sullo-staging-render-d-136).
 - 14 novembre 2026, D-135: modulo ed esito disostruzione aggiornati per acconto del 50% e conferma automatica. `course_terms.py` è la fonte unica del testo contrattuale versionato, pubblicato nelle condizioni corsi e copiato nell’email di conferma. Include preavviso sonno, no-show e perdita dello sconto coppia con una sola presenza. Gli invii reali restano disattivati nel collaudo.
 
 - 14 novembre 2026, D-134: nel solo collaudo Nexi del corso disostruzione sono aggiunti l'avviso di simulazione, il pulsante per proseguire alla cassa e gli esiti del pagamento per singolo/coppia. Prezzi 34/60 € riconfermati; fonte economica in `PROJECT_BRIEF.md`, procedura in [NEXI_SANDBOX.md](NEXI_SANDBOX.md).

@@ -1114,3 +1114,12 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Implementazione: importi dal server, accettazione esplicita e copia versionata delle condizioni, conferma e collegamento paziente nella transazione del pagamento, email successiva e idempotente. Guasti email non annullano la pratica; conflitti anagrafici o modifiche dell'acquisto richiedono controllo. Ricontatti e lista d'attesa non pagano. Ordini storici e consensi precedenti non vengono convertiti retroattivamente.
 - Confini: le uniche credenziali disponibili sono di test. Il percorso è verificato nel profilo isolato, con database in memoria e invii simulati; D-133 resta valido per l'isolamento. Nessuna attivazione reale, modifica Calendar, apertura pubblica o deploy implicito. Le regole commerciali aggiornate sono in `course_terms.py`, condivise da pagina e copia email.
 - Sostituisce: D-134 per i nuovi acquisti; per gli altri corsi resta la conferma manuale.
+
+## D-136 — Collaudo Nexi del corso nello staging Render
+
+- Data: 2026-11-14.
+- Contesto: il committente segnala che dopo il deploy D-135 il sito mostra ancora «Invia richiesta». Il codice limitava il gateway alla copia temporanea in memoria; il deploy corretto non era sufficiente.
+- Soluzione predisposta: flag `NEXI_COURSE_SANDBOX_ENABLED` e chiave dedicata `NEXI_COURSE_SANDBOX_API_KEY`, accettati soltanto con `APP_ENV=staging`, origine HTTPS e protezione staging configurata. Default disattivato. Il sonno mantiene l'isolamento D-133; non vengono abilitate carte reali.
+- Conseguenze dell'attivazione: iscrizioni di prova nel database dello staging e normali posti riservati; email secondo la configurazione esistente, chiaramente marcate `[PROVA NEXI]`. Nessuna modifica a Calendar o alle configurazioni delle integrazioni. La sola notifica POST Nexi usa il token dell'ordine anziché la Basic Auth del browser; esiti, modulo e retry restano protetti.
+- Stato: codice preparato; l'attivazione e il deploy Render restano operazioni esplicite. Nessuna scrittura o email di test eseguita dagli agenti sul servizio reale.
+- Collegamenti: `NEXI_SANDBOX.md`, D-131, D-133 e D-135.

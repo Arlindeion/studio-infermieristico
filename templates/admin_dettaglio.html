@@ -159,7 +159,7 @@
                 {% if entita.partecipazione %}<div><dt>Partecipazione</dt><dd>{{ entita.partecipazione }}</dd></div>{% endif %}
                 {% if entita.posti_richiesti %}<div><dt>Posti richiesti</dt><dd>{{ entita.posti_richiesti }}</dd></div>{% endif %}
                 {% if tipo == 'IscrizioneCorso' and entita.extra_dict().get('nexi_deposit') %}<div><dt>Acconto e saldo</dt><dd>{{ deposit_summary(entita.extra_dict()) }}</dd></div>{% endif %}
-                {% if tipo == 'IscrizioneCorso' and config.NEXI_SANDBOX_ENABLED %}
+                {% if tipo == 'IscrizioneCorso' and (config.NEXI_SANDBOX_ENABLED or config.NEXI_COURSE_SANDBOX_ENABLED) %}
                 {% for payment in entita.sandbox_payment_attempts|reverse %}
                 <div><dt>Pagamento Nexi di prova</dt><dd>{{ {'confirmed': 'Confermato', 'failed': 'Non completato', 'initialization_failed': 'Avvio non riuscito', 'review': 'Da verificare', 'authorized': 'Solo autorizzato'}.get(payment.status, 'In attesa') }} · {{ '%.2f'|format(payment.amount_cents / 100)|replace('.', ',') }} € · {{ payment.order_id }}</dd></div>
                 {% endfor %}

@@ -33,6 +33,8 @@ Seguire [ROADMAP.md](ROADMAP.md) e [PRE_GO_LIVE_CHECKLIST.md](PRE_GO_LIVE_CHECKL
 Il collaudo locale Nexi HPP usa un profilo isolato distinto da questi ambienti:
 [procedura Nexi sandbox](NEXI_SANDBOX.md), D-133. Nessun cambio automatico a Render,
 alle integrazioni live o alla protezione staging.
+Il solo corso può essere collaudato anche nello staging protetto tramite
+attivazione esplicita D-136: [variabili, notifiche e limiti](NEXI_SANDBOX.md#collaudo-del-corso-sullo-staging-render-d-136).
 
 - Applicazione Flask monolitica in `app.py`.
 - Rendering server-side con Jinja2.

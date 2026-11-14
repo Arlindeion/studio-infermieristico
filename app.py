@@ -79,7 +79,9 @@ from sleep_terms import (
     SLEEP_TERMS_VERSION,
 )
 from payment_sandbox import register_payment_sandbox
-from course_payment_sandbox import COURSE_PRICES, deposit_quote, register_course_payment_sandbox
+from course_payment_sandbox import (
+    COURSE_PRICES, deposit_quote, register_course_payment_sandbox, staging_course_sandbox_enabled,
+)
 from course_terms import (
     COURSE_TERMS_VERSION, COURSE_TERMS_UPDATED_LABEL, COURSE_TERMS_SECTIONS, course_terms_text,
 )
@@ -4606,6 +4608,11 @@ def proteggi_staging():
         return None
     if request.path == '/healthz':
         return None
+    if (request.endpoint == 'nexi_course_sandbox.notification'
+            and request.method == 'POST' and staging_course_sandbox_enabled()):
+        # Nexi cannot provide browser Basic Auth. This endpoint authenticates
+        # its order-specific security token and independently verifies the order.
+        return None
     if request.path == '/robots.txt':
         return Response(
             'User-agent: *\nDisallow: /\n',
@@ -5276,7 +5283,7 @@ def invia_email_conferma_iscrizione_corso(iscrizione):
         )
     return _invia_email_partecipante_corso(
         iscrizione,
-        f'Posto confermato - {iscrizione.corso_titolo}',
+        f'{"[PROVA NEXI] " if deposit and payment.get("status") == "paid" else ""}Posto confermato - {iscrizione.corso_titolo}',
         (
             f'Buongiorno {iscrizione.nome},\n\n'
             f'il tuo posto per {iscrizione.corso_titolo} è confermato.\n\n'
@@ -10229,7 +10236,7 @@ def reinvia_email_admin(id):
     try:
         _invia_email_tracciata(msg, precedente.entita_tipo, precedente.entita_id)
         if (precedente.entita_tipo == 'IscrizioneCorso'
-                and precedente.oggetto.startswith('Posto confermato -')):
+                and precedente.oggetto.startswith(('Posto confermato -', '[PROVA NEXI] Posto confermato -'))):
             registration = db.session.get(IscrizioneCorso, precedente.entita_id)
             if registration:
                 extra = registration.extra_dict()

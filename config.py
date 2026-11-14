@@ -85,6 +85,10 @@ class Config:
     NEXI_SANDBOX_ENABLED = False
     NEXI_SANDBOX_API_KEY = None
     NEXI_SANDBOX_ISOLATED = False
+    NEXI_COURSE_SANDBOX_ENABLED = os.environ.get(
+        'NEXI_COURSE_SANDBOX_ENABLED', 'false'
+    ).lower() in ['true', 'on', '1']
+    NEXI_COURSE_SANDBOX_API_KEY = os.environ.get('NEXI_COURSE_SANDBOX_API_KEY')
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
@@ -118,6 +122,8 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     """Configurazione di test applicativa, sempre isolata su SQLite in-memory."""
     TESTING = True
+    NEXI_COURSE_SANDBOX_ENABLED = False
+    NEXI_COURSE_SANDBOX_API_KEY = None
     # Sicurezza: la suite applicativa non deve mai ereditare DATABASE_URL da
     # shell/.env. Le fixture usano create_all()/drop_all(), quindi qualunque
     # database esterno sarebbe distruttivo.

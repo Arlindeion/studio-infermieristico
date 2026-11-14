@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-14",
+  "python_passed": 615,
+  "python_skipped": 12,
+  "targeted_nexi_passed": 98,
+  "ui": {
+    "runtime": "local staging profile; synthetic credentials; in-memory database; GET-only preview",
+    "widths": [
+      1440,
+      390
+    ],
+    "one_h1": true,
+    "horizontal_overflow": false,
+    "button": "Paga l\u2019acconto del 50% \u00b7 prova Nexi"
+  },
+  "http_tests": {
+    "browser_password_required": true,
+    "notification_order_token_required": true,
+    "independent_gateway_check": true,
+    "course_flag_does_not_enable_sleep": true,
+    "calendar_unchanged": true
+  },
+  "render_observed": {
+    "deployed_commit": "b848d5a",
+    "deployment_status": "Live",
+    "configuration_changed": false,
+    "test_registration_created": false
+  }
+}

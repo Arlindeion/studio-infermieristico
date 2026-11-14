@@ -1,4 +1,4 @@
-"""Disposable Nexi checkout for choking-prevention course registrations."""
+"""Nexi test checkout for isolated or explicitly enabled staging courses."""
 
 from datetime import datetime, timedelta
 import json
@@ -8,7 +8,9 @@ from zoneinfo import ZoneInfo
 from flask import Blueprint, abort, current_app, redirect, render_template, request, url_for
 from sqlalchemy.exc import IntegrityError
 
-from nexi_gateway import NexiError, NexiSandboxClient, ORDER_PATTERN, safe_checkout_url, token_digest
+from nexi_gateway import (
+    NexiError, NexiSandboxClient, ORDER_PATTERN, safe_checkout_url, token_digest, valid_public_origin,
+)
 from patient_service import AmbiguousPatientMatchError
 from payment_sandbox import (
     FAILURE_RESULTS, TOKEN_PATTERN, sandbox_enabled, sandbox_ready, utc_now,
@@ -17,6 +19,25 @@ from payment_sandbox import (
 
 
 COURSE_PRICES = {'Singolo 34 euro': 3400, 'Coppia 60 euro': 6000}
+
+
+def staging_course_sandbox_enabled():
+    config = current_app.config
+    return bool(
+        config.get('APP_ENV') == 'staging'
+        and config.get('NEXI_COURSE_SANDBOX_ENABLED')
+        and config.get('NEXI_COURSE_SANDBOX_API_KEY')
+        and config.get('STAGING_AUTH_USERNAME') and config.get('STAGING_AUTH_PASSWORD')
+        and valid_public_origin(config.get('PUBLIC_BASE_URL'))
+    )
+
+
+def course_sandbox_enabled():
+    return sandbox_enabled() or staging_course_sandbox_enabled()
+
+
+def course_sandbox_ready():
+    return sandbox_ready() or staging_course_sandbox_enabled()
 
 
 def deposit_quote(participation):
@@ -84,7 +105,9 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
     blueprint = Blueprint('nexi_course_sandbox', __name__, url_prefix='/payments/nexi/sandbox/courses')
 
     def client():
-        return NexiSandboxClient(current_app.config.get('NEXI_SANDBOX_API_KEY'))
+        key_name = ('NEXI_COURSE_SANDBOX_API_KEY' if staging_course_sandbox_enabled()
+                    else 'NEXI_SANDBOX_API_KEY')
+        return NexiSandboxClient(current_app.config.get(key_name))
 
     def record_error(payment, message):
         record_event('nexi_course_sandbox', 'errore', message, 'IscrizioneCorso',
@@ -94,7 +117,7 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
         return url_for('nexi_course_sandbox.result', access_token=payment.access_token)
 
     def start_checkout(registration):
-        if not sandbox_ready():
+        if not course_sandbox_ready():
             abort(404)
         existing = payment_model.query.filter(
             payment_model.registration_id == registration.id,
@@ -201,8 +224,8 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
         db.session.commit()
 
     @blueprint.before_request
-    def require_isolation():
-        if not sandbox_enabled():
+    def require_test_mode():
+        if not course_sandbox_enabled():
             abort(404)
 
     @blueprint.after_request
@@ -229,6 +252,7 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
             'nexi_course_sandbox_result.html', payment=payment, registration=registration,
             deposit=registration.extra_dict().get('nexi_deposit'),
             delivery_status=registration.extra_dict().get('nexi_payment', {}).get('email_status'),
+            mail_suppressed=current_app.config.get('MAIL_SUPPRESS_SEND', True),
             verification_unavailable=unavailable,
             retry_available=payment.status in {'failed', 'initialization_failed'} and registration_eligible(registration),
             checkout_available=payment.status == 'pending' and payment.expires_at > utc_now()
@@ -272,4 +296,4 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
         return '', 200
 
     app.register_blueprint(blueprint)
-    return {'ready': sandbox_ready, 'start_checkout': start_checkout}
+    return {'ready': course_sandbox_ready, 'start_checkout': start_checkout}

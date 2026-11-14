@@ -4,6 +4,7 @@ Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scel
 
 ## Stato attuale: dominio pronto per il collaudo privato, non lancio pubblico
 
+- D-136, 14 novembre 2026: predisposta la modalità Nexi di prova del solo corso sullo staging Render, con flag e chiave dedicati. Risolve il limite che lasciava il modulo ordinario dopo il deploy D-135; richiede attivazione esplicita in Render. Iscrizioni ed eventuali email di prova seguono database e configurazione dello staging; nessun pagamento reale o apertura pubblica. [Istruzioni](NEXI_SANDBOX.md#collaudo-del-corso-sullo-staging-render-d-136).
 - Aggiornamento locale D-135, 14 novembre 2026: nuovo percorso disostruzione con acconto 50% (17/30 €), conferma automatica dopo verifica Nexi, email e nominativi nella scheda corso. Condizioni aggiornate con preavviso sonno, perdita dell’acconto per assenza senza preavviso valido e quota singola 34 € se partecipa una sola persona della coppia (saldo 4 €). Nessuna attivazione reale o deploy implicito; [procedura e verifiche](NEXI_SANDBOX.md).
 
 - Aggiornamento locale del 14 novembre 2026: Nexi sandbox esteso a disostruzione pediatrica e tagli sicuri, singolo 34 € e coppia 60 € (D-134). Sono preservate capienza, lista d'attesa e conferma manuale del posto; nessuna attivazione online. Evidenze in [NEXI_SANDBOX.md](NEXI_SANDBOX.md).

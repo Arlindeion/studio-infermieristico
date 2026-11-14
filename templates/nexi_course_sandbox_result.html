@@ -13,7 +13,7 @@
             {% if deposit and registration.stato == 'Confermato' %}
             <h2>Iscrizione confermata</h2>
             <p>L’acconto simulato del 50% è stato verificato. Il tuo posto è confermato e il nominativo è registrato nell’edizione scelta.</p>
-            {% if delivery_status == 'sent' %}<p>L’email di conferma è stata preparata correttamente. In questo ambiente di prova l’invio è simulato.</p>
+            {% if delivery_status == 'sent' %}<p>{% if mail_suppressed %}L’email di conferma è stata preparata correttamente. In questo ambiente di prova l’invio è simulato.{% else %}L’email dell’iscrizione di prova è stata inviata con oggetto «PROVA NEXI».{% endif %}</p>
             {% else %}<p>L’iscrizione resta confermata, ma l’invio dell’email richiede una verifica dello studio.</p>{% endif %}
             {% else %}
             <h2>Pagamento simulato confermato</h2>

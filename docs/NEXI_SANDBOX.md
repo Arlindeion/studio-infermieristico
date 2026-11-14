@@ -15,10 +15,59 @@ disabilita scheduler, invio email e accesso a Calendar. La chiave viene richiest
 con input nascosto oppure letta dalla variabile dedicata `NEXI_SANDBOX_API_KEY`.
 Non salvarla nel codice, nei documenti o in file di esempio.
 
-Le configurazioni ordinarie hanno Nexi disattivato. Non basta aggiungere una
-chiave alla configurazione del sito: i controlli richiedono il profilo isolato,
-il database realmente in memoria e le integrazioni esterne disabilitate.
-Non rimuovere né aggirare la protezione staging sul dominio dello studio.
+Per impostazione predefinita le configurazioni ordinarie hanno Nexi disattivato.
+Il sonno richiede sempre il profilo isolato, il database in memoria e le
+integrazioni esterne disabilitate. Per il solo corso è predisposta l'attivazione
+esplicita nello staging protetto, descritta nella sezione seguente (D-136).
+Non impostare `FLASK_ENV=payment_sandbox` sul servizio ordinario Render: quel
+profilo sostituirebbe il database con uno temporaneo e disattiverebbe le integrazioni.
+
+## Collaudo del corso sullo staging Render (D-136)
+
+Il deploy di D-135 da solo lascia il pulsante ordinario «Invia richiesta di
+iscrizione»: il flusso era inizialmente limitato alla copia isolata. La nuova
+modalità usa lo stesso gateway Nexi sandbox e si abilita soltanto con:
+
+| Impostazione Render | Valore richiesto |
+| --- | --- |
+| `APP_ENV` | `staging` (mantenere il valore e la protezione attuali) |
+| `NEXI_COURSE_SANDBOX_ENABLED` | `true` |
+| `NEXI_COURSE_SANDBOX_API_KEY` | Chiave Nexi di test, nel gestore segreti |
+| `PUBLIC_BASE_URL` | Origine HTTPS canonica del sito, già configurata |
+| `STAGING_AUTH_USERNAME` / `STAGING_AUTH_PASSWORD` | Entrambe configurate; non modificarle |
+
+Nessuna nuova migrazione. Le due nuove variabili del corso non abilitano Nexi
+per il sonno, né pagamenti reali. La modalità è rifiutata in production e
+development, con chiave mancante o origine non HTTPS. Per disattivarla basta
+impostare `NEXI_COURSE_SANDBOX_ENABLED=false` e ridistribuire la configurazione.
+
+Il modulo mostra «Acconto del 50% · prova Nexi» e «Paga l’acconto del 50% · prova
+Nexi», con l'invito a usare soltanto dati e carte fittizi. A differenza della
+copia temporanea, le iscrizioni di prova vengono salvate nel database dello
+staging, consumano la normale capienza e sono visibili in admin. Le email
+seguono la configurazione SMTP già attiva: hanno oggetto `[PROVA NEXI]` e corpo
+che dichiara l'assenza di addebito reale. Non cambiare `MAIL_SUPPRESS_SEND`,
+scheduler, Calendar o altre integrazioni per attivare questa modalità.
+
+La sola notifica POST `/payments/nexi/sandbox/courses/notification` non usa la
+password del browser quando la modalità è interamente configurata: si autentica
+con il token segreto specifico dell'ordine e legge indipendentemente lo stato
+da Nexi. Le pagine del sito, gli esiti personali e i retry restano protetti
+dalla password staging; una notifica contraffatta viene rifiutata. Nessun nuovo
+percorso del corso crea o modifica eventi Calendar.
+
+L'attivazione richiede una modifica esplicita alle variabili Render e un deploy;
+il commit da solo non cambia il servizio. Le prove automatiche usano database,
+gateway, SMTP e Calendar simulati, senza iscrizioni o invii sul servizio reale.
+
+Riscontro del 14 novembre 2026: Render mostrava il commit D-135 `b848d5a` già
+distribuito con successo; il pulsante ordinario dipendeva dal limite applicativo,
+non da un deploy mancante. La correzione supera 98 test mirati Nexi e la suite
+completa (615 superati, 12 saltati). Verifica visiva del profilo staging su copia
+locale a 1440 e 390 px: pulsante Nexi, focus, un solo `h1` e nessun overflow.
+Le verifiche di password e notifica sono eseguite separatamente nei test HTTP.
+Schermate in `output/nexi-staging-qa/`. Nessuna variabile o iscrizione su Render
+è stata modificata per questi controlli.
 
 ## Avvio locale
 
@@ -57,8 +106,8 @@ Il parametro è letto solo da `NEXI_SANDBOX_PUBLIC_BASE_URL`, mai dal generico
 
 ## Percorso verificato dall'applicazione
 
-Questa sequenza riguarda la proposta sonno; il corso mantiene la conferma manuale
-dell'iscrizione, come descritto nella sezione dedicata più avanti.
+Questa sequenza riguarda la proposta sonno; il corso usa l'acconto e la conferma
+automatica descritti nella sezione dedicata più avanti.
 
 1. Selezione formula e accettazione delle condizioni, con CSRF.
 2. Salvataggio locale dell'acquisto e del tentativo prima della richiesta Nexi.
