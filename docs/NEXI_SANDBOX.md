@@ -69,6 +69,16 @@ Le verifiche di password e notifica sono eseguite separatamente nei test HTTP.
 Schermate in `output/nexi-staging-qa/`. Nessuna variabile o iscrizione su Render
 è stata modificata per questi controlli.
 
+Successiva attivazione autorizzata dal committente («configura»), 14 novembre
+2026: impostati i due parametri dedicati del corso, poi eseguito il deploy
+`36ac840` con esito Live alle 11:57 circa, fuso italiano. Il modulo del dominio
+mostra ora l'avviso di prova e il pulsante Nexi. Riscontri senza credenziali:
+`/healthz` 200, modulo 401, notifica contraffatta 403. Non sono state inviate
+nuove iscrizioni o email né eseguite operazioni Calendar. Questa verifica
+certifica attivazione e protezioni, non un nuovo pagamento completo sul database
+Render. Schermate `pulsante-render-attivo.jpg` e `render-deploy-36ac840.jpg` ed
+evidenza aggiornata nella cartella `output/nexi-staging-qa/`.
+
 ## Avvio locale
 
 Anteprima senza credenziali e senza chiamate Nexi:

@@ -25,5 +25,20 @@
     "deployment_status": "Live",
     "configuration_changed": false,
     "test_registration_created": false
+  },
+  "render_activation": {
+    "date": "2026-11-14",
+    "time_rome": "11:57",
+    "commit": "36ac840",
+    "deploy_status": "Live",
+    "course_test_mode_enabled": true,
+    "sandbox_key_configured": true,
+    "live_button_verified": true,
+    "health_http_status": 200,
+    "unauthenticated_form_http_status": 401,
+    "forged_notification_http_status": 403,
+    "new_registration_created": false,
+    "test_email_sent_by_agent": false,
+    "calendar_modified_by_agent": false
   }
 }
