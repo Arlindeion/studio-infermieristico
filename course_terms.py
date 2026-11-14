@@ -1,7 +1,12 @@
 """Versioned course terms shared by the public page and confirmation email."""
 
-COURSE_TERMS_VERSION = '2026-11-14'
+COURSE_TERMS_VERSION = '2026-11-14.2'
 COURSE_TERMS_UPDATED_LABEL = '14 novembre 2026'
+LAB_UPDATES_CONSENT_TEXT = (
+    'Acconsento all’uso dei miei recapiti e dell’eventuale età del bambino per ricevere '
+    'via email o WhatsApp proposte di futuri laboratori dello Studio. '
+    'Il consenso è facoltativo e posso revocarlo in qualsiasi momento.'
+)
 COURSE_TERMS_SECTIONS = (
     ('1. Iscrizione e conferma', (
         'Per il corso di disostruzione pediatrica e tagli sicuri con pagamento online, il modulo è seguito dal versamento su Nexi di un acconto pari al 50% della quota. Il posto è confermato automaticamente solo dopo la verifica del pagamento; viene inviata una email con i dettagli dell’iscrizione.',
@@ -32,6 +37,7 @@ COURSE_TERMS_SECTIONS = (
         'Se lo studio annulla il corso, oppure la nuova data o sede proposta non viene accettata, l’acconto è rimborsato integralmente e il saldo non è dovuto. Il trasferimento dell’acconto a una nuova data avviene soltanto con l’accordo del partecipante.',
     )),
     ('7. Condizioni specifiche e contatti', (
+        'Il modulo di disostruzione pediatrica richiede una sola accettazione delle condizioni, incluse le modalità di pagamento e le regole di rinuncia. Non richiede una dichiarazione sullo stato di salute né dati dei bambini per iscriversi. L’eventuale età del bambino può essere indicata facoltativamente, con un consenso distinto, per ricevere proposte di futuri laboratori. Durante le esercitazioni si seguono le indicazioni della docente per la sicurezza dell’attività.',
         'Le dichiarazioni richieste nel modulo fanno parte delle condizioni del corso: natura informativa e pratica, requisiti per svolgere le esercitazioni in sicurezza ed eventuale rilascio o mancato rilascio di certificazioni.',
         'S.C. Studio Infermieristico — Via C. D’Agnese 43, 65015 Montesilvano (PE). Email: info@scstudioinfermieristico.it. Telefono e WhatsApp: 380 631 7175.',
     )),

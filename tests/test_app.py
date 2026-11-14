@@ -1118,7 +1118,7 @@ def test_privacy_policy_pubblica_il_testo_aggiornato(client):
 
     assert response.status_code == 200
     assert 'Informativa sul trattamento dei dati personali' in response.text
-    assert 'Ultimo aggiornamento: 29 agosto 2026' in response.text
+    assert 'Ultimo aggiornamento: 14 novembre 2026' in response.text
     assert response.text.count('class="privacy-blocco') == 21
     assert 'Selene Campetta, titolare di S.C. Studio Infermieristico' in response.text
     assert 'P. IVA 02439230687' in response.text
@@ -1150,10 +1150,11 @@ def test_checkbox_obbligatorie_distinguono_presa_visione_e_consensi_specifici(cl
 
     assert 'Dichiaro di aver letto' in prenotazione.text
     assert 'Dichiaro di aver letto' in call.text
-    assert 'Dichiaro di aver letto' in corso.text
+    assert 'Ho letto e accetto le' in corso.text
     for modulo_corso in [corso, nascita, blsd, laboratorio]:
         assert modulo_corso.text.count('name="condizioni_corso" required') == 1
-        assert 'Dichiaro di aver letto e accettato le' in modulo_corso.text
+        assert ('Dichiaro di aver letto e accettato le' in modulo_corso.text
+                or 'Ho letto e accetto le' in modulo_corso.text)
         assert 'href="/condizioni-iscrizione-corsi"' in modulo_corso.text
     assert 'name="condizioni_corso"' not in interesse.text
     assert 'name="condizioni_corso"' not in call.text
@@ -1224,7 +1225,7 @@ def test_scheda_iscrizione_registra_revoca_immagini_e_informativa_in_presenza(cl
     with flask_app.app_context():
         autorizzazione = AutorizzazioneImmagini.query.one()
         assert autorizzazione.secondo_genitore_nome == 'Genitore Due'
-        assert autorizzazione.versione_informativa == '2026-08-29'
+        assert autorizzazione.versione_informativa == app_module.VERSIONE_INFORMATIVA_PRIVACY
         autorizzazione_id = autorizzazione.id
         iscrizione = db.session.get(IscrizioneCorso, iscrizione_id)
         assert iscrizione.informativa_terzi_destinatario == 'Secondo Partecipante'
@@ -1995,8 +1996,8 @@ def test_iscrizione_disostruzione_salva_richiesta(client):
         assert iscrizione.tipo_richiesta == 'richiesta_iscrizione'
         assert iscrizione.posti == 1
         assert iscrizione.persona is None
-        assert iscrizione.extra_dict()['nome_bambino'] == 'Luca'
-        assert iscrizione.extra_dict()['eta_bambino'] == '3 anni'
+        assert 'nome_bambino' not in iscrizione.extra_dict()
+        assert 'eta_bambino' not in iscrizione.extra_dict()
         assert iscrizione.extra_dict()['nome_secondo_partecipante'] == ''
         assert iscrizione.extra_dict()['codice_fiscale_secondo_partecipante'] == ''
         assert iscrizione.extra_dict()['condizioni_corso_versione'] == app_module.VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI
@@ -2971,8 +2972,8 @@ def test_data_piena_senza_successiva_crea_lista_attesa(client):
         assert consent.persona_v2_id == iscrizione.persona_v2_id
         assert consent.entita_tipo == 'IscrizioneCorso'
         assert consent.entita_id == iscrizione.id
-        assert consent.accettato is True
-        assert consent.accettato_il == iscrizione.creato_il
+        assert consent.accettato is False
+        assert consent.accettato_il is None
         audit = app_module.RegistroModifica.query.filter_by(
             azione='creazione_anagrafica_da_lista_attesa',
             entita_tipo='Persona',

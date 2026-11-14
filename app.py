@@ -84,6 +84,7 @@ from course_payment_sandbox import (
 )
 from course_terms import (
     COURSE_TERMS_VERSION, COURSE_TERMS_UPDATED_LABEL, COURSE_TERMS_SECTIONS, course_terms_text,
+    LAB_UPDATES_CONSENT_TEXT,
 )
 
 # Configurazione del logging: su Render si usa soltanto stdout/stderr. Il file
@@ -373,7 +374,7 @@ STATI_LISTA_ATTESA = {'Lista attesa', 'Invitato'}
 STATI_ISCRIZIONE_DA_GESTIRE = {'Nuova', 'Contattato', 'Lista attesa', 'Invitato'}
 STATI_CORSO_VALIDI = ['Aperto', 'Completo', 'Chiuso', 'Annullato', 'Concluso']
 STATI_PERCORSO_ACCOMPAGNAMENTO_VALIDI = ['Bozza', 'Aperto', 'Chiuso', 'Concluso']
-VERSIONE_INFORMATIVA_PRIVACY = '2026-08-29'
+VERSIONE_INFORMATIVA_PRIVACY = '2026-11-14'
 VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI = COURSE_TERMS_VERSION
 GIORNI_CONSERVAZIONE_RICHIESTE = 180
 GIORNI_CONSERVAZIONE_CORSI_E_SONNO = 365
@@ -6094,11 +6095,18 @@ def _patient_privacy_history(persona):
         else:
             title = f'{consent.entita_tipo} #{consent.entita_id}'
             practice_date = 'Pratica non più disponibile'
+        notice_time = None
+        if consent.entita_tipo == 'IscrizioneCorso' and practice:
+            try:
+                notice_time = datetime.fromisoformat(practice.extra_dict().get('privacy_notice_provided_at', ''))
+            except (TypeError, ValueError):
+                pass
         history.append({
             'consent': consent,
             'title': title,
             'practice_date': practice_date,
             'practice_available': practice is not None,
+            'notice_provided_at': notice_time,
         })
     return history
 
@@ -6433,6 +6441,7 @@ def _corso_iscrivibile_con_date(corso_tipo):
     corso['data_options'] = _opzioni_date_corso(corso_tipo)
     corso['has_open_dates'] = len(corso['data_options']) > 0
     corso['interest_topic'] = COURSE_INTEREST_TOPIC_BY_TYPE[corso_tipo]
+    corso['lab_updates_consent_text'] = LAB_UPDATES_CONSENT_TEXT
     corso['sandbox_payment_available'] = (
         corso_tipo == 'disostruzione-pediatrica' and course_payment_sandbox['ready']()
     )
@@ -6680,6 +6689,13 @@ def iscrizione_corso(corso_tipo):
         codice_fiscale = request.form.get('codice_fiscale', '').strip()
         nome_bambino = request.form.get('nome_bambino', '').strip()
         eta_bambino = request.form.get('eta_bambino', '').strip()
+        lab_updates_requested = (
+            corso_tipo == 'disostruzione-pediatrica' and _checkbox_checked('lab_updates_consent')
+        )
+        if corso_tipo == 'disostruzione-pediatrica':
+            nome_bambino = ''
+            if not lab_updates_requested:
+                eta_bambino = ''
         extra = {}
         data_corso_id = request.form.get('data_corso', '').strip()
         opzioni_date = {option['value']: option for option in corso['data_options']}
@@ -6699,8 +6715,12 @@ def iscrizione_corso(corso_tipo):
             extra['richiesta_prossime_date'] = True
         partecipazione = request.form.get('partecipazione', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
+        if corso_tipo == 'disostruzione-pediatrica':
+            consenso_privacy = False
         condizioni_corso_accettate = _checkbox_checked('condizioni_corso')
         consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
+        if corso_tipo == 'disostruzione-pediatrica':
+            consenso_dati_gravidanza = False
         tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
 
         if not nome or len(nome) > 100:
@@ -6721,7 +6741,7 @@ def iscrizione_corso(corso_tipo):
             return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.', 'nome_bambino')
         if len(eta_bambino) > 40:
             return _render_iscrizione_con_errore(corso_tipo, 'L\'età del bambino è troppo lunga.', 'eta_bambino')
-        if not consenso_privacy:
+        if not consenso_privacy and corso_tipo != 'disostruzione-pediatrica':
             return _render_iscrizione_con_errore(corso_tipo, 'Devi dichiarare di aver letto l’informativa privacy.', 'consenso_privacy')
         if not condizioni_corso_accettate:
             return _render_iscrizione_con_errore(
@@ -6729,12 +6749,6 @@ def iscrizione_corso(corso_tipo):
                 'Devi dichiarare di aver letto e accettato le Condizioni di iscrizione ai corsi.',
                 'condizioni_corso',
             )
-        if sandbox_payment_requested and not _checkbox_checked('acconto_condizioni'):
-            return _render_iscrizione_con_errore(
-                corso_tipo, 'Accetta le condizioni dell’acconto e della mancata presentazione.',
-                'acconto_condizioni',
-            )
-
         if nome_bambino:
             extra['nome_bambino'] = nome_bambino
         if eta_bambino:
@@ -6783,23 +6797,21 @@ def iscrizione_corso(corso_tipo):
                     'codice_fiscale_secondo_partecipante',
                 )
 
-            dichiarazioni = {
-                'scopo_informativo': _checkbox_checked('scopo_informativo'),
-                'no_certificazione': _checkbox_checked('no_certificazione'),
-                'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
-            }
-            if not all(dichiarazioni.values()):
-                campo_mancante = next(campo for campo, valore in dichiarazioni.items() if not valore)
-                return _render_iscrizione_con_errore(
-                    corso_tipo,
-                    'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
-                    campo_mancante,
-                )
             extra = {
                 **extra,
                 'nome_secondo_partecipante': nome_secondo,
                 'codice_fiscale_secondo_partecipante': cf_secondo,
-                **dichiarazioni,
+                'privacy_notice_version': VERSIONE_INFORMATIVA_PRIVACY,
+                'privacy_notice_provided_at': utc_now().isoformat(),
+                'privacy_legal_basis': 'contract',
+                'course_conditions_acceptance': 'single_checkbox',
+                'lab_updates_consent': {
+                    'accepted': lab_updates_requested,
+                    'accepted_at': utc_now().isoformat() if lab_updates_requested else None,
+                    'notice_version': VERSIONE_INFORMATIVA_PRIVACY,
+                    'channels': ['email', 'whatsapp'] if lab_updates_requested else [],
+                    'text': LAB_UPDATES_CONSENT_TEXT,
+                },
             }
 
         elif corso_tipo == 'accompagnamento-nascita':
@@ -6868,7 +6880,6 @@ def iscrizione_corso(corso_tipo):
         if sandbox_payment_requested and not in_lista_attesa:
             extra['nexi_deposit'] = deposit_quote(partecipazione)
             extra['condizioni_corso_testo'] = course_terms_text()
-            extra['acconto_condizioni_accettate_il'] = extra['condizioni_corso_accettate_il']
 
         iscrizione = IscrizioneCorso(
             corso_id=corso_id,
@@ -11603,6 +11614,28 @@ def esporta_corso_pdf(id):
     righe.extend([f'- {i.nome} | {i.telefono} | {i.email or "email non indicata"} | posti {i.posti} | {i.stato}' for i in iscrizioni] or ['Nessuna iscrizione.'])
     pdf = _crea_pdf_testuale(f'Iscritti - {corso.titolo}', righe)
     return Response(pdf, mimetype='application/pdf', headers={'Content-Disposition': f'attachment; filename="corso-{corso.id}-iscritti.pdf"'})
+
+
+@app.route('/admin/iscrizione-corso/<int:id>/lab-updates/revoke', methods=['POST'])
+@login_required
+def revoke_course_lab_updates(id):
+    if not _csrf_admin_valido():
+        abort(400)
+    registration = db.get_or_404(IscrizioneCorso, id)
+    if registration.corso_tipo != 'disostruzione-pediatrica':
+        abort(400)
+    extra = registration.extra_dict()
+    consent = extra.get('lab_updates_consent', {})
+    if consent.get('accepted'):
+        consent['accepted'] = False
+        consent['revoked_at'] = utc_now().isoformat()
+        extra['lab_updates_consent'] = consent
+        extra.pop('eta_bambino', None)
+        registration.dati_extra = json.dumps(extra, ensure_ascii=False)
+        db.session.commit()
+        registra_modifica('revoca_proposte_laboratori', 'IscrizioneCorso', registration.id)
+    flash('Consenso per le proposte di laboratori revocato; età del bambino rimossa.', 'success')
+    return redirect(_url_dettaglio_admin('IscrizioneCorso', registration.id))
 
 
 @app.route('/admin/iscrizione-corso/<int:id>/<stato>', methods=['POST'])

@@ -77,6 +77,8 @@ def purchase_digest(registration):
             'second_name': extra.get('nome_secondo_partecipante'),
             'deposit_accepted_at': extra.get('acconto_condizioni_accettate_il'),
         })
+        if extra.get('course_conditions_acceptance'):
+            snapshot['acceptance_method'] = extra['course_conditions_acceptance']
     return token_digest(json.dumps(snapshot, sort_keys=True))
 
 

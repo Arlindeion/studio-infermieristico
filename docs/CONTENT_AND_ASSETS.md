@@ -1,5 +1,6 @@
 # Contenuti e materiali
 
+- 14 novembre 2026, D-137: modulo disostruzione con il testo esatto approvato dal committente in una sola spunta obbligatoria e nota privacy senza checkbox. Sezione distinta per le proposte di futuri laboratori: spunta facoltativa e sola età del bambino, conservata esclusivamente con opt-in; nome e dichiarazione sanitaria rimossi. Condizioni `2026-11-14.2`, informativa `2026-11-14`; fonti `course_terms.py` e `templates/privacy.html`.
 - 14 novembre 2026, D-136: avviso Nexi esplicito anche nel profilo staging del corso, con invito a usare dati e carte fittizi. Le email dei nuovi acconti hanno prefisso `[PROVA NEXI]`; l'esito distingue invio simulato da invio secondo la configurazione SMTP dello staging. [Attivazione](NEXI_SANDBOX.md#collaudo-del-corso-sullo-staging-render-d-136).
 - 14 novembre 2026, D-135: modulo ed esito disostruzione aggiornati per acconto del 50% e conferma automatica. `course_terms.py` è la fonte unica del testo contrattuale versionato, pubblicato nelle condizioni corsi e copiato nell’email di conferma. Include preavviso sonno, no-show e perdita dello sconto coppia con una sola presenza. Gli invii reali restano disattivati nel collaudo.
 

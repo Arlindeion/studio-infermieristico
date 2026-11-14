@@ -5,6 +5,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const participationSelect = document.getElementById('partecipazione');
     const secondParticipantFields = document.querySelector('[data-second-participant-fields]');
     const serverError = document.querySelector('[data-course-form-error]');
+    const labUpdatesConsent = document.getElementById('lab_updates_consent');
+    const childAge = document.getElementById('eta_bambino');
+
+    if (labUpdatesConsent && childAge) {
+        function updateOptionalChildAge() {
+            childAge.disabled = !labUpdatesConsent.checked;
+            if (!labUpdatesConsent.checked) childAge.value = '';
+        }
+        labUpdatesConsent.addEventListener('change', updateOptionalChildAge);
+        updateOptionalChildAge();
+    }
 
     if (dateSelect && locationOutput) {
         function updateCourseLocation() {

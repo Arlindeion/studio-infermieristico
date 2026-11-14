@@ -212,6 +212,22 @@ sono chiusi a fine collaudo; i dati in memoria non vengono trasferiti al sito.
 
 ## Corso di disostruzione: acconto e conferma automatica (D-135)
 
+Aggiornamento D-137: il modulo disostruzione richiede ora una sola spunta per
+le condizioni e la natura del corso. La nota privacy non è una checkbox e non
+viene trasformata in consenso fittizio. Una spunta facoltativa distinta consente
+le proposte di futuri laboratori via email o WhatsApp, con eventuale età del
+bambino, conservata soltanto con opt-in. Non sono richiesti nome del bambino
+o dichiarazioni sanitarie. La revoca da admin rimuove l'età e disattiva il
+consenso facoltativo senza alterare iscrizione e pagamento. Gli ordini e le
+accettazioni storiche restano invariati; nessuna migrazione aggiuntiva.
+
+Verifica D-137: suite completa 620 superati e 12 saltati, 55 test JavaScript
+superati. Controlli desktop 1440 px e mobile 390 px, un solo `h1`, nessun
+overflow, una checkbox obbligatoria e una facoltativa non preselezionata;
+il campo età si abilita con l'opt-in e si svuota quando viene rimosso.
+Evidenze in `output/course-consents-qa/`. Le prove non inviano iscrizioni,
+email o operazioni Calendar sul servizio reale.
+
 Il parametro `--course` aggiunge un'edizione fittizia futura e ne stampa il
 collegamento al modulo. Per provare l'intero percorso:
 

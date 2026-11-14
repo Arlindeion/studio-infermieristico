@@ -376,7 +376,7 @@
             {% if corso.has_open_dates %}<small>{% if corso.sandbox_payment_available %}Riceverai la conferma dell’iscrizione dopo la verifica dell’acconto Nexi.{% else %}La userò per inviarti la conferma del posto dopo la verifica dello studio.{% endif %}</small>{% endif %}
         </div>
 
-        {% if corso_tipo in ['disostruzione-pediatrica', 'laboratorio-infanzia'] %}
+        {% if corso_tipo == 'laboratorio-infanzia' %}
         <h3>Dati bambino</h3>
         <p class="nota-form">Facoltativi, ma utili se vuoi essere ricontattato per laboratori o attività dedicate all'età del bambino.</p>
         <div class="form-riga">
@@ -469,40 +469,26 @@
             </div>
         </div>
 
-        <h3>Dichiarazioni e consensi</h3>
+        <h3>Condizioni di iscrizione</h3>
         <div class="form-gruppo checkbox-stack">
             <label>
-                <input type="checkbox" name="scopo_informativo" required {{ 'checked' if form_data.get('scopo_informativo') }}>
-                <span>Partecipo al corso di disostruzione pediatrica a scopo informativo e pratico *</span>
+                <input type="checkbox" name="condizioni_corso" required {{ 'checked' if form_data.get('condizioni_corso') }}>
+                <span>Ho letto e accetto le <a href="{{ url_for('condizioni_iscrizione_corsi') }}" target="_blank" rel="noopener">Condizioni di iscrizione al corso</a>. Sono consapevole che il corso ha finalità informative e pratiche e non rilascia certificazioni professionali. *</span>
             </label>
         </div>
+        <p class="nota-form">I dati personali sono trattati per gestire l’iscrizione, il pagamento e le comunicazioni relative al corso. Leggi l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">Informativa privacy</a>.</p>
+        <h3>Per i prossimi laboratori · facoltativo</h3>
         <div class="form-gruppo checkbox-stack">
             <label>
-                <input type="checkbox" name="no_certificazione" required {{ 'checked' if form_data.get('no_certificazione') }}>
-                <span>Sono consapevole che il corso non abilita a certificazioni professionali *</span>
+                <input type="checkbox" name="lab_updates_consent" id="lab_updates_consent" {{ 'checked' if form_data.get('lab_updates_consent') in ['on', 'true', '1'] }}>
+                <span>{{ corso.lab_updates_consent_text }}</span>
             </label>
         </div>
-        <div class="form-gruppo checkbox-stack">
-            <label>
-                <input type="checkbox" name="buono_stato_salute" required {{ 'checked' if form_data.get('buono_stato_salute') }}>
-                <span>Dichiaro di essere in buono stato di salute per le prove pratiche e acconsento esplicitamente al trattamento di questa informazione per la sicurezza dell’attività. *</span>
-            </label>
+        <div class="form-gruppo">
+            <label for="eta_bambino">Età del bambino (facoltativa)</label>
+            <input type="text" id="eta_bambino" name="eta_bambino" maxlength="40" placeholder="Es. 8 mesi, 3 anni" {% if form_data.get('lab_updates_consent') in ['on', 'true', '1'] %}value="{{ form_data.get('eta_bambino', '') }}"{% endif %}>
+            <small>Indica l’età solo se sei il genitore o tutore. Il nome del bambino non è richiesto. La scelta non influisce sull’iscrizione al corso.</small>
         </div>
-        <div class="form-gruppo checkbox-stack">
-            <label>
-                <input type="checkbox" name="consenso_privacy" required {{ 'checked' if form_data.get('consenso_privacy') }}>
-                <span>Dichiaro di aver letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per gestire la richiesta di iscrizione. *</span>
-            </label>
-        </div>
-        {% include "_condizioni_iscrizione_corsi_checkbox.html" %}
-        {% if corso.sandbox_payment_available %}
-        <div class="form-gruppo checkbox-stack">
-            <label>
-                <input type="checkbox" name="acconto_condizioni" required {{ 'checked' if form_data.get('acconto_condizioni') }}>
-                <span>Accetto il pagamento dell’acconto del 50% e le regole di rinuncia e mancata presentazione: senza il preavviso previsto dalle condizioni perdo l’acconto. Se della coppia partecipa una sola persona si applica la quota singola di 34 €, con saldo di 4 € dopo l’acconto di 30 €. *</span>
-            </label>
-        </div>
-        {% endif %}
         {% elif corso_tipo == 'accompagnamento-nascita' %}
         <h3>Dati anagrafici</h3>
         <div class="form-riga">
@@ -620,6 +606,7 @@
         <div class="form-gruppo">
             <label for="note">Note aggiuntive</label>
             <textarea id="note" name="note" rows="4">{{ form_data.get('note', '') }}</textarea>
+            {% if corso_tipo == 'disostruzione-pediatrica' %}<small>Indica solo esigenze organizzative, senza informazioni sanitarie.</small>{% endif %}
         </div>
 
         <button type="submit" class="btn" data-conversion="course_registration_submit">

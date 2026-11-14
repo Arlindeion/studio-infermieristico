@@ -68,8 +68,7 @@ def enroll(client, course, **changes):
         'nome': 'Partecipante di prova', 'codice_fiscale': 'TESTONLY00000000',
         'telefono': '3330000000', 'email': 'prova@example.invalid',
         'partecipazione': 'Singolo 34 euro', 'data_corso': str(course.id),
-        'scopo_informativo': 'on', 'no_certificazione': 'on', 'buono_stato_salute': 'on',
-        'consenso_privacy': 'on', 'condizioni_corso': 'on', 'acconto_condizioni': 'on',
+        'condizioni_corso': 'on',
     }
     form.update(changes)
     return client.post(COURSE_URL, data=form)
@@ -117,7 +116,7 @@ def test_server_prices_and_seats_saved_before_gateway(client, course, gateway, p
 
 
 @pytest.mark.parametrize('changes', [
-    {'_csrf_token': 'wrong'}, {'condizioni_corso': ''}, {'acconto_condizioni': ''}, {'partecipazione': 'Coppia 60 euro'},
+    {'_csrf_token': 'wrong'}, {'condizioni_corso': ''}, {'partecipazione': 'Coppia 60 euro'},
     {'partecipazione': 'Singolo 1 euro'},
 ])
 def test_invalid_forms_do_not_create_orders(client, course, gateway, changes):
@@ -394,7 +393,8 @@ def test_historical_full_payment_keeps_original_manual_confirmation(client, cour
     data = registration.extra_dict()
     data.pop('nexi_deposit')
     data.pop('condizioni_corso_testo')
-    data.pop('acconto_condizioni_accettate_il')
+    data.pop('acconto_condizioni_accettate_il', None)
+    data.pop('course_conditions_acceptance', None)
     data['condizioni_corso_versione'] = '2026-08-30'
     registration.dati_extra = json.dumps(data)
     payment.amount_cents = 3400
@@ -466,4 +466,88 @@ def test_failed_confirmation_can_be_resent_without_new_payment(client, course, g
     assert response.status_code == 302
     assert payment.registration.extra_dict()['nexi_payment']['email_status'] == 'sent'
     assert payment.registration.stato == 'Confermato'
+    gateway[0].assert_called_once()
+
+
+def test_single_required_course_acceptance_and_optional_lab_choice(client, course):
+    from html.parser import HTMLParser
+    class FormFields(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.active = False
+            self.fields = []
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == 'form' and 'data-course-registration-form' in attrs:
+                self.active = True
+            if self.active and tag == 'input':
+                self.fields.append(attrs)
+        def handle_endtag(self, tag):
+            if tag == 'form':
+                self.active = False
+    page = client.get(COURSE_URL).text
+    form = FormFields()
+    form.feed(page)
+    boxes = [field for field in form.fields if field.get('type') == 'checkbox']
+    assert [box['name'] for box in boxes if 'required' in box] == ['condizioni_corso']
+    assert [box['name'] for box in boxes] == ['condizioni_corso', 'lab_updates_consent']
+    assert 'checked' not in boxes[1]
+    fields = {field.get('name'): field for field in form.fields}
+    assert 'required' not in fields['eta_bambino']
+    assert 'nome_bambino' not in fields
+    assert 'Ho letto e accetto le' in page
+    assert 'non rilascia certificazioni professionali' in page
+    assert 'I dati personali sono trattati per gestire l’iscrizione, il pagamento' in page
+
+
+@pytest.mark.parametrize('opt_in,age_saved', [('', False), ('on', True)])
+def test_lab_age_is_saved_only_with_explicit_optional_consent(client, course, gateway, opt_in, age_saved):
+    enroll(client, course, lab_updates_consent=opt_in, eta_bambino='8 mesi',
+           nome_bambino='Dato da ignorare', buono_stato_salute='on', consenso_privacy='on',
+           consenso_dati_gravidanza='on')
+    registration = attempt().registration
+    extra = registration.extra_dict()
+    assert registration.consenso_privacy is False
+    assert registration.consenso_dati_gravidanza is False
+    assert extra['privacy_legal_basis'] == 'contract'
+    assert extra['privacy_notice_provided_at']
+    assert ('eta_bambino' in extra) is age_saved
+    assert extra['lab_updates_consent']['accepted'] is age_saved
+    assert 'nome_bambino' not in extra and 'buono_stato_salute' not in extra
+    assert 'acconto_condizioni_accettate_il' not in extra
+    gateway[0].assert_called_once()
+
+
+def test_lab_consent_is_optional_even_without_age(client, course, gateway):
+    assert enroll(client, course, lab_updates_consent='on', eta_bambino='').status_code == 303
+    assert attempt().registration.extra_dict()['lab_updates_consent']['accepted'] is True
+
+
+def test_notice_delivery_does_not_become_a_fictitious_privacy_consent(client, course, gateway):
+    enroll(client, course)
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    notify(client, payment)
+    consent = site.ConsensoPrivacyPaziente.query.one()
+    assert consent.accettato is False and consent.accettato_il is None
+    history = site._patient_privacy_history(payment.registration.persona_v2)
+    assert history[0]['notice_provided_at'] is not None
+
+
+def test_admin_can_revoke_lab_consent_and_remove_age_without_affecting_course(client, course, gateway):
+    enroll(client, course, lab_updates_consent='on', eta_bambino='8 mesi')
+    payment = attempt()
+    gateway[1].return_value = {'operations': [operation(payment)]}
+    notify(client, payment)
+    login_admin(client)
+    path = f'/admin/iscrizione-corso/{payment.registration_id}/lab-updates/revoke'
+    assert client.post(path, data={}).status_code == 400
+    token = csrf(client, f'/admin/pratica/IscrizioneCorso/{payment.registration_id}')
+    for _ in range(2):
+        assert client.post(path, data={'_csrf_token': token}).status_code == 302
+    extra = payment.registration.extra_dict()
+    assert extra['lab_updates_consent']['accepted'] is False
+    assert extra['lab_updates_consent']['revoked_at']
+    assert 'eta_bambino' not in extra
+    assert payment.status == 'confirmed' and payment.registration.stato == 'Confermato'
     gateway[0].assert_called_once()
