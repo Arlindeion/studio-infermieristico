@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block titolo %}Prestazioni infermieristiche a Montesilvano | S.C. Studio Infermieristico{% endblock %}
-{% block meta_description %}Prestazioni infermieristiche in studio a Montesilvano: terapie, medicazioni, controlli diagnostici e assistenza professionale. Consulta tariffe e richiedi un appuntamento.{% endblock %}
+{% block meta_description %}Prestazioni infermieristiche in studio a Montesilvano: terapie, medicazioni, controlli diagnostici e assistenza professionale. Consulta tariffe e {{ 'invia una richiesta di interesse' if showcase_mode else 'richiedi un appuntamento' }}.{% endblock %}
 
 {% block contenuto %}
 
@@ -12,8 +12,8 @@
             <p class="nursing-hero__lead">In studio puoi richiedere terapie, medicazioni e controlli, con tariffa e indicazioni chiarite prima dell'appuntamento.</p>
 
             <div class="prestazioni-actions" aria-label="Prenotazione prestazioni infermieristiche">
-                <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota">Prenota una prestazione</a>
-                <p>Scegli la prestazione, la data e l'orario. La richiesta sarà confermata dallo studio.</p>
+                <a href="{{ '#interesse' if showcase_mode else url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota">{{ 'Lascia il tuo interesse' if showcase_mode else 'Prenota una prestazione' }}</a>
+                <p>{{ 'Lascia i tuoi recapiti: lo studio ti contatterà per informazioni, senza prenotare un appuntamento.' if showcase_mode else "Scegli la prestazione, la data e l'orario. La richiesta sarà confermata dallo studio." }}</p>
             </div>
         </div>
 
@@ -109,15 +109,20 @@
 
         <div class="nursing-booking-card">
             <p class="eyebrow">Come funziona</p>
-            <h2>Richiedi il tuo appuntamento</h2>
+            <h2>{{ 'Richiedi informazioni' if showcase_mode else 'Richiedi il tuo appuntamento' }}</h2>
             <ol>
-                <li>Scegli la prestazione, la data e l’orario.</li>
+                <li>{{ 'Invia i tuoi recapiti dal modulo di interesse.' if showcase_mode else 'Scegli la prestazione, la data e l’orario.' }}</li>
                 <li>Lo studio verifica la disponibilità e le indicazioni necessarie.</li>
-                <li>Ricevi la conferma dell’appuntamento.</li>
+                <li>{{ 'Ricevi un contatto dallo studio, senza prenotazione automatica.' if showcase_mode else 'Ricevi la conferma dell’appuntamento.' }}</li>
             </ol>
-            <a href="{{ url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota_finale">Prenota una prestazione</a>
+            <a href="{{ '#interesse' if showcase_mode else url_for('prenota') }}" class="btn" data-conversion="prestazioni_prenota_finale">{{ 'Lascia il tuo interesse' if showcase_mode else 'Prenota una prestazione' }}</a>
         </div>
     </div>
+
+    {% if showcase_mode %}
+    {% from 'showcase/_interest_form.html' import interest_form with context %}
+    {{ interest_form('prestazioni') }}
+    {% endif %}
 
     <div class="studio-location" aria-labelledby="studio-location-title">
         <div class="studio-location__header">

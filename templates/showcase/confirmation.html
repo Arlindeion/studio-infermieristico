@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block titolo %}Interesse ricevuto | S.C. Studio Infermieristico{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <div class="conferma-box">
+        <p class="eyebrow">Richiesta ricevuta</p>
+        <h1>Il tuo interesse è stato registrato.</h1>
+        <p>Lo studio ti ricontatterà per chiarire la richiesta e valutare le possibilità.</p>
+        <p>Non è stato prenotato alcun appuntamento.</p>
+        <a href="{{ url_for('homepage') }}" class="btn">Torna alla homepage</a>
+    </div>
+</section>
+{% endblock %}

@@ -59,7 +59,7 @@
             <p class="home-hero-lead">Corsi pratici a Montesilvano e consulenza sul sonno, in studio oppure online in tutta Italia. Partiamo dai dubbi che pesano di più e li trasformiamo in indicazioni da usare nella vita di ogni giorno.</p>
             <div class="home-actions" aria-label="Azioni principali">
                 <a href="/iscrizione-corsi" class="btn" data-conversion="home_hero_corsi">Scopri i corsi</a>
-                <a href="{{ url_for('prenota_call_sonno') }}" class="btn btn-linea" data-conversion="home_hero_call_sonno">Scegli l’orario della call</a>
+                <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="btn btn-linea" data-conversion="home_hero_call_sonno">{{ 'Lascia il tuo interesse' if showcase_mode else 'Scegli l’orario della call' }}</a>
             </div>
             <p class="home-hero-note">La call dura circa 20 minuti e serve a capire se la consulenza è davvero il passo adatto.</p>
         </div>
@@ -137,7 +137,7 @@
                 </ul>
                 <div class="home-actions">
                     <a href="{{ url_for('consulenze_online') }}#formule" class="btn" data-conversion="home_pilastro_sonno">Scopri la consulenza</a>
-                    <a href="{{ url_for('prenota_call_sonno') }}" class="link-azione">Prima parliamone</a>
+                    <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="link-azione">Prima parliamone</a>
                 </div>
             </div>
             <figure class="home-feature-media home-feature-media--sleep" data-scene-motion="right">
@@ -289,7 +289,7 @@
                     <p class="home-final-choice__kicker">Online in tutta Italia o in studio</p>
                     <h3>Vuoi capire meglio il sonno del tuo bambino?</h3>
                     <p>Una breve call aiuta a chiarire la difficoltà e a capire se la consulenza è il passo adatto.</p>
-                    <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="home_finale_call_sonno">Scegli l’orario della call</a>
+                    <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="btn" data-conversion="home_finale_call_sonno">{{ 'Lascia il tuo interesse' if showcase_mode else 'Scegli l’orario della call' }}</a>
                 </div>
             </article>
         </div>

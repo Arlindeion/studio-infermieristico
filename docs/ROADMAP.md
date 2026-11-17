@@ -2,7 +2,9 @@
 
 Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scelte in [DECISIONS.md](DECISIONS.md), procedure in [OPERATIONS.md](OPERATIONS.md), prove e limiti in [VERIFICHE_RILASCIO_2026-10-22.md](VERIFICHE_RILASCIO_2026-10-22.md).
 
-## Stato attuale: dominio pronto per il collaudo privato, non lancio pubblico
+## Stato attuale: sito pubblico riferito dal committente; vetrina pronta in locale
+
+- 17 novembre 2026, D-138: il committente conferma l'apertura pubblica e richiede una vetrina parallela senza prenotazioni di corsi, prestazioni o call sonno. Implementata localmente con raccolta interesse via email; versione completa conservata tramite configurazione. Deploy della vetrina ancora da eseguire/verificare. Procedura in [OPERATIONS.md](OPERATIONS.md#vetrina-pubblica-parallela--17-novembre-2026-d-138). Il riepilogo del 22 ottobre sottostante resta storico, non certifica la configurazione online attuale.
 
 - Aggiornamento locale D-137, 14 novembre 2026: semplificata la raccolta delle dichiarazioni in disostruzione. Una sola spunta obbligatoria per condizioni e natura del corso; privacy come nota con link. Su scelta del committente resta una spunta facoltativa distinta per futuri laboratori e l'età del bambino, utilizzata solo con opt-in e rimovibile alla revoca. Prezzi e percorso Nexi invariati; nessuna migrazione. Verificato in locale, non ancora pubblicato su Render.
 - D-136, 14 novembre 2026: modalità Nexi di prova del corso attivata sullo staging Render su ordine del committente («configura»). Deploy `36ac840` Live, pulsante Nexi verificato sul dominio; password staging e autenticazione della notifica preservate. Nessuna nuova iscrizione o email creata dagli agenti nella verifica. Iscrizioni ed eventuali email di prova seguono database e configurazione dello staging; nessun pagamento reale o apertura pubblica. [Riscontro e istruzioni](NEXI_SANDBOX.md#collaudo-del-corso-sullo-staging-render-d-136).

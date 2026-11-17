@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block titolo %}Controlla i recapiti | S.C. Studio Infermieristico{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block contenuto %}
+<section class="pagina-interna testo-centro">
+    <h1>Controlla i dati della richiesta.</h1>
+    <p>Servono nome e cognome, un telefono valido e la presa visione dell'informativa privacy. Se indichi un'email, verifica che sia corretta.</p>
+    <a class="btn" href="{{ url_for('prestazioni' if kind == 'prestazioni' else 'consulenze_online', _anchor='interesse') }}">Torna al modulo</a>
+</section>
+{% endblock %}

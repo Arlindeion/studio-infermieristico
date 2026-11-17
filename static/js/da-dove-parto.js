@@ -12,6 +12,13 @@
         dubbi: {title: 'Confronta prima di scegliere', copy: 'Le domande frequenti chiariscono differenze, prenotazioni e contatti senza obbligarti a inviare una richiesta.', href: '/faq', label: 'Apri le domande frequenti'}
     };
 
+    if (document.body.dataset.publicSiteMode === 'showcase') {
+        percorsi.prestazioni.copy = 'Consulta le prestazioni in studio e lascia i tuoi recapiti per informazioni.';
+        percorsi.sonno.copy = 'Scopri la consulenza e lascia i tuoi recapiti per informazioni, senza prenotare una call.';
+        percorsi.sicurezza.copy = 'Confronta disostruzione pediatrica, tagli sicuri e BLSD, poi lascia il tuo interesse.';
+        percorsi.laboratori.copy = 'Esplora le attività dedicate ad alimentazione, gioco e sviluppo e lascia il tuo interesse.';
+    }
+
     const stage = quiz.querySelector('[data-quiz-stage]');
     const steps = [...quiz.querySelectorAll('[data-quiz-step]')];
     const resultPanel = quiz.querySelector('[data-quiz-result-panel]');

@@ -1,0 +1,35 @@
+{% macro interest_form(kind) %}
+<section class="pagina-interna course-interest-page" id="interesse" aria-labelledby="interest-title">
+    <div class="course-interest-layout">
+        <header class="course-interest-intro">
+            <p class="eyebrow">Informazioni e ricontatto</p>
+            <h2 id="interest-title">Lascia il tuo interesse</h2>
+            <p>Invia i tuoi recapiti allo studio. Ti contatteremo per chiarire la richiesta e valutare le possibilità.</p>
+            <p>L'invio non prenota un appuntamento e non comporta un acquisto.</p>
+        </header>
+        <form class="form-prenotazione course-interest-form" method="post" action="{{ url_for('showcase.interest', kind=kind) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="form-gruppo">
+                <label for="interest-name">Nome e cognome *</label>
+                <input id="interest-name" name="nome" autocomplete="name" maxlength="100" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="interest-phone">Telefono *</label>
+                <input id="interest-phone" name="telefono" type="tel" autocomplete="tel" maxlength="20" pattern="[0-9+()./ \-]{6,20}" required>
+            </div>
+            <div class="form-gruppo">
+                <label for="interest-email">Email (facoltativa)</label>
+                <input id="interest-email" name="email" type="email" autocomplete="email" maxlength="100">
+            </div>
+            <p class="nota-form">Indica soltanto i tuoi recapiti. Non inviare dati sanitari, referti o informazioni identificative di minori.</p>
+            <div class="form-gruppo">
+                <label class="privacy-label">
+                    <input type="checkbox" name="consenso_privacy" class="privacy-checkbox" required>
+                    <span class="privacy-text">Ho letto l’<a href="{{ url_for('privacy') }}" target="_blank" rel="noopener">informativa privacy</a>. I dati sono trattati per rispondere a questa richiesta. *</span>
+                </label>
+            </div>
+            <button type="submit" class="btn" data-conversion="{{ kind }}_interest_submit">Invia il tuo interesse</button>
+        </form>
+    </div>
+</section>
+{% endmacro %}

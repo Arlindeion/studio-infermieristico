@@ -4,9 +4,9 @@
 
 {% block contenuto %}
 <section class="pagina-interna">
-    <p class="eyebrow">Iscrizioni corsi</p>
-    <h1>Scegli il corso e controlla le prossime date</h1>
-    <p class="sottotitolo">Scegli tra corsi sulla sicurezza, accompagnamento alla nascita e laboratori per l'infanzia. Se trovi una data aperta puoi richiedere l'iscrizione; altrimenti lascia i tuoi dati e ti ricontatterò alla prossima apertura.</p>
+    <p class="eyebrow">Corsi in presenza</p>
+    <h1>{{ 'Scopri i corsi e lascia il tuo interesse' if showcase_mode else 'Scegli il corso e controlla le prossime date' }}</h1>
+    <p class="sottotitolo">Scegli tra corsi sulla sicurezza, accompagnamento alla nascita e laboratori per l'infanzia. {% if showcase_mode %}Puoi lasciare i tuoi recapiti per ricevere informazioni. L'invio non comporta iscrizione e non riserva posti.{% else %}Se trovi una data aperta puoi richiedere l'iscrizione; altrimenti lascia i tuoi dati e ti ricontatterò alla prossima apertura.{% endif %}</p>
 
     {% if edizioni_programmate %}
     <section class="course-schedule" aria-labelledby="corsi-in-calendario">
@@ -127,7 +127,7 @@
         <div class="course-flow-grid">
             <p><strong>1. Ricezione</strong> La richiesta viene registrata.</p>
             <p><strong>2. Verifica</strong> Controllo la data, i posti disponibili e le informazioni necessarie.</p>
-            <p><strong>3. Conferma</strong> Ti contatto per confermare la partecipazione o proporti la prossima data utile.</p>
+            <p><strong>3. Conferma</strong> {{ 'Ti contatto per informazioni: nessuna iscrizione viene confermata dal modulo.' if showcase_mode else 'Ti contatto per confermare la partecipazione o proporti la prossima data utile.' }}</p>
         </div>
     </div>
 

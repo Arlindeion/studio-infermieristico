@@ -32,7 +32,7 @@
         <h1>Capire prima di cambiare.</h1>
         <p class="sleep-hero-lead">Se risvegli, addormentamenti o sonnellini sono diventati difficili da leggere, partiamo da ciò che accade nella tua famiglia. Le indicazioni tengono conto del bambino e della vita di ogni giorno.</p>
         <div class="sleep-hero-actions">
-            <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_hero_call">Scegli l’orario della call</a>
+            <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_hero_call">{{ 'Lascia il tuo interesse' if showcase_mode else 'Scegli l’orario della call' }}</a>
             <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20non%20so%20se%20la%20consulenza%20del%20sonno%20fa%20per%20noi%20e%20vorrei%20capirlo." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="sleep_hero_whatsapp">Non sai se fa per te? Scrivimi</a>
         </div>
         <div class="sleep-authority">
@@ -73,11 +73,11 @@
     <div class="sleep-call-main">
         <p class="eyebrow">Come iniziare</p>
         <h2 id="sleep-call-path-title">Partiamo da una call gratuita di circa 20 minuti.</h2>
-        <p>Scegli un orario e indicami la difficoltà principale. Durante la call capiremo se la consulenza è il passo adatto.</p>
+        <p>{{ 'Lascia i tuoi recapiti per ricevere informazioni sulla consulenza. Ti contatterò per parlarne insieme.' if showcase_mode else 'Scegli un orario e indicami la difficoltà principale. Durante la call capiremo se la consulenza è il passo adatto.' }}</p>
         <div class="sleep-hero-actions">
-            <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_mid_call">Scegli l’orario della call</a>
+            <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_mid_call">{{ 'Lascia il tuo interesse' if showcase_mode else 'Scegli l’orario della call' }}</a>
         </div>
-        <p class="sleep-call-note">L’orario resta provvisorio finché non ti invio la conferma entro il giorno lavorativo successivo.</p>
+        <p class="sleep-call-note">{{ 'Il modulo raccoglie soltanto interesse: non riserva una call.' if showcase_mode else 'L’orario resta provvisorio finché non ti invio la conferma entro il giorno lavorativo successivo.' }}</p>
     </div>
     <aside class="sleep-after-call">
         <p class="eyebrow">Solo se decidi di proseguire</p>
@@ -185,10 +185,12 @@
             <summary>Devo già sapere quale formula scegliere?</summary>
             <p>No. Puoi vedere prima contenuti e prezzi, ma la call gratuita serve a distinguere una domanda circoscritta da una situazione che richiede osservazione e verifica.</p>
         </details>
+        {% if not showcase_mode %}
         <details>
             <summary>Posso pagare il percorso a rate?</summary>
             <p>Sì. Dopo la call riceverai un collegamento privato per il pagamento; l’eventuale rateizzazione tramite il gestore del pagamento resta soggetta alla sua approvazione. Se non viene concessa, il percorso può essere pagato per fasi concordate.</p>
         </details>
+        {% endif %}
         <details>
             <summary>Applicate un metodo rigido per farlo dormire?</summary>
             <p>No. Parto dalla fisiologia, dalla sicurezza e dagli equilibri della famiglia. Le indicazioni vengono costruite sul contesto reale.</p>
@@ -202,12 +204,16 @@
 
 <section class="sleep-final-cta">
     <p class="eyebrow">Il primo passo è breve e gratuito</p>
-    <h2>Scegli un orario. Al resto penseremo durante la call.</h2>
-    <p>Prima di sentirci ti chiedo soltanto la difficoltà principale e le informazioni necessarie per organizzare la call.</p>
+    <h2>{{ 'Vuoi informazioni sulla consulenza del sonno?' if showcase_mode else 'Scegli un orario. Al resto penseremo durante la call.' }}</h2>
+    <p>{{ 'Lascia i tuoi recapiti: ti contatterò per capire insieme come procedere.' if showcase_mode else 'Prima di sentirci ti chiedo soltanto la difficoltà principale e le informazioni necessarie per organizzare la call.' }}</p>
     <div class="sleep-hero-actions sleep-final-actions">
-        <a href="{{ url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_final_call">Scegli l’orario della call</a>
+        <a href="{{ url_for('consulenze_online', _anchor='interesse') if showcase_mode else url_for('prenota_call_sonno') }}" class="btn" data-conversion="sleep_final_call">{{ 'Lascia il tuo interesse' if showcase_mode else 'Scegli l’orario della call' }}</a>
         <a href="https://wa.me/393806317175?text=Buongiorno%20Selene%2C%20ho%20un%20dubbio%20sulla%20consulenza%20del%20sonno." class="link-azione" target="_blank" rel="noopener noreferrer" data-conversion="sleep_final_whatsapp">Se sei indeciso, scrivimi su WhatsApp</a>
     </div>
 </section>
 
+{% if showcase_mode %}
+{% from 'showcase/_interest_form.html' import interest_form with context %}
+{{ interest_form('sonno') }}
+{% endif %}
 {% endblock %}

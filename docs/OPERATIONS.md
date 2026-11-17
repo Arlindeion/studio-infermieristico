@@ -2,6 +2,63 @@
 
 Revisione documentale: 22 ottobre 2026. Le evidenze esterne mantengono la propria data e non dimostrano da sole lo stato corrente dei pannelli.
 
+## Vetrina pubblica parallela — 17 novembre 2026, D-138
+
+Il committente riferisce che il sito è pubblico e richiede una versione
+informativa senza prenotazioni, conservando l'interesse via email. Il riepilogo
+D-131 sottostante descrive lo stato storico; non va usato per attestare che la
+password sia ancora presente. Dominio principale invariato, senza `www`.
+
+La configurazione `PUBLIC_SITE_MODE=showcase` attiva la vetrina; `full` conserva
+la versione completa per un ambiente di collaudo protetto. Non duplicare il
+database o spostare le integrazioni per attivare la vetrina. Con
+`FLASK_ENV=production` il default è `showcase`; sviluppo e test restano `full`.
+Un valore sconosciuto blocca l'avvio.
+
+Attivazione su Render:
+
+1. Distribuire il codice della vetrina e impostare `PUBLIC_SITE_MODE=showcase`.
+   Il solo flag sulla vecchia versione non disabilita le prenotazioni.
+2. Per il servizio pubblico mantenere `FLASK_ENV=production`,
+   `APP_ENV=production`, `PUBLIC_BASE_URL=https://scstudioinfermieristico.it`,
+   `MAIL_SUPPRESS_SEND=false` e `NEXI_COURSE_SANDBOX_ENABLED=false`.
+   Preservare database, segreti e configurazione delle integrazioni esistenti.
+   Non eseguire un Blueprint Sync indiscriminato: il file preparatorio mantiene
+   ancora `APP_ENV=staging` e non rappresenta il pannello corrente.
+3. Eseguire il deploy controllato e verificare `/healthz`, pagine pubbliche,
+   interesse corsi/prestazioni/sonno, login admin e blocco dei vecchi link/API.
+   Non inviare richieste live di prova senza destinatari e ambito concordati;
+   i collaudi locali usano email simulate e Calendar disabilitato.
+
+I corsi riusano il ricontatto esistente, senza data e con zero posti. Per
+prestazioni e sonno vengono accettati soltanto nome, telefono, email facoltativa
+e presa visione privacy. Il messaggio viene salvato in `EmailOperativa` prima
+dell'invio a `MAIL_ADMIN_RECIPIENT`, con la retention delle richieste di
+prestazione. Se SMTP fallisce, resta `fallita` e compare un errore nel registro
+admin riferito al suo ID. È disponibile il reinvio admin protetto da CSRF
+`POST /admin/email/<id>/reinvia`; nessuna conferma di appuntamento viene creata.
+Nessuna migrazione o operazione Calendar è necessaria.
+
+Le route pubbliche operative (anche URL privati e checkout) vengono fermate
+prima dei rispettivi handler. Le vecchie pagine di prenotazione reindirizzano
+alle pagine informative; POST operativi e API restituiscono `503`. Il vecchio
+POST al corso viene trattato esclusivamente come ricontatto. La cache delle
+pagine dinamiche della vetrina è disabilitata. Le richieste aziendali restano
+contatti organizzativi; l'admin mantiene le proprie protezioni e funzioni.
+
+Per collaudare la versione completa in parallelo usare un servizio separato
+protetto con `PUBLIC_SITE_MODE=full`, `APP_ENV=staging` e credenziali staging.
+Non impostare `full` sul servizio pubblico per provarla. Le configurazioni live
+e l'effettivo rilascio della vetrina non sono attestati da questi controlli locali.
+
+Verifiche locali del 17 novembre: 644 test Python superati, 12 saltati;
+55 test JavaScript superati; `git diff --check` superato. Controllate homepage,
+elenco corsi, disostruzione, sonno e prestazioni a 1440×900 e 390×844: un solo
+`h1`, nessun link ai calendari di prenotazione e nessun overflow orizzontale.
+Verificati visivamente i moduli corso/prestazioni, il menu mobile e l'invio
+interesse prestazioni fino alla conferma, su database in memoria con email
+soppresse. Guasti SMTP e blocco dei vecchi POST/API verificati nei test automatici.
+
 ## Stato operativo corrente — dominio privato, D-131
 
 Il committente conferma il manual deploy di `3fe6033` e il funzionamento di `https://scstudioinfermieristico.it` con password. Il servizio resta una preproduzione privata su risorse pagate: non è stato autorizzato il GO pubblico. [Evidenze e limiti](VERIFICHE_RILASCIO_2026-10-22.md).

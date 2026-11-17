@@ -33,6 +33,8 @@ projects:
                 value: production
               - key: APP_ENV
                 value: staging
+              - key: PUBLIC_SITE_MODE
+                value: showcase
               - key: SECRET_KEY
                 generateValue: true
               - key: DATABASE_URL

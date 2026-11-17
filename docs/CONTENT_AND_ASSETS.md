@@ -26,6 +26,7 @@ Questo documento registra testi, immagini e materiali disponibili. Non sostituis
 
 ## Messaggi approvati
 
+- Vetrina D-138 (17 novembre 2026): CTA «Lascia il tuo interesse» e «Invia il tuo interesse». Per prestazioni e sonno: «L'invio non prenota un appuntamento e non comporta un acquisto», conferma «Il tuo interesse è stato registrato». Rimosse dalla vetrina le istruzioni per scegliere slot o iscriversi; FAQ dedicate al ricontatto. Immagini e prezzi invariati. Flussi e attivazione nelle rispettive fonti competenti.
 - Ricontatto corsi senza date (22 ottobre 2026): usare «Lascia il tuo interesse», «L'invio non comporta alcuna iscrizione» e «Invia il tuo interesse», senza conferme d’iscrizione. Comportamento in `SITE_MAP_AND_FLOWS.md`, decisione D-130; nessuna nuova immagine.
 
 ### Sistema generale per il creator

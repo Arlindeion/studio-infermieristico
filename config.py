@@ -92,6 +92,7 @@ class Config:
     # Ambiente operativo distinto dalla configurazione Flask: development,
     # staging o production. Lo staging pubblico richiede autenticazione HTTP.
     APP_ENV = os.environ.get('APP_ENV') or 'development'
+    PUBLIC_SITE_MODE = os.environ.get('PUBLIC_SITE_MODE', 'full')
     APP_BUILD_REVISION = os.environ.get('APP_BUILD_REVISION') or os.environ.get('RENDER_GIT_COMMIT')
     PAZ_A2_PLAN_TTL_SECONDS = int(os.environ.get('PAZ_A2_PLAN_TTL_SECONDS') or 3600)
     # Opt-in separato per collaudare integrazioni reali in uno staging pagato,
@@ -115,6 +116,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Configurazione di produzione."""
     DEBUG = False
+    PUBLIC_SITE_MODE = os.environ.get('PUBLIC_SITE_MODE', 'showcase')
     # In produzione, i cookie devono essere inviati solo su HTTPS
     SESSION_COOKIE_SECURE = True
     PREFERRED_URL_SCHEME = 'https'
@@ -122,6 +124,7 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     """Configurazione di test applicativa, sempre isolata su SQLite in-memory."""
     TESTING = True
+    PUBLIC_SITE_MODE = 'full'
     NEXI_COURSE_SANDBOX_ENABLED = False
     NEXI_COURSE_SANDBOX_API_KEY = None
     # Sicurezza: la suite applicativa non deve mai ereditare DATABASE_URL da

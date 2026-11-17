@@ -79,6 +79,7 @@ from sleep_terms import (
     SLEEP_TERMS_VERSION,
 )
 from payment_sandbox import register_payment_sandbox
+from public_showcase import register_public_showcase, showcase_enabled
 from course_payment_sandbox import (
     COURSE_PRICES, deposit_quote, register_course_payment_sandbox, staging_course_sandbox_enabled,
 )
@@ -207,6 +208,7 @@ def inject_tracking_config():
         'public_url': public_url,
         'prestazioni_categorie': PRESTAZIONI_CATEGORIE,
         'servizi_prenotabili': SERVIZI_PRENOTABILI,
+        'showcase_mode': showcase_enabled(),
     }
 
 
@@ -4337,6 +4339,8 @@ def _valida_integrazioni_reali():
 
 def valida_configurazione_runtime():
     """Rifiuta configurazioni insicure prima di staging o produzione."""
+    if app.config.get('PUBLIC_SITE_MODE') not in {'full', 'showcase'}:
+        raise RuntimeError('PUBLIC_SITE_MODE deve essere full o showcase.')
     ambiente = app.config.get('APP_ENV')
     if ambiente not in {'staging', 'production'}:
         return
@@ -5733,6 +5737,8 @@ def da_dove_parto():
 
 @app.route('/')
 def homepage():
+    if showcase_enabled():
+        return render_template('homepage.html', corsi=[])
     oggi = local_today().isoformat()
     corsi = Corso.query.filter(
         Corso.data >= oggi,
@@ -5748,6 +5754,19 @@ def chi_siamo():
 
 @app.route('/faq')
 def faq():
+    if showcase_enabled():
+        items = [
+            {'id': 'interesse-online', 'question': 'Posso prenotare dal sito?',
+             'answer': 'In questo momento il sito raccoglie richieste di informazioni e interesse. I moduli non prenotano appuntamenti, non iscrivono ai corsi e non riservano posti.',
+             'link_href': url_for('iscrizione_corsi'), 'link_text': 'Scopri i corsi'},
+            {'id': 'ricontatto', 'question': 'Cosa succede dopo l’invio?',
+             'answer': 'Lo studio riceve i tuoi recapiti e ti ricontatta per chiarire la richiesta e valutare le possibilità. Non sono richiesti pagamenti dal modulo di interesse.'},
+            {'id': 'informazioni-prestazioni', 'question': 'Come chiedo informazioni sulle prestazioni?',
+             'answer': 'Consulta le prestazioni e lascia i tuoi recapiti nel modulo dedicato. Non inviare referti o informazioni sanitarie nel modulo.',
+             'link_href': url_for('prestazioni', _anchor='interesse'), 'link_text': 'Lascia il tuo interesse'},
+            *[item for item in FAQ_ITEMS if item['id'] in {'durata-corsi', 'disostruzione-pediatrica-tagli-sicuri'}],
+        ]
+        return render_template('faq.html', faq_items=items)
     return render_template('faq.html', faq_items=FAQ_ITEMS)
 
 
@@ -6438,12 +6457,12 @@ def _opzioni_date_corso(corso_tipo):
 
 def _corso_iscrivibile_con_date(corso_tipo):
     corso = dict(CORSI_ISCRIVIBILI[corso_tipo])
-    corso['data_options'] = _opzioni_date_corso(corso_tipo)
+    corso['data_options'] = [] if showcase_enabled() else _opzioni_date_corso(corso_tipo)
     corso['has_open_dates'] = len(corso['data_options']) > 0
     corso['interest_topic'] = COURSE_INTEREST_TOPIC_BY_TYPE[corso_tipo]
     corso['lab_updates_consent_text'] = LAB_UPDATES_CONSENT_TEXT
     corso['sandbox_payment_available'] = (
-        corso_tipo == 'disostruzione-pediatrica' and course_payment_sandbox['ready']()
+        not showcase_enabled() and corso_tipo == 'disostruzione-pediatrica' and course_payment_sandbox['ready']()
     )
     return corso
 
@@ -6953,6 +6972,8 @@ def iscrizione_corso(corso_tipo):
 
 @app.route('/iscrizione-corsi')
 def iscrizione_corsi():
+    if showcase_enabled():
+        return render_template('iscrizione_corsi.html', edizioni_programmate=[])
     oggi = local_today().isoformat()
     corsi_in_calendario = Corso.query.filter(
         Corso.tipo.in_(tuple(CORSI_ISCRIVIBILI)),
@@ -7535,6 +7556,11 @@ course_payment_sandbox = register_course_payment_sandbox(
     limiter.limit,
     lambda registration, payment: prepare_paid_course_registration(registration, payment),
     lambda registration, payment, context: send_paid_course_confirmation(registration, payment, context),
+)
+
+register_public_showcase(
+    app, db, mail, EmailOperativa, utc_now, GIORNI_CONSERVAZIONE_PRENOTAZIONI,
+    validate_csrf_token, _email_valida, _telefono_valido, registra_evento, limiter.limit,
 )
 
 

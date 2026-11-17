@@ -69,7 +69,7 @@
                 <span>Insieme a un adulto</span>
                 <span>In studio a Montesilvano</span>
             </div>
-            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="laboratorio_infanzia_modulo">Vedi date e iscrizione</a>
+            <a href="#{{ form_anchor_id }}" class="btn" data-conversion="laboratorio_infanzia_modulo">{{ 'Lascia il tuo interesse' if showcase_mode else 'Vedi date e iscrizione' }}</a>
         </div>
         <figure class="laboratori-hero__media">
             <img src="{{ url_for('static', filename='img/laboratori-hero-esplorazione-sensoriale.jpg') }}" width="1200" height="1600" alt="Bambini impegnati in diverse attività sensoriali nello spazio del laboratorio" fetchpriority="high">
@@ -104,8 +104,8 @@
     <div class="blsd-choice-panel" aria-labelledby="modalita-blsd">
         <article class="blsd-choice-card">
             <span>Privati</span>
-            <h3>Iscrizione individuale</h3>
-            <p>Scegli una data aperta in studio e invia la richiesta dal modulo.</p>
+            <h3>{{ 'Interesse individuale' if showcase_mode else 'Iscrizione individuale' }}</h3>
+            <p>{{ 'Lascia i recapiti per ricevere informazioni sul corso, senza riservare un posto.' if showcase_mode else 'Scegli una data aperta in studio e invia la richiesta dal modulo.' }}</p>
             <a href="#{{ form_anchor_id }}" class="link-azione">Vai al modulo</a>
         </article>
         <article class="blsd-choice-card blsd-choice-card-azienda">

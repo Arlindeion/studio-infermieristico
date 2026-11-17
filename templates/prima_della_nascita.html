@@ -89,7 +89,7 @@
     <section class="cta birth-course__cta">
         <p class="eyebrow">Il primo passo</p>
         <h2>Conosci il percorso e chi lo conduce</h2>
-        <p>Iscriviti all’open day gratuito: potrai incontrare i professionisti, fare domande e capire se il corso completo è adatto alla tua famiglia. L’iscrizione al percorso avverrà in un secondo momento tramite link privato.</p>
+        <p>{% if showcase_mode %}Lascia il tuo interesse per conoscere il percorso e le prossime possibilità di incontro con l’équipe. Il modulo non comporta iscrizione all’open day o al corso completo.{% else %}Iscriviti all’open day gratuito: potrai incontrare i professionisti, fare domande e capire se il corso completo è adatto alla tua famiglia. L’iscrizione al percorso avverrà in un secondo momento tramite link privato.{% endif %}</p>
         <a href="/iscrizione-corsi/accompagnamento-nascita" class="btn" data-conversion="accompagnamento_open_day_finale">Scopri il prossimo open day</a>
     </section>
 

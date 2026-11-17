@@ -93,7 +93,7 @@
     }
     </script>
 </head>
-<body class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}{% if admin_area %} is-admin-area{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
+<body data-public-site-mode="{{ 'showcase' if showcase_mode else 'full' }}" class="page-{{ (request.endpoint or 'pagina') | replace('_', '-') }}{% if internal_page_mode %} internal-page internal-page--{{ internal_page_mode }}{% endif %}{% if admin_area %} is-admin-area{% endif %}"{% if internal_page_mode %} data-internal-page="{{ internal_page_mode }}"{% endif %}>
 
 {% set current_endpoint = request.endpoint or '' %}
 {% set courses_active = current_endpoint in ['iscrizione_corsi', 'iscrizione_corso', 'prima_della_nascita', 'condizioni_iscrizione_corsi', 'conferma_iscrizione_corso', 'course_interest', 'course_interest_confirmation', 'richiesta_azienda', 'richiesta_azienda_conferma'] %}
@@ -269,7 +269,7 @@
 <script src="{{ url_for('static', filename='js/prestazioni-filter.js') }}" defer></script>
 {% endif %}
 {% if page_endpoint == 'da_dove_parto' %}
-<script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.1" defer></script>
+<script src="{{ url_for('static', filename='js/da-dove-parto.js') }}?v=1.2" defer></script>
 {% endif %}
 {% if page_endpoint == 'iscrizione_corso' %}
 <script src="{{ url_for('static', filename='js/course-registration.js') }}?v=1.2" defer></script>
@@ -327,6 +327,10 @@
 {% elif endpoint == 'prima_della_nascita' %}
     {% set sticky_href = '/iscrizione-corsi/accompagnamento-nascita' %}
     {% set sticky_label = 'Scopri l’open day' %}
+{% endif %}
+{% if showcase_mode and endpoint in ['prestazioni', 'consulenze_online'] %}
+    {% set sticky_href = '#interesse' %}
+    {% set sticky_label = 'Lascia il tuo interesse' %}
 {% endif %}
 {% if sticky_enabled %}
 <div class="sticky-prenota">

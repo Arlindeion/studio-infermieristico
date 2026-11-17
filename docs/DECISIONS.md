@@ -1132,3 +1132,14 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Proposte laboratori: consenso distinto, non preselezionato, per email o WhatsApp ai recapiti del solo richiedente. L'età è facoltativa, utilizzabile solo con opt-in; nessun nome del bambino raccolto. In assenza di consenso l'età viene ignorata anche dal server. Versione, testo, canali e istante dell'opt-in sono conservati. L'admin può registrare la revoca e rimuovere l'età senza annullare corso o pagamento. Non sono introdotti invii promozionali o segmentazioni automatizzati.
 - Confini: altri corsi e relativi consensi invariati; lista d'attesa, prezzi, acconti e conferma Nexi non cambiano. Nessuna migrazione aggiuntiva.
 - Sostituisce: D-135 per la raccolta delle dichiarazioni e l'accettazione separata dell'acconto nei nuovi moduli disostruzione. Non modifica le regole economiche.
+
+## D-138 — Vetrina pubblica senza prenotazioni
+
+- Data: 2026-11-17.
+- Contesto: il committente riferisce che il sito è ormai pubblico, ma i flussi completi non sono pronti; richiede una versione parallela informativa con moduli di interesse via email nelle pagine corsi e prestazioni.
+- Decisione: modalità reversibile `PUBLIC_SITE_MODE=showcase`, predefinita nella configurazione Flask production, e versione completa `full` conservata per il collaudo privato. Nessun cambio di custom domain: origine principale senza `www`.
+- Comportamento: corsi senza date/iscrizioni o posti riservati, prestazioni senza appuntamenti; anche la prenotazione call sonno è sospesa, mantenendo interesse e presentazione. Bloccare lato server vecchi link, POST, API di disponibilità, proposte private e checkout. Contatti aziendali e admin protetto preservati.
+- Integrità: interesse corsi riusa il ricontatto; prestazioni e sonno conservano la richiesta nell'archivio email operativo prima dell'invio allo studio. Guasti SMTP visibili nel registro admin. Nessuna migrazione, scrittura Calendar o modifica alle integrazioni live.
+- Stato: implementazione e verifiche locali; apertura pubblica riferita dal committente, distribuzione della vetrina ancora da verificare.
+- Sostituisce: D-131/D-132 quanto allo stato riferito di accesso pubblico e, temporaneamente, i flussi di prenotazione pubblici. Non attiva campagne, analytics o pagamenti.
+- Fonti competenti: [flussi](SITE_MAP_AND_FLOWS.md), [attivazione](OPERATIONS.md#vetrina-pubblica-parallela--17-novembre-2026-d-138).

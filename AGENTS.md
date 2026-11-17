@@ -37,7 +37,7 @@ In caso di contraddizione, questo file prevale sulle altre fonti. Non duplicare 
 
 ## Obiettivo e priorità di prodotto
 
-Stato operativo al 22 ottobre 2026 (D-131): il dominio definitivo funziona con password; mantenere `APP_ENV=staging`, `STAGING_AUTH_*` e `PUBLIC_BASE_URL=https://scstudioinfermieristico.it`. Il committente non autorizza ancora l'apertura pubblica. Non confondere DNS/HTTPS pronti con GO; rimozione della protezione e passaggio production richiedono un nuovo ordine esplicito. Prossimi passi e sviluppi proposti in `docs/ROADMAP.md` (D-132), evidenze in `docs/VERIFICHE_RILASCIO_2026-10-22.md`.
+Aggiornamento del 17 novembre 2026 (D-138): il committente riferisce che il sito è pubblico e richiede una vetrina parallela senza prenotazioni, con raccolta di interesse via email. Stato e limiti in `docs/ROADMAP.md`, comportamento temporaneo in `docs/SITE_MAP_AND_FLOWS.md`, attivazione in `docs/OPERATIONS.md`. Queste indicazioni sospendono temporaneamente i flussi di prenotazione pubblici descritti sotto; la versione completa resta per il collaudo privato. Dominio principale invariato: `https://scstudioinfermieristico.it`. Lo stato con password D-131 resta storico; la pubblicazione della vetrina va verificata separatamente. Deploy e DNS restano passaggi espliciti.
 
 Il sito è una vetrina autorevole con un gestionale commerciale leggero. Deve sostenere una crescita controllata e generare contatti qualificati.
 

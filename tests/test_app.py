@@ -7188,7 +7188,7 @@ def test_quiz_da_dove_parto_orienta_senza_raccogliere_dati(client):
     assert 'data-orientation-quiz' in response.text
     assert 'data-quiz-stage' in response.text
     assert response.text.count('orientation-panel') == 3
-    assert 'js/da-dove-parto.js?v=1.1' in response.text
+    assert 'js/da-dove-parto.js?v=1.2' in response.text
     assert '/aziende-e-gruppi' in response.text
     assert 'js/da-dove-parto.js' in response.text
     assert '<form' not in response.text

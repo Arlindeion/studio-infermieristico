@@ -1,5 +1,18 @@
 # Mappa del sito e flussi
 
+## Eccezione temporanea: vetrina pubblica D-138
+
+Con `PUBLIC_SITE_MODE=showcase` restano pubbliche le pagine informative, senza
+date prenotabili, calendari di disponibilità, iscrizioni o checkout. Corsi:
+modulo di interesse esistente anche in presenza di edizioni aperte, senza
+riservare posti. Prestazioni e sonno: recapiti per ricontatto via email allo
+studio, senza dati sanitari o informazioni sui minori. Anche i vecchi link
+operativi sono bloccati lato server; le richieste aziendali restano contatti.
+L'admin resta protetto e la versione completa rimane disponibile nella modalità
+`full`, da collaudare in ambiente privato. Attivazione e limiti sono in
+[OPERATIONS.md](OPERATIONS.md#vetrina-pubblica-parallela--17-novembre-2026-d-138).
+I flussi completi descritti sotto si applicano alla modalità `full`.
+
 Allineamento operativo: 22 ottobre 2026.
 
 Priorità operative: [ROADMAP.md](ROADMAP.md), D-123 e D-130–D-132. Queste sono route pubbliche di prodotto, ma l'intero dominio è ancora protetto da password staging. Il lancio conserva i flussi; nuove funzioni e campagna seguono l'apertura esplicita al pubblico.
