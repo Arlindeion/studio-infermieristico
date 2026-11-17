@@ -51,6 +51,28 @@ protetto con `PUBLIC_SITE_MODE=full`, `APP_ENV=staging` e credenziali staging.
 Non impostare `full` sul servizio pubblico per provarla. Le configurazioni live
 e l'effettivo rilascio della vetrina non sono attestati da questi controlli locali.
 
+Riscontro live del 17 novembre, successivo alle verifiche locali:
+
+- Commit/push e deploy manuale autorizzati dal committente fino al punto 2.
+  Commit applicativo `a502765307737a1af524547492fbf0e45bcf257a` su `origin/main`;
+  deploy Render `dep-dbubi9dg1s2s73bbp200`, stato **Deploy succeeded | Live**,
+  servizio disponibile dalle 21:30:57 circa (Europe/Rome).
+- Prima del deploy controllati soltanto i valori non segreti: `APP_ENV=production`,
+  `FLASK_ENV=production`, `NEXI_COURSE_SANDBOX_ENABLED=false`. Nessuna variabile
+  modificata, nessun Sync Blueprint. `PUBLIC_SITE_MODE` non aggiunto nel pannello:
+  la vetrina è già attiva grazie al default della configurazione production.
+- Controlli anonimi GET: homepage e `/healthz` `200`; prestazioni, sonno e
+  disostruzione `200`, un solo `h1`, moduli di interesse e nessuna scelta della
+  data corso. `/prenota` e `/prenota-call-sonno` `303` alle rispettive pagine
+  informative; entrambe le API di disponibilità `503`. `/admin` `302` al login.
+  `data-public-site-mode="showcase"` osservato su homepage e pagine commerciali.
+- Verifica browser del modulo prestazioni e del ricontatto disostruzione sul
+  dominio. Nessun modulo inviato live, nessuna email di prova, nessuna operazione
+  Calendar o nuova prenotazione creata dagli agenti. Il recapito SMTP end-to-end
+  non è attestato da questi controlli; è coperto soltanto il comportamento locale
+  con invii simulati. Il parametro esplicito del punto 3 resta al committente.
+- [Deploy Render](https://dashboard.render.com/web/srv-da5df23m8hqs73ca61eg/deploys/dep-dbubi9dg1s2s73bbp200).
+
 Verifiche locali del 17 novembre: 644 test Python superati, 12 saltati;
 55 test JavaScript superati; `git diff --check` superato. Controllate homepage,
 elenco corsi, disostruzione, sonno e prestazioni a 1440×900 e 390×844: un solo
