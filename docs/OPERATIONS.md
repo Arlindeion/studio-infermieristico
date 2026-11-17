@@ -73,6 +73,17 @@ Riscontro live del 17 novembre, successivo alle verifiche locali:
   con invii simulati. Il parametro esplicito del punto 3 resta al committente.
 - [Deploy Render](https://dashboard.render.com/web/srv-da5df23m8hqs73ca61eg/deploys/dep-dbubi9dg1s2s73bbp200).
 
+Aggiornamento delle 21:41 circa (Europe/Rome), su successivo ordine esplicito:
+aggiunto il solo `PUBLIC_SITE_MODE=showcase` in Environment e scelto **Save and
+deploy**, senza modificare altre variabili o sincronizzare il Blueprint.
+Deploy `dep-dbubn7l6e07s73f4q220`, build esistente `a502765`, **Live** dalle
+21:41:05 circa. Verificato nel pannello il valore persistito; homepage in
+showcase e `/healthz` `200`, vecchie prenotazioni prestazioni e call sonno `303`
+alle rispettive pagine informative. Nessun invio di moduli, email o operazione
+Calendar nei controlli. Questa attivazione completa il punto 3, lasciato al
+committente nel primo resoconto sopra.
+[Deploy della configurazione](https://dashboard.render.com/web/srv-da5df23m8hqs73ca61eg/deploys/dep-dbubn7l6e07s73f4q220).
+
 Verifiche locali del 17 novembre: 644 test Python superati, 12 saltati;
 55 test JavaScript superati; `git diff --check` superato. Controllate homepage,
 elenco corsi, disostruzione, sonno e prestazioni a 1440×900 e 390×844: un solo
