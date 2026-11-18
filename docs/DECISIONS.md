@@ -1143,3 +1143,10 @@ Una decisione sostituita non va cancellata: indicare quale nuova decisione la ri
 - Stato: implementazione e verifiche locali completate. Il committente autorizza commit/push e deploy manuale fino al punto 2; `a502765` distribuito su Render, Live il 17 novembre alle 21:30 circa (Europe/Rome), modalità showcase verificata sul dominio. Dopo il primo deploy, su nuovo ordine esplicito, aggiunto `PUBLIC_SITE_MODE=showcase` su Render; Save and deploy della build esistente riuscito alle 21:41 circa. Nessun altro parametro modificato. Evidenze e limiti in OPERATIONS.md.
 - Sostituisce: D-131/D-132 quanto allo stato riferito di accesso pubblico e, temporaneamente, i flussi di prenotazione pubblici. Non attiva campagne, analytics o pagamenti.
 - Fonti competenti: [flussi](SITE_MAP_AND_FLOWS.md), [attivazione](OPERATIONS.md#vetrina-pubblica-parallela--17-novembre-2026-d-138).
+
+## D-139 — Finalizzazione del sito completo su ramo dedicato
+
+- Data: 2026-11-18.
+- Disposizione del committente: da questo momento modificare soltanto il ramo del sito completo, con prenotazioni e pagamenti, lasciando online la vetrina fino al collaudo e al futuro rilascio.
+- Attuazione: creato e selezionato localmente `codex/sito-completo` da `main` al commit `f9acb25`; i flussi completi erano già conservati nella modalità `full`. Nessuna duplicazione del database e nessun nuovo ambiente Render creato da questa operazione.
+- Regole operative: fonte unica in [AGENTS.md](../AGENTS.md#branch-di-lavoro--disposizione-del-18-novembre-2026). Nessuna modifica alla vetrina pubblica o alle integrazioni live. I pagamenti reali e il rilascio del sito completo restano passaggi distinti.

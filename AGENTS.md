@@ -8,6 +8,14 @@
 4. Preservare le modifiche locali e non attribuite: non sovrascriverle, ripristinarle o includerle automaticamente nel proprio lavoro.
 5. Fare domande solo quando una risposta può cambiare sostanzialmente il risultato o richiede nuova autorizzazione.
 
+## Branch di lavoro — disposizione del 18 novembre 2026
+
+- Lavorare esclusivamente su `codex/sito-completo` per finalizzare il sito con prenotazioni e pagamenti. Verificare il branch prima di modificare file.
+- `main` resta il riferimento della vetrina pubblica: non modificarlo, unirvi il ramo di sviluppo o distribuirvi nuove versioni senza un nuovo ordine esplicito.
+- Collaudare la modalità `PUBLIC_SITE_MODE=full` soltanto in locale o in un ambiente separato e protetto. Non cambiare la modalità della vetrina Render per fare prove.
+- Lavorare sui pagamenti non autorizza incassi reali né l'attivazione dei gateway sul sito pubblico. Restano validi i vincoli su Calendar, dati reali, email e integrazioni live.
+- Questa disposizione supera le precedenti autorizzazioni circoscritte di commit/push su `main` e deploy della vetrina. Il passaggio online del sito completo richiederà un ordine distinto dopo il collaudo.
+
 ## Fonti di verità
 
 - Questo file: regole operative non negoziabili.
