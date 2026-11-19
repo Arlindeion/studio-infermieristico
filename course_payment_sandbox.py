@@ -167,7 +167,16 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
             return
         operations = verified_order_operations(payment, client().get_order(payment.order_id))
         successful = [op for op in operations if op.get('operationResult') == 'EXECUTED']
-        payment.verified_at = utc_now()
+        # Claim the attempt after the gateway read. A late response must observe
+        # terminal outcomes already committed by another callback or return.
+        claimed = payment_model.query.filter(
+            payment_model.id == payment.id,
+            payment_model.status.notin_(['confirmed', 'review']),
+        ).update({payment_model.verified_at: utc_now()}, synchronize_session=False)
+        if not claimed:
+            db.session.rollback()
+            return
+        db.session.refresh(payment)
         if successful:
             registration = registration_model.query.filter_by(id=payment.registration_id).with_for_update().first()
             other = payment_model.query.filter(
@@ -185,36 +194,31 @@ def register_course_payment_sandbox(app, db, registration_model, payment_model, 
                 db.session.commit()
                 record_error(payment, 'Pagamento di prova ricevuto; iscrizione o corso da verificare manualmente.')
                 return
-            updated = payment_model.query.filter(
-                payment_model.id == payment.id,
-                payment_model.status.notin_(['confirmed', 'review']),
-            ).update({
-                payment_model.status: 'confirmed',
-                payment_model.active_registration_id: None,
-                payment_model.operation_id: successful[0]['operationId'],
-                payment_model.verified_at: utc_now(),
-            }, synchronize_session=False)
             confirmation_context = None
-            if updated and registration.extra_dict().get('nexi_deposit'):
+            if registration.extra_dict().get('nexi_deposit'):
                 try:
-                    confirmation_context = prepare_confirmation(registration, payment)
+                    with db.session.begin_nested():
+                        confirmation_context = prepare_confirmation(registration, payment)
                 except AmbiguousPatientMatchError:
-                    db.session.rollback()
                     payment.status = 'review'
                     db.session.commit()
                     record_error(payment, 'Acconto verificato; anagrafica da controllare prima della conferma.')
                     return
+            payment.status = 'confirmed'
+            payment.active_registration_id = None
+            payment.operation_id = successful[0]['operationId']
             db.session.commit()
-            db.session.refresh(payment)
-            if updated:
-                record_event('nexi_course_sandbox', 'successo', 'Pagamento corso di prova verificato.',
-                             'IscrizioneCorso', registration.id, {'order_id': payment.order_id})
-                if confirmation_context is not None:
-                    try:
-                        send_confirmation(registration, payment, confirmation_context)
-                    except Exception:
-                        db.session.rollback()
-                        record_error(payment, 'Iscrizione confermata; email o registrazione secondaria non riuscita.')
+            record_event('nexi_course_sandbox', 'successo', 'Pagamento corso di prova verificato.',
+                         'IscrizioneCorso', registration.id, {'order_id': payment.order_id})
+            if confirmation_context is not None:
+                try:
+                    send_confirmation(registration, payment, confirmation_context)
+                except Exception:
+                    db.session.rollback()
+                    record_error(payment, 'Iscrizione confermata; email o registrazione secondaria non riuscita.')
+            return
+        if payment.status == 'failed':
+            db.session.commit()
             return
         if any(op.get('operationResult') == 'AUTHORIZED' for op in operations):
             payment.status = 'authorized'

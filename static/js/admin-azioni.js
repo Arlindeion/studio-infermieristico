@@ -203,8 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selezionePersona) {
             selezionePersona.addEventListener('change', function() {
-                const persona = this.selectedOptions[0]?.dataset || {};
-                if (!this.value) return;
+                const persona = this.value ? this.selectedOptions[0].dataset : {};
                 nuovoAppuntamentoForm.elements.nome.value = persona.nome || '';
                 nuovoAppuntamentoForm.elements.telefono.value = persona.telefono || '';
                 nuovoAppuntamentoForm.elements.email.value = persona.email || '';

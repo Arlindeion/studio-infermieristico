@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pytest
 from unittest.mock import MagicMock, patch
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from flask import Flask
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -770,6 +770,28 @@ def test_promemoria_call_sonno_email_due_ore(app):
         db.session.refresh(call)
         assert call.promemoria_email_2h_il is not None
         email.assert_called_once_with(call, 2)
+
+
+@pytest.mark.parametrize('hours', [2, 24])
+def test_sleep_reminder_retries_after_delivery_failure(app, hours):
+    now = datetime(2026, 9, 20, 10, 0, tzinfo=app_module.FUSO_ORARIO)
+    start = now + timedelta(hours=hours)
+    with app.app_context():
+        call = CallSonno(
+            nome='Persona sintetica', telefono='3330000000', email='test@example.invalid',
+            eta_bambino_mesi=7, difficolta_principale='Risvegli', stato='Confermata',
+            data=start.date().isoformat(), ora=start.strftime('%H:%M'),
+        )
+        db.session.add(call)
+        db.session.commit()
+        with patch.object(app_module, 'invia_email_promemoria_call_sonno',
+                          side_effect=[False, True]) as send:
+            app_module.controlla_e_invia_promemoria_call_sonno(now)
+            assert getattr(call, f'promemoria_email_{hours}h_il') is None
+            app_module.controlla_e_invia_promemoria_call_sonno(now)
+            app_module.controlla_e_invia_promemoria_call_sonno(now)
+        assert getattr(call, f'promemoria_email_{hours}h_il') is not None
+        assert send.call_count == 2
 
 
 def test_call_sonno_non_si_sovrappone_a_prestazione(client):
@@ -3260,6 +3282,25 @@ def test_admin_rifiuta_open_day_manuale_per_corsi_diversi_da_accompagnamento(cli
     with flask_app.app_context():
         assert IscrizioneCorso.query.count() == 0
         assert PersonaCorso.query.count() == 0
+
+
+def test_duplicate_patient_contacts_only_include_active_matches_once(app):
+    with app.app_context():
+        source, match, other, archived = [app_module.Persona(nome='Sintetico') for _ in range(4)]
+        db.session.add_all([source, match, other, archived])
+        for person in (source, match, archived):
+            person.recapiti.extend([
+                app_module.RecapitoPersona(tipo='email', valore='test@example.invalid'),
+                app_module.RecapitoPersona(tipo='telefono', valore='3330000000'),
+            ])
+        other.recapiti.append(app_module.RecapitoPersona(
+            tipo='email', valore='test@example.invalid', archiviato_il=app_module.utc_now(),
+        ))
+        archived.stato = 'archiviata'
+        archived.archiviato_il = app_module.utc_now()
+        db.session.commit()
+        assert app_module._possibili_duplicati_persona(source) == [match]
+        assert app_module._possibili_duplicati_persona(other) == []
 
 
 def test_admin_richiama_persona_da_rubrica_senza_duplicarla(client):

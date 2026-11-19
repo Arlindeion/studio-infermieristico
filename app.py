@@ -38,7 +38,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from sqlalchemy import event, false as sql_false, text as sql_text
+from sqlalchemy import event, false as sql_false, inspect as sa_inspect, text as sql_text, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SASession, selectinload
 from patient_backfill import (
@@ -2668,6 +2668,33 @@ class PropostaSlot(db.Model):
     scade_il = db.Column(db.DateTime, nullable=False, index=True)
     creata_il = db.Column(db.DateTime, default=utc_now, nullable=False)
     accettata_il = db.Column(db.DateTime, nullable=True)
+
+
+def can_receive_slot_proposal(booking):
+    if isinstance(booking, CallSonno):
+        return booking.stato in {'In attesa', 'Confermata'} and booking.archiviata_il is None
+    return (isinstance(booking, Appuntamento)
+            and booking.stato in {'In attesa', 'Confermato'} and booking.archiviato_il is None)
+
+
+def pending_slot_revocation(booking):
+    return db.update(PropostaSlot).where(
+        PropostaSlot.entita_tipo == type(booking).__name__,
+        PropostaSlot.entita_id == booking.id,
+        PropostaSlot.stato == 'Inviata',
+    ).values(stato='Revocata')
+
+
+@event.listens_for(Appuntamento, 'after_update')
+@event.listens_for(CallSonno, 'after_update')
+def revoke_obsolete_slot_proposals(mapper, connection, booking):
+    # Direct edits, Calendar reconciliation and cancellations all change the same booking.
+    fields = sa_inspect(booking).attrs
+    moved = any(fields[key].history.has_changes() for key in ('data', 'ora'))
+    archive_field = 'archiviata_il' if isinstance(booking, CallSonno) else 'archiviato_il'
+    eligibility_changed = fields.stato.history.has_changes() or fields[archive_field].history.has_changes()
+    if moved or (eligibility_changed and not can_receive_slot_proposal(booking)):
+        connection.execute(pending_slot_revocation(booking))
 
 
 class BloccoAgenda(db.Model):
@@ -5627,7 +5654,8 @@ def controlla_e_invia_promemoria_call_sonno(adesso=None):
         if ore_promemoria is None:
             continue
 
-        invia_email_promemoria_call_sonno(call, ore_promemoria)
+        if not invia_email_promemoria_call_sonno(call, ore_promemoria):
+            continue
         timestamp = utc_now()
         if ore_promemoria == 24:
             call.promemoria_email_24h_il = timestamp
@@ -5824,14 +5852,6 @@ def _posti_iscrizione_da_partecipazione(partecipazione):
     return 1
 
 
-def _tipo_richiesta_da_corso(corso_tipo, corso_id):
-    if not corso_id:
-        return 'ricontatto'
-    if corso_tipo == 'accompagnamento-nascita':
-        return 'open_day'
-    return 'richiesta_iscrizione'
-
-
 def _posti_attivi_corso(corso_id):
     iscrizioni = IscrizioneCorso.query.filter(
         IscrizioneCorso.corso_id == corso_id,
@@ -5979,26 +5999,16 @@ def _aggiorna_persona_v2_da_snapshot(persona, nome='', telefono='', email='', co
 
 def _possibili_duplicati_persona(persona):
     """Segnala contatti condivisi senza unire automaticamente le persone."""
-    contatti = {
-        (recapito.tipo, recapito.valore_normalizzato)
-        for recapito in persona.recapiti
-        if recapito.archiviato_il is None
-    }
-    if not contatti:
-        return []
-    duplicati = []
-    for candidata in Persona.query.filter(
+    contatti = db.select(RecapitoPersona.tipo, RecapitoPersona.valore_normalizzato).where(
+        RecapitoPersona.persona_id == persona.id, RecapitoPersona.archiviato_il.is_(None),
+    )
+    return Persona.query.join(Persona.recapiti).filter(
         Persona.id != persona.id,
         Persona.dati_anonimizzati_il.is_(None),
         Persona.stato == 'attiva',
-    ).all():
-        if any(
-            (recapito.tipo, recapito.valore_normalizzato) in contatti
-            for recapito in candidata.recapiti
-            if recapito.archiviato_il is None
-        ):
-            duplicati.append(candidata)
-    return duplicati
+        RecapitoPersona.archiviato_il.is_(None),
+        tuple_(RecapitoPersona.tipo, RecapitoPersona.valore_normalizzato).in_(contatti),
+    ).distinct().order_by(Persona.id).all()
 
 
 def _patient_practices(persona):
@@ -6718,20 +6728,15 @@ def iscrizione_corso(corso_tipo):
         extra = {}
         data_corso_id = request.form.get('data_corso', '').strip()
         opzioni_date = {option['value']: option for option in corso['data_options']}
-        corso_id = None
-        if opzioni_date:
-            if data_corso_id not in opzioni_date:
-                return _render_iscrizione_con_errore(
-                    corso_tipo,
-                    'Seleziona una data disponibile tra quelle aperte.',
-                    'data_corso',
-                )
-            data_scelta = opzioni_date[data_corso_id]
-            corso_id = data_scelta['corso_id']
-            data_corso = data_scelta['label']
-        else:
-            data_corso = 'Da ricontattare per prossime date'
-            extra['richiesta_prossime_date'] = True
+        if data_corso_id not in opzioni_date:
+            return _render_iscrizione_con_errore(
+                corso_tipo,
+                'Seleziona una data disponibile tra quelle aperte.',
+                'data_corso',
+            )
+        data_scelta = opzioni_date[data_corso_id]
+        corso_id = data_scelta['corso_id']
+        data_corso = data_scelta['label']
         partecipazione = request.form.get('partecipazione', '').strip()
         consenso_privacy = _checkbox_checked('consenso_privacy')
         if corso_tipo == 'disostruzione-pediatrica':
@@ -6740,7 +6745,7 @@ def iscrizione_corso(corso_tipo):
         consenso_dati_gravidanza = _checkbox_checked('consenso_dati_gravidanza')
         if corso_tipo == 'disostruzione-pediatrica':
             consenso_dati_gravidanza = False
-        tipo_richiesta = _tipo_richiesta_da_corso(corso_tipo, corso_id)
+        tipo_richiesta = 'open_day' if corso_tipo == 'accompagnamento-nascita' else 'richiesta_iscrizione'
 
         if not nome or len(nome) > 100:
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci nome e cognome.', 'nome')
@@ -6748,13 +6753,13 @@ def iscrizione_corso(corso_tipo):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci il codice fiscale.', 'codice_fiscale')
         if not telefono or not _telefono_valido(telefono):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un numero di telefono valido.', 'telefono')
-        if corso_id and not email:
+        if not email:
             return _render_iscrizione_con_errore(
                 corso_tipo,
                 'Inserisci un indirizzo email: verrà usato per comunicarti la conferma del posto.',
                 'email',
             )
-        if email and not _email_valida(email):
+        if not _email_valida(email):
             return _render_iscrizione_con_errore(corso_tipo, 'Inserisci un indirizzo email valido.', 'email')
         if len(nome_bambino) > 100:
             return _render_iscrizione_con_errore(corso_tipo, 'Il nome del bambino è troppo lungo.', 'nome_bambino')
@@ -6779,9 +6784,8 @@ def iscrizione_corso(corso_tipo):
             dichiarazioni = {
                 'buono_stato_salute': _checkbox_checked('buono_stato_salute'),
                 'richiesta_non_conferma': _checkbox_checked('richiesta_non_conferma'),
+                'prove_pratiche': _checkbox_checked('prove_pratiche'),
             }
-            if corso_id:
-                dichiarazioni['prove_pratiche'] = _checkbox_checked('prove_pratiche')
             if not all(dichiarazioni.values()):
                 campo_mancante = next(campo for campo, valore in dichiarazioni.items() if not valore)
                 return _render_iscrizione_con_errore(
@@ -6789,7 +6793,7 @@ def iscrizione_corso(corso_tipo):
                     'Per procedere devi accettare tutte le dichiarazioni obbligatorie.',
                     campo_mancante,
                 )
-            if corso_id and request.form.get('conferma_finale') != 'on':
+            if request.form.get('conferma_finale') != 'on':
                 return _render_iscrizione_con_errore(corso_tipo, 'Devi confermare la richiesta di iscrizione al corso.', 'conferma_finale')
 
             extra = {
@@ -6880,21 +6884,19 @@ def iscrizione_corso(corso_tipo):
         extra['condizioni_corso_versione'] = VERSIONE_CONDIZIONI_ISCRIZIONE_CORSI
         extra['condizioni_corso_accettate_il'] = utc_now().isoformat()
 
-        posti_richiesti = 0 if tipo_richiesta == 'ricontatto' else _posti_iscrizione_da_partecipazione(partecipazione)
-        in_lista_attesa = False
-        if corso_id:
-            corso_selezionato = Corso.query.filter_by(id=corso_id).with_for_update().first()
-            if not corso_selezionato or corso_selezionato.stato != 'Aperto':
-                db.session.rollback()
-                return _render_iscrizione_con_errore(
-                    corso_tipo,
-                    'La data scelta non è più aperta. Seleziona un’altra edizione.',
-                    'data_corso',
-                )
-            in_lista_attesa = not _corso_accetta_prenotazione_online(
-                corso_selezionato,
-                posti_richiesti,
+        posti_richiesti = _posti_iscrizione_da_partecipazione(partecipazione)
+        corso_selezionato = Corso.query.filter_by(id=corso_id).with_for_update().first()
+        if not corso_selezionato or corso_selezionato.stato != 'Aperto':
+            db.session.rollback()
+            return _render_iscrizione_con_errore(
+                corso_tipo,
+                'La data scelta non è più aperta. Seleziona un’altra edizione.',
+                'data_corso',
             )
+        in_lista_attesa = not _corso_accetta_prenotazione_online(
+            corso_selezionato,
+            posti_richiesti,
+        )
 
         if sandbox_payment_requested and not in_lista_attesa:
             extra['nexi_deposit'] = deposit_quote(partecipazione)
@@ -8272,6 +8274,8 @@ def dettaglio_admin(tipo, entita_id):
         'admin_dettaglio.html',
         tipo=tipo,
         entita=entita,
+        can_propose_slot=can_receive_slot_proposal(entita),
+        sleep_slot_minutes=BLOCCO_CALL_SONNO_MINUTI,
         nome_entita=_nome_entita_admin(tipo, entita),
         note_admin=note,
         email_admin=email,
@@ -10287,22 +10291,47 @@ def reinvia_email_admin(id):
     return redirect(_url_dettaglio_admin(precedente.entita_tipo, precedente.entita_id))
 
 
+def slot_proposal_time_is_valid(booking, day, time, minutes):
+    if minutes is None:
+        return False
+    try:
+        start, _ = _intervallo_locale(day, time, minutes)
+    except (TypeError, ValueError):
+        return False
+    if start <= local_now():
+        return False
+    if isinstance(booking, CallSonno):
+        return time in ORARI_CALL_SONNO and _giorno_lavorativo_call(start.date())
+    return is_appointment_interval_bookable(day, time, minutes)
+
+
+def slot_booking(kind, booking_id, *, lock):
+    model = {'Appuntamento': Appuntamento, 'CallSonno': CallSonno}.get(kind)
+    if model is None:
+        return None
+    return db.session.get(model, booking_id, with_for_update=lock, populate_existing=lock)
+
+
 @app.route('/admin/pratica/<tipo>/<int:entita_id>/proponi-slot', methods=['POST'])
 @login_required
 def proponi_slot_admin(tipo, entita_id):
-    if not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}:
+    if (not _csrf_admin_valido() or tipo not in {'Appuntamento', 'CallSonno'}
+            or request.form.get('conferma_invio') != '1'):
         abort(400)
-    entita = _entita_admin(tipo, entita_id)
+    entita = slot_booking(tipo, entita_id, lock=True)
     if entita is None:
         abort(404)
+    if not can_receive_slot_proposal(entita):
+        flash('Questa pratica è chiusa o archiviata.', 'error')
+        return redirect(_url_dettaglio_admin(tipo, entita_id))
     data_proposta = request.form.get('data_proposta', '').strip()
     ora_proposta = request.form.get('ora_proposta', '').strip()
-    durata = parse_appointment_duration(request.form.get('durata_minuti'))
-    try:
-        _intervallo_locale(data_proposta, ora_proposta, durata)
-    except (TypeError, ValueError):
-        flash('Data, ora o durata della proposta non valide.', 'error')
+    durata = (BLOCCO_CALL_SONNO_MINUTI if tipo == 'CallSonno'
+              else parse_appointment_duration(request.form.get('durata_minuti')))
+    if not slot_proposal_time_is_valid(entita, data_proposta, ora_proposta, durata):
+        flash('Verifica data, ora e durata della proposta rispetto agli orari disponibili.', 'error')
         return redirect(_url_dettaglio_admin(tipo, entita_id))
+    db.session.execute(pending_slot_revocation(entita))
     token = secrets.token_urlsafe(48)
     proposta = PropostaSlot(
         token=token,
@@ -10316,16 +10345,14 @@ def proponi_slot_admin(tipo, entita_id):
     db.session.add(proposta)
     db.session.commit()
     link = public_url(url_for('accetta_proposta_slot', token=token))
-    corpo_default = (
-        f'Buongiorno {entita.nome},\n\n'
-        f'le proponiamo {data_proposta} alle {ora_proposta}. '
+    introduzione = request.form.get('corpo_email', '').strip() or f'Buongiorno {entita.nome},'
+    corpo = (
+        f'{introduzione}\n\n'
+        f'Orario proposto: {data_proposta} alle {ora_proposta}. '
         f'Può accettare entro 48 ore da questo link:\n{link}\n\n'
         'Studio infermieristico'
     )
-    corpo = request.form.get('corpo_email', '').strip() or corpo_default
     oggetto = request.form.get('oggetto_email', '').strip() or 'Proposta di nuovo orario'
-    if request.form.get('conferma_invio') != '1':
-        abort(400)
     msg = Message(subject=oggetto, recipients=[entita.email], body=corpo)
     try:
         _invia_email_tracciata(msg, tipo, entita_id)
@@ -10342,38 +10369,53 @@ def accetta_proposta_slot(token):
     if request.method == 'POST' and not validate_csrf_token():
         abort(400)
     proposta = PropostaSlot.query.filter_by(token=token).first_or_404()
-    entita = _entita_admin(proposta.entita_tipo, proposta.entita_id)
-    valida = bool(entita and proposta.stato == 'Inviata' and proposta.scade_il > utc_now())
-    if request.method == 'POST' and valida:
+    submitting = request.method == 'POST'
+    entita = slot_booking(proposta.entita_tipo, proposta.entita_id, lock=submitting)
+    if submitting:
+        db.session.refresh(proposta)
+    duration = BLOCCO_CALL_SONNO_MINUTI if proposta.entita_tipo == 'CallSonno' else proposta.durata_minuti
+    # Multiple outstanding links can predate the single-proposal rule.
+    newer = PropostaSlot.query.filter_by(
+        entita_tipo=proposta.entita_tipo, entita_id=proposta.entita_id,
+    ).filter(PropostaSlot.id > proposta.id).first()
+    valida = (can_receive_slot_proposal(entita) and proposta.stato == 'Inviata'
+              and proposta.scade_il > utc_now() and newer is None
+              and slot_proposal_time_is_valid(entita, proposta.data_proposta, proposta.ora_proposta, duration))
+    if submitting and valida:
         ignore_call = entita.id if proposta.entita_tipo == 'CallSonno' else None
         ignore_appuntamento = entita.id if proposta.entita_tipo == 'Appuntamento' else None
         occupato = slot_occupato_db(
             proposta.data_proposta,
             proposta.ora_proposta,
-            proposta.durata_minuti,
+            duration,
             ignore_call_id=ignore_call,
             ignore_appuntamento_id=ignore_appuntamento,
         ) or intervallo_occupato_da_calendario(
             proposta.data_proposta,
             proposta.ora_proposta,
-            proposta.durata_minuti,
+            duration,
             ignore_google_event_id=entita.google_event_id,
         )
         if occupato:
             proposta.stato = 'Non disponibile'
             db.session.commit()
             return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=False, occupato=True)
+        claimed = PropostaSlot.query.filter_by(id=proposta.id, stato='Inviata').update(
+            {'stato': 'Accettata', 'accettata_il': utc_now(), 'durata_minuti': duration}
+        )
+        if not claimed:
+            db.session.rollback()
+            return render_template('accetta_proposta_slot.html', proposta=proposta, valida=False)
+        db.session.execute(pending_slot_revocation(entita))
         entita.data = proposta.data_proposta
         entita.ora = proposta.ora_proposta
         if proposta.entita_tipo == 'Appuntamento':
-            entita.duration_minutes = proposta.durata_minuti
+            entita.duration_minutes = duration
             entita.stato = 'Confermato'
             patient, patient_created = _ensure_patient_for_appointment(entita)
         else:
             entita.stato = 'Confermata'
             patient, patient_created = _ensure_patient_for_sleep_call(entita)
-        proposta.stato = 'Accettata'
-        proposta.accettata_il = utc_now()
         db.session.commit()
         _audit_automatic_patient_link(
             proposta.entita_tipo,
@@ -10388,7 +10430,7 @@ def accetta_proposta_slot(token):
         else:
             invia_email_conferma_call_sonno(entita)
         return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=False, accettata=True)
-    return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=valida)
+    return render_template('accetta_proposta_slot.html', proposta=proposta, entita=entita, valida=valida, duration=duration)
 
 
 def _segnala_prossimo_lista_attesa(corso):

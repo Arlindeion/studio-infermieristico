@@ -2,11 +2,55 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const script = fs.readFileSync(
     path.resolve(__dirname, '../../static/js/admin-azioni.js'),
     'utf8'
 );
+
+test('scegliendo Nuova persona si cancellano i recapiti della selezione precedente', () => {
+    const listeners = {};
+    const personSelect = {
+        value: '',
+        selectedOptions: [{dataset: {nome: 'Persona Test', telefono: '3330000000', email: 'test@example.invalid'}}],
+        addEventListener: (event, handler) => { listeners[event] = handler; },
+    };
+    const elements = Object.fromEntries(
+        ['nome', 'telefono', 'email', 'confirm_missing_contacts']
+            .map(name => [name, {value: '', disabled: false}])
+    );
+    const message = {textContent: '', hidden: true};
+    const form = {
+        elements,
+        addEventListener() {},
+        querySelector: selector => ({
+            '.admin-inline-form-message': message,
+        })[selector] || null,
+    };
+    const document = {
+        addEventListener: (event, handler) => { if (event === 'DOMContentLoaded') handler(); },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        getElementById: id => ({
+            'admin-new-appointment-form': form,
+            'admin-appointment-person': personSelect,
+        })[id] || null,
+    };
+    vm.runInNewContext(script, {document});
+    personSelect.value = '1';
+    listeners.change.call(personSelect);
+    assert.equal(elements.nome.value, 'Persona Test');
+    assert.equal(elements.telefono.value, '3330000000');
+    assert.equal(elements.email.value, 'test@example.invalid');
+    elements.confirm_missing_contacts.value = '1';
+    personSelect.value = '';
+    listeners.change.call(personSelect);
+    assert.equal(elements.nome.value, '');
+    assert.equal(elements.telefono.value, '');
+    assert.equal(elements.email.value, '');
+    assert.equal(elements.confirm_missing_contacts.value, '0');
+});
 
 test('apre il modal Calendar soltanto quando il server lo richiede', () => {
     assert.match(script, /\[data-calendar-conflict-modal\]\[data-open-on-load\]/);

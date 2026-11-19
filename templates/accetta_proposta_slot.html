@@ -13,7 +13,7 @@
         <p>Nel frattempo lo slot è stato occupato. Lo studio ti contatterà per una nuova proposta.</p>
         {% elif valida %}
         <h1>Conferma il nuovo orario</h1>
-        <p>{{ proposta.data_proposta }} alle {{ proposta.ora_proposta }} · {{ proposta.durata_minuti }} minuti</p>
+        <p>{{ proposta.data_proposta }} alle {{ proposta.ora_proposta }} · {{ duration }} minuti</p>
         <form method="post">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <button class="btn" type="submit">Accetta l’orario</button>

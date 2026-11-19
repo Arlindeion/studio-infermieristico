@@ -1,5 +1,7 @@
 # Roadmap di sviluppo e pubblicazione
 
+- 19 novembre 2026, ramo del sito completo. Corrette le proposte di cambio orario, il recupero dei promemoria sonno dopo errore email e il cambio di persona in agenda. La riconciliazione degli acconti Nexi di prova protegge gli esiti definitivi quando il ritorno dal checkout e la notifica si sovrappongono.
+
 Revisione: **22 ottobre 2026**. Fonte unica delle priorità; registro delle scelte in [DECISIONS.md](DECISIONS.md), procedure in [OPERATIONS.md](OPERATIONS.md), prove e limiti in [VERIFICHE_RILASCIO_2026-10-22.md](VERIFICHE_RILASCIO_2026-10-22.md).
 
 ## Stato attuale: vetrina pubblicata e verificata sul dominio

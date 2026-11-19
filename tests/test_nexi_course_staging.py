@@ -7,7 +7,7 @@ import pytest
 import app as site
 from tests.test_nexi_course_sandbox import (
     application, client, course, gateway, csrf, enroll, attempt, operation, notify,
-    BASE, COURSE_URL,
+    BASE, COURSE_URL, SECURITY_TOKEN,
 )
 
 
@@ -105,3 +105,36 @@ def test_missing_remote_key_does_not_fall_back_to_isolated_key(application, auth
     monkeypatch.setitem(application.config, 'NEXI_COURSE_SANDBOX_API_KEY', None)
     assert enroll(authenticated_client, course).status_code == 200
     gateway[0].assert_not_called()
+
+
+@pytest.mark.parametrize('late_result', ['AUTHORIZED', 'DECLINED', 'EXECUTED'])
+def test_return_cannot_overwrite_a_concurrent_notification(
+        application, authenticated_client, course, gateway, late_result):
+    enroll(authenticated_client, course)
+    payment = attempt()
+    success = operation(payment)
+    late = operation(payment, operationResult=late_result)
+    result_path = BASE + '/result/' + payment.access_token
+    outer_session = site.db.session()
+
+    def read_while_notification_arrives(order_id):
+        gateway[1].side_effect = None
+        gateway[1].return_value = {'operations': [success]}
+        # The browser request has loaded the pending attempt and is waiting for Nexi.
+        # Complete the callback in a separate transaction before returning the old result.
+        with application.app_context():
+            assert site.db.session() is not outer_session
+            response = application.test_client().post(BASE + '/notification', json={
+                'operation': success, 'securityToken': SECURITY_TOKEN,
+            })
+            assert response.status_code == 200
+        return {'operations': [late]}
+
+    gateway[1].side_effect = read_while_notification_arrives
+    response = authenticated_client.get(result_path)
+    assert response.status_code == 200 and 'Iscrizione confermata' in response.text
+    site.db.session.refresh(payment)
+    assert payment.status == 'confirmed'
+    assert payment.registration.stato == 'Confermato'
+    assert payment.operation_id == success['operationId']
+    assert site.EmailOperativa.query.filter_by(entita_tipo='IscrizioneCorso').count() == 1

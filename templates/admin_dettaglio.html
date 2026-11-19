@@ -271,7 +271,7 @@
     </section>
     {% endif %}
 
-    {% if tipo in ['Appuntamento', 'CallSonno'] %}
+    {% if can_propose_slot %}
     <section class="admin-surface">
         <p class="admin-eyebrow">Nuovo orario</p>
         <h2>Proponi uno slot via email</h2>
@@ -281,9 +281,13 @@
             <input type="hidden" name="conferma_invio" value="1">
             <label>Data proposta<input type="date" name="data_proposta" required></label>
             <label>Ora<input type="time" name="ora_proposta" required></label>
+            {% if tipo == 'CallSonno' %}
+            <p>Blocco in agenda per la call: {{ sleep_slot_minutes }} minuti</p>
+            {% else %}
             <label>Durata minuti<input type="number" name="durata_minuti" value="{{ entita.duration_minutes or 30 }}" min="1" max="480" required></label>
+            {% endif %}
             <label class="admin-form-wide">Oggetto email<input type="text" name="oggetto_email" value="Proposta di nuovo orario"></label>
-            <label class="admin-form-wide">Testo email<textarea name="corpo_email" rows="6" placeholder="Lascia vuoto per usare il testo predefinito con il link di accettazione."></textarea></label>
+            <label class="admin-form-wide">Testo email<textarea name="corpo_email" rows="6" placeholder="Introduzione facoltativa. Data, ora e link di accettazione vengono aggiunti automaticamente."></textarea></label>
             <button class="btn" type="submit">Controlla e invia</button>
         </form>
     </section>
